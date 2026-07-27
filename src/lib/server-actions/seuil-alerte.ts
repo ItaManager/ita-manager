@@ -20,8 +20,15 @@ async function requireAccesSeuilAlerte() {
  * DEMANDE_ACHAT_DECLENCHEE). Jamais wired à upsertDemandeIndex() : aucune
  * cible de routage réelle n'existe tant que le Lot 7 (Achat) n'existe pas
  * — cf. CLAUDE.md.
+ *
+ * L'acteur de l'HistoriqueStatut est résolu en interne (pas de paramètre
+ * acteurId) — un identifiant fourni par l'appelant serait une usurpation
+ * d'audit trail pour quiconque appelle cette Server Action directement.
  */
-export async function creerOuReutiliserDemandeReapprovisionnement(materielId: string, acteurId: string) {
+export async function creerOuReutiliserDemandeReapprovisionnement(materielId: string) {
+  const utilisateur = await getCurrentUtilisateur();
+  if (!utilisateur) redirect("/login");
+
   const existante = await prisma.demandeReapprovisionnement.findFirst({
     where: { materielId, statut: "EN_ATTENTE_ACHAT" },
   });
@@ -41,7 +48,7 @@ export async function creerOuReutiliserDemandeReapprovisionnement(materielId: st
     entiteType: "DemandeReapprovisionnement",
     entiteId: demande.id,
     statutNouveau: "EN_ATTENTE_ACHAT",
-    acteurId,
+    acteurId: utilisateur.id,
   });
 
   return demande;
@@ -52,14 +59,16 @@ export async function creerOuReutiliserDemandeReapprovisionnement(materielId: st
  * dashboard/layout.tsx : un stock sous seuil n'est adressé à personne en
  * particulier, contrairement aux échéances projet du Lot 5. Cf. CLAUDE.md.
  */
-export async function verifierEtCreerDemandesReapprovisionnement(utilisateurId: string): Promise<void> {
+export async function verifierEtCreerDemandesReapprovisionnement(): Promise<void> {
+  await requireAccesSeuilAlerte();
+
   const materielsSousSeuil = await prisma.materiel.findMany({
     where: { magasinId: { not: null }, seuilAlerte: { not: null }, quantiteStock: { not: null } },
   });
 
   for (const materiel of materielsSousSeuil) {
     if (materiel.quantiteStock! <= materiel.seuilAlerte!) {
-      await creerOuReutiliserDemandeReapprovisionnement(materiel.id, utilisateurId);
+      await creerOuReutiliserDemandeReapprovisionnement(materiel.id);
     }
   }
 }

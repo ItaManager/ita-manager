@@ -111,6 +111,8 @@ export async function obtenirUrlPieceAdministrative(cheminFichier: string): Prom
  * Fenêtre de 30 jours avant expiration.
  */
 export async function verifierEtCreerAlertesExpirationPieces(): Promise<void> {
+  await requireAccesPiecesAdmin();
+
   const dansTrenteJours = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
   const pieces = await prisma.pieceAdministrativeVehicule.findMany({

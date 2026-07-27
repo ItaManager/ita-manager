@@ -24,7 +24,10 @@ async function requireAccesNonConformite() {
   return utilisateur;
 }
 
+/** Authentification requise — probe de permission, pas une donnée publique. */
 export async function peutCloturerNonConformite(utilisateurId: string): Promise<boolean> {
+  const appelant = await getCurrentUtilisateur();
+  if (!appelant) redirect("/login");
   return possedeAccesSousModule(utilisateurId, "qhse", "non-conformite");
 }
 
@@ -41,11 +44,17 @@ type OrigineNonConformite =
  * NON) ET creerRapportIncident() (qhse-rapport-incident.ts, quand
  * nonConformiteIdentifiee est coché) — même principe que
  * creerOuReutiliserDemandeReapprovisionnement() (seuil-alerte.ts, Lot 6).
+ *
+ * L'identificateur est résolu en interne (pas de paramètre acteurId) — un
+ * identifiant fourni par l'appelant serait une usurpation d'audit trail
+ * pour quiconque appelle cette Server Action directement.
  */
 export async function creerOuReutiliserNonConformite(
   origine: OrigineNonConformite,
-  acteurId: string,
 ): Promise<NonConformite> {
+  const utilisateur = await getCurrentUtilisateur();
+  if (!utilisateur) redirect("/login");
+
   const where =
     origine.type === "POINT_INSPECTION_HSE"
       ? { reponsePointInspectionHSEId: origine.reponsePointId }
@@ -56,7 +65,7 @@ export async function creerOuReutiliserNonConformite(
 
   const nonConformite = await prisma.nonConformite.create({
     data: {
-      identificateurId: acteurId,
+      identificateurId: utilisateur.id,
       typeNonConformite:
         origine.type === "POINT_INSPECTION_HSE" ? "INSPECTION_VISUELLE" : "NON_RESPECT_EXIGENCE",
       descriptionNonConformite:
@@ -72,7 +81,7 @@ export async function creerOuReutiliserNonConformite(
     entiteType: "NonConformite",
     entiteId: nonConformite.id,
     statutNouveau: "OUVERTE",
-    acteurId,
+    acteurId: utilisateur.id,
   });
 
   return nonConformite;

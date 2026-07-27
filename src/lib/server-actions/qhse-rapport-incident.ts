@@ -108,16 +108,13 @@ export async function creerRapportIncident(
   });
 
   if (donnees.nonConformiteIdentifiee) {
-    await creerOuReutiliserNonConformite(
-      {
-        type: "RAPPORT_INCIDENT",
-        rapportIncidentId: rapport.id,
-        description:
-          donnees.nonConformiteDescription?.trim() ||
-          `Non-conformité identifiée — Rapport Incident RI-${String(rapport.numero).padStart(5, "0")}`,
-      },
-      utilisateur.id,
-    );
+    await creerOuReutiliserNonConformite({
+      type: "RAPPORT_INCIDENT",
+      rapportIncidentId: rapport.id,
+      description:
+        donnees.nonConformiteDescription?.trim() ||
+        `Non-conformité identifiée — Rapport Incident RI-${String(rapport.numero).padStart(5, "0")}`,
+    });
   }
 
   return { succes: true };

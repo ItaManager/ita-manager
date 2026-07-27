@@ -1,8 +1,10 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import type { RoleValidationAchat } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
+  getCurrentUtilisateur,
   possedeAccesModule,
   possedeAccesSousModule,
   peutValiderDirectionGenerale,
@@ -40,10 +42,13 @@ const VERIFICATEURS_PAR_ROLE: Record<
   DG: peutValiderDGAchat,
 };
 
+/** Authentification requise — probe de permission, pas une donnée publique. */
 export async function peutValiderRoleAchat(
   utilisateurId: string,
   role: RoleValidationAchat,
 ): Promise<boolean> {
+  const appelant = await getCurrentUtilisateur();
+  if (!appelant) redirect("/login");
   return VERIFICATEURS_PAR_ROLE[role](utilisateurId);
 }
 
@@ -60,15 +65,23 @@ export async function rolesEligibles(utilisateurId: string): Promise<RoleValidat
  * router DemandeIndex vers un individu résolu (étape 3, broadcast-vers-un-
  * seul), jamais une vérification d'autorisation (peutGererComptes/
  * requireAccesModule restent les seules garde-fous réels).
+ *
+ * Garde d'authentification minimale + select restreint à l'id : l'unique
+ * appelant (achat-demandes.ts) n'utilise jamais que `.id` — retourner
+ * l'Utilisateur complet (email, téléphone, numeroWave...) exposerait des
+ * données personnelles sans besoin.
  */
 export async function resoudreResponsableAchat() {
+  const utilisateur = await getCurrentUtilisateur();
+  if (!utilisateur) redirect("/login");
+
   const acces = await prisma.accesUtilisateur.findFirst({
     where: {
       actif: true,
       utilisateur: { statut: "ACTIF" },
       sousModule: { code: "traitement-achat", actif: true, module: { code: "achat" } },
     },
-    include: { utilisateur: true },
+    include: { utilisateur: { select: { id: true } } },
     orderBy: { utilisateur: { dateCreation: "asc" } },
   });
   return acces?.utilisateur ?? null;

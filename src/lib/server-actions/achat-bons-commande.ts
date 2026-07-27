@@ -64,12 +64,26 @@ export async function trouverOuCreerBonDeCommandeOuvert(fournisseur: string) {
  * unitaire du BC est dérivé de montantLigneHT/quantité (fonctionne aussi
  * bien en mode forfaitaire que calculé, tous deux déjà résolus en HT à
  * l'étape 3). Cf. CLAUDE.md.
+ *
+ * Gate d'authentification + garde d'état (statut déjà BC_EMIS) plutôt qu'un
+ * requireAccesModule("achat","traitement-achat") : les deux vrais appelants
+ * (appliquerTraitementAchat() côté urgent, recalculerStatutDemandeAchat()
+ * après validation parallèle complète) placent déjà le statut à BC_EMIS
+ * juste avant d'appeler cette fonction, et le second peut être invoqué par
+ * n'importe quel rôle validateur (DT/RH/DFC/DG), pas seulement Achat — un
+ * gate module aurait cassé ce chemin légitime. Le check d'état empêche en
+ * revanche un appel direct d'émettre un BC pour une demande pas encore
+ * réellement approuvée.
  */
 export async function emettreLignesBonDeCommande(demandeId: string): Promise<void> {
+  const utilisateur = await getCurrentUtilisateur();
+  if (!utilisateur) redirect("/login");
+
   const demande = await prisma.demandeAchat.findUniqueOrThrow({
     where: { id: demandeId },
     include: { lignes: true },
   });
+  if (demande.statut !== "BC_EMIS") return;
 
   const tauxTva = demande.tauxTva ? Number(demande.tauxTva) : 0;
 

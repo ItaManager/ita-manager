@@ -17,7 +17,7 @@ export default async function SeuilAlertePage() {
   if (!utilisateur) redirect("/login");
   await requireAccesModule(utilisateur.id, "logistique", "seuil-alerte");
 
-  await verifierEtCreerDemandesReapprovisionnement(utilisateur.id);
+  await verifierEtCreerDemandesReapprovisionnement();
 
   const [materielsSousSeuil, demandesReapprovisionnement] = await Promise.all([
     listerMaterielsSousSeuil(),

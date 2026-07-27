@@ -80,7 +80,7 @@ export async function validerParallele(
     acteurId: utilisateur.id,
   });
 
-  await recalculerStatutDemandeAchat(validation.demandeId, utilisateur.id);
+  await recalculerStatutDemandeAchat(validation.demandeId);
 
   return { succes: true };
 }
@@ -120,7 +120,7 @@ export async function refuserParallele(
     commentaire: motif,
   });
 
-  await recalculerStatutDemandeAchat(validation.demandeId, utilisateur.id);
+  await recalculerStatutDemandeAchat(validation.demandeId);
 
   return { succes: true };
 }
@@ -132,11 +132,17 @@ export async function refuserParallele(
  * atomique (updateMany conditionné sur le statut courant, count===1) contre
  * la course "deux rôles résolvent quasi simultanément" — même idiome que
  * les décréments de stock. Cf. CLAUDE.md.
+ *
+ * Authentification requise (pas de garde d'accès spécifique — appelée par
+ * n'importe quel rôle validateur DT/RH/DFC/DG) ; l'acteur de l'audit trail
+ * est résolu en interne plutôt que fourni par l'appelant (usurpation
+ * d'audit sinon).
  */
-export async function recalculerStatutDemandeAchat(
-  demandeId: string,
-  acteurId: string,
-): Promise<void> {
+export async function recalculerStatutDemandeAchat(demandeId: string): Promise<void> {
+  const utilisateur = await getCurrentUtilisateur();
+  if (!utilisateur) redirect("/login");
+  const acteurId = utilisateur.id;
+
   const demande = await prisma.demandeAchat.findUniqueOrThrow({
     where: { id: demandeId },
     include: { validations: true },

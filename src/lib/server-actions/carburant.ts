@@ -23,12 +23,17 @@ const TYPE_MODULE = "carburant";
 const SOUS_MODULE = "demande-carburant";
 const LIEN_DETAIL = "/dashboard/carburant/demande-carburant";
 
+/** Authentification requise — probe de permission, pas une donnée publique. */
 export async function peutValiderLogistique(utilisateurId: string): Promise<boolean> {
+  const appelant = await getCurrentUtilisateur();
+  if (!appelant) redirect("/login");
   return possedeAccesSousModule(utilisateurId, "carburant", "depots");
 }
 
 /** Délègue à acces.ts — même vérification que Lot 5's appel-offres.ts, pas dupliquée. */
 export async function peutValiderDG(utilisateurId: string): Promise<boolean> {
+  const appelant = await getCurrentUtilisateur();
+  if (!appelant) redirect("/login");
   return peutValiderDirectionGenerale(utilisateurId);
 }
 

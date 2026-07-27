@@ -13,7 +13,10 @@ async function requireAccesAST() {
   return utilisateur;
 }
 
+/** Authentification requise — probe de permission, pas une donnée publique. */
 export async function peutValiderAST(utilisateurId: string): Promise<boolean> {
+  const appelant = await getCurrentUtilisateur();
+  if (!appelant) redirect("/login");
   return possedeAccesSousModule(utilisateurId, "qhse", "ast");
 }
 

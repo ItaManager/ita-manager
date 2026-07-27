@@ -114,8 +114,16 @@ export async function cocherPointValidation(
  * Notifie le chef de projet ET son superieurId (le document de cadrage
  * demande explicitement les deux). Idempotent via @@unique — ne repasse
  * jamais un `lu: true` à false.
+ *
+ * L'identité est résolue en interne (pas de paramètre utilisateurId) — un
+ * paramètre pilotant entièrement le scope de la requête et le destinataire
+ * des Notification créées serait spoofable par tout appelant direct de
+ * cette Server Action.
  */
-export async function verifierEtCreerAlertesEcheance(utilisateurId: string): Promise<void> {
+export async function verifierEtCreerAlertesEcheance(): Promise<void> {
+  const utilisateur = await getCurrentUtilisateur();
+  if (!utilisateur) redirect("/login");
+
   const dansSeptJours = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
   const points = await prisma.pointValidation.findMany({
@@ -123,7 +131,7 @@ export async function verifierEtCreerAlertesEcheance(utilisateurId: string): Pro
       statut: "A_FAIRE",
       echeance: { lte: dansSeptJours },
       projet: {
-        OR: [{ chefProjetId: utilisateurId }, { chefProjet: { superieurId: utilisateurId } }],
+        OR: [{ chefProjetId: utilisateur.id }, { chefProjet: { superieurId: utilisateur.id } }],
       },
     },
     include: { projet: { select: { nom: true } } },
@@ -133,7 +141,7 @@ export async function verifierEtCreerAlertesEcheance(utilisateurId: string): Pro
 
   await prisma.notification.createMany({
     data: points.map((point) => ({
-      destinataireId: utilisateurId,
+      destinataireId: utilisateur.id,
       titre: `Échéance ${point.echeance < new Date() ? "dépassée" : "à venir"} — ${point.projet.nom}`,
       description: point.libelle,
       entiteType: "PointValidation",

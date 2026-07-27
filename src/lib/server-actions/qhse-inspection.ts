@@ -64,10 +64,11 @@ export async function creerInspectionHSE(
 
   for (const reponse of inspection.reponsesPoints) {
     if (reponse.reponse === "NON") {
-      await creerOuReutiliserNonConformite(
-        { type: "POINT_INSPECTION_HSE", reponsePointId: reponse.id, libellePoint: reponse.point.libelle },
-        utilisateur.id,
-      );
+      await creerOuReutiliserNonConformite({
+        type: "POINT_INSPECTION_HSE",
+        reponsePointId: reponse.id,
+        libellePoint: reponse.point.libelle,
+      });
     }
   }
 

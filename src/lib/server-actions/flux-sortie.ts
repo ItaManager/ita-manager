@@ -320,7 +320,6 @@ export async function deciderDMS(input: DeciderDMSInput): Promise<{ erreur: stri
     const premiereLigne = demande.lignes[0];
     const demandeReappro = await creerOuReutiliserDemandeReapprovisionnement(
       premiereLigne.materielId,
-      utilisateur.id,
     );
 
     await prisma.demandeMiseADisposition.update({

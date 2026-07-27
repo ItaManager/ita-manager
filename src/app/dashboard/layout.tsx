@@ -27,7 +27,7 @@ export default async function DashboardLayout({
   // Vérification "pull" à chaque navigation (pas de tâche planifiée dans ce
   // projet) — doit se terminer avant listerNotifications() pour que les
   // alertes fraîchement créées apparaissent dès cette même requête.
-  await verifierEtCreerAlertesEcheance(utilisateur.id);
+  await verifierEtCreerAlertesEcheance();
 
   const [modules, gestionComptesAutorisee, notificationsBrutes] = await Promise.all([
     getModulesAccessibles(utilisateur.id),
