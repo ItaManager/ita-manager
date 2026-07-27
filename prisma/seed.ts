@@ -251,19 +251,38 @@ async function seedUnitesMesure() {
 }
 
 async function seedFonctions() {
-  const tousLesSousModulesSauf = async (codesExclus: string[]) =>
-    prisma.sousModule.findMany({
-      where: { code: { notIn: codesExclus }, actif: true },
-    });
-
-  // Fonction RH : accès à tous les modules métier + au module transversal
-  // "authentification-roles" (seule fonction à l'avoir par défaut).
+  // Fonction RH : accès aux 4 sous-modules RH réels, au module transversal
+  // "authentification-roles" (seule fonction à l'avoir par défaut) et à
+  // l'archivage documentaire (aucune autre Fonction seedée ne détient
+  // aujourd'hui archivage-documentaire — le retirer de RH sans alternative
+  // couperait Document Archiving pour tout le monde).
+  //
+  // CORRIGÉ (cf. CLAUDE.md) : jusqu'ici cette Fonction recevait
+  // tousLesSousModulesSauf(["pointage"]) — un catch-all sur TOUS les
+  // sous-modules actifs, tous modules confondus, qui donnait accidentellement
+  // à RH un accès réel à carburant/depots, logistique/magasins,
+  // direction-technique/*, dfc/*, qhse/*, achat/* etc. Au-delà des
+  // résolutions "responsable" mal routées déjà documentées, ce catch-all
+  // permettait aussi à un compte RH d'agir comme validateur DT/DFC/DG (pas
+  // seulement RH) dans le circuit de validation parallèle Achat (Lot 7) —
+  // remplacé par une allowlist explicite, même forme que codesChefChantier
+  // ci-dessous.
+  const codesRh = [
+    "creation-profil",
+    "conge-permission",
+    "releve-activite",
+    "mission",
+    "gestion-comptes-acces",
+    "archivage-documentaire",
+  ];
   const rhFonction = await prisma.fonction.upsert({
     where: { nom: "Responsable RH" },
     update: {},
     create: { nom: "Responsable RH", description: "Gestion administrative du personnel" },
   });
-  const sousModulesRh = await tousLesSousModulesSauf(["pointage"]);
+  const sousModulesRh = await prisma.sousModule.findMany({
+    where: { code: { in: codesRh }, actif: true },
+  });
   for (const sousModule of sousModulesRh) {
     await prisma.fonctionModuleDefaut.upsert({
       where: {
@@ -273,6 +292,16 @@ async function seedFonctions() {
       create: { fonctionId: rhFonction.id, sousModuleId: sousModule.id, activeParDefaut: true },
     });
   }
+  // Nettoyage des anciennes lignes de template héritées du catch-all — sans
+  // ce deleteMany, un nouveau compte RH futur récupérerait quand même les
+  // accès accidentels via initialiserAccesDepuisFonction() (qui lit
+  // FonctionModuleDefaut, pas ce tableau codesRh).
+  await prisma.fonctionModuleDefaut.deleteMany({
+    where: {
+      fonctionId: rhFonction.id,
+      sousModuleId: { notIn: sousModulesRh.map((s) => s.id) },
+    },
+  });
 
   // Fonction Chef de chantier : accès limité (Logistique, QHSE, RH côté
   // relevé d'activité/congés) — sert à démontrer une sidebar différente.
@@ -292,7 +321,8 @@ async function seedFonctions() {
     "ast",
     "rapport-hebdo",
     // Lot 3 — ajout délibéré : persona demandeur carburant réaliste et
-    // propre (distinct de l'accès déjà large et non-corrigé de RH).
+    // propre (distinct de l'accès RH, désormais restreint aux 4 sous-modules
+    // rh réels — cf. correction du catch-all ci-dessus).
     "demande-carburant",
     // Lot 6, Livraison B — même persona demandeur pour Demande de
     // Transport (déjà présent) et Bon de Sortie et Transfert (nouveau).
@@ -321,8 +351,8 @@ async function seedFonctions() {
   }
 
   // Fonction Direction Générale : accès aux 3 sous-modules du module DG +
-  // gestion-comptes-acces (administration des comptes) — indépendamment de
-  // l'accès déjà large (connu, non corrigé) de "Responsable RH".
+  // gestion-comptes-acces (administration des comptes) — persona dédiée,
+  // indépendante de l'accès RH (restreint aux 4 sous-modules rh réels).
   const dgFonction = await prisma.fonction.upsert({
     where: { nom: "Direction Générale" },
     update: {},
@@ -390,7 +420,7 @@ async function seedFonctions() {
 
   // Fonction Directeur Technique (Lot 5) : accès aux 5 sous-modules du
   // module direction-technique — persona dédiée plutôt que de s'appuyer
-  // sur l'accès déjà large et non-corrigé de "Responsable RH", même
+  // sur l'accès RH (restreint aux 4 sous-modules rh réels), même
   // précédent que "Responsable Logistique/Carburant" (Lot 3).
   const directionTechniqueFonction = await prisma.fonction.upsert({
     where: { nom: "Directeur Technique" },
@@ -549,9 +579,9 @@ async function seedFonctions() {
   }
 
   // Fonction Responsable DFC (Lot 7) : aucune Fonction dédiée n'accédait
-  // jusqu'ici réellement au module "dfc" (seul le catch-all "Responsable
-  // RH" l'incluait incidemment) — nécessaire pour un persona DFC réaliste
-  // côté validation parallèle Achat.
+  // jusqu'ici réellement au module "dfc" (avant correction du catch-all,
+  // seul "Responsable RH" l'incluait incidemment) — nécessaire pour un
+  // persona DFC réaliste côté validation parallèle Achat.
   const dfcFonction = await prisma.fonction.upsert({
     where: { nom: "Responsable DFC" },
     update: {},
@@ -1152,11 +1182,6 @@ async function seedPointsInspectionHSE() {
 /// Lot 7 — référentiel de configuration à une seule ligne (table plutôt
 /// qu'enum, même philosophie que CategorieMateriel/UniteMesure). Seuil
 /// placeholder — aucun chiffre métier réel n'a été fourni.
-///
-/// Note connue, non corrigée (même convention que chaque lot précédent) :
-/// le catch-all "Responsable RH" (tousLesSousModulesSauf(["pointage"]))
-/// obtient aussi incidemment les 4 nouveaux sous-modules "achat" ci-dessus
-/// — cf. CLAUDE.md, jamais patché en marge d'un lot non lié à ce sujet.
 async function seedParametresAchat() {
   const existant = await prisma.parametresAchat.findFirst();
   if (existant) return;
