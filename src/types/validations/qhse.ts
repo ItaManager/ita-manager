@@ -12,27 +12,27 @@ export const chantierRefineur = (donnees: { projetId?: string; chantierLibre?: s
 export const completerAccueilSecuriteSchema = z.object({
   age: z.number().int().positive().optional(),
   statutTravailleur: z.enum(["PERMANENT", "OCCASIONNEL", "VISITEUR"]).optional(),
-  contactsTelephone: z.string().optional(),
-  lieuHabitation: z.string().optional(),
-  personneContactUrgenceNom: z.string().optional(),
-  personneContactUrgenceTelephone: z.string().optional(),
-  epiRecus: z.array(z.string()),
-  autresEquipements: z.string().optional(),
-  informationsFormationsRecues: z.array(z.string()),
-  sensibilisationsConduites: z.array(z.string()),
+  contactsTelephone: z.string().max(30, "Trop long").optional(),
+  lieuHabitation: z.string().max(255, "Trop long").optional(),
+  personneContactUrgenceNom: z.string().max(255, "Trop long").optional(),
+  personneContactUrgenceTelephone: z.string().max(30, "Trop long").optional(),
+  epiRecus: z.array(z.string().max(255, "Trop long")),
+  autresEquipements: z.string().max(1000, "Trop long").optional(),
+  informationsFormationsRecues: z.array(z.string().max(255, "Trop long")),
+  sensibilisationsConduites: z.array(z.string().max(255, "Trop long")),
 });
 export type CompleterAccueilSecuriteInput = z.infer<typeof completerAccueilSecuriteSchema>;
 
 export const tacheASTSchema = z.object({
-  ressources: z.string().min(1, "Les ressources sont requises"),
-  risques: z.string().min(1, "Les risques sont requis"),
-  mesuresPrevention: z.string().min(1, "Les mesures de prévention sont requises"),
+  ressources: z.string().min(1, "Les ressources sont requises").max(2000, "Trop long"),
+  risques: z.string().min(1, "Les risques sont requis").max(2000, "Trop long"),
+  mesuresPrevention: z.string().min(1, "Les mesures de prévention sont requises").max(2000, "Trop long"),
 });
 
 export const creerASTSchema = z
   .object({
     projetId: z.string().optional(),
-    chantierLibre: z.string().optional(),
+    chantierLibre: z.string().max(255, "Trop long").optional(),
     taches: z.array(tacheASTSchema).min(1, "Au moins une tâche est requise"),
   })
   .superRefine(chantierRefineur);
@@ -41,15 +41,15 @@ export type CreerASTInput = z.infer<typeof creerASTSchema>;
 export const validerASTSchema = z.object({
   astId: z.string().min(1),
   decision: z.enum(["VALIDEE", "REFUSEE"]),
-  motifRefus: z.string().optional(),
+  motifRefus: z.string().max(1000, "Trop long").optional(),
 });
 export type ValiderASTInput = z.infer<typeof validerASTSchema>;
 
 export const creerAttributionEPISchema = z
   .object({
     projetId: z.string().optional(),
-    chantierLibre: z.string().optional(),
-    lieu: z.string().optional(),
+    chantierLibre: z.string().max(255, "Trop long").optional(),
+    lieu: z.string().max(255, "Trop long").optional(),
     beneficiaireId: z.string().min(1, "Le bénéficiaire est requis"),
     materielId: z.string().min(1, "L'article est requis"),
     quantiteSortie: z.number().positive("Quantité invalide"),
@@ -61,7 +61,7 @@ export type CreerAttributionEPIInput = z.infer<typeof creerAttributionEPISchema>
 export const creerRapportHebdoQHSESchema = z
   .object({
     projetId: z.string().optional(),
-    chantierLibre: z.string().optional(),
+    chantierLibre: z.string().max(255, "Trop long").optional(),
     semaineDu: z.string().min(1, "La date de début est requise"),
     semaineAu: z.string().min(1, "La date de fin est requise"),
     effectifVendredi: z.number().int().min(0),
@@ -70,9 +70,9 @@ export const creerRapportHebdoQHSESchema = z
     effectifMardi: z.number().int().min(0),
     effectifMercredi: z.number().int().min(0),
     effectifJeudi: z.number().int().min(0),
-    activitesQHSE: z.string().min(1, "Les activités QHSE sont requises"),
-    constatsEffectues: z.string().min(1, "Les constats sont requis"),
-    propositionsRecommandations: z.string().min(1, "Les propositions sont requises"),
+    activitesQHSE: z.string().min(1, "Les activités QHSE sont requises").max(5000, "Trop long"),
+    constatsEffectues: z.string().min(1, "Les constats sont requis").max(5000, "Trop long"),
+    propositionsRecommandations: z.string().min(1, "Les propositions sont requises").max(5000, "Trop long"),
   })
   .superRefine(chantierRefineur);
 export type CreerRapportHebdoQHSEInput = z.infer<typeof creerRapportHebdoQHSESchema>;
@@ -86,21 +86,21 @@ export const creerNonConformiteManuelleSchema = z.object({
     "CONTROLE_QUALITE",
     "INDICATEUR_NON_ATTEINT",
   ]),
-  processus: z.string().optional(),
-  normeDocReference: z.string().optional(),
-  refExigence: z.string().optional(),
-  descriptionNonConformite: z.string().min(1, "La description est requise"),
-  preuveDescription: z.string().optional(),
+  processus: z.string().max(255, "Trop long").optional(),
+  normeDocReference: z.string().max(255, "Trop long").optional(),
+  refExigence: z.string().max(255, "Trop long").optional(),
+  descriptionNonConformite: z.string().min(1, "La description est requise").max(5000, "Trop long"),
+  preuveDescription: z.string().max(1000, "Trop long").optional(),
 });
 export type CreerNonConformiteManuelleInput = z.infer<typeof creerNonConformiteManuelleSchema>;
 
 export const mettreAJourPlanActionNonConformiteSchema = z.object({
   nonConformiteId: z.string().min(1),
-  correctionContenu: z.string().optional(),
+  correctionContenu: z.string().max(5000, "Trop long").optional(),
   correctionDelai: z.string().optional(),
-  analyseCausesContenu: z.string().optional(),
+  analyseCausesContenu: z.string().max(5000, "Trop long").optional(),
   analyseCausesDelai: z.string().optional(),
-  actionsCorrectivesContenu: z.string().optional(),
+  actionsCorrectivesContenu: z.string().max(5000, "Trop long").optional(),
   actionsCorrectivesDelai: z.string().optional(),
   dateAchevement: z.string().optional(),
   responsableMiseOeuvreId: z.string().optional(),

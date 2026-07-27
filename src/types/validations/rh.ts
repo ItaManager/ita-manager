@@ -5,17 +5,17 @@ const typeProfilEnum = z.enum(["AGENT", "SOUS_TRAITANT", "OUVRIER"]);
 export const profilRHSchema = z
   .object({
     typeProfil: typeProfilEnum,
-    poste: z.string().min(1, "Le poste est requis"),
-    service: z.string().min(1, "Le service est requis"),
+    poste: z.string().min(1, "Le poste est requis").max(255, "Poste trop long"),
+    service: z.string().min(1, "Le service est requis").max(255, "Service trop long"),
     dateEntree: z.string().min(1, "La date d'entrée est requise"),
     soldeConges: z.number().int().min(0, "Le solde ne peut pas être négatif"),
     superieurId: z.string().optional(),
     salaireFixe: z.number().positive().optional(),
-    entrepriseRattachee: z.string().optional(),
+    entrepriseRattachee: z.string().max(255, "Trop long").optional(),
     tauxJournalier: z.number().positive().optional(),
     // Lot 8 (DFC) : requis pour être bénéficiaire éligible d'un paiement
     // mobile money (standard ou Wave urgent).
-    numeroWave: z.string().optional(),
+    numeroWave: z.string().max(30, "Numéro Wave trop long").optional(),
   })
   .superRefine((donnees, ctx) => {
     if (donnees.typeProfil === "AGENT" && !donnees.salaireFixe) {
@@ -51,7 +51,7 @@ export const creerDemandeAbsenceSchema = z
     dateDebut: z.string().min(1, "La date de début est requise"),
     dateFin: z.string().optional(),
     dureeHeures: z.number().int().positive().optional(),
-    motif: z.string().min(1, "Le motif est requis"),
+    motif: z.string().min(1, "Le motif est requis").max(1000, "Motif trop long"),
   })
   .superRefine((donnees, ctx) => {
     if (donnees.type === "CONGE" && !donnees.dateFin) {
@@ -71,12 +71,12 @@ export type CreerDemandeAbsenceInput = z.infer<typeof creerDemandeAbsenceSchema>
 export const creerDemandeMissionSchema = z.object({
   employeConcerneId: z.string().min(1, "L'employé concerné est requis"),
   typeMission: z.enum(["CHANTIER", "FORMATION", "REPRESENTATION_CLIENT", "AUTRE"]),
-  description: z.string().min(1, "La description est requise"),
-  lieu: z.string().min(1, "Le lieu est requis"),
+  description: z.string().min(1, "La description est requise").max(5000, "Description trop longue"),
+  lieu: z.string().min(1, "Le lieu est requis").max(255, "Lieu trop long"),
   dateDebut: z.string().min(1, "La date de début est requise"),
   dateFin: z.string().min(1, "La date de fin est requise"),
   fraisDeclares: z.number().nonnegative().optional(),
-  motifFrais: z.string().optional(),
+  motifFrais: z.string().max(1000, "Motif trop long").optional(),
 });
 
 export type CreerDemandeMissionInput = z.infer<typeof creerDemandeMissionSchema>;
@@ -84,7 +84,7 @@ export type CreerDemandeMissionInput = z.infer<typeof creerDemandeMissionSchema>
 export const creerReleveActiviteSchema = z.object({
   ouvrierId: z.string().min(1, "L'ouvrier est requis"),
   projetId: z.string().min(1, "Le projet est requis"),
-  periode: z.string().min(1, "La période est requise"),
+  periode: z.string().min(1, "La période est requise").max(255, "Trop long"),
   joursTravailles: z.number().int().positive("Nombre de jours invalide"),
 });
 
@@ -92,7 +92,7 @@ export type CreerReleveActiviteInput = z.infer<typeof creerReleveActiviteSchema>
 
 export const refuserSchema = z.object({
   demandeId: z.string().min(1),
-  motif: z.string().min(1, "Le motif est requis"),
+  motif: z.string().min(1, "Le motif est requis").max(1000, "Motif trop long"),
 });
 
 export type RefuserInput = z.infer<typeof refuserSchema>;

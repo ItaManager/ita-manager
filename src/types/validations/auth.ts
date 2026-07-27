@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const loginSchema = z.object({
-  email: z.string().email("Adresse email invalide"),
-  motDePasse: z.string().min(1, "Le mot de passe est requis"),
+  email: z.string().email("Adresse email invalide").max(255, "Adresse email trop longue"),
+  motDePasse: z.string().min(1, "Le mot de passe est requis").max(128, "Mot de passe trop long"),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
@@ -11,8 +11,9 @@ export const changePasswordSchema = z
   .object({
     nouveauMotDePasse: z
       .string()
-      .min(8, "Le mot de passe doit contenir au moins 8 caractères"),
-    confirmationMotDePasse: z.string(),
+      .min(8, "Le mot de passe doit contenir au moins 8 caractères")
+      .max(128, "Mot de passe trop long"),
+    confirmationMotDePasse: z.string().max(128, "Mot de passe trop long"),
   })
   .refine((data) => data.nouveauMotDePasse === data.confirmationMotDePasse, {
     message: "Les mots de passe ne correspondent pas",

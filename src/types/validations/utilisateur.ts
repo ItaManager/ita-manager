@@ -3,10 +3,10 @@ import { z } from "zod";
 const niveauHierarchiqueEnum = z.enum(["DIRECTEUR", "CHEF_SERVICE", "AGENT"]);
 
 export const creerCompteSchema = z.object({
-  nom: z.string().min(1, "Le nom est requis"),
-  prenom: z.string().min(1, "Le prénom est requis"),
-  email: z.string().email("Adresse email invalide"),
-  telephone: z.string().optional().or(z.literal("")),
+  nom: z.string().min(1, "Le nom est requis").max(255, "Nom trop long"),
+  prenom: z.string().min(1, "Le prénom est requis").max(255, "Prénom trop long"),
+  email: z.string().email("Adresse email invalide").max(255, "Adresse email trop longue"),
+  telephone: z.string().max(30, "Numéro de téléphone trop long").optional().or(z.literal("")),
   niveauHierarchique: niveauHierarchiqueEnum,
   fonctionId: z.string().min(1, "La fonction est requise"),
 });

@@ -3,7 +3,7 @@ import { z } from "zod";
 export const ligneDemandeAchatSchema = z
   .object({
     articleId: z.string().optional(),
-    designationLibre: z.string().optional(),
+    designationLibre: z.string().max(255, "Désignation trop longue").optional(),
     quantite: z.number().positive("Quantité invalide"),
   })
   .superRefine((donnees, ctx) => {
@@ -19,13 +19,13 @@ export const ligneDemandeAchatSchema = z
 export const creerDemandeAchatSchema = z
   .object({
     forType: z.enum(["SERVICE", "CHANTIER"]),
-    forServiceModuleCode: z.string().optional(),
+    forServiceModuleCode: z.string().max(100, "Trop long").optional(),
     projetId: z.string().optional(),
-    chantierLibre: z.string().optional(),
+    chantierLibre: z.string().max(255, "Trop long").optional(),
     lieuLivraisonProjetId: z.string().optional(),
-    lieuLivraisonLibre: z.string().optional(),
+    lieuLivraisonLibre: z.string().max(255, "Trop long").optional(),
     dateLivraisonSouhaitee: z.string().min(1, "La date de livraison souhaitée est requise"),
-    justification: z.string().min(1, "La justification est requise"),
+    justification: z.string().min(1, "La justification est requise").max(2000, "Justification trop longue"),
     // Optionnels : permettent de soumettre pour un autre demandeur (même
     // précédent que DemandeMission.employeConcerneId/initiateurId) — par
     // défaut, demandeur = émetteur = créateur = l'utilisateur courant.
@@ -56,14 +56,14 @@ export type CreerDemandeAchatInput = z.infer<typeof creerDemandeAchatSchema>;
 
 export const refuserDemandeAchatSchema = z.object({
   demandeId: z.string().min(1),
-  motif: z.string().min(1, "Le motif est requis"),
+  motif: z.string().min(1, "Le motif est requis").max(1000, "Motif trop long"),
 });
 export type RefuserDemandeAchatInput = z.infer<typeof refuserDemandeAchatSchema>;
 
 export const ligneTraitementAchatSchema = z
   .object({
     ligneId: z.string().min(1),
-    fournisseur: z.string().min(1, "Le fournisseur est requis"),
+    fournisseur: z.string().min(1, "Le fournisseur est requis").max(255, "Trop long"),
     modeTarification: z.enum(["FORFAITAIRE", "CALCULE"]),
     prixUnitaire: z.number().positive().optional(),
     montantForfaitaire: z.number().positive().optional(),
@@ -109,13 +109,13 @@ export type TraiterDemandeAchatInput = z.infer<typeof traiterDemandeAchatSchema>
 
 export const refuserParalleleSchema = z.object({
   validationId: z.string().min(1),
-  motif: z.string().min(1, "Le motif est requis"),
+  motif: z.string().min(1, "Le motif est requis").max(1000, "Motif trop long"),
 });
 export type RefuserParalleleInput = z.infer<typeof refuserParalleleSchema>;
 
 export const mettreAJourArticleFournisseurPrixSchema = z.object({
   articleId: z.string().min(1),
-  fournisseur: z.string().min(1, "Le fournisseur est requis"),
+  fournisseur: z.string().min(1, "Le fournisseur est requis").max(255, "Trop long"),
   prix: z.number().positive("Prix invalide"),
 });
 export type MettreAJourArticleFournisseurPrixInput = z.infer<

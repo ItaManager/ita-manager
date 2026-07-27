@@ -4,7 +4,7 @@ const modePaiementEnum = z.enum(["CHEQUE", "VIREMENT", "ESPECES", "MOBILE_MONEY"
 
 export const mettreAJourNumeroWaveFournisseurSchema = z.object({
   fournisseurId: z.string().min(1),
-  numeroWave: z.string().min(1, "Le numéro Wave est requis"),
+  numeroWave: z.string().min(1, "Le numéro Wave est requis").max(30, "Trop long"),
 });
 export type MettreAJourNumeroWaveFournisseurInput = z.infer<
   typeof mettreAJourNumeroWaveFournisseurSchema
@@ -12,7 +12,7 @@ export type MettreAJourNumeroWaveFournisseurInput = z.infer<
 
 export const enregistrerFactureSchema = z.object({
   bonDeCommandeId: z.string().min(1),
-  referenceFournisseur: z.string().min(1, "La référence est requise"),
+  referenceFournisseur: z.string().min(1, "La référence est requise").max(255, "Trop long"),
   montant: z.number().positive("Montant invalide"),
   dateFacture: z.string().min(1, "La date de facture est requise"),
 });
@@ -24,7 +24,7 @@ export type EnregistrerFactureInput = z.infer<typeof enregistrerFactureSchema>;
 export const executerPaiementFactureSchema = z.object({
   factureId: z.string().min(1),
   mode: modePaiementEnum,
-  reference: z.string().optional(),
+  reference: z.string().max(255, "Trop long").optional(),
 });
 export type ExecuterPaiementFactureInput = z.infer<typeof executerPaiementFactureSchema>;
 
@@ -35,24 +35,24 @@ export type ExecuterPaiementFactureInput = z.infer<typeof executerPaiementFactur
 export const executerPaiementMissionSchema = z.object({
   demandeMissionId: z.string().min(1),
   mode: modePaiementEnum,
-  reference: z.string().optional(),
+  reference: z.string().max(255, "Trop long").optional(),
 });
 export type ExecuterPaiementMissionInput = z.infer<typeof executerPaiementMissionSchema>;
 
 export const demanderCodeAutorisationSchema = z.object({
-  justification: z.string().min(1, "La justification est requise"),
+  justification: z.string().min(1, "La justification est requise").max(2000, "Trop long"),
 });
 export type DemanderCodeAutorisationInput = z.infer<typeof demanderCodeAutorisationSchema>;
 
 export const refuserCodeAutorisationSchema = z.object({
   codeId: z.string().min(1),
-  motif: z.string().min(1, "Le motif est requis"),
+  motif: z.string().min(1, "Le motif est requis").max(1000, "Motif trop long"),
 });
 export type RefuserCodeAutorisationInput = z.infer<typeof refuserCodeAutorisationSchema>;
 
 export const executerPaiementUrgentSchema = z
   .object({
-    codeSaisi: z.string().min(1, "Le code est requis"),
+    codeSaisi: z.string().min(1, "Le code est requis").max(10, "Code invalide"),
     beneficiaireUtilisateurId: z.string().optional(),
     beneficiaireFournisseurId: z.string().optional(),
     montant: z.number().positive("Montant invalide"),
