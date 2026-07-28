@@ -12,6 +12,13 @@ datasource db {
   directUrl = env("DIRECT_URL") // connexion directe — utilisée par les migrations
 }
 
+/// Routage uniquement (ex: DemandeIndex.enAttenteValidationDe) — jamais un
+/// contrôle d'accès (voir guards.ts/acces.ts, qui vérifient toujours un accès
+/// réel via AccesUtilisateur). Distinct de Poste.niveau (référentiel RH,
+/// direction/cadre/support/operationnel) : deux axes qui se ressemblent en
+/// langage naturel mais qui décrivent des choses différentes (position dans
+/// un circuit de validation vs. classification organisationnelle) et qui
+/// doivent tous les deux continuer d'exister sans être fusionnés.
 enum NiveauHierarchique {
   DIRECTEUR
   CHEF_SERVICE
@@ -476,6 +483,88 @@ enum TypeProfilEmploye {
   AGENT
   SOUS_TRAITANT
   OUVRIER
+}
+
+enum NiveauPoste {
+  DIRECTION
+  CADRE
+  SUPPORT
+  OPERATIONNEL
+}
+
+/// Référentiel organisationnel (organigramme), livré comme premier jalon de
+/// l'extension RH décrite par le brief de passation / MODULE-RH.md. Axe
+/// délibérément séparé de Fonction : Fonction pilote l'accès aux modules
+/// (FonctionModuleDefaut/AccesUtilisateur), Direction/Service/Poste décrivent
+/// la place d'un employé dans l'organigramme réel — un utilisateur de Fonction
+/// "Responsable RH" peut très bien occuper le Poste "Assistant RH" (support)
+/// ou "Directeur Administratif et RH" (direction). Ne jamais fusionner les
+/// deux notions même si elles se ressemblent en langage naturel.
+///
+/// Table plutôt qu'enum, même raisonnement que CategorieMateriel/UniteMesure :
+/// corrigible par un simple `pnpm db:seed`, sans migration.
+///
+/// Ce jalon ne touche PAS encore ProfilEmploye.poste/.service (qui restent du
+/// texte libre) — la bascule vers de vraies FK (avec libellés dénormalisés
+/// figés à l'affectation, cf. MODULE-RH.md §3.2) est une décision produit
+/// ouverte, volontairement non tranchée ici ; elle sera résolue avant le lot
+/// qui construit l'assistant de création de profil.
+model Direction {
+  id       String    @id @default(cuid())
+  code     String    @unique
+  nom      String
+  ordre    Int       @default(0)
+  actif    Boolean   @default(true)
+  services Service[]
+  postes   Poste[] // postes transverses rattachés directement à la direction, sans Service
+}
+
+model Service {
+  id          String    @id @default(cuid())
+  code        String
+  nom         String
+  ordre       Int       @default(0)
+  actif       Boolean   @default(true)
+  directionId String
+  direction   Direction @relation(fields: [directionId], references: [id])
+  postes      Poste[]
+
+  @@unique([directionId, code])
+}
+
+/// serviceId nullable : les postes "transverses" de la Direction Technique
+/// (Conducteur de Travaux, Chef Chantier, Chef Chantier Adjoint, Chef
+/// d'équipe, Ouvrier, Manœuvre) ne sont rattachés à aucun Service unique,
+/// seulement à leur Direction — ils interviennent sur les chantiers des
+/// quatre services techniques. Le rattachement administratif exact de ces
+/// postes reste une décision produit ouverte (brief §7.1, non tranchée ici) ;
+/// la forme nullable elle-même est déjà celle de la spec source
+/// (`serviceCode: string | null`) et n'exclut aucune réponse à cette
+/// décision — elle décrit juste la contrainte structurelle, pas le choix.
+model Poste {
+  id          String      @id @default(cuid())
+  code        String      @unique
+  nom         String
+  niveau      NiveauPoste
+  directionId String
+  direction   Direction   @relation(fields: [directionId], references: [id])
+  serviceId   String?
+  service     Service?    @relation(fields: [serviceId], references: [id])
+  ordre       Int         @default(0)
+  actif       Boolean     @default(true)
+}
+
+/// Une ligne par NiveauPoste (4 au total) — état courant, pas un historique de
+/// révisions. L'historique/motif de révision (édition de la grille par la
+/// DFC) réutilisera HistoriqueStatut (entiteType="GrilleSalariale") plutôt
+/// qu'une table dédiée, comme le reste du projet — non construit à ce jalon.
+model GrilleSalariale {
+  id               String      @id @default(cuid())
+  niveau           NiveauPoste @unique
+  salaireMin       Decimal     @db.Decimal(14, 2)
+  salaireMedian    Decimal     @db.Decimal(14, 2)
+  salaireMax       Decimal     @db.Decimal(14, 2)
+  dateModification DateTime    @updatedAt
 }
 
 /// Lot 4 — DARH. Relation 1:1 OPTIONNELLE avec Utilisateur (onDelete: Cascade

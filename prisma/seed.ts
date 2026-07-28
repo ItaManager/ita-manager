@@ -250,6 +250,131 @@ async function seedUnitesMesure() {
   }
 }
 
+/// Référentiel organisationnel (Direction → Service → Poste), premier jalon
+/// de l'extension RH décrite par le brief de passation / MODULE-RH.md §3.1 —
+/// organigramme ITA SARL v02 (juillet 2025), contenu réel, pas inventé : 4
+/// directions, 10 services, 28 postes. Tables plutôt qu'enums (cf.
+/// seedCategoriesMateriel/seedUnitesMesure) : corrigibles sans migration.
+///
+/// Les 6 postes "transverses" de la Direction Technique (Conducteur de
+/// Travaux, Chef Chantier, Chef Chantier Adjoint, Chef d'équipe, Ouvrier,
+/// Manœuvre) sont seedés avec serviceCode: null — rattachés à leur Direction
+/// uniquement, conformément à la spec source. Le rattachement administratif
+/// exact reste une décision produit ouverte (non tranchée à ce jalon).
+async function seedOrganisation() {
+  const directions = [
+    { code: "DG", nom: "Direction Générale" },
+    { code: "DFC", nom: "Direction Financière et Comptable" },
+    { code: "DT", nom: "Direction Technique" },
+    { code: "DAR", nom: "Direction Administrative et RH" },
+  ];
+  const directionsCreees = new Map<string, string>();
+  for (const [ordre, direction] of directions.entries()) {
+    const cree = await prisma.direction.upsert({
+      where: { code: direction.code },
+      update: { nom: direction.nom },
+      create: { ...direction, ordre },
+    });
+    directionsCreees.set(direction.code, cree.id);
+  }
+
+  const services = [
+    { code: "SEC_DG", nom: "Secrétariat de Direction", directionCode: "DG" },
+    { code: "ACHATS", nom: "Service Achats", directionCode: "DFC" },
+    { code: "COMPTA", nom: "Comptabilité", directionCode: "DFC" },
+    { code: "LOGISTIQUE", nom: "Service Logistique", directionCode: "DFC" },
+    { code: "ETUDES", nom: "Service Études et Appels d'Offres", directionCode: "DT" },
+    { code: "AEP", nom: "Service Adduction d'Eau Potable", directionCode: "DT" },
+    { code: "ASSAINISSEMENT", nom: "Service Assainissement", directionCode: "DT" },
+    { code: "ROUTES_VOIRIES", nom: "Service Routes et Voiries", directionCode: "DT" },
+    { code: "QHSE", nom: "Service QHSE", directionCode: "DAR" },
+    { code: "ADMIN_RH", nom: "Administration & Ressources Humaines", directionCode: "DAR" },
+  ];
+  const servicesCrees = new Map<string, string>();
+  for (const [ordre, service] of services.entries()) {
+    const directionId = directionsCreees.get(service.directionCode)!;
+    const cree = await prisma.service.upsert({
+      where: { directionId_code: { directionId, code: service.code } },
+      update: { nom: service.nom },
+      create: { code: service.code, nom: service.nom, ordre, directionId },
+    });
+    servicesCrees.set(service.code, cree.id);
+  }
+
+  const postes: {
+    code: string;
+    nom: string;
+    niveau: "DIRECTION" | "CADRE" | "SUPPORT" | "OPERATIONNEL";
+    directionCode: string;
+    serviceCode: string | null;
+  }[] = [
+    { code: "DIRECTEUR_GENERAL", nom: "Directeur Général", niveau: "DIRECTION", directionCode: "DG", serviceCode: "SEC_DG" },
+    { code: "ASSISTANTE_DIRECTION", nom: "Assistante de Direction", niveau: "SUPPORT", directionCode: "DG", serviceCode: "SEC_DG" },
+    { code: "DIRECTEUR_FINANCIER", nom: "Directeur Financier et Comptable", niveau: "DIRECTION", directionCode: "DFC", serviceCode: "COMPTA" },
+    { code: "RESPONSABLE_ACHATS", nom: "Responsable Achats", niveau: "CADRE", directionCode: "DFC", serviceCode: "ACHATS" },
+    { code: "AGENT_ACHATS", nom: "Agent d'Achats", niveau: "SUPPORT", directionCode: "DFC", serviceCode: "ACHATS" },
+    { code: "COMPTABLE", nom: "Comptable", niveau: "CADRE", directionCode: "DFC", serviceCode: "COMPTA" },
+    { code: "RESPONSABLE_LOGISTIQUE", nom: "Responsable Logistique", niveau: "CADRE", directionCode: "DFC", serviceCode: "LOGISTIQUE" },
+    { code: "CHEF_GARAGE", nom: "Chef du Garage", niveau: "CADRE", directionCode: "DFC", serviceCode: "LOGISTIQUE" },
+    { code: "GESTIONNAIRE_STOCKS", nom: "Gestionnaire de stocks", niveau: "OPERATIONNEL", directionCode: "DFC", serviceCode: "LOGISTIQUE" },
+    { code: "MECANICIEN", nom: "Mécanicien", niveau: "OPERATIONNEL", directionCode: "DFC", serviceCode: "LOGISTIQUE" },
+    { code: "CHAUFFEUR", nom: "Chauffeur", niveau: "OPERATIONNEL", directionCode: "DFC", serviceCode: "LOGISTIQUE" },
+    { code: "CONDUCTEUR_ENGINS", nom: "Conducteur d'engins", niveau: "OPERATIONNEL", directionCode: "DFC", serviceCode: "LOGISTIQUE" },
+    { code: "GARDIEN", nom: "Gardien", niveau: "OPERATIONNEL", directionCode: "DFC", serviceCode: "LOGISTIQUE" },
+    { code: "DIRECTEUR_TECHNIQUE", nom: "Directeur Technique", niveau: "DIRECTION", directionCode: "DT", serviceCode: "ETUDES" },
+    { code: "CHARGE_ETUDES", nom: "Chargé d'études et travaux", niveau: "CADRE", directionCode: "DT", serviceCode: "ETUDES" },
+    { code: "CONDUCTEUR_TRAVAUX", nom: "Conducteur de Travaux", niveau: "CADRE", directionCode: "DT", serviceCode: null },
+    { code: "CHEF_CHANTIER", nom: "Chef Chantier", niveau: "CADRE", directionCode: "DT", serviceCode: null },
+    { code: "CHEF_CHANTIER_ADJOINT", nom: "Chef Chantier Adjoint", niveau: "CADRE", directionCode: "DT", serviceCode: null },
+    { code: "CHEF_EQUIPE", nom: "Chef d'équipe", niveau: "OPERATIONNEL", directionCode: "DT", serviceCode: null },
+    { code: "OUVRIER", nom: "Ouvrier", niveau: "OPERATIONNEL", directionCode: "DT", serviceCode: null },
+    { code: "MANOEUVRE", nom: "Manœuvre", niveau: "OPERATIONNEL", directionCode: "DT", serviceCode: null },
+    { code: "DIRECTEUR_ADMIN_RH", nom: "Directeur Administratif et RH", niveau: "DIRECTION", directionCode: "DAR", serviceCode: "ADMIN_RH" },
+    { code: "RESPONSABLE_QHSE", nom: "Responsable QHSE", niveau: "CADRE", directionCode: "DAR", serviceCode: "QHSE" },
+    { code: "ASSISTANT_QHSE", nom: "Assistant QHSE", niveau: "SUPPORT", directionCode: "DAR", serviceCode: "QHSE" },
+    { code: "RELAIS_QHSE", nom: "Relais QHSE", niveau: "OPERATIONNEL", directionCode: "DAR", serviceCode: "QHSE" },
+    { code: "ASSISTANT_RH", nom: "Assistant RH", niveau: "SUPPORT", directionCode: "DAR", serviceCode: "ADMIN_RH" },
+    { code: "COURSIER", nom: "Coursier", niveau: "SUPPORT", directionCode: "DAR", serviceCode: "ADMIN_RH" },
+    { code: "TECHNICIEN_SURFACE", nom: "Technicien de surface", niveau: "OPERATIONNEL", directionCode: "DAR", serviceCode: "ADMIN_RH" },
+  ];
+  for (const [ordre, poste] of postes.entries()) {
+    const directionId = directionsCreees.get(poste.directionCode)!;
+    const serviceId = poste.serviceCode ? servicesCrees.get(poste.serviceCode)! : null;
+    await prisma.poste.upsert({
+      where: { code: poste.code },
+      update: { nom: poste.nom, niveau: poste.niveau, directionId, serviceId },
+      create: {
+        code: poste.code,
+        nom: poste.nom,
+        niveau: poste.niveau,
+        directionId,
+        serviceId,
+        ordre,
+      },
+    });
+  }
+}
+
+/// Une ligne par NiveauPoste — état courant de la grille salariale par
+/// niveau de poste. Valeurs reprises de la maquette de référence (à confirmer
+/// avec la Direction Financière avant tout usage réel en paie — cf. décision
+/// produit ouverte sur le taux journalier).
+async function seedGrilleSalariale() {
+  const grille = [
+    { niveau: "DIRECTION", salaireMin: 1_500_000, salaireMedian: 2_200_000, salaireMax: 3_000_000 },
+    { niveau: "CADRE", salaireMin: 450_000, salaireMedian: 750_000, salaireMax: 1_200_000 },
+    { niveau: "SUPPORT", salaireMin: 200_000, salaireMedian: 320_000, salaireMax: 480_000 },
+    { niveau: "OPERATIONNEL", salaireMin: 90_000, salaireMedian: 145_000, salaireMax: 260_000 },
+  ] as const;
+  for (const ligne of grille) {
+    await prisma.grilleSalariale.upsert({
+      where: { niveau: ligne.niveau },
+      update: { salaireMin: ligne.salaireMin, salaireMedian: ligne.salaireMedian, salaireMax: ligne.salaireMax },
+      create: ligne,
+    });
+  }
+}
+
 async function seedFonctions() {
   // Fonction RH : accès aux 4 sous-modules RH réels, au module transversal
   // "authentification-roles" (seule fonction à l'avoir par défaut) et à
@@ -1209,6 +1334,8 @@ async function main() {
   await seedMagasins();
   await seedCategoriesMateriel();
   await seedUnitesMesure();
+  await seedOrganisation();
+  await seedGrilleSalariale();
   const fonctions = await seedFonctions();
   await seedUtilisateursTest(fonctions);
   await seedCarburantTest();
