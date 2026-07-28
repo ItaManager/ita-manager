@@ -14,6 +14,9 @@ export function LoginForm() {
   const router = useRouter();
   const [erreurConnexion, setErreurConnexion] = useState<string | null>(null);
   const [enCours, setEnCours] = useState(false);
+  console.log('====================================');
+  console.log("enCours : ", enCours);
+  console.log('====================================');
 
   const {
     register,
