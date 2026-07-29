@@ -6,7 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **ITA Manager** — Internal ERP for ITA SARL, a construction company in Ivory Coast. Complete rebuild from scratch built with Next.js 16, React 19, Tailwind v4, Prisma, Supabase, and deployed on Vercel.
 
-**Current Status**: M0 (Foundation module) completed. The application implements authentication, TOTP 2FA, session locking, role-based permissions, and audit logging.
+**Current Status**: M0 (Foundation module) completed and corrected (v0.1.1). The application implements authentication, TOTP 2FA, session locking, role-based permissions, and audit logging.
+
+**Recent corrections (July 2026)**:
+- QR code TOTP generated client-side with `qrcode.react`
+- Numeric validation on 6-digit code fields
+- Dedicated backup codes screen with copy/print
+- Visual polish: identity block, progress indicator, password strength gauge, eye toggle button
 
 **Stack**: Next.js (App Router) · React 19 · Tailwind v4 · shadcn/ui · Prisma · Supabase (PostgreSQL + Auth + Storage) · Resend · Cloudflare
 
@@ -214,7 +220,7 @@ These return explicit error messages like: "You are the last administrator. Desi
 
 Application built module by module:
 
-- **M0** (✅ Complete) — Foundation: auth, 2FA, permissions, layout
+- **M0** (✅ Complete v0.1.1) — Foundation: auth, 2FA, permissions, layout
 - **M1** (Planned) — Organization: departments, services, positions
 - **M2** (Planned) — Employees: profiles, contracts, documents
 - **M3** (Planned) — Leave management
@@ -248,6 +254,23 @@ Before marking any module complete:
 - [ ] No sensitive data in logs/console
 - [ ] Audit events are logged for decisions
 - [ ] Error states show actionable messages
+
+## Scripts Utilitaires (Development)
+
+Scripts disponibles dans `scripts/` pour le dépannage :
+
+```bash
+# Générer un lien de réinitialisation de mot de passe (développement)
+npx dotenv -e .env.dev -- npx tsx scripts/test-reset-password.ts
+
+# Réinitialiser un mot de passe directement via Admin (urgence)
+npx dotenv -e .env.dev -- npx tsx scripts/reset-password-admin.ts
+
+# Supprimer les facteurs TOTP bloqués (nettoyage)
+npx dotenv -e .env.dev -- npx tsx scripts/reset-totp.ts
+```
+
+**Note :** Ces scripts utilisent `SUPABASE_SERVICE_ROLE_KEY` et ne doivent JAMAIS être utilisés en production.
 
 ## Key Files to Reference
 
@@ -292,12 +315,14 @@ From DECISIONS.md:
 
 1. **Session locking**: After 20 minutes of inactivity → password to unlock (not TOTP)
 2. **TOTP enforcement**: Mandatory for ADMIN, DG, DRH, DFC, DT roles (enforced at first login)
-3. **Backup codes**: 10 codes generated at TOTP setup, displayed once (never shown again)
+3. **Backup codes**: 10 codes generated at TOTP setup, displayed once (never shown again), copy and print buttons available
 4. **Account lifecycle**: Creating employee ≠ creating account (explicit "Open Access" action sends invitation)
 5. **Delegation**: Each manager can designate a delegate with validity period (decision B-03)
 6. **Auto-approval prohibited**: No one can approve their own requests (decision B-05)
-7. **Password policy**: Minimum 12 characters, verified against known breaches (HIBP), strength indicator shown
+7. **Password policy**: Minimum 12 characters, verified against known breaches (HIBP), strength indicator shown (4 segments)
 8. **Account deactivation**: Takes effect immediately without waiting for token expiration
+9. **TOTP QR Code**: Generated client-side with `qrcode.react` from `totp.uri` (not server image)
+10. **6-digit codes**: Numeric-only input with `inputMode="numeric"` and `.replace(/\D/g, "")` filter
 
 ## When in Doubt
 
