@@ -1,0 +1,10 @@
+allowBuilds:
+  sharp: true
+  unrs-resolver: true
+
+# Empêche `shadcn` (devDependency) de tirer un zod v3 transitif via
+# @modelcontextprotocol/sdk, qui casserait les overloads TypeScript de
+# zodResolver() dans les formulaires react-hook-form. Cf. ancien CLAUDE.md,
+# note « Dependency-tree quirk ».
+overrides:
+  zod: ^4.4.3

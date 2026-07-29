@@ -1,12 +1,19 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 @plugin "tailwindcss-animate";
 
 /* =====================================================================
    ITA SARL — Thème applicatif
    Tailwind v4 (configuration CSS) + variables shadcn/ui
 
-   Les valeurs proviennent directement des maquettes :
-     indigo #1D186C · vert #16850C · vert clair #E2FAE0
+   Couleurs officielles de marque (2026-07-29) :
+     navy #002A5C · magenta #7F0F59 · vert #13850B
+
+   --primary-hover et --attention-hover sont des teintes provisoires
+   (assombrissement de 20 %, pas une valeur de charte) — à remplacer si
+   la charte graphique en fournit un jour. --primary-soft applique la
+   formule déjà documentée ci-dessous (rgba à 9 %), donc pas provisoire.
    ===================================================================== */
 
 @custom-variant dark (&:is(.dark *));
@@ -22,15 +29,15 @@
   --popover: #ffffff;
   --popover-foreground: #111111;
 
-  /* Marque — indigo ITA */
-  --primary: #1d186c;
+  /* Marque — navy ITA */
+  --primary: #002a5c;
   --primary-foreground: #ffffff;
-  --primary-hover: #161152;
-  /* Fond de bandeau et d'état actif : rgba(29,24,108,0.09) */
-  --primary-soft: #ebeaf2;
+  --primary-hover: #00224a; /* provisoire — assombri de 20 % */
+  /* Fond de bandeau et d'état actif : rgba(0,42,92,0.09) */
+  --primary-soft: #e8ecf0;
 
   /* Accent — vert de validation */
-  --success: #16850c;
+  --success: #13850b;
   --success-foreground: #ffffff;
   --success-soft: #e2fae0;
 
@@ -45,6 +52,11 @@
   --destructive-foreground: #ffffff;
   --destructive-soft: #fef2f2;
 
+  /* Marque — magenta ITA (refus / attention) */
+  --attention: #7f0f59;
+  --attention-foreground: #ffffff;
+  --attention-hover: #660c47; /* provisoire — assombri de 20 % */
+
   /* Étape de validation intermédiaire (DFC, MOE) */
   --review: #7c3aed;
   --review-foreground: #ffffff;
@@ -52,35 +64,35 @@
 
   /* Neutres */
   --secondary: #f3f4f6;
-  --secondary-foreground: #1d186c;
+  --secondary-foreground: #002a5c;
   --muted: #f9fafb;
   --muted-foreground: #6b7280;
   --accent: #f3f4f6;
   --accent-foreground: #111111;
   --border: #e5e7eb;
   --input: #e5e7eb;
-  --ring: #1d186c;
+  --ring: #002a5c;
 
   /* Barre latérale */
   --sidebar: #ffffff;
   --sidebar-foreground: #374151;
-  --sidebar-primary: #1d186c;
+  --sidebar-primary: #002a5c;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #ebeaf2;
-  --sidebar-accent-foreground: #1d186c;
+  --sidebar-accent: #e8ecf0;
+  --sidebar-accent-foreground: #002a5c;
   --sidebar-border: #e5e7eb;
-  --sidebar-ring: #1d186c;
+  --sidebar-ring: #002a5c;
 
   /* Chantiers — une couleur par projet dans le planning et le Gantt */
-  --chantier-1: #1d186c;
-  --chantier-2: #16850c;
+  --chantier-1: #002a5c;
+  --chantier-2: #13850b;
   --chantier-3: #b45309;
   --chantier-4: #7c3aed;
   --chantier-5: #0e7490;
 
   /* Graphiques */
-  --chart-1: #1d186c;
-  --chart-2: #16850c;
+  --chart-1: #002a5c;
+  --chart-2: #13850b;
   --chart-3: #b45309;
   --chart-4: #7c3aed;
   --chart-5: #0e7490;
@@ -111,6 +123,10 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-destructive-soft: var(--destructive-soft);
+
+  --color-attention: var(--attention);
+  --color-attention-foreground: var(--attention-foreground);
+  --color-attention-hover: var(--attention-hover);
 
   --color-review: var(--review);
   --color-review-foreground: var(--review-foreground);

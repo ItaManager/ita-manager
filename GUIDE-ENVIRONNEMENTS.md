@@ -267,6 +267,18 @@ Vérifie que `.gitignore` contient bien :
 comme compromises et fais-les tourner immédiatement — l'historique Git les
 conserve même après suppression.
 
+> **Note temporaire — clé Resend partagée avec la production (2026-07-29)**
+> `.env.dev` réutilise actuellement le `RESEND_API_KEY` et l'`EMAIL_FROM` de
+> `.env.local` (production), faute de compte/clé Resend dédié au dev.
+> Conséquence concrète : **tout email envoyé depuis l'environnement dev part
+> réellement par le compte Resend de production** — mêmes statistiques, même
+> quota, même réputation d'expéditeur que `app.itamanager.cloud`. À surveiller
+> si des tests génèrent un volume d'emails important. `NEXT_PUBLIC_APP_URL`
+> n'est **pas** concernée par ce partage : elle vaut `https://dev.itamanager.cloud`
+> dans `.env.dev`, jamais l'URL de production, pour que les liens des emails
+> de test (réinitialisation, activation) pointent vers le bon environnement.
+> À séparer (nouvelle clé Resend dédiée) si le volume de tests le justifie.
+
 ### ✅ Point de vérification B
 
 - [ ] Le projet `ita-manager-dev` est actif
