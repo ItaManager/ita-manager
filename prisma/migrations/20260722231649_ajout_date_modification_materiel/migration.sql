@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE "Materiel" ADD COLUMN     "dateModification" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;

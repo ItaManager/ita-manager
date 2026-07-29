@@ -1,0 +1,1604 @@
+// =====================================================================
+// ITA SARL — Schéma de données
+// PostgreSQL · Prisma
+//
+// Conventions
+//   · Montants        : Decimal(15,2), en francs CFA
+//   · Dates pures     : DateTime @db.Date  (pas d'heure, pas de fuseau)
+//   · Horodatages     : DateTime @default(now()) en UTC
+//   · Suppression     : archiveLe DateTime?  — jamais de DELETE physique
+//     sur les entités référencées par un historique
+//   · Référentiels    : tables, pas enums, dès que le métier peut créer
+//     une valeur. Les enums sont réservés aux listes fermées qui pilotent
+//     un traitement (paie, déclarations CNPS, circuits de validation).
+// =====================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Connexion mutualisée (pgBouncer, port 6543) — utilisée par l'application
+  url       = env("DATABASE_URL")
+  // Connexion directe (port 5432) — requise par les migrations et introspect
+  directUrl = env("DIRECT_URL")
+}
+
+// =====================================================================
+// PROFILS ET HABILITATIONS
+//
+// L'authentification est assurée par Supabase Auth : la table
+// `auth.users` détient l'identité, le mot de passe et les sessions.
+// Prisma ne la gère pas — elle vit dans un schéma que les migrations
+// ne doivent pas toucher.
+//
+// `Profil.id` reprend l'UUID de `auth.users.id`. Le lien est maintenu
+// par un trigger Postgres à la création du compte.
+// =====================================================================
+
+model Profil {
+  /// UUID identique à auth.users.id (Supabase)
+  id String @id @db.Uuid
+
+  email       String    @unique
+  actif       Boolean   @default(true)
+  derniereConn DateTime?
+
+  /// Un profil est rattaché à un employé, sauf comptes techniques
+  employeId String?  @unique
+  employe   Employe? @relation(fields: [employeId], references: [id])
+
+  roles      ProfilRole[]
+  evenements JournalEvenement[]
+
+  creeLe    DateTime  @default(now())
+  modifieLe DateTime  @updatedAt
+  archiveLe DateTime?
+
+  @@map("profils")
+}
+
+/// Rôle applicatif. Distinct du poste : un Chef Chantier peut porter
+/// le rôle de saisie des relevés sans que le poste ne l'implique.
+model Role {
+  id          String  @id @default(cuid())
+  code        String  @unique // ADMIN, DRH, RH, DT, CT, CC, CE, DFC, DG
+  libelle     String
+  description String?
+  systeme     Boolean @default(false) // non supprimable
+
+  permissions RolePermission[]
+  profils     ProfilRole[]
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@map("roles")
+}
+
+model Permission {
+  id      String @id @default(cuid())
+  code    String @unique // employe:creer, derogation:valider, paie:validerDT…
+  libelle String
+  domaine String // RH, PAIE, TECHNIQUE, REFERENTIEL, ADMIN
+
+  roles RolePermission[]
+
+  @@index([domaine])
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model ProfilRole {
+  profilId   String   @db.Uuid
+  roleId     String
+  profil     Profil   @relation(fields: [profilId], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  attribueLe DateTime @default(now())
+
+  @@id([profilId, roleId])
+  @@map("profil_roles")
+}
+
+// =====================================================================
+// ORGANISATION — Direction › Service › Poste
+//
+// Ces trois niveaux sont des TABLES et non des enums. L'organigramme
+// évolue, et le conflit constaté entre le PDF officiel et les postes
+// extrapolés se règle au seed, pas au schéma.
+// =====================================================================
+
+enum NiveauHierarchique {
+  DIRECTION
+  CADRE
+  SUPPORT
+  OPERATIONNEL
+}
+
+model Direction {
+  id             String  @id @default(cuid())
+  code           String  @unique // DG, DFC, DT, DAR
+  libelle        String
+  ordre          Int     @default(0)
+  reserveAdmin   Boolean @default(false) // création/affectation réservée
+
+  services Service[]
+  postes   Poste[]
+
+  creeLe    DateTime  @default(now())
+  modifieLe DateTime  @updatedAt
+  archiveLe DateTime?
+
+  @@map("directions")
+}
+
+model Service {
+  id          String @id @default(cuid())
+  code        String @unique
+  libelle     String
+  ordre       Int    @default(0)
+
+  directionId String
+  direction   Direction @relation(fields: [directionId], references: [id])
+
+  postes      Poste[]
+  affectations Affectation[]
+
+  creeLe    DateTime  @default(now())
+  modifieLe DateTime  @updatedAt
+  archiveLe DateTime?
+
+  @@index([directionId])
+  @@map("services")
+}
+
+model Poste {
+  id      String             @id @default(cuid())
+  code    String             @unique
+  libelle String
+  niveau  NiveauHierarchique
+
+  /// Rattachement à un service. NULL = poste transverse à la direction,
+  /// intervenant sur les chantiers de tous ses services (chaîne DT).
+  serviceId String?
+  service   Service? @relation(fields: [serviceId], references: [id])
+
+  directionId String
+  direction   Direction @relation(fields: [directionId], references: [id])
+
+  reserveAdmin  Boolean @default(false)
+  /// Un seul titulaire actif à la fois (postes de direction)
+  titulaireUnique Boolean @default(false)
+  /// Ouvre un compteur de congés annuels. Paramétrable, voir ReglesConges.
+  ouvreDroitConges Boolean @default(true)
+
+  affectations Affectation[]
+  demandesRh   DemandeRessourceHumaine[]
+
+  creeLe    DateTime  @default(now())
+  modifieLe DateTime  @updatedAt
+  archiveLe DateTime?
+
+  @@index([directionId])
+  @@index([serviceId])
+  @@map("postes")
+}
+
+// =====================================================================
+// EMPLOYÉS
+// =====================================================================
+
+enum Sexe {
+  M
+  F
+}
+
+enum SituationMatrimoniale {
+  CELIBATAIRE
+  MARIE
+  DIVORCE
+  VEUF
+}
+
+enum StatutDossier {
+  INCOMPLET
+  EN_ATTENTE
+  COMPLET
+}
+
+/// Origine de la main-d'œuvre — décision A-11.
+/// Axe indépendant du poste : un Ouvrier peut être permanent ou journalier.
+/// Détermine les champs exigés au dossier, la forme de rémunération et
+/// l'accès au module Congés.
+///
+/// Les agents fournis par un prestataire ne figurent PAS ici : ITA ne les
+/// suit pas nominativement. Le prestataire est un fournisseur, facturé sur
+/// contrat — voir `Prestataire` et `ContratPrestation`.
+enum TypeMainOeuvre {
+  /// Salarié ITA. Dossier complet, contrat, salaire mensuel, congés.
+  PERMANENT
+  /// Recruté par ITA pour un projet. Dossier allégé — nom, prénom,
+  /// téléphone, pièce d'identité. Payé au taux journalier via les relevés
+  /// d'activité. Aucun compteur de congés — décision A-13.
+  JOURNALIER
+}
+
+/// Fournisseur de main-d'œuvre. Personne physique ou entreprise.
+/// N'a AUCUN lien vers des personnes : ITA ne suit pas ses agents.
+model Prestataire {
+  id           String  @id @default(cuid())
+  raisonSociale String
+  rccm         String?
+  numeroCc     String? // compte contribuable
+  contactNom   String?
+  telephone    String?
+  email        String?
+  adresse      String?
+
+  /// Personne physique plutôt qu'entreprise
+  personnePhysique Boolean @default(false)
+
+  contrats ContratPrestation[]
+
+  creeLe    DateTime  @default(now())
+  modifieLe DateTime  @updatedAt
+  archiveLe DateTime?
+
+  @@map("prestataires")
+}
+
+/// Deux modes seulement — décision A-14.
+/// Le taux journalier est volontairement absent : ITA ne pointant pas les
+/// agents du prestataire, aucun décompte de jours ne serait justifiable.
+enum ModeFacturationPrestation {
+  /// Montant fixe pour la période ou la prestation
+  FORFAIT
+  /// Unité d'ouvrage réalisée × prix unitaire
+  A_LA_TACHE
+}
+
+/// Contrat liant ITA à un prestataire, pour un projet donné.
+model ContratPrestation {
+  id        String @id @default(cuid())
+  reference String @unique
+
+  prestataireId String
+  prestataire   Prestataire @relation(fields: [prestataireId], references: [id])
+
+  projetId String
+  projet   Projet @relation(fields: [projetId], references: [id])
+
+  modeFacturation ModeFacturationPrestation
+  /// Renseigné si mode TAUX_JOURNALIER
+  tauxJournalier  Decimal? @db.Decimal(15, 2)
+  /// Renseigné si mode FORFAIT
+  montantForfait  Decimal? @db.Decimal(15, 2)
+
+  dateDebut DateTime  @db.Date
+  dateFin   DateTime? @db.Date
+
+  /// Unité d'ouvrage et prix unitaire, si mode A_LA_TACHE
+  uniteOuvrage  String?
+  prixUnitaire  Decimal? @db.Decimal(15, 2)
+
+  /// Effectif contractuel annoncé, à titre indicatif. ITA ne le contrôle pas.
+  effectifAnnonce Int?
+
+  /// Contrat signé — obligatoire, décision A-14.
+  /// Bucket Supabase Storage : contrats-prestation
+  contratNomFichier String
+  contratChemin     String
+
+  observation String?
+
+  factures FacturePrestation[]
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([prestataireId])
+  @@index([projetId])
+  @@map("contrats_prestation")
+}
+
+model Employe {
+  id String @id @default(cuid())
+
+  /// Origine de la main-d'œuvre — décision A-11.
+  /// Détermine les champs exigés, l'existence d'un contrat et le
+  /// destinataire du paiement.
+  typeMainOeuvre TypeMainOeuvre @default(PERMANENT)
+
+
+  /// Matricule interne généré, format ITA-AAAA-NNNN. Modifiable en cas
+  /// de reprise d'historique, d'où l'absence de génération en base.
+  matricule String @unique
+  /// Code employé préexistant à la mise en service de l'application.
+  /// Saisie libre, unique lorsqu'il est renseigné.
+  reference String? @unique
+
+  nom       String
+  prenom    String
+  emailPro  String? @unique
+  sexe      Sexe
+
+  /// Champs obligatoires pour un PERMANENT seulement. La contrainte est
+  /// portée par le schéma zod, variable selon `typeMainOeuvre` : la base
+  /// les accepte nuls pour permettre un dossier allégé.
+  dateNaissance         DateTime?              @db.Date
+  lieuNaissance         String?
+  nationalite           String?
+  numeroCnps            String?
+  situationMatrimoniale SituationMatrimoniale?
+  nombreEnfants         Int                    @default(0)
+
+  telPrincipal   String
+  telSecondaire  String?
+  adresse        String?
+
+  /// Compte Wave — décision A-12.
+  /// Pour un journalier, c'est le moyen de paiement : une erreur de saisie
+  /// envoie l'argent à un tiers, sans recours. Donnée SENSIBLE au sens de
+  /// SECURITE.md § 2 — double confirmation à la saisie, toute modification
+  /// journalisée.
+  /// Distinct du téléphone de contact : les deux numéros peuvent différer.
+  numeroMobileMoney String?
+  operateurMobile   OperateurMobile? @default(WAVE)
+
+  statutDossier StatutDossier @default(INCOMPLET)
+  photoUrl      String?
+
+  profil        Profil?
+  affectations  Affectation[]
+  contrats      Contrat[]
+  experiences   Experience[]
+  formations    Formation[]
+  competences   EmployeCompetence[]
+  documents     Document[]
+  absences      DemandeAbsence[]
+  soldesConges  SoldeConges[]
+
+  // Chantier
+  affectationsChantier AffectationChantier[]
+  pointages            Pointage[]
+  lignesPaie           LignePaieChantier[]
+
+  // Relations inverses
+  subordonnes       Affectation[] @relation("SuperieurHierarchique")
+  derogations       DerogationSalariale[]
+  demandesRhTraitees DemandeRessourceHumaine[] @relation("DemandeurRh")
+  demandesLogTraitees DemandeRessourceLogistique[] @relation("DemandeurLog")
+
+  creeLe    DateTime  @default(now())
+  modifieLe DateTime  @updatedAt
+  archiveLe DateTime?
+
+  @@index([nom, prenom])
+  @@index([statutDossier])
+  @@map("employes")
+}
+
+/// Historique des affectations. Une nouvelle affectation clôt la
+/// précédente (dateFin) au lieu de l'écraser : l'historique des
+/// contrats et des paies doit rester lisible après réorganisation.
+model Affectation {
+  id String @id @default(cuid())
+
+  employeId String
+  employe   Employe @relation(fields: [employeId], references: [id])
+
+  posteId   String
+  poste     Poste   @relation(fields: [posteId], references: [id])
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id])
+
+  superieurId String?
+  superieur   Employe? @relation("SuperieurHierarchique", fields: [superieurId], references: [id])
+
+  /// Libellés figés à la date d'affectation. Une réorganisation
+  /// ultérieure ne doit pas réécrire l'historique.
+  directionLibelle String
+  serviceLibelle   String
+  posteLibelle     String
+
+  dateDebut DateTime  @db.Date
+  dateFin   DateTime? @db.Date
+  motif     String?
+
+  creeLe DateTime @default(now())
+
+  @@index([employeId, dateDebut])
+  @@index([posteId])
+  @@map("affectations")
+}
+
+model Experience {
+  id        String    @id @default(cuid())
+  employeId String
+  employe   Employe   @relation(fields: [employeId], references: [id], onDelete: Cascade)
+  entreprise String
+  poste      String
+  dateDebut  DateTime  @db.Date
+  dateFin    DateTime? @db.Date
+  missions   String?
+
+  @@index([employeId])
+  @@map("experiences")
+}
+
+model OrganismeFormation {
+  id      String @id @default(cuid())
+  libelle String @unique
+
+  formations Formation[]
+
+  @@map("organismes_formation")
+}
+
+enum TypeFormation {
+  FORMATION
+  CERTIFICAT
+  HABILITATION
+}
+
+model Formation {
+  id        String        @id @default(cuid())
+  employeId String
+  employe   Employe       @relation(fields: [employeId], references: [id], onDelete: Cascade)
+  type      TypeFormation
+  intitule  String
+
+  organismeId String?
+  organisme   OrganismeFormation? @relation(fields: [organismeId], references: [id])
+
+  dateObtention  DateTime  @db.Date
+  /// Habilitations et CACES expirent : sert aux alertes de renouvellement
+  dateExpiration DateTime? @db.Date
+  documentId     String?
+
+  @@index([employeId])
+  @@index([dateExpiration])
+  @@map("formations")
+}
+
+model FamilleCompetence {
+  id      String @id @default(cuid())
+  libelle String @unique
+  ordre   Int    @default(0)
+
+  competences Competence[]
+
+  @@map("familles_competence")
+}
+
+model Competence {
+  id      String @id @default(cuid())
+  code    String @unique // slug
+  libelle String
+
+  familleId String?
+  famille   FamilleCompetence? @relation(fields: [familleId], references: [id])
+
+  employes   EmployeCompetence[]
+  demandesRh DemandeRhCompetence[]
+
+  creeLe    DateTime  @default(now())
+  archiveLe DateTime?
+
+  @@map("competences")
+}
+
+model EmployeCompetence {
+  employeId    String
+  competenceId String
+  employe      Employe    @relation(fields: [employeId], references: [id], onDelete: Cascade)
+  competence   Competence @relation(fields: [competenceId], references: [id])
+  niveau       Int?       @db.SmallInt // 1 à 4, optionnel
+  attribueLe   DateTime   @default(now())
+
+  @@id([employeId, competenceId])
+  @@map("employe_competences")
+}
+
+// =====================================================================
+// CONTRATS
+// =====================================================================
+
+enum TypeContrat {
+  CDI
+  CDD
+  INTERIM
+  STAGE
+}
+
+enum ModePaiement {
+  VIREMENT
+  CHEQUE
+  ESPECES
+  /// Transfert d'argent mobile — mode usuel des journaliers
+  MOBILE_MONEY
+}
+
+/// Wave uniquement — décision A-12. Un enum plutôt qu'une valeur figée :
+/// ajouter un opérateur reste une migration d'une ligne, sans changement
+/// de structure ni reprise de données.
+enum OperateurMobile {
+  WAVE
+}
+
+enum StatutContrat {
+  BROUILLON
+  ACTIF
+  SUSPENDU
+  TERMINE
+  ROMPU
+}
+
+model Contrat {
+  id String @id @default(cuid())
+
+  employeId String
+  employe   Employe @relation(fields: [employeId], references: [id])
+
+  type      TypeContrat
+  statut    StatutContrat @default(BROUILLON)
+  dateDebut DateTime      @db.Date
+  dateFin   DateTime?     @db.Date
+
+  /// Rémunération mensuelle — renseignée pour un PERMANENT
+  salaireBrut Decimal? @db.Decimal(15, 2)
+  /// Taux journalier — renseigné pour un JOURNALIER, décision A-11
+  tauxJournalier Decimal? @db.Decimal(15, 2)
+
+  modePaiement ModePaiement
+  /// Requis si modePaiement = VIREMENT
+  rib          String?
+
+  /// Le salaire est-il en attente de validation d'une dérogation ?
+  /// Tant que c'est vrai, il est exclu des exports de paie.
+  salaireEnAttente Boolean @default(false)
+
+  avenantDeId String?
+  avenantDe   Contrat?  @relation("Avenants", fields: [avenantDeId], references: [id])
+  avenants    Contrat[] @relation("Avenants")
+
+  derogations DerogationSalariale[]
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([employeId])
+  @@index([dateFin])
+  @@index([statut])
+  @@map("contrats")
+}
+
+// =====================================================================
+// DOCUMENTS
+// =====================================================================
+
+/// Types de documents attendus. Table et non enum : « Autres documents »
+/// permet à l'utilisateur d'en créer à la volée.
+model TypeDocument {
+  id       String  @id @default(cuid())
+  code     String  @unique
+  libelle  String
+  requis   Boolean @default(false)
+  groupe   String  // OBLIGATOIRE, PARCOURS, SPECIFIQUE, FINALISATION, AUTRE
+  ordre    Int     @default(0)
+  /// Créé à la volée par un utilisateur plutôt que fourni au seed
+  personnalise Boolean @default(false)
+
+  documents Document[]
+
+  @@map("types_document")
+}
+
+model Document {
+  id        String @id @default(cuid())
+  employeId String
+  employe   Employe @relation(fields: [employeId], references: [id], onDelete: Cascade)
+
+  typeId String
+  type   TypeDocument @relation(fields: [typeId], references: [id])
+
+  /// Libellé libre pour les documents hors nomenclature
+  libelle    String?
+  nomFichier String
+  /// Bucket Supabase Storage : documents-employes
+  bucket     String @default("documents-employes")
+  /// Chemin dans le bucket : {employeId}/{typeCode}/{uuid}-{nom}
+  chemin     String
+  mimeType   String
+  tailleOctets Int
+
+  deposeParId String?  @db.Uuid
+  deposeLe    DateTime @default(now())
+
+  @@index([employeId])
+  @@map("documents")
+}
+
+// =====================================================================
+// CONGÉS ET PERMISSIONS
+// =====================================================================
+
+enum NatureAbsence {
+  CONGE
+  PERMISSION
+}
+
+enum TypeAbsence {
+  // Congés
+  ANNUEL
+  MALADIE
+  MATERNITE
+  // Permissions
+  MARIAGE
+  DECES
+  FAMILIALE
+  PROFESSIONNELLE
+  AUTRE
+}
+
+enum StatutDemande {
+  BROUILLON
+  SOUMISE
+  VALIDEE
+  REFUSEE
+  ANNULEE
+}
+
+model DemandeAbsence {
+  id String @id @default(cuid())
+
+  employeId String
+  employe   Employe @relation(fields: [employeId], references: [id])
+
+  nature NatureAbsence
+  type   TypeAbsence
+  statut StatutDemande @default(BROUILLON)
+
+  dateDebut DateTime @db.Date
+  dateFin   DateTime @db.Date
+  /// Jours décomptés, calculé côté serveur (week-ends et fériés exclus)
+  nbJours   Int
+  motif     String?
+
+  // Pièce justificative — bucket Supabase Storage : justificatifs-absences
+  pieceNomFichier   String?
+  pieceBucket       String? @default("justificatifs-absences")
+  pieceChemin       String?
+  pieceMimeType     String?
+  pieceTailleOctets Int?
+
+  deposeLe DateTime @default(now())
+
+  decideParId    String?
+  decideLe       DateTime?
+  commentaireDecision String?
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([employeId, dateDebut])
+  @@index([statut])
+  @@map("demandes_absence")
+}
+
+/// Compteur de congés par employé et par exercice.
+model SoldeConges {
+  id        String  @id @default(cuid())
+  employeId String
+  employe   Employe @relation(fields: [employeId], references: [id], onDelete: Cascade)
+
+  exercice   Int // année civile
+  dotation   Int // jours attribués à l'ouverture
+  consomme   Int @default(0)
+  reporte    Int @default(0)
+
+  @@unique([employeId, exercice])
+  @@map("soldes_conges")
+}
+
+/// Règles de congés, modifiables depuis Paramètres sans intervention
+/// technique. Une ligne par niveau hiérarchique.
+model RegleConges {
+  id                 String             @id @default(cuid())
+  niveau             NiveauHierarchique @unique
+  joursParAn         Int
+  reportMaxJours     Int                @default(0)
+  modifieParId       String?
+  modifieLe          DateTime           @updatedAt
+
+  @@map("regles_conges")
+}
+
+/// Jours fériés ivoiriens. Sans cette table, le calcul des jours
+/// travaillés ne déduit que les week-ends.
+model JourFerie {
+  id      String   @id @default(cuid())
+  date    DateTime @unique @db.Date
+  libelle String
+  chome   Boolean  @default(true)
+
+  @@map("jours_feries")
+}
+
+// =====================================================================
+// GRILLE SALARIALE ET DÉROGATIONS
+// =====================================================================
+
+/// Versionnée : une révision crée une nouvelle version plutôt que de
+/// modifier l'existante, pour que les dérogations passées restent
+/// interprétables au regard de la grille en vigueur à leur date.
+model VersionGrilleSalariale {
+  id           String    @id @default(cuid())
+  version      Int       @unique
+  motif        String
+  dateEffet    DateTime  @db.Date
+  dateFin      DateTime? @db.Date
+  publieParId  String?
+  publieLe     DateTime  @default(now())
+
+  echelons EchelonGrille[]
+
+  @@map("versions_grille_salariale")
+}
+
+model EchelonGrille {
+  id        String                 @id @default(cuid())
+  versionId String
+  version   VersionGrilleSalariale @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  niveau  NiveauHierarchique
+  minimum Decimal @db.Decimal(15, 2)
+  mediane Decimal @db.Decimal(15, 2)
+  maximum Decimal @db.Decimal(15, 2)
+
+  @@unique([versionId, niveau])
+  @@map("echelons_grille")
+}
+
+enum StatutDerogation {
+  EN_ATTENTE
+  VALIDEE
+  REFUSEE
+}
+
+model DerogationSalariale {
+  id String @id @default(cuid())
+
+  employeId String
+  employe   Employe @relation(fields: [employeId], references: [id])
+  contratId String
+  contrat   Contrat @relation(fields: [contratId], references: [id])
+
+  montantDemande Decimal @db.Decimal(15, 2)
+  /// Bornes de grille au moment de la demande, figées
+  borneMin       Decimal @db.Decimal(15, 2)
+  borneMax       Decimal @db.Decimal(15, 2)
+  niveau         NiveauHierarchique
+
+  motif String
+
+  statut         StatutDerogation @default(EN_ATTENTE)
+  demandeParId   String
+  demandeLe      DateTime         @default(now())
+  decideParId    String?
+  decideLe       DateTime?
+  commentaireDecision String?
+  /// Montant retenu après décision. Un refus ramène à la borne la plus proche.
+  montantRetenu  Decimal? @db.Decimal(15, 2)
+
+  @@index([statut])
+  @@map("derogations_salariales")
+}
+
+// =====================================================================
+// APPELS D'OFFRES
+// =====================================================================
+
+model MaitreOuvrage {
+  id       String  @id @default(cuid())
+  code     String  @unique
+  libelle  String
+  contact  String?
+  telephone String?
+  email    String?
+
+  appelsOffres AppelOffres[]
+  projets      Projet[]
+
+  archiveLe DateTime?
+
+  @@map("maitres_ouvrage")
+}
+
+enum TypeMarche {
+  TRAVAUX
+  FOURNITURES
+  SERVICES
+  ETUDES
+}
+
+enum ModePassation {
+  APPEL_OUVERT
+  APPEL_RESTREINT
+  CONSULTATION
+  GRE_A_GRE
+  MANIFESTATION_INTERET
+}
+
+enum FormeParticipation {
+  SEUL
+  MANDATAIRE
+  COTRAITANT
+  SOUSTRAITANT
+}
+
+enum StatutAppelOffres {
+  BROUILLON
+  ATTENTE_GO_DG
+  NO_GO
+  EN_PREPARATION
+  ATTENTE_VISA_DG
+  SOUMIS
+  ATTRIBUE
+  NON_RETENU
+  SANS_SUITE
+}
+
+model AppelOffres {
+  id        String @id @default(cuid())
+  reference String @unique
+  objet     String
+
+  maitreOuvrageId String
+  maitreOuvrage   MaitreOuvrage @relation(fields: [maitreOuvrageId], references: [id])
+
+  serviceId String
+  typeMarche    TypeMarche
+  modePassation ModePassation
+  source        String?
+  lieuExecution String
+
+  datePublication DateTime? @db.Date
+  /// Date ET heure limites : le dépôt est contractuel à la minute
+  dateLimite      DateTime
+  delaiMois       Int?
+
+  montantEstime      Decimal  @db.Decimal(15, 2)
+  cautionSoumission  Decimal? @db.Decimal(15, 2)
+  cautionBonneExecPct Decimal? @db.Decimal(5, 2)
+  fraisDossier       Decimal? @db.Decimal(15, 2)
+
+  forme       FormeParticipation @default(SEUL)
+  partenaires String?
+
+  chargeDossierId String?
+  concurrents     String?
+  atouts          String?
+  risques         String?
+  probabilite     Int?    @db.SmallInt // 0-100
+
+  statut  StatutAppelOffres @default(BROUILLON)
+  avisDg  String?
+
+  // Résultat
+  attributaire      String?
+  montantAttribue   Decimal?  @db.Decimal(15, 2)
+  dateResultat      DateTime? @db.Date
+  enseignements     String?
+
+  pieces  PieceAppelOffres[]
+  projet  Projet?
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([statut])
+  @@index([dateLimite])
+  @@map("appels_offres")
+}
+
+model TypePieceAppelOffres {
+  id      String  @id @default(cuid())
+  code    String  @unique
+  libelle String
+  /// Une pièce éliminatoire bloque la transmission au Directeur Général
+  eliminatoire Boolean @default(false)
+  ordre   Int     @default(0)
+
+  pieces PieceAppelOffres[]
+
+  @@map("types_piece_ao")
+}
+
+model PieceAppelOffres {
+  id            String      @id @default(cuid())
+  appelOffresId String
+  appelOffres   AppelOffres @relation(fields: [appelOffresId], references: [id], onDelete: Cascade)
+
+  typeId String
+  type   TypePieceAppelOffres @relation(fields: [typeId], references: [id])
+
+  fournie     Boolean   @default(false)
+  fournieLe   DateTime?
+  cheminUrl   String?
+  observation String?
+
+  @@unique([appelOffresId, typeId])
+  @@map("pieces_appel_offres")
+}
+
+// =====================================================================
+// PROJETS ET CHANTIERS
+//
+// Un projet EST un chantier. Les maquettes traitaient les deux
+// séparément — duplication corrigée ici.
+// =====================================================================
+
+enum StatutProjet {
+  PREPARATION
+  EN_COURS
+  SUSPENDU
+  RECEPTION
+  CLOTURE
+}
+
+enum CyclePaie {
+  HEBDOMADAIRE  // 7 jours
+  QUINZAINE     // 15 jours
+  MENSUEL       // 30 jours
+  PERSONNALISE
+}
+
+model Projet {
+  id   String @id @default(cuid())
+  code String @unique
+  nom  String
+
+  appelOffresId String?      @unique
+  appelOffres   AppelOffres? @relation(fields: [appelOffresId], references: [id])
+
+  maitreOuvrageId String
+  maitreOuvrage   MaitreOuvrage @relation(fields: [maitreOuvrageId], references: [id])
+  maitreOeuvre    String?
+
+  serviceId String
+  site      String
+  latitude  Decimal? @db.Decimal(10, 7)
+  longitude Decimal? @db.Decimal(10, 7)
+
+  montantMarche   Decimal @db.Decimal(15, 2)
+  avancePct       Decimal @db.Decimal(5, 2) @default(20)
+  retenueGarantiePct Decimal @db.Decimal(5, 2) @default(5)
+  penaliteRetardPourMille Decimal @db.Decimal(5, 2) @default(1)
+
+  dateOrdreService DateTime @db.Date
+  delaiMois        Int
+  dateDebut        DateTime @db.Date
+  dateFinPrevue    DateTime @db.Date
+  dateFinReelle    DateTime? @db.Date
+
+  conducteurId    String?
+  chefChantierId  String?
+
+  statut     StatutProjet @default(PREPARATION)
+  /// Avancement physique déclaré, distinct du délai écoulé
+  avancement Int          @default(0) @db.SmallInt
+
+  // Cycle de paie des équipes affectées
+  cyclePaie          CyclePaie @default(QUINZAINE)
+  cycleJours         Int       @default(15)
+  prochaineCloture   DateTime? @db.Date
+
+  taches          Tache[]
+  affectations    AffectationChantier[]
+  periodesPaie    PeriodePaieChantier[]
+  releves         ReleveActivite[]
+  demandesRh      DemandeRessourceHumaine[]
+  demandesLog     DemandeRessourceLogistique[]
+  contratsPrestation ContratPrestation[]
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([statut])
+  @@index([prochaineCloture])
+  @@map("projets")
+}
+
+enum TypeTache {
+  PHASE
+  TACHE
+  JALON
+}
+
+enum NatureJalon {
+  ALERTE     // notifie, ne bloque pas
+  VALIDATION // exige un accord formel, bloque la suite
+}
+
+enum StatutJalon {
+  A_VENIR
+  ATTEINT
+  EN_RETARD
+  VALIDE
+  REJETE
+}
+
+model Tache {
+  id       String @id @default(cuid())
+  projetId String
+  projet   Projet @relation(fields: [projetId], references: [id], onDelete: Cascade)
+
+  type   TypeTache
+  nom    String
+  description String?
+  ordre  Int       @default(0)
+
+  parentId String?
+  parent   Tache?  @relation("SousTaches", fields: [parentId], references: [id])
+  enfants  Tache[] @relation("SousTaches")
+
+  // Phases et tâches
+  dateDebut  DateTime? @db.Date
+  dateFin    DateTime? @db.Date
+  avancement Int       @default(0) @db.SmallInt
+  responsableId String?
+
+  // Jalons
+  dateEcheance DateTime?    @db.Date
+  natureJalon  NatureJalon?
+  /// Code de rôle habilité à lever le jalon : DG, DT, MOE, MO, QHSE
+  validateurRole String?
+  statutJalon    StatutJalon?
+  decideParId    String?
+  decideLe       DateTime?
+  commentaireDecision String?
+
+  travaux TravailReleve[]
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([projetId])
+  @@index([dateEcheance])
+  @@map("taches")
+}
+
+/// Affectation d'un agent à un chantier sur une période.
+/// La détection de conflit se fait contre DemandeAbsence validée.
+model AffectationChantier {
+  id       String @id @default(cuid())
+  projetId String
+  projet   Projet @relation(fields: [projetId], references: [id], onDelete: Cascade)
+
+  employeId String
+  employe   Employe @relation(fields: [employeId], references: [id])
+
+  dateDebut DateTime @db.Date
+  dateFin   DateTime @db.Date
+  /// Un conflit détecté puis arbitré volontairement par la DT
+  conflitAccepte Boolean @default(false)
+  observation    String?
+
+  creeParId String?
+  creeLe    DateTime @default(now())
+
+  @@index([projetId, dateDebut])
+  @@index([employeId, dateDebut])
+  @@map("affectations_chantier")
+}
+
+// =====================================================================
+// RELEVÉS D'ACTIVITÉ
+//
+// Source de vérité des présences chantier. Un relevé visé alimente
+// la période de paie ET l'avancement des tâches.
+// =====================================================================
+
+enum Meteo {
+  ENSOLEILLE
+  NUAGEUX
+  PLUIE
+}
+
+enum StatutReleve {
+  BROUILLON
+  A_VISER
+  VISE
+  REJETE
+}
+
+model ReleveActivite {
+  id       String @id @default(cuid())
+  projetId String
+  projet   Projet @relation(fields: [projetId], references: [id])
+
+  date       DateTime @db.Date
+  meteo      Meteo
+  heureDebut String   // HH:mm
+  heureFin   String
+
+  incidents    String?
+  observations String?
+
+  statut     StatutReleve @default(BROUILLON)
+  saisiParId String
+  saisiLe    DateTime     @default(now())
+  viseParId  String?
+  viseLe     DateTime?
+  commentaireVisa String?
+
+  pointages   Pointage[]
+  travaux     TravailReleve[]
+  materiels   MaterielReleve[]
+  materiaux   MateriauReleve[]
+
+  @@unique([projetId, date])
+  @@index([statut])
+  @@map("releves_activite")
+}
+
+enum EtatPresence {
+  PRESENT
+  RETARD
+  ABSENT
+  CONGE
+}
+
+model Pointage {
+  id       String         @id @default(cuid())
+  releveId String
+  releve   ReleveActivite @relation(fields: [releveId], references: [id], onDelete: Cascade)
+
+  employeId String
+  employe   Employe @relation(fields: [employeId], references: [id])
+
+  etat            EtatPresence
+  heuresTravaillees Decimal    @db.Decimal(4, 2) @default(0)
+  heuresSupplementaires Decimal @db.Decimal(4, 2) @default(0)
+  observation     String?
+
+  @@unique([releveId, employeId])
+  @@index([employeId])
+  @@map("pointages")
+}
+
+model TravailReleve {
+  id       String         @id @default(cuid())
+  releveId String
+  releve   ReleveActivite @relation(fields: [releveId], references: [id], onDelete: Cascade)
+
+  tacheId String?
+  tache   Tache?  @relation(fields: [tacheId], references: [id])
+
+  description String
+  quantite    Decimal? @db.Decimal(12, 2)
+  unite       String?  // ml, m2, m3, u, t, kg
+  /// Avancement déclaré de la tâche à l'issue de la journée
+  avancementDeclare Int? @db.SmallInt
+
+  @@index([releveId])
+  @@map("travaux_releve")
+}
+
+model MaterielReleve {
+  id       String         @id @default(cuid())
+  releveId String
+  releve   ReleveActivite @relation(fields: [releveId], references: [id], onDelete: Cascade)
+
+  materielId String
+  materiel   Materiel @relation(fields: [materielId], references: [id])
+
+  heuresUtilisation Decimal @db.Decimal(4, 2)
+  pannesSignalee    Boolean @default(false)
+  descriptionPanne  String?
+
+  @@index([releveId])
+  @@map("materiels_releve")
+}
+
+model MateriauReleve {
+  id       String         @id @default(cuid())
+  releveId String
+  releve   ReleveActivite @relation(fields: [releveId], references: [id], onDelete: Cascade)
+
+  designation String
+  quantite    Decimal @db.Decimal(12, 2)
+  unite       String
+
+  @@index([releveId])
+  @@map("materiaux_releve")
+}
+
+// =====================================================================
+// PAIE CHANTIER
+//
+// Circuit : ouverture RH → validation Direction Technique
+//           → validation Direction Financière → payée
+// =====================================================================
+
+enum StatutPeriodePaie {
+  BROUILLON
+  ATTENTE_DT
+  ATTENTE_DFC
+  PAYEE
+  ANNULEE
+}
+
+model PeriodePaieChantier {
+  id       String @id @default(cuid())
+  projetId String
+  projet   Projet @relation(fields: [projetId], references: [id])
+
+  dateDebut DateTime @db.Date
+  dateFin   DateTime @db.Date
+
+  statut StatutPeriodePaie @default(BROUILLON)
+
+  ouvertParId String
+  ouvertLe    DateTime @default(now())
+
+  valideDtParId String?
+  valideDtLe    DateTime?
+  valideDfcParId String?
+  valideDfcLe    DateTime?
+  commentaire    String?
+
+  /// Total figé à la validation DFC, pour ne pas dépendre d'un recalcul
+  montantTotal Decimal? @db.Decimal(15, 2)
+
+  lignes     LignePaieChantier[]
+  evenements EvenementPeriodePaie[]
+
+  @@unique([projetId, dateDebut, dateFin])
+  @@index([statut])
+  @@map("periodes_paie_chantier")
+}
+
+model LignePaieChantier {
+  id        String              @id @default(cuid())
+  periodeId String
+  periode   PeriodePaieChantier @relation(fields: [periodeId], references: [id], onDelete: Cascade)
+
+  employeId String
+  employe   Employe @relation(fields: [employeId], references: [id])
+
+  /// Figés au moment de l'ouverture de la période
+  matricule        String
+  nomComplet       String
+  posteLibelle     String
+
+  /// Permanent ou journalier — les deux sont payés directement par ITA.
+  /// Les prestataires ne figurent pas ici : ils sont facturés sur contrat.
+  typeMainOeuvre TypeMainOeuvre
+
+  joursTravailles       Decimal @db.Decimal(5, 2)
+  heuresSupplementaires Decimal @db.Decimal(6, 2) @default(0)
+  tauxJournalier        Decimal @db.Decimal(15, 2)
+  montantBrut           Decimal @db.Decimal(15, 2)
+  ajustement            Decimal @db.Decimal(15, 2) @default(0)
+  motifAjustement       String?
+
+  @@unique([periodeId, employeId])
+  @@index([employeId])
+  @@map("lignes_paie_chantier")
+}
+
+model EvenementPeriodePaie {
+  id        String              @id @default(cuid())
+  periodeId String
+  periode   PeriodePaieChantier @relation(fields: [periodeId], references: [id], onDelete: Cascade)
+
+  action     String
+  auteurId   String
+  auteurNom  String
+  commentaire String?
+  survenuLe  DateTime @default(now())
+
+  @@index([periodeId])
+  @@map("evenements_periode_paie")
+}
+
+/// Facture de prestation. Circuit distinct de la paie chantier :
+/// elle ne dépend d'aucun relevé d'activité — décision A-14.
+/// Visée par la Direction Technique — service fait — puis réglée par la DFC.
+enum StatutFacturePrestation {
+  RECUE
+  ATTENTE_DT
+  ATTENTE_DFC
+  REGLEE
+  REJETEE
+}
+
+model FacturePrestation {
+  id        String @id @default(cuid())
+  reference String @unique
+
+  contratId String
+  contrat   ContratPrestation @relation(fields: [contratId], references: [id])
+
+  periodeDebut DateTime @db.Date
+  periodeFin   DateTime @db.Date
+
+  /// Détail selon le mode de facturation du contrat
+  quantite    Decimal? @db.Decimal(12, 2)
+  montantHt   Decimal  @db.Decimal(15, 2)
+  montantTtc  Decimal  @db.Decimal(15, 2)
+
+  statut StatutFacturePrestation @default(RECUE)
+
+  viseDtParId  String?
+  viseDtLe     DateTime?
+  regleParId   String?
+  regleLe      DateTime?
+  commentaire  String?
+
+  /// Facture déposée — bucket : factures-prestation
+  nomFichier String?
+  chemin     String?
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([contratId])
+  @@index([statut])
+  @@map("factures_prestation")
+}
+
+// =====================================================================
+// PARC MATÉRIEL ET DEMANDES DE RESSOURCES
+// =====================================================================
+
+enum CategorieMateriel {
+  ENGIN
+  VEHICULE
+  MATERIEL
+  CONSOMMABLE
+}
+
+enum EtatMateriel {
+  DISPONIBLE
+  AFFECTE
+  MAINTENANCE
+  PANNE
+  REFORME
+}
+
+model Materiel {
+  id      String @id @default(cuid())
+  code    String @unique
+  libelle String
+
+  categorie CategorieMateriel
+  etat      EtatMateriel      @default(DISPONIBLE)
+  quantite  Int               @default(1)
+
+  operateurRequis Boolean @default(false)
+  /// Date de libération prévisionnelle si affecté ou en maintenance
+  disponibleLe    DateTime? @db.Date
+
+  releves  MaterielReleve[]
+  demandes DemandeRessourceLogistique[]
+
+  creeLe    DateTime  @default(now())
+  modifieLe DateTime  @updatedAt
+  archiveLe DateTime?
+
+  @@index([etat])
+  @@map("materiels")
+}
+
+enum Urgence {
+  NORMALE
+  HAUTE
+  CRITIQUE
+}
+
+enum StatutDemandeRessource {
+  BROUILLON
+  SOUMISE
+  EN_COURS
+  SATISFAITE
+  REFUSEE
+}
+
+enum TypeBesoinRh {
+  RENFORT
+  RECRUTEMENT
+  REMPLACEMENT
+  MUTATION_INTERNE
+}
+
+model DemandeRessourceHumaine {
+  id        String @id @default(cuid())
+  reference String @unique
+
+  projetId String
+  projet   Projet @relation(fields: [projetId], references: [id])
+
+  type    TypeBesoinRh
+  posteId String
+  poste   Poste  @relation(fields: [posteId], references: [id])
+  nombre  Int    @default(1)
+
+  contratSouhaite TypeContrat?
+  dateDebut       DateTime     @db.Date
+  dureeJours      Int
+  urgence         Urgence      @default(NORMALE)
+
+  justification String
+  imputation    String?
+
+  statut StatutDemandeRessource @default(BROUILLON)
+
+  demandeurId String
+  demandeur   Employe @relation("DemandeurRh", fields: [demandeurId], references: [id])
+  demandeLe   DateTime @default(now())
+
+  traiteParId String?
+  traiteLe    DateTime?
+  reponse     String?
+
+  competences DemandeRhCompetence[]
+
+  @@index([statut])
+  @@index([projetId])
+  @@map("demandes_ressource_humaine")
+}
+
+model DemandeRhCompetence {
+  demandeId    String
+  competenceId String
+  demande      DemandeRessourceHumaine @relation(fields: [demandeId], references: [id], onDelete: Cascade)
+  competence   Competence              @relation(fields: [competenceId], references: [id])
+
+  @@id([demandeId, competenceId])
+  @@map("demande_rh_competences")
+}
+
+model DemandeRessourceLogistique {
+  id        String @id @default(cuid())
+  reference String @unique
+
+  projetId String
+  projet   Projet @relation(fields: [projetId], references: [id])
+
+  materielId String
+  materiel   Materiel @relation(fields: [materielId], references: [id])
+  quantite   Int      @default(1)
+
+  dateMiseDispo   DateTime @db.Date
+  dateRestitution DateTime @db.Date
+  lieuLivraison   String
+  avecOperateur   Boolean  @default(false)
+  urgence         Urgence  @default(NORMALE)
+
+  justification String
+
+  statut StatutDemandeRessource @default(BROUILLON)
+
+  demandeurId String
+  demandeur   Employe @relation("DemandeurLog", fields: [demandeurId], references: [id])
+  demandeLe   DateTime @default(now())
+
+  traiteParId String?
+  traiteLe    DateTime?
+  reponse     String?
+  bonSortie   String?
+
+  @@index([statut])
+  @@index([projetId])
+  @@map("demandes_ressource_logistique")
+}
+
+// =====================================================================
+// PARAMÈTRES ET AUDIT
+// =====================================================================
+
+/// Brouillon de formulaire, enregistré automatiquement — décision F-03.
+/// Un seul brouillon par utilisateur, par entité et par cible.
+/// `donnees` porte une saisie partielle : elle ne satisfait pas le schéma
+/// de soumission, seulement sa version partielle.
+model Brouillon {
+  id String @id @default(cuid())
+
+  profilId String @db.Uuid
+
+  /// Type d'entité concernée : Employe, ReleveActivite, AppelOffres…
+  entite String
+  /// Identifiant de l'entité en cours de modification. `null` en création.
+  entiteId String?
+
+  donnees Json
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@unique([profilId, entite, entiteId])
+  @@index([modifieLe])
+  @@map("brouillons")
+}
+
+/// Paramètres applicatifs typés par clé. Évite une table par famille.
+model Parametre {
+  id      String @id @default(cuid())
+  cle     String @unique
+  valeur  String // sérialisé, typé côté applicatif via zod
+  type    String // NUMBER, STRING, BOOLEAN, JSON
+  groupe  String // AO, PROJET, RELEVE, RH, PAIE
+  libelle String
+  aide    String?
+
+  modifieParId String?
+  modifieLe    DateTime @updatedAt
+
+  @@index([groupe])
+  @@map("parametres")
+}
+
+/// Journal d'audit transverse. Toute décision opposable y est tracée :
+/// validations, refus, changements de règle, révisions de grille.
+model JournalEvenement {
+  id String @id @default(cuid())
+
+  entite   String // Employe, Contrat, DemandeAbsence, PeriodePaieChantier…
+  entiteId String
+  action   String // CREATION, MODIFICATION, VALIDATION, REFUS, ARCHIVAGE
+
+  auteurId  String? @db.Uuid
+  auteur    Profil? @relation(fields: [auteurId], references: [id])
+  auteurNom String
+
+  /// Différentiel avant/après, ou contexte de la décision
+  details Json?
+  commentaire String?
+
+  survenuLe DateTime @default(now())
+
+  @@index([entite, entiteId])
+  @@index([survenuLe])
+  @@map("journal_evenements")
+}
+
+/// File de notifications. Alimentée par les règles métier :
+/// échéance de contrat, jalon en retard, période de paie à clôturer,
+/// dérogation en attente, habilitation qui expire.
+model Notification {
+  id String @id @default(cuid())
+
+  destinataireId String  @db.Uuid
+  type           String // ECHEANCE_CONTRAT, JALON_RETARD, PAIE_A_CLOTURER…
+  titre          String
+  message        String
+  lienEntite     String?
+  lienEntiteId   String?
+
+  lue   Boolean   @default(false)
+  lueLe DateTime?
+
+  /// Envoi par courriel via Resend
+  emailEnvoye   Boolean   @default(false)
+  emailEnvoyeLe DateTime?
+  emailResendId String?
+
+  creeLe DateTime @default(now())
+
+  @@index([destinataireId, lue])
+  @@index([emailEnvoye])
+  @@map("notifications")
+}
