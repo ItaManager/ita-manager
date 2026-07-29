@@ -37,5 +37,9 @@ export default defineConfig({
         email TEXT
       );
     `,
+    // process.env est déjà chargé par le script npm appelant (dotenv-cli,
+    // .env.dev) avant que `prisma db seed` ne s'exécute — tsx hérite du
+    // même process.env, pas besoin d'un second wrapper dotenv ici.
+    seed: "tsx prisma/seed.ts",
   },
 });
