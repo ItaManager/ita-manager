@@ -82,9 +82,30 @@ export function InscriptionTotp() {
     );
   }
 
+  const ETAPES = ["Configuration", "Vérification", "Codes de secours"];
+  const etapeNum = etape === "demarrage" ? 1 : etape === "qr" ? 2 : 3;
+
   if (etape === "qr") {
     return (
       <div className="flex flex-col gap-4">
+        <div className="mb-2 flex gap-1.5">
+          {ETAPES.map((_, i) => (
+            <span
+              key={i}
+              className="h-1.5 flex-1 rounded-full"
+              style={{
+                background:
+                  i + 1 <= etapeNum
+                    ? "var(--success)"
+                    : "var(--success-soft)",
+              }}
+            />
+          ))}
+        </div>
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Activation · étape {etapeNum} sur {ETAPES.length}
+        </p>
+
         <p className="text-sm text-foreground">
           Scannez ce code avec votre application d&apos;authentification,
           puis saisissez le code à 6 chiffres généré.
@@ -176,6 +197,22 @@ export function InscriptionTotp() {
 
   return (
     <div className="flex flex-col gap-5">
+      <div className="mb-2 flex gap-1.5">
+        {ETAPES.map((_, i) => (
+          <span
+            key={i}
+            className="h-1.5 flex-1 rounded-full"
+            style={{
+              background:
+                i + 1 <= etapeNum ? "var(--success)" : "var(--success-soft)",
+            }}
+          />
+        ))}
+      </div>
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        Activation · étape {etapeNum} sur {ETAPES.length}
+      </p>
+
       <Alert className="border-warning bg-warning-soft">
         <AlertTriangle className="size-4 text-warning" />
         <AlertTitle className="text-warning">

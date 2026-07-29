@@ -6,6 +6,7 @@ import { demanderReinitialisation } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { BlocIdentite } from "@/components/bloc-identite";
 
 export default function PageMotDePasseOublie() {
   const [envoye, setEnvoye] = useState(false);
@@ -21,9 +22,15 @@ export default function PageMotDePasseOublie() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background p-8">
-      <h1 className="text-2xl font-bold text-primary">ITA Manager</h1>
+      <BlocIdentite />
 
-      <div className="flex w-full max-w-sm flex-col gap-4 rounded-xl border border-border bg-card p-6">
+      <div className="flex w-full max-w-sm flex-col gap-4 rounded-xl border border-border bg-card p-8">
+        <h1 className="text-xl font-semibold text-primary">
+          Mot de passe oublié
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Recevez un lien de réinitialisation par e-mail.
+        </p>
         {envoye ? (
           <p className="text-sm text-foreground">
             Si un compte existe avec cette adresse, un e-mail de

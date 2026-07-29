@@ -3,11 +3,13 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AlertTriangle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { consommerCodeSecours } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { BlocIdentite } from "@/components/bloc-identite";
 
 type Etape = "identifiants" | "defi2fa";
 
@@ -29,6 +31,7 @@ export default function PageConnexion() {
   const [utiliserCodeSecours, setUtiliserCodeSecours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [enCours, setEnCours] = useState(false);
+  const [tentatives, setTentatives] = useState(0);
 
   async function seConnecter(event: FormEvent) {
     event.preventDefault();
@@ -43,7 +46,8 @@ export default function PageConnexion() {
 
     if (error) {
       setEnCours(false);
-      setErreur("Identifiants incorrects. Vérifiez votre e-mail et votre mot de passe.");
+      setTentatives((t) => t + 1);
+      setErreur("Identifiants incorrects.");
       return;
     }
 
@@ -97,11 +101,17 @@ export default function PageConnexion() {
   if (etape === "defi2fa") {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background p-8">
-        <h1 className="text-2xl font-bold text-primary">ITA Manager</h1>
+        <BlocIdentite />
         <form
           onSubmit={validerDefi}
-          className="flex w-full max-w-sm flex-col gap-4 rounded-xl border border-border bg-card p-6"
+          className="flex w-full max-w-sm flex-col gap-4 rounded-xl border border-border bg-card p-8"
         >
+          <h1 className="text-xl font-semibold text-primary">
+            Double authentification
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Saisissez le code généré par votre application.
+          </p>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="code">
               {utiliserCodeSecours ? "Code de secours" : "Code à 6 chiffres"}
@@ -162,12 +172,16 @@ export default function PageConnexion() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background p-8">
-      <h1 className="text-2xl font-bold text-primary">ITA Manager</h1>
+      <BlocIdentite />
 
       <form
         onSubmit={seConnecter}
-        className="flex w-full max-w-sm flex-col gap-4 rounded-xl border border-border bg-card p-6"
+        className="flex w-full max-w-sm flex-col gap-4 rounded-xl border border-border bg-card p-8"
       >
+        <h1 className="text-xl font-semibold text-primary">Connexion</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Accédez à votre espace de travail.
+        </p>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email">E-mail</Label>
           <Input
@@ -193,9 +207,22 @@ export default function PageConnexion() {
         </div>
 
         {erreur && (
-          <p role="alert" className="statut statut-erreur">
-            {erreur}
-          </p>
+          <div
+            role="alert"
+            className="flex items-start gap-2 rounded-lg bg-destructive-soft px-4 py-3 text-sm text-destructive"
+          >
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+            <div>
+              {erreur}
+              {tentatives >= 3 && (
+                <p className="mt-1 text-xs">
+                  Le message reste volontairement générique : il n&apos;indique
+                  pas si c&apos;est l&apos;adresse ou le mot de passe qui est
+                  erroné.
+                </p>
+              )}
+            </div>
+          </div>
         )}
 
         <Button type="submit" disabled={enCours}>
