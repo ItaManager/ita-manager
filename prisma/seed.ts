@@ -9,7 +9,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { randomBytes } from "node:crypto";
-import { prismaDirect as prisma } from "../lib/db/prisma";
+import { prismaDirect as prisma } from "../scripts/lib/prisma-direct";
 import { PERMISSIONS } from "../lib/auth/guard";
 
 const ROLES = [
