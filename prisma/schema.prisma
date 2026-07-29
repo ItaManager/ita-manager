@@ -1,0 +1,224 @@
+// =====================================================================
+// ITA SARL — Schéma de données — M0 (Socle)
+//
+// Ce fichier ne porte que les 9 modèles nécessaires à M0 (cf. décision
+// confirmée avec l'utilisateur, M0-SOCLE.md §4), pas le schéma cible
+// complet du produit — celui-ci reste consultable tel quel dans
+// docs/schema-cible.prisma, module par module.
+//
+// Conventions reprises du schéma cible :
+//   · Horodatages : DateTime @default(now()) en UTC
+//   · Suppression : archiveLe DateTime? — jamais de DELETE physique
+// =====================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Connexion mutualisée (pgBouncer, port 6543) — utilisée par l'application
+  url       = env("DATABASE_URL")
+  // Connexion directe (port 5432) — requise par les migrations et introspect
+  directUrl = env("DIRECT_URL")
+}
+
+// =====================================================================
+// PROFILS ET HABILITATIONS
+//
+// L'authentification est assurée par Supabase Auth : la table
+// `auth.users` détient l'identité, le mot de passe et les sessions.
+// Prisma ne la gère pas — elle vit dans un schéma que les migrations
+// ne doivent pas toucher.
+//
+// `Profil.id` reprend l'UUID de `auth.users.id`. Le lien est maintenu
+// par un trigger Postgres (migration écrite à la main) à la création
+// du compte Supabase.
+// =====================================================================
+
+model Profil {
+  /// UUID identique à auth.users.id (Supabase)
+  id String @id @db.Uuid
+
+  email        String    @unique
+  actif        Boolean   @default(true)
+  derniereConn DateTime?
+
+  /// Rattachement à un employé — colonne scalaire en M0 car le modèle
+  /// Employe n'existe pas encore. Sera promue en vraie relation
+  /// (@relation) quand Employe sera introduit. `null` pour les comptes
+  /// techniques (ex. Super Admin, hors organigramme).
+  employeId String? @unique
+
+  /// Délégation de pouvoir (décision B-03)
+  delegataireId   String?   @db.Uuid
+  delegationDebut DateTime? @db.Date
+  delegationFin   DateTime? @db.Date
+
+  roles          ProfilRole[]
+  evenements     JournalEvenement[]
+  codesSecoursMfa CodeSecoursMfa[]
+
+  creeLe    DateTime  @default(now())
+  modifieLe DateTime  @updatedAt
+  archiveLe DateTime?
+
+  @@map("profils")
+}
+
+/// Rôle applicatif. Distinct du poste : un Chef Chantier peut porter
+/// le rôle de saisie des relevés sans que le poste ne l'implique.
+model Role {
+  id          String  @id @default(cuid())
+  code        String  @unique // ADMIN, DRH, RH, DT, CT, CC, CE, DFC, DG
+  libelle     String
+  description String?
+  systeme     Boolean @default(false) // non supprimable
+
+  permissions RolePermission[]
+  profils     ProfilRole[]
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@map("roles")
+}
+
+model Permission {
+  id      String @id @default(cuid())
+  code    String @unique // employe:creer, derogation:valider, paie:validerDT…
+  libelle String
+  domaine String // RH, PAIE, TECHNIQUE, REFERENTIEL, ADMIN
+
+  roles RolePermission[]
+
+  @@index([domaine])
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model ProfilRole {
+  profilId   String   @db.Uuid
+  roleId     String
+  profil     Profil   @relation(fields: [profilId], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  attribueLe DateTime @default(now())
+
+  @@id([profilId, roleId])
+  @@map("profil_roles")
+}
+
+/// Codes de secours MFA (TOTP) — dix codes à usage unique, générés à
+/// l'activation, affichés une seule fois, jamais stockés en clair.
+/// Absent du schéma cible fourni, ajouté en M0 (décision confirmée
+/// avec l'utilisateur) car requis par le critère de recette de la
+/// double authentification.
+model CodeSecoursMfa {
+  id        String    @id @default(cuid())
+  profilId  String    @db.Uuid
+  profil    Profil    @relation(fields: [profilId], references: [id], onDelete: Cascade)
+  codeHache String
+  utiliseLe DateTime?
+  creeLe    DateTime  @default(now())
+
+  @@index([profilId])
+  @@map("codes_secours_mfa")
+}
+
+/// Créé en M0, utilisé à partir de M2 (décision E-03).
+model Brouillon {
+  id String @id @default(cuid())
+
+  profilId String @db.Uuid
+
+  /// Type d'entité concernée : Employe, ReleveActivite, AppelOffres…
+  entite String
+  /// Identifiant de l'entité en cours de modification. `null` en création.
+  entiteId String?
+
+  donnees Json
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@unique([profilId, entite, entiteId])
+  @@index([modifieLe])
+  @@map("brouillons")
+}
+
+/// Paramètres applicatifs typés par clé. Évite une table par famille.
+model Parametre {
+  id      String @id @default(cuid())
+  cle     String @unique
+  valeur  String // sérialisé, typé côté applicatif via zod
+  type    String // NUMBER, STRING, BOOLEAN, JSON
+  groupe  String // AO, PROJET, RELEVE, RH, PAIE
+  libelle String
+  aide    String?
+
+  modifieParId String?
+  modifieLe    DateTime @updatedAt
+
+  @@index([groupe])
+  @@map("parametres")
+}
+
+/// Journal d'audit transverse. Toute décision opposable y est tracée :
+/// validations, refus, changements de règle, révisions de grille.
+model JournalEvenement {
+  id String @id @default(cuid())
+
+  entite   String // Profil, Role, ProfilRole…
+  entiteId String
+  action   String // CREATION, MODIFICATION, VALIDATION, REFUS, ARCHIVAGE
+
+  auteurId  String? @db.Uuid
+  auteur    Profil? @relation(fields: [auteurId], references: [id])
+  auteurNom String
+
+  /// Différentiel avant/après, ou contexte de la décision
+  details     Json?
+  commentaire String?
+
+  survenuLe DateTime @default(now())
+
+  @@index([entite, entiteId])
+  @@index([survenuLe])
+  @@map("journal_evenements")
+}
+
+/// Créée en M0 pour que les modules suivants puissent y écrire
+/// (décision E-05). Non exploitée par un écran de M0.
+model Notification {
+  id String @id @default(cuid())
+
+  destinataireId String  @db.Uuid
+  type           String // ECHEANCE_CONTRAT, JALON_RETARD, PAIE_A_CLOTURER…
+  titre          String
+  message        String
+  lienEntite     String?
+  lienEntiteId   String?
+
+  lue   Boolean   @default(false)
+  lueLe DateTime?
+
+  /// Envoi par courriel via Resend
+  emailEnvoye   Boolean   @default(false)
+  emailEnvoyeLe DateTime?
+  emailResendId String?
+
+  creeLe DateTime @default(now())
+
+  @@index([destinataireId, lue])
+  @@index([emailEnvoye])
+  @@map("notifications")
+}
