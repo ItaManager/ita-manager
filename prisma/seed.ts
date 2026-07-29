@@ -9,7 +9,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { randomBytes } from "node:crypto";
-import { prisma } from "../lib/db/prisma";
+import { prismaDirect as prisma } from "../lib/db/prisma";
 import { PERMISSIONS } from "../lib/auth/guard";
 
 const ROLES = [
@@ -59,11 +59,9 @@ const MATRICE: Record<string, readonly string[]> = {
   "employe:modifier": ["ADMIN", "DRH", "RH"],
   "employe:archiver": ["ADMIN", "DRH"],
   "employe:donneesSensibles": ["ADMIN", "DG", "DRH", "DFC"],
-  "organisation:consulter": ["ADMIN", "DG", "DRH", "RH", "DFC", "DT", "CT"],
-  "organisation:modifier": ["ADMIN", "DRH"],
-  "referentiel:creer": ["ADMIN", "DRH", "DT"],
-  "direction:creer": ["ADMIN"],
-  "posteDirection:affecter": ["ADMIN"],
+  "referentiel:creer": ["ADMIN", "DRH", "DT"], // M1: créer services et postes
+  "direction:creer": ["ADMIN"], // M1: Super Admin seul
+  "posteDirection:affecter": ["ADMIN"], // M1: Super Admin seul
   "absence:demander": ["ADMIN", "DG", "DRH", "RH", "DFC", "DT", "CT", "CC", "CE"],
   "absence:valider": ["ADMIN", "DRH"],
   "reglesConges:modifier": ["ADMIN"],
@@ -100,14 +98,15 @@ const supabaseAdmin = createClient(
 );
 
 async function seedPermissions() {
-  for (const permission of PERMISSIONS) {
+  const permissionsList = Object.values(PERMISSIONS);
+  for (const permission of permissionsList) {
     await prisma.permission.upsert({
       where: { code: permission.code },
       create: permission,
       update: { libelle: permission.libelle, domaine: permission.domaine },
     });
   }
-  console.log(`  ${PERMISSIONS.length} permissions`);
+  console.log(`  ${permissionsList.length} permissions`);
 }
 
 async function seedRoles() {
@@ -126,6 +125,39 @@ async function seedRolePermissions() {
   const permissions = await prisma.permission.findMany();
   const roleId = Object.fromEntries(roles.map((r) => [r.code, r.id]));
   const permissionId = Object.fromEntries(permissions.map((p) => [p.code, p.id]));
+
+  // Contrôle bidirectionnel : MATRICE ↔ PERMISSIONS doivent être synchrones
+  const codesPermissionsCatalogue = Object.keys(PERMISSIONS);
+  const codesPermissionsMatrice = Object.keys(MATRICE);
+
+  // 1. Permissions dans MATRICE absentes du catalogue
+  const permissionsInconnues = codesPermissionsMatrice.filter(
+    (code) => !codesPermissionsCatalogue.includes(code)
+  );
+
+  // 2. Permissions au catalogue absentes de MATRICE (donc inutilisables)
+  const permissionsSansRole = codesPermissionsCatalogue.filter(
+    (code) => !codesPermissionsMatrice.includes(code)
+  );
+
+  let erreurs = false;
+
+  if (permissionsInconnues.length > 0) {
+    console.error("\n❌ ERREUR SEED : Permissions dans MATRICE absentes du catalogue PERMISSIONS:");
+    permissionsInconnues.forEach((code) => console.error(`   - ${code}`));
+    erreurs = true;
+  }
+
+  if (permissionsSansRole.length > 0) {
+    console.error("\n❌ ERREUR SEED : Permissions au catalogue non attribuées à un rôle (inutilisables):");
+    permissionsSansRole.forEach((code) => console.error(`   - ${code}`));
+    erreurs = true;
+  }
+
+  if (erreurs) {
+    console.error("\nLe seed ne peut continuer avec une divergence catalogue/matrice.");
+    process.exit(1);
+  }
 
   let count = 0;
   for (const [permissionCode, roleCodes] of Object.entries(MATRICE)) {
@@ -321,6 +353,7 @@ async function seedPostes() {
     { code: "RELAIS_QHSE", libelle: "Relais QHSE", niveau: "OPERATIONNEL", directionId: DAR.id, serviceId: qhse.id },
   ];
 
+  // PASSE 1 : Créer tous les postes sans superieurPosteId
   for (const poste of postes) {
     await prisma.poste.upsert({
       where: { code: poste.code },
@@ -338,6 +371,80 @@ async function seedPostes() {
   }
 
   console.log(`  ✅ ${postes.length} postes créés`);
+
+  // PASSE 2 : Résoudre la hiérarchie (superieurPosteId)
+  console.log("📋 Seed M1 — Hiérarchie");
+
+  // Récupérer tous les postes créés
+  const postesDB = await prisma.poste.findMany({
+    select: { id: true, code: true },
+  });
+  const postesMap = new Map(postesDB.map((p) => [p.code, p.id]));
+
+  // Définir la hiérarchie : code poste → code supérieur
+  // Source : DECISIONS.md A-06, A-08, A-08 bis
+  // ATTENTION : chaîne hiérarchique ≠ chaîne fonctionnelle
+  // Le Conducteur de Travaux vise les relevés (fonctionnel) mais n'est PAS
+  // le supérieur du Chef Chantier (hiérarchique).
+  const hierarchie: Record<string, string> = {
+    // DG
+    ASST_DG: "DIR_GENERAL",
+
+    // DFC
+    DIR_FINANCIER: "DIR_GENERAL",
+    CHEF_ACHATS: "DIR_FINANCIER",
+    ASST_COMPTABLE: "DIR_FINANCIER",
+
+    // DT
+    DIR_TECHNIQUE: "DIR_GENERAL",
+    CONDUCTEUR_TRAVAUX: "DIR_TECHNIQUE",
+    CHEF_CHANTIER: "DIR_TECHNIQUE", // A-08 : hiérarchique direct DT, pas CT
+    CHEF_CHANTIER_ADJ: "DIR_TECHNIQUE", // A-08 bis : pair du CC, pas subordonné
+    CHEF_EQUIPE: "CHEF_CHANTIER",
+    OUVRIER: "CHEF_EQUIPE",
+    MANOEUVRE: "CHEF_EQUIPE",
+    CHARGE_ETUDES: "DIR_TECHNIQUE",
+    CHEF_AEP: "DIR_TECHNIQUE",
+    CHEF_ASSAINISSEMENT: "DIR_TECHNIQUE",
+    CHEF_ROUTES: "DIR_TECHNIQUE",
+    CHEF_LOGISTIQUE: "DIR_TECHNIQUE",
+    CHEF_GARAGE: "CHEF_LOGISTIQUE",
+    GESTIONNAIRE_STOCKS: "CHEF_LOGISTIQUE",
+    MECANICIEN: "CHEF_GARAGE",
+    CONDUCTEUR_ENGINS: "CHEF_GARAGE",
+    GARDIEN: "CHEF_GARAGE", // A-06 : équipe garage sous Chef Garage
+    CHAUFFEUR: "CHEF_GARAGE",
+
+    // DAR
+    DIR_ADMIN_RH: "DIR_GENERAL",
+    ASST_RH: "DIR_ADMIN_RH",
+    COURSIER: "DIR_ADMIN_RH",
+    TECH_SURFACE: "DIR_ADMIN_RH",
+    CHEF_QHSE: "DIR_ADMIN_RH",
+    ASST_QHSE: "CHEF_QHSE",
+    RELAIS_QHSE: "CHEF_QHSE",
+  };
+
+  // Appliquer en une seule transaction
+  await prisma.$transaction(
+    Object.entries(hierarchie).map(([codePoste, codeSuperieur]) => {
+      const posteId = postesMap.get(codePoste);
+      const superieurId = postesMap.get(codeSuperieur);
+
+      if (!posteId || !superieurId) {
+        throw new Error(
+          `Hiérarchie invalide : ${codePoste} → ${codeSuperieur}`
+        );
+      }
+
+      return prisma.poste.update({
+        where: { id: posteId },
+        data: { superieurPosteId: superieurId },
+      });
+    })
+  );
+
+  console.log(`  ✅ Hiérarchie configurée pour ${Object.keys(hierarchie).length} postes`);
 }
 
 async function main() {
