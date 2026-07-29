@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Building2, Briefcase, FileText } from "lucide-react";
+import { Building2, Briefcase, FileText, Users, ScrollText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -32,6 +32,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Link href="/organisation/postes" className="gap-2">
                 <Briefcase className="size-4" aria-hidden="true" />
                 Postes
+              </Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/admin/utilisateurs" className="gap-2">
+                <Users className="size-4" aria-hidden="true" />
+                Utilisateurs
+              </Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/admin/journal" className="gap-2">
+                <ScrollText className="size-4" aria-hidden="true" />
+                Journal
               </Link>
             </Button>
           </nav>
