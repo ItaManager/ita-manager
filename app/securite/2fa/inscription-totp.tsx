@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
+import { AlertTriangle, Copy, Printer, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { genererCodesSecours } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type Etape = "demarrage" | "qr" | "codes";
 
@@ -136,19 +138,78 @@ export function InscriptionTotp() {
     );
   }
 
+  async function copierCodes() {
+    const texte = codesSecours.join("\n");
+    await navigator.clipboard.writeText(texte);
+  }
+
+  function imprimerCodes() {
+    const contenu = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>ITA Manager — Codes de secours</title>
+          <style>
+            body { font-family: system-ui, sans-serif; padding: 2rem; max-width: 600px; margin: 0 auto; }
+            h1 { color: #1D186C; font-size: 1.5rem; margin-bottom: 0.5rem; }
+            p { color: #6B7280; font-size: 0.875rem; margin-bottom: 1.5rem; }
+            .codes { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+            code { font-family: monospace; font-size: 1rem; color: #1D186C; }
+          </style>
+        </head>
+        <body>
+          <h1>ITA Manager — Codes de secours</h1>
+          <p>Conservez ces codes dans un endroit sûr. Chacun ne fonctionne qu'une seule fois.</p>
+          <div class="codes">
+            ${codesSecours.map((c) => `<code>${c}</code>`).join("")}
+          </div>
+        </body>
+      </html>
+    `;
+    const fenetre = window.open("", "_blank");
+    if (fenetre) {
+      fenetre.document.write(contenu);
+      fenetre.document.close();
+      fenetre.print();
+    }
+  }
+
   return (
-    <div className="flex flex-col gap-4">
-      <p className="statut statut-succes w-fit">Double authentification activée</p>
-      <p className="text-sm text-foreground">
-        Notez ces dix codes de secours dans un endroit sûr. Chacun ne
-        fonctionne qu&apos;une seule fois et ne sera plus jamais affiché.
-      </p>
-      <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-4 font-mono text-sm">
+    <div className="flex flex-col gap-5">
+      <Alert className="border-warning bg-warning-soft">
+        <AlertTriangle className="size-4 text-warning" />
+        <AlertTitle className="text-warning">
+          Ces codes ne seront plus jamais affichés
+        </AlertTitle>
+        <AlertDescription className="text-warning">
+          Imprimez-les ou notez-les maintenant. Ils sont votre seul recours si
+          vous perdez votre téléphone.
+        </AlertDescription>
+      </Alert>
+
+      <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-4">
         {codesSecours.map((c) => (
-          <span key={c}>{c}</span>
+          <code key={c} className="font-mono text-sm text-primary">
+            {c}
+          </code>
         ))}
       </div>
-      <Button onClick={() => router.push("/")}>J&apos;ai noté mes codes</Button>
+
+      <div className="flex gap-2">
+        <Button variant="outline" onClick={copierCodes} className="flex-1">
+          <Copy className="size-4" />
+          Copier
+        </Button>
+        <Button variant="outline" onClick={imprimerCodes} className="flex-1">
+          <Printer className="size-4" />
+          Imprimer
+        </Button>
+      </div>
+
+      <Button onClick={() => router.push("/")} className="w-full bg-success">
+        <Check className="size-4" />
+        J&apos;ai conservé mes codes, accéder à l&apos;application
+      </Button>
     </div>
   );
 }
