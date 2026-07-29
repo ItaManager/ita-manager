@@ -144,12 +144,94 @@ async function seedPostes() {
   console.log(`  ✅ ${postes.length} postes créés`);
 }
 
+async function seedHierarchie() {
+  console.log("📋 Seed M1 — Hiérarchie des postes");
+
+  // Récupération de tous les postes en une seule requête
+  const postes = await prisma.poste.findMany();
+  const posteByCode = new Map(postes.map((p) => [p.code, p]));
+
+  const getPoste = (code: string) => {
+    const p = posteByCode.get(code);
+    if (!p) throw new Error(`Poste ${code} introuvable`);
+    return p;
+  };
+
+  const DG = getPoste("DIR_GENERAL");
+  const DFC = getPoste("DIR_FINANCIER");
+  const DT = getPoste("DIR_TECHNIQUE");
+  const DAR = getPoste("DIR_ADMIN_RH");
+
+  // Chaîne hiérarchique selon DECISIONS.md
+  const hierarchie = [
+    // DG
+    { code: "DIR_GENERAL", superieurCode: null }, // Sommet
+
+    // DG › Assistante DG
+    { code: "ASST_DG", superieurCode: "DIR_GENERAL" },
+
+    // DG › Directeurs
+    { code: "DIR_FINANCIER", superieurCode: "DIR_GENERAL" },
+    { code: "DIR_TECHNIQUE", superieurCode: "DIR_GENERAL" },
+    { code: "DIR_ADMIN_RH", superieurCode: "DIR_GENERAL" },
+
+    // DFC › Chef Achats, Assistant comptable (A-07)
+    { code: "CHEF_ACHATS", superieurCode: "DIR_FINANCIER" },
+    { code: "ASST_COMPTABLE", superieurCode: "DIR_FINANCIER" },
+
+    // DT › Chefs de service (A-08)
+    { code: "CHARGE_ETUDES", superieurCode: "DIR_TECHNIQUE" },
+    { code: "CHEF_AEP", superieurCode: "DIR_TECHNIQUE" },
+    { code: "CHEF_ASSAINISSEMENT", superieurCode: "DIR_TECHNIQUE" },
+    { code: "CHEF_ROUTES", superieurCode: "DIR_TECHNIQUE" },
+    { code: "CHEF_LOGISTIQUE", superieurCode: "DIR_TECHNIQUE" },
+
+    // DT › Chaîne chantier (A-08 bis)
+    { code: "CONDUCTEUR_TRAVAUX", superieurCode: "DIR_TECHNIQUE" },
+    { code: "CHEF_CHANTIER", superieurCode: "DIR_TECHNIQUE" }, // ⚠️ DT, PAS Conducteur de Travaux
+    { code: "CHEF_CHANTIER_ADJ", superieurCode: "DIR_TECHNIQUE" },
+    { code: "CHEF_EQUIPE", superieurCode: "CHEF_CHANTIER" },
+    { code: "OUVRIER", superieurCode: "CHEF_EQUIPE" },
+    { code: "MANOEUVRE", superieurCode: "CHEF_EQUIPE" },
+
+    // Service Logistique (A-06)
+    { code: "GESTIONNAIRE_STOCKS", superieurCode: "CHEF_LOGISTIQUE" },
+    { code: "CHEF_GARAGE", superieurCode: "CHEF_LOGISTIQUE" },
+    { code: "MECANICIEN", superieurCode: "CHEF_GARAGE" },
+    { code: "CONDUCTEUR_ENGINS", superieurCode: "CHEF_GARAGE" },
+    { code: "CHAUFFEUR", superieurCode: "CHEF_GARAGE" },
+    { code: "GARDIEN", superieurCode: "CHEF_GARAGE" },
+
+    // DAR (A-10)
+    { code: "ASST_RH", superieurCode: "DIR_ADMIN_RH" },
+    { code: "COURSIER", superieurCode: "DIR_ADMIN_RH" },
+    { code: "TECH_SURFACE", superieurCode: "DIR_ADMIN_RH" },
+    { code: "CHEF_QHSE", superieurCode: "DIR_ADMIN_RH" },
+    { code: "ASST_QHSE", superieurCode: "CHEF_QHSE" },
+    { code: "RELAIS_QHSE", superieurCode: "ASST_QHSE" },
+  ];
+
+  // Mise à jour
+  for (const { code, superieurCode } of hierarchie) {
+    const poste = getPoste(code);
+    const superieurId = superieurCode ? getPoste(superieurCode).id : null;
+
+    await prisma.poste.update({
+      where: { id: poste.id },
+      data: { superieurPosteId: superieurId },
+    });
+  }
+
+  console.log(`  ✅ ${hierarchie.length} liens hiérarchiques renseignés`);
+}
+
 async function main() {
   console.log("🌱 Seed M1 — début\n");
 
   await seedDirections();
   await seedServices();
   await seedPostes();
+  await seedHierarchie();
 
   console.log("\n✅ Seed M1 — terminé");
 }

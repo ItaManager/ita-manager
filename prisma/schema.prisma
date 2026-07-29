@@ -288,6 +288,14 @@ model Poste {
   directionId String
   direction   Direction @relation(fields: [directionId], references: [id])
 
+  /// Supérieur par défaut au niveau du poste. Sert à proposer
+  /// automatiquement le bon supérieur lors d'une affectation.
+  /// Affectation.superieurId reste le lien réel, personne par personne,
+  /// et peut s'en écarter.
+  superieurPosteId String?
+  superieurPoste   Poste?  @relation("HierarchiePoste", fields: [superieurPosteId], references: [id])
+  subordonnesPoste Poste[] @relation("HierarchiePoste")
+
   reserveAdmin     Boolean @default(false)
   /// Un seul titulaire actif à la fois (postes de direction)
   titulaireUnique  Boolean @default(false)
