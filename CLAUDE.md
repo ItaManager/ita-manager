@@ -6,13 +6,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **ITA Manager** — Internal ERP for ITA SARL, a construction company in Ivory Coast. Complete rebuild from scratch built with Next.js 16, React 19, Tailwind v4, Prisma, Supabase, and deployed on Vercel.
 
-**Current Status**: M0 (Foundation module) completed and corrected (v0.1.1). The application implements authentication, TOTP 2FA, session locking, role-based permissions, and audit logging.
+**Current Status**: M1 (Organisation) completed (v0.2.0). The application implements authentication, TOTP 2FA, session locking, role-based permissions, audit logging, and organizational structure management.
 
-**Recent corrections (July 2026)**:
+**M0 corrections (v0.1.1 - July 2026)**:
 - QR code TOTP generated client-side with `qrcode.react`
 - Numeric validation on 6-digit code fields
 - Dedicated backup codes screen with copy/print
 - Visual polish: identity block, progress indicator, password strength gauge, eye toggle button
+
+**M1 features (v0.2.0 - July 2026)**:
+- Organizational structure: 4 directions, 8 services, 30 positions
+- CRUD interfaces for services and positions with server-side pagination
+- Visual org chart with hierarchical display
+- Combobox with inline creation (R-04 compliance)
+- Permissions: `organisation:consulter`, `organisation:modifier`
 
 **Stack**: Next.js (App Router) · React 19 · Tailwind v4 · shadcn/ui · Prisma · Supabase (PostgreSQL + Auth + Storage) · Resend · Cloudflare
 
@@ -165,9 +172,11 @@ await prisma.journalEvenement.create({
 - Search ignores accents
 - Allow inline creation when appropriate (not for structural data)
 
-## Database Schema (M0 Models)
+## Database Schema
 
 Core models in `prisma/schema.prisma`:
+
+### M0 Models
 
 - **Profil** — User accounts (linked to Supabase `auth.users` by UUID)
 - **Role** & **Permission** — Authorization (9 roles, 30 permissions)
@@ -179,6 +188,18 @@ Core models in `prisma/schema.prisma`:
 - **Parametre** — Application settings (typed by key)
 
 **Trigger**: `auth.users` insertion creates corresponding `profils` row automatically.
+
+### M1 Models
+
+- **Direction** — Organizational departments (4: DG, DFC, DT, DAR)
+- **Service** — Services within directions (8 total)
+- **Poste** — Positions in hierarchy (30 total)
+- **NiveauHierarchique** — Enum (DIRECTION, CADRE, SUPPORT, OPERATIONNEL)
+
+Key relationships:
+- `Direction` 1:N `Service` 1:N `Poste`
+- `Direction` 1:N `Poste` (direct attachment for direction-level positions)
+- `Poste.serviceId` nullable (chain positions attached to direction, not service)
 
 ## Common Pitfalls (from PATRONS.md)
 
@@ -221,7 +242,7 @@ These return explicit error messages like: "You are the last administrator. Desi
 Application built module by module:
 
 - **M0** (✅ Complete v0.1.1) — Foundation: auth, 2FA, permissions, layout
-- **M1** (Planned) — Organization: departments, services, positions
+- **M1** (✅ Complete v0.2.0) — Organization: departments, services, positions
 - **M2** (Planned) — Employees: profiles, contracts, documents
 - **M3** (Planned) — Leave management
 - **M4** (Planned) — Compensation
@@ -268,6 +289,12 @@ npx dotenv -e .env.dev -- npx tsx scripts/reset-password-admin.ts
 
 # Supprimer les facteurs TOTP bloqués (nettoyage)
 npx dotenv -e .env.dev -- npx tsx scripts/reset-totp.ts
+
+# Seed M1 uniquement (directions, services, postes)
+npx dotenv -e .env.dev -- npx tsx scripts/seed-m1-only.ts
+
+# Seed permissions M1 uniquement
+npx dotenv -e .env.dev -- npx tsx scripts/seed-permissions-m1.ts
 ```
 
 **Note :** Ces scripts utilisent `SUPABASE_SERVICE_ROLE_KEY` et ne doivent JAMAIS être utilisés en production.
@@ -281,6 +308,8 @@ npx dotenv -e .env.dev -- npx tsx scripts/reset-totp.ts
 **Database**:
 - `prisma/schema.prisma` — Data model
 - `prisma/seed.ts` — Seed script (roles, permissions, Super Admin)
+- `scripts/seed-m1-only.ts` — M1 seed (directions, services, postes)
+- `scripts/seed-permissions-m1.ts` — M1 permissions seed
 - `lib/db/prisma.ts` — Prisma client singleton
 
 **Supabase**:
@@ -299,7 +328,7 @@ From DECISIONS.md:
 - **8 Services**: Achats, Comptabilité, Études et AO, AEP, Assainissement, Routes, Logistique, QHSE
 - **30 Positions** (Postes)
 - **9 Application Roles**: ADMIN, DG, DRH, RH, DFC, DT, CT, CC, CE
-- **30 Permissions** across 5 domains: RH, PAIE, TECHNIQUE, REFERENTIEL, ADMIN
+- **31 Permissions** across 5 domains: RH, PAIE, TECHNIQUE, REFERENTIEL, ADMIN
 
 **Hierarchical chain ≠ Functional chain**: A site supervisor approves leave requests (hierarchical) but a Works Supervisor validates activity reports (functional).
 

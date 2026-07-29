@@ -59,6 +59,8 @@ const MATRICE: Record<string, readonly string[]> = {
   "employe:modifier": ["ADMIN", "DRH", "RH"],
   "employe:archiver": ["ADMIN", "DRH"],
   "employe:donneesSensibles": ["ADMIN", "DG", "DRH", "DFC"],
+  "organisation:consulter": ["ADMIN", "DG", "DRH", "RH", "DFC", "DT", "CT"],
+  "organisation:modifier": ["ADMIN", "DRH"],
   "referentiel:creer": ["ADMIN", "DRH", "DT"],
   "direction:creer": ["ADMIN"],
   "posteDirection:affecter": ["ADMIN"],

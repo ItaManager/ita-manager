@@ -26,6 +26,16 @@ export const PERMISSIONS = [
     domaine: "RH",
   },
   {
+    code: "organisation:consulter",
+    libelle: "Consulter l'organigramme",
+    domaine: "REFERENTIEL",
+  },
+  {
+    code: "organisation:modifier",
+    libelle: "Modifier l'organigramme (services, postes)",
+    domaine: "REFERENTIEL",
+  },
+  {
     code: "referentiel:creer",
     libelle: "Créer une valeur de référentiel",
     domaine: "REFERENTIEL",
