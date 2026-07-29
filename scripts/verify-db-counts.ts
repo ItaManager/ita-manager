@@ -1,6 +1,5 @@
 #!/usr/bin/env tsx
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import { prismaDirect as prisma } from "./lib/prisma-direct";
 
 async function main() {
   const [
@@ -34,6 +33,4 @@ async function main() {
   );
 }
 
-main()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect());
+main().catch(console.error);

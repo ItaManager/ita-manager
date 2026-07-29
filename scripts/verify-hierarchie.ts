@@ -4,8 +4,7 @@
  * Usage: npx dotenv -e .env.dev -- npx tsx scripts/verify-hierarchie.ts
  */
 
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import { prismaDirect as prisma } from "./lib/prisma-direct";
 
 async function main() {
   console.log("🔍 Vérification superieurPosteId en base réelle\n");
@@ -70,6 +69,4 @@ async function main() {
   console.log("\n✅ Vérification terminée");
 }
 
-main()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect());
+main().catch(console.error);
