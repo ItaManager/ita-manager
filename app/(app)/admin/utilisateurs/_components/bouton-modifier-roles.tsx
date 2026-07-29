@@ -83,30 +83,40 @@ export function BoutonModifierRoles({
               </Alert>
             )}
 
+            {/* R-02 : Optimisé pour la lecture — checkboxes acceptables car 9 rôles seulement */}
             <div className="space-y-3">
-              {rolesDisponibles.map((role) => (
-                <div key={role.id} className="flex items-start space-x-3">
-                  <Checkbox
-                    id={`role-${role.id}`}
-                    checked={rolesSelectionnes.includes(role.id)}
-                    onCheckedChange={() => toggleRole(role.id)}
-                    disabled={isPending}
-                  />
-                  <div className="grid gap-1.5 leading-none">
-                    <Label
-                      htmlFor={`role-${role.id}`}
-                      className="font-medium cursor-pointer"
-                    >
-                      {role.libelle}
-                    </Label>
-                    {role.description && (
-                      <p className="text-xs text-muted-foreground">
-                        {role.description}
-                      </p>
-                    )}
+              <p className="text-sm text-muted-foreground">
+                Sélectionnez les rôles à attribuer à cet utilisateur.
+              </p>
+
+              <div className="space-y-3">
+                {rolesDisponibles.map((role) => (
+                  <div
+                    key={role.id}
+                    className="flex items-start space-x-3 rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                  >
+                    <Checkbox
+                      id={`role-${role.id}`}
+                      checked={rolesSelectionnes.includes(role.id)}
+                      onCheckedChange={() => toggleRole(role.id)}
+                      disabled={isPending}
+                    />
+                    <div className="flex-1 space-y-1">
+                      <Label
+                        htmlFor={`role-${role.id}`}
+                        className="font-medium cursor-pointer leading-none"
+                      >
+                        {role.libelle}
+                      </Label>
+                      {role.description && (
+                        <p className="text-xs text-muted-foreground">
+                          {role.description}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
 
