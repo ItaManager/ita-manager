@@ -2,9 +2,18 @@
 // verbatim, ne pas modifier sans validation (BRIEF-CLAUDE-CODE.md,
 // « ce que tu ne décides pas seul »).
 //
-// `exigerPermission` et `actionProtegee` — la garde d'autorisation
-// proprement dite — sont ajoutées à l'étape 0.5. Ce fichier ne porte pour
-// l'instant que le catalogue, nécessaire dès l'étape 0.3 (seed).
+// `exigerPermission` et `actionProtegee` ci-dessous sont une version
+// minimale, avancée de l'étape 0.5 à l'étape 0.4 parce que la
+// réinitialisation du second facteur par le Super Admin (0.4) est une
+// Server Action réservée et doit, comme toute Server Action, respecter
+// l'exigence bloquante n°1 de BRIEF-CLAUDE-CODE.md dès sa création — pas
+// de fenêtre où elle existerait sans garde. Les 3 garde-fous en dur
+// (retirerRole/desactiverProfil) et les pages /403 /404 restent prévus
+// pour l'étape 0.5, avec les écrans d'administration qui les rendent
+// pertinents.
+
+import { prisma } from "@/lib/db/prisma";
+import { createClient } from "@/lib/supabase/server";
 
 export const PERMISSIONS = [
   { code: "employe:lire", libelle: "Consulter les employés", domaine: "RH" },
@@ -107,3 +116,80 @@ export const PERMISSIONS = [
 ] as const;
 
 export type PermissionCode = (typeof PERMISSIONS)[number]["code"];
+
+export class PermissionRefusee extends Error {
+  constructor(code: PermissionCode) {
+    super(`Permission refusée : ${code}`);
+    this.name = "PermissionRefusee";
+  }
+}
+
+async function journaliserRefus(code: PermissionCode, userId: string | null, email: string | null) {
+  await prisma.journalEvenement.create({
+    data: {
+      entite: "Permission",
+      entiteId: userId ?? "anonyme",
+      action: "REFUS",
+      auteurId: userId,
+      auteurNom: email ?? "anonyme",
+      commentaire: `Permission refusée : ${code}`,
+    },
+  });
+}
+
+/**
+ * Authentifie via `getUser()` (jamais `getSession()` — SECURITE.md,
+ * exigence bloquante n°2), vérifie que le profil est actif et détient
+ * la permission demandée via ses rôles, journalise tout refus — y
+ * compris pour un appel non authentifié — avant de lever une erreur.
+ */
+export async function exigerPermission(
+  code: PermissionCode,
+): Promise<{ userId: string; email: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    await journaliserRefus(code, null, null);
+    throw new PermissionRefusee(code);
+  }
+
+  const profil = await prisma.profil.findUnique({
+    where: { id: user.id },
+    include: {
+      roles: {
+        include: { role: { include: { permissions: { include: { permission: true } } } } },
+      },
+    },
+  });
+
+  const autorise =
+    !!profil?.actif &&
+    profil.roles.some((profilRole) =>
+      profilRole.role.permissions.some((rp) => rp.permission.code === code),
+    );
+
+  if (!autorise) {
+    await journaliserRefus(code, user.id, user.email ?? null);
+    throw new PermissionRefusee(code);
+  }
+
+  return { userId: user.id, email: user.email ?? "" };
+}
+
+/**
+ * Enveloppe standard de toute Server Action protégée. `exigerPermission`
+ * s'exécute avant toute lecture/validation des paramètres reçus
+ * (SECURITE.md §4).
+ */
+export function actionProtegee<Args extends unknown[], Result>(
+  code: PermissionCode,
+  fn: (session: { userId: string; email: string }, ...args: Args) => Promise<Result>,
+) {
+  return async (...args: Args): Promise<Result> => {
+    const session = await exigerPermission(code);
+    return fn(session, ...args);
+  };
+}
