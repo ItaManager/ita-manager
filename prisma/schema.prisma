@@ -222,3 +222,83 @@ model Notification {
   @@index([emailEnvoye])
   @@map("notifications")
 }
+
+// =====================================================================
+// ORGANISATION — M1
+//
+// Trois niveaux : Direction › Service › Poste
+// Ces trois niveaux sont des TABLES et non des enums. L'organigramme
+// évolue (DECISIONS.md A-01 à A-11).
+// =====================================================================
+
+enum NiveauHierarchique {
+  DIRECTION
+  CADRE
+  SUPPORT
+  OPERATIONNEL
+}
+
+model Direction {
+  id           String  @id @default(cuid())
+  code         String  @unique // DG, DFC, DT, DAR
+  libelle      String
+  ordre        Int     @default(0)
+  reserveAdmin Boolean @default(false) // création/affectation réservée
+
+  services Service[]
+  postes   Poste[]
+
+  creeLe    DateTime  @default(now())
+  modifieLe DateTime  @updatedAt
+  archiveLe DateTime?
+
+  @@map("directions")
+}
+
+model Service {
+  id      String @id @default(cuid())
+  code    String @unique
+  libelle String
+  ordre   Int    @default(0)
+
+  directionId String
+  direction   Direction @relation(fields: [directionId], references: [id])
+
+  postes Poste[]
+
+  creeLe    DateTime  @default(now())
+  modifieLe DateTime  @updatedAt
+  archiveLe DateTime?
+
+  @@index([directionId])
+  @@map("services")
+}
+
+model Poste {
+  id      String             @id @default(cuid())
+  code    String             @unique
+  libelle String
+  niveau  NiveauHierarchique
+
+  /// Rattachement à un service. NULL = poste transverse à la direction
+  /// (ex: chaîne chantier DT, sans service spécifique)
+  serviceId String?
+  service   Service? @relation(fields: [serviceId], references: [id])
+
+  directionId String
+  direction   Direction @relation(fields: [directionId], references: [id])
+
+  reserveAdmin     Boolean @default(false)
+  /// Un seul titulaire actif à la fois (postes de direction)
+  titulaireUnique  Boolean @default(false)
+  /// Ouvre un compteur de congés annuels (DECISIONS.md)
+  ouvreDroitConges Boolean @default(true)
+
+  creeLe    DateTime  @default(now())
+  modifieLe DateTime  @updatedAt
+  archiveLe DateTime?
+
+  @@index([directionId])
+  @@index([serviceId])
+  @@map("postes")
+}
