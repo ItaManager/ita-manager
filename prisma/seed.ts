@@ -99,6 +99,9 @@ const supabaseAdmin = createClient(
 
 async function seedPermissions() {
   const permissionsList = Object.values(PERMISSIONS);
+  const codesAttendu = new Set(permissionsList.map((p) => p.code));
+
+  // Upsert des permissions du catalogue
   for (const permission of permissionsList) {
     await prisma.permission.upsert({
       where: { code: permission.code },
@@ -106,10 +109,35 @@ async function seedPermissions() {
       update: { libelle: permission.libelle, domaine: permission.domaine },
     });
   }
+
+  // Nettoyage des permissions obsolètes (retirées du catalogue)
+  const permissionsEnBase = await prisma.permission.findMany({
+    select: { code: true, id: true },
+  });
+
+  const obsoletes = permissionsEnBase.filter(
+    (p) => !codesAttendu.has(p.code)
+  );
+
+  if (obsoletes.length > 0) {
+    console.log(
+      `\n  ⚠️  ${obsoletes.length} permission(s) obsolète(s) retirée(s) :`
+    );
+    obsoletes.forEach((p) => console.log(`     - ${p.code}`));
+
+    // Suppression avec cascade (role_permissions supprimés automatiquement)
+    await prisma.permission.deleteMany({
+      where: { id: { in: obsoletes.map((p) => p.id) } },
+    });
+  }
+
   console.log(`  ${permissionsList.length} permissions`);
 }
 
 async function seedRoles() {
+  const codesAttendu = new Set(ROLES.map((r) => r.code));
+
+  // Upsert des rôles du registre
   for (const role of ROLES) {
     await prisma.role.upsert({
       where: { code: role.code },
@@ -117,6 +145,28 @@ async function seedRoles() {
       update: { libelle: role.libelle, description: role.description },
     });
   }
+
+  // Nettoyage des rôles obsolètes (retirés du registre)
+  // ATTENTION : ne touche que les rôles systeme = true (référentiels)
+  const rolesEnBase = await prisma.role.findMany({
+    where: { systeme: true },
+    select: { code: true, id: true },
+  });
+
+  const obsoletes = rolesEnBase.filter((r) => !codesAttendu.has(r.code));
+
+  if (obsoletes.length > 0) {
+    console.log(
+      `\n  ⚠️  ${obsoletes.length} rôle(s) obsolète(s) retiré(s) :`
+    );
+    obsoletes.forEach((r) => console.log(`     - ${r.code}`));
+
+    // Suppression avec cascade (profil_roles et role_permissions supprimés)
+    await prisma.role.deleteMany({
+      where: { id: { in: obsoletes.map((r) => r.id) } },
+    });
+  }
+
   console.log(`  ${ROLES.length} rôles`);
 }
 
