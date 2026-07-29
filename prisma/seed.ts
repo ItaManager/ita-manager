@@ -422,7 +422,7 @@ async function seedPostes() {
     TECH_SURFACE: "DIR_ADMIN_RH",
     CHEF_QHSE: "DIR_ADMIN_RH",
     ASST_QHSE: "CHEF_QHSE",
-    RELAIS_QHSE: "CHEF_QHSE",
+    RELAIS_QHSE: "ASST_QHSE",
   };
 
   // Appliquer en une seule transaction
