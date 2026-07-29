@@ -1,0 +1,315 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+**ITA Manager** — Internal ERP for ITA SARL, a construction company in Ivory Coast. Complete rebuild from scratch built with Next.js 16, React 19, Tailwind v4, Prisma, Supabase, and deployed on Vercel.
+
+**Current Status**: M0 (Foundation module) completed. The application implements authentication, TOTP 2FA, session locking, role-based permissions, and audit logging.
+
+**Stack**: Next.js (App Router) · React 19 · Tailwind v4 · shadcn/ui · Prisma · Supabase (PostgreSQL + Auth + Storage) · Resend · Cloudflare
+
+## Key Documentation (Read in Order)
+
+1. **DECISIONS.md** — Source of truth. In case of conflict, this document prevails.
+2. **SECURITE.md** — Security policy with 3 blocking requirements (see below)
+3. **PATRONS.md** — Nine reference implementations and UI rules
+4. **M0-SOCLE.md** — Foundation module specification
+5. **GUIDE-ENVIRONNEMENTS.md** — Environment setup and deployment
+
+## Critical Security Requirements (BLOCKING)
+
+These three requirements from SECURITE.md are non-negotiable:
+
+1. **Every Server Action starts with `exigerPermission()`**
+   - Server Actions are public HTTP endpoints
+   - Being called from a protected page does NOT protect them
+   - Use `actionProtegee()` wrapper or call `exigerPermission()` explicitly
+
+2. **Always use `supabase.auth.getUser()`, never `getSession()`**
+   - `getSession()` only reads the cookie without server validation
+   - Cookies can be forged
+   - Use `getUser()` for all access control decisions
+
+3. **`SUPABASE_SERVICE_ROLE_KEY` must NEVER reach the client**
+   - Never use `NEXT_PUBLIC_` prefix with this key
+   - Never import in client components
+   - This key bypasses all RLS protections
+
+## Development Commands
+
+```bash
+# Development server (uses .env.dev)
+npm run dev
+
+# Build
+npm run build
+
+# Linting
+npm run lint
+
+# Database commands (all use .env.dev)
+npm run db:migrate:dev        # Create and apply migration
+npm run db:seed               # Seed database with roles/permissions
+npm run db:studio:dev         # Open Prisma Studio
+
+# Production database (uses .env.local)
+npm run db:migrate:prod       # Apply migrations in production
+```
+
+## Environment Files
+
+**Two local environment files, never interchangeable:**
+
+| File | Purpose | Database |
+|------|---------|----------|
+| `.env.dev` | Development | `ita-manager-dev` |
+| `.env.local` | Production | `ita-manager` |
+
+All npm scripts explicitly target `.env.dev` via `dotenv -e .env.dev`.
+
+## Git Workflow
+
+**Branches:**
+- `main` — Production (protected, requires PR)
+- `dev` — Development work (current working branch)
+- `feat/*` — Feature branches (merge to dev)
+
+**Current branch**: `dev`
+**Main branch** (for PRs): `main`
+
+**Commit Convention:**
+- `feat(m0):` — New feature
+- `fix(m0):` — Bug fix
+- `db(m0):` — Database migration/schema
+- `refactor:` — Code refactoring
+- `chore:` — Dependencies, config
+- `docs:` — Documentation only
+
+**Versioning**: `vMAJOR.MINOR.PATCH`
+- Minor increments per module delivery (e.g., v0.1.0 = M0, v0.2.0 = M1)
+- Patch for bug fixes
+- Major at production launch (v1.0.0)
+
+## Architecture Patterns
+
+### Authorization Guard Pattern
+
+Every Server Action MUST use the authorization wrapper:
+
+```typescript
+import { actionProtegee, PERMISSIONS } from '@/lib/auth/guard';
+
+export const myAction = actionProtegee(
+  PERMISSIONS.EMPLOYE_CREER,
+  async (session, ...args) => {
+    // session contains { userId, email }
+    // Permission already validated
+    // Args are type-safe
+  }
+);
+```
+
+### Database Access
+
+- **Prisma client**: `import { prisma } from '@/lib/db/prisma'`
+- **Supabase client (server)**: `import { createClient } from '@/lib/supabase/server'`
+- **Migrations**: Prisma Migrate exclusively — never modify schema from Supabase dashboard
+
+### Audit Logging
+
+All decisions must be logged to `JournalEvenement`:
+
+```typescript
+await prisma.journalEvenement.create({
+  data: {
+    entite: 'Profil',
+    entiteId: profileId,
+    action: 'MODIFICATION',
+    auteurId: session.userId,
+    auteurNom: session.email,
+    details: { before, after },
+    commentaire: 'Role ADMIN added'
+  }
+});
+```
+
+**Never log sensitive data** (RIB, CNPS number, medical info) — log identifiers only.
+
+## UI/UX Rules (from PATRONS.md)
+
+### R-01: No Information Through Color Alone
+- Status must be readable by label, not just color
+- Add text labels to all colored badges/indicators
+- Support text-only views (print, copy-paste)
+
+### R-02: Optimize for Reading, Not Editing
+- Display values by default
+- "Modify" button opens editor
+- Don't clutter view with edit controls
+
+### R-03: Tooltips Enrich, Never Explain Essential Info
+- No hover on tablets/touch devices
+- Essential info must be visible without tooltip
+- All icons need `aria-label`
+
+### R-04: All Selectors are Autocomplete Fields
+- No closed dropdowns for reference data
+- Search ignores accents
+- Allow inline creation when appropriate (not for structural data)
+
+## Database Schema (M0 Models)
+
+Core models in `prisma/schema.prisma`:
+
+- **Profil** — User accounts (linked to Supabase `auth.users` by UUID)
+- **Role** & **Permission** — Authorization (9 roles, 30 permissions)
+- **ProfilRole** & **RolePermission** — Many-to-many relations
+- **CodeSecoursMfa** — TOTP backup codes (10 per user, single-use)
+- **JournalEvenement** — Audit log (append-only, 5 year retention)
+- **Brouillon** — Auto-saved drafts (created in M0, used from M2)
+- **Notification** — Application notifications (created in M0, used from M10)
+- **Parametre** — Application settings (typed by key)
+
+**Trigger**: `auth.users` insertion creates corresponding `profils` row automatically.
+
+## Common Pitfalls (from PATRONS.md)
+
+1. **Don't use array in `useState` for repeatable lists** — use `useFieldArray` from react-hook-form
+2. **Don't use index as React key** — use `field.id` from `useFieldArray`
+3. **Don't create Server Actions without `exigerPermission`** — they're public HTTP endpoints
+4. **Don't hardcode colors** — use CSS tokens from `globals.css`
+5. **Don't scatter demo data** — single block at file top, easy to delete
+6. **Don't show empty states without explanation** — explain why empty and what to do
+7. **Don't log sensitive values** — log IDs, not RIB/CNPS/medical data
+8. **Don't rely on color alone for status** — see R-01
+9. **Don't omit `aria-label` on icons** — see R-03
+10. **Don't use closed dropdowns for references** — see R-04
+11. **Don't return errors on duplicate inline creation** — return existing entity
+
+## Admin Safeguards (Hard-Coded)
+
+Three server-side checks independent of permissions (from M0-SOCLE.md §6.1):
+
+1. **Cannot remove ADMIN role from last admin** — prevents lockout
+2. **Cannot deactivate your own account** — prevents self-lockout
+3. **Cannot remove your own ADMIN role** — prevents privilege loss
+
+These return explicit error messages like: "You are the last administrator. Designate another administrator before removing this role."
+
+## Deployment Notes
+
+**DO NOT modify Vercel Build Command** until main branch switchover — would break production.
+
+**Current Build Command**: `next build` (Prisma migrations run locally)
+**After switchover**: `prisma generate && prisma migrate deploy && next build`
+
+**Environment scopes in Vercel:**
+- Production → `main` branch → `ita-manager` database
+- Preview → `dev` branch → `ita-manager-dev` database
+- Development → local only
+
+## Module Structure (Incremental)
+
+Application built module by module:
+
+- **M0** (✅ Complete) — Foundation: auth, 2FA, permissions, layout
+- **M1** (Planned) — Organization: departments, services, positions
+- **M2** (Planned) — Employees: profiles, contracts, documents
+- **M3** (Planned) — Leave management
+- **M4** (Planned) — Compensation
+- **M5** (Planned) — Projects
+- **M6** (Planned) — Activity reports (site work)
+- **M7** (Planned) — Payroll
+- **M8** (Planned) — Resources
+- **M9** (Planned) — Tenders
+- **M10** (Planned) — Dashboards
+- **M11** (Planned) — Administration
+- **M12** (Planned) — Office attendance
+
+## Schema Modifications
+
+**Always discuss Prisma schema changes before applying** — even seemingly minor additions.
+
+Production migrations cannot be undone. Two-step process for destructive changes:
+1. Stop writing/reading the column, deploy
+2. Remove column in next version
+
+## Testing Checklist for New Features
+
+Before marking any module complete:
+
+- [ ] Server Action permission check works (test via direct POST)
+- [ ] Desktop and tablet (768px+) layouts work
+- [ ] Empty states have explanatory text
+- [ ] Color is not the only indicator (R-01)
+- [ ] All icons have `aria-label`
+- [ ] No sensitive data in logs/console
+- [ ] Audit events are logged for decisions
+- [ ] Error states show actionable messages
+
+## Key Files to Reference
+
+**Authorization**:
+- `lib/auth/guard.ts` — Permission catalog and `actionProtegee` wrapper
+- `lib/auth/mfa-oblige.ts` — TOTP enforcement logic
+
+**Database**:
+- `prisma/schema.prisma` — Data model
+- `prisma/seed.ts` — Seed script (roles, permissions, Super Admin)
+- `lib/db/prisma.ts` — Prisma client singleton
+
+**Supabase**:
+- `lib/supabase/server.ts` — Server-side client
+- `lib/supabase/client.ts` — Client-side client
+- `lib/supabase/admin.ts` — Admin client (service role key)
+
+**Email**:
+- `lib/email/resend.ts` — Resend client wrapper
+
+## Organization Context
+
+From DECISIONS.md:
+
+- **4 Departments** (Directions): DG, DFC, DT, DAR
+- **8 Services**: Achats, Comptabilité, Études et AO, AEP, Assainissement, Routes, Logistique, QHSE
+- **30 Positions** (Postes)
+- **9 Application Roles**: ADMIN, DG, DRH, RH, DFC, DT, CT, CC, CE
+- **30 Permissions** across 5 domains: RH, PAIE, TECHNIQUE, REFERENTIEL, ADMIN
+
+**Hierarchical chain ≠ Functional chain**: A site supervisor approves leave requests (hierarchical) but a Works Supervisor validates activity reports (functional).
+
+## Super Admin Account
+
+- **Email**: `armelgnakpa7@gmail.com`
+- **Role**: `ADMIN`
+- **Type**: Technical maintenance access (not an employee)
+- **Not in org chart**: Has no `employeId`, cannot be N+1 of anyone
+- **TOTP required**: Enforced at first login
+
+## Important Conventions
+
+1. **Session locking**: After 20 minutes of inactivity → password to unlock (not TOTP)
+2. **TOTP enforcement**: Mandatory for ADMIN, DG, DRH, DFC, DT roles (enforced at first login)
+3. **Backup codes**: 10 codes generated at TOTP setup, displayed once (never shown again)
+4. **Account lifecycle**: Creating employee ≠ creating account (explicit "Open Access" action sends invitation)
+5. **Delegation**: Each manager can designate a delegate with validity period (decision B-03)
+6. **Auto-approval prohibited**: No one can approve their own requests (decision B-05)
+7. **Password policy**: Minimum 12 characters, verified against known breaches (HIBP), strength indicator shown
+8. **Account deactivation**: Takes effect immediately without waiting for token expiration
+
+## When in Doubt
+
+1. Check **DECISIONS.md** first (source of truth)
+2. Security questions → **SECURITE.md**
+3. UI patterns → **PATRONS.md**
+4. Module specs → `M0-SOCLE.md` (and future M1, M2, etc.)
+
+## Notes for Future Modules
+
+- **Pagination**: Server-side, 25 items, state in URL via `searchParams`
+- **Forms**: Modal up to 3 tabs, dedicated page beyond
+- **Auto-save drafts**: 2s after last keystroke (uses `Brouillon` model)
+- **Notifications**: 3 levels — toast (own action), badge (server-calculated), email (Resend)
+- **Offline capability**: Only for M6 activity reports (IndexedDB local, sync later)

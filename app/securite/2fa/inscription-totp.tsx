@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { QRCodeSVG } from "qrcode.react";
 import { createClient } from "@/lib/supabase/client";
 import { genererCodesSecours } from "./actions";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ export function InscriptionTotp() {
   const router = useRouter();
   const [etape, setEtape] = useState<Etape>("demarrage");
   const [factorId, setFactorId] = useState<string | null>(null);
-  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [totpUri, setTotpUri] = useState<string | null>(null);
   const [secret, setSecret] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [codesSecours, setCodesSecours] = useState<string[]>([]);
@@ -34,7 +35,7 @@ export function InscriptionTotp() {
     }
 
     setFactorId(data.id);
-    setQrCode(data.totp.qr_code);
+    setTotpUri(data.totp.uri);
     setSecret(data.totp.secret);
     setEtape("qr");
   }
@@ -86,21 +87,25 @@ export function InscriptionTotp() {
           Scannez ce code avec votre application d&apos;authentification,
           puis saisissez le code à 6 chiffres généré.
         </p>
-        {qrCode && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={`data:image/svg+xml;utf-8,${encodeURIComponent(qrCode)}`}
-            alt="Code QR de configuration TOTP"
-            width={200}
-            height={200}
-            className="self-center"
-          />
+        {totpUri && (
+          <div className="mx-auto flex size-52 items-center justify-center rounded-lg border-2 border-border bg-card p-3">
+            <QRCodeSVG
+              value={totpUri}
+              size={180}
+              level="M"
+              aria-label="Code QR de configuration de la double authentification"
+            />
+          </div>
         )}
         {secret && (
-          <p className="text-center text-xs text-muted-foreground">
-            Impossible de scanner ? Saisissez ce code manuellement : <br />
-            <span className="font-mono">{secret}</span>
-          </p>
+          <div className="rounded-lg bg-muted p-3 text-center">
+            <p className="text-xs text-muted-foreground">
+              Impossible de scanner ? Saisissez cette clé dans votre application :
+            </p>
+            <code className="mt-1 block break-all font-mono text-sm text-primary">
+              {secret.match(/.{1,4}/g)?.join(" ") || secret}
+            </code>
+          </div>
         )}
 
         <div className="flex flex-col gap-1.5">
