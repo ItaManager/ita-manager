@@ -10,7 +10,8 @@
     "db:migrate:dev": "dotenv -e .env.dev -- prisma migrate dev",
     "db:seed": "dotenv -e .env.dev -- prisma db seed",
     "db:studio:dev": "dotenv -e .env.dev -- prisma studio",
-    "db:migrate:prod": "dotenv -e .env.local -- prisma migrate deploy"
+    "db:migrate:prod": "dotenv -e .env.local -- prisma migrate deploy",
+    "verify": "dotenv -e .env.dev -- tsx scripts/verify-all.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
