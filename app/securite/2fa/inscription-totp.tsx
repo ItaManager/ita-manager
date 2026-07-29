@@ -113,9 +113,13 @@ export function InscriptionTotp() {
           <Input
             id="code"
             inputMode="numeric"
+            autoComplete="one-time-code"
             maxLength={6}
             value={code}
-            onChange={(e) => setCode(e.target.value)}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            placeholder="000000"
+            className="text-center font-mono text-xl tracking-[0.5em]"
+            aria-label="Code à six chiffres"
           />
         </div>
 

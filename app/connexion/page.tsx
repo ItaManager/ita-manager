@@ -109,10 +109,26 @@ export default function PageConnexion() {
             <Input
               id="code"
               inputMode={utiliserCodeSecours ? "text" : "numeric"}
+              autoComplete="one-time-code"
               maxLength={utiliserCodeSecours ? 8 : 6}
               required
               value={code}
-              onChange={(e) => setCode(e.target.value)}
+              onChange={(e) =>
+                setCode(
+                  utiliserCodeSecours
+                    ? e.target.value.toUpperCase().slice(0, 8)
+                    : e.target.value.replace(/\D/g, "").slice(0, 6)
+                )
+              }
+              placeholder={utiliserCodeSecours ? "XXXX-XXXX" : "000000"}
+              className={
+                utiliserCodeSecours
+                  ? "font-mono text-sm uppercase"
+                  : "text-center font-mono text-xl tracking-[0.5em]"
+              }
+              aria-label={
+                utiliserCodeSecours ? "Code de secours" : "Code à six chiffres"
+              }
             />
           </div>
 
