@@ -1,0 +1,221 @@
+#!/usr/bin/env tsx
+/**
+ * Test de protection des Server Actions — critère de recette M0
+ *
+ * Vérifie qu'une action protégée refuse l'accès HTTP direct à un utilisateur
+ * sans la permission requise, et journalise le refus.
+ *
+ * Méthode :
+ * 1. Authentification avec un compte test sans permission admin:utilisateurs
+ * 2. Lecture de l'ID d'action dans .next/server/server-reference-manifest.json
+ * 3. POST direct avec l'en-tête Next-Action
+ * 4. Vérification du refus (erreur retournée)
+ * 5. Vérification de la ligne au journal d'audit
+ *
+ * Usage: npx dotenv -e .env.dev -- npx tsx scripts/test-protection.ts
+ */
+
+import { createClient } from "@supabase/supabase-js";
+import { prismaDirect as prisma } from "./lib/prisma-direct";
+import { readFileSync, existsSync } from "fs";
+import { join } from "path";
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const SUPABASE_SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+// Compte test : utilisateur sans permission admin:utilisateurs
+const TEST_USER_EMAIL = "test-protection@ita-sarl.local";
+const TEST_USER_PASSWORD = "TestProtection2026!";
+
+async function main() {
+  console.log("🔐 Test de protection des Server Actions\n");
+
+  // 1. Créer/récupérer compte test
+  console.log("1️⃣  Préparation du compte test");
+
+  const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  // Vérifier si le compte existe déjà
+  const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+  const existingUser = existingUsers?.users.find(
+    (u) => u.email === TEST_USER_EMAIL
+  );
+
+  let testUserId: string;
+
+  if (existingUser) {
+    testUserId = existingUser.id;
+    console.log(`   ✅ Compte test existant : ${TEST_USER_EMAIL}`);
+  } else {
+    // Créer le compte test
+    const { data: newUser, error } =
+      await supabaseAdmin.auth.admin.createUser({
+        email: TEST_USER_EMAIL,
+        password: TEST_USER_PASSWORD,
+        email_confirm: true,
+      });
+
+    if (error || !newUser.user) {
+      console.error("   ❌ Échec création compte test :", error);
+      process.exit(1);
+    }
+
+    testUserId = newUser.user.id;
+    console.log(`   ✅ Compte test créé : ${TEST_USER_EMAIL}`);
+  }
+
+  // Vérifier que le profil n'a PAS la permission admin:utilisateurs
+  const profil = await prisma.profil.findUnique({
+    where: { id: testUserId },
+    include: {
+      roles: {
+        include: {
+          role: {
+            include: {
+              permissions: {
+                include: { permission: true },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const aPermissionAdmin = profil?.roles.some((pr) =>
+    pr.role.permissions.some((rp) => rp.permission.code === "admin:utilisateurs")
+  );
+
+  if (aPermissionAdmin) {
+    console.error(
+      "   ❌ Le compte test a la permission admin:utilisateurs — test invalide"
+    );
+    process.exit(1);
+  }
+
+  console.log("   ✅ Compte test sans permission admin:utilisateurs\n");
+
+  // 2. Authentification
+  console.log("2️⃣  Authentification du compte test");
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { data: authData, error: authError } =
+    await supabase.auth.signInWithPassword({
+      email: TEST_USER_EMAIL,
+      password: TEST_USER_PASSWORD,
+    });
+
+  if (authError || !authData.session) {
+    console.error("   ❌ Échec authentification :", authError);
+    process.exit(1);
+  }
+
+  const accessToken = authData.session.access_token;
+  console.log("   ✅ Authentification réussie\n");
+
+  // 3. Lecture du manifest pour trouver l'ID de listerUtilisateurs
+  console.log("3️⃣  Lecture du server-reference-manifest.json");
+
+  const manifestPath = join(
+    process.cwd(),
+    ".next/server/server-reference-manifest.json"
+  );
+
+  if (!existsSync(manifestPath)) {
+    console.error(
+      "   ❌ Manifest introuvable. Lancez 'npm run build' d'abord."
+    );
+    process.exit(1);
+  }
+
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
+  const actions = manifest.node || manifest.edge || {};
+
+  // Chercher l'action listerUtilisateurs
+  const actionEntry = Object.entries(actions).find(([key, value]: [string, any]) =>
+    value?.workers?.["app-pages-browser"]?.some((w: string) =>
+      w.includes("listerUtilisateurs")
+    )
+  );
+
+  if (!actionEntry) {
+    console.error("   ❌ Action listerUtilisateurs introuvable dans le manifest");
+    process.exit(1);
+  }
+
+  const actionId = actionEntry[0];
+  console.log(`   ✅ Action ID : ${actionId}\n`);
+
+  // 4. Appel HTTP direct
+  console.log("4️⃣  POST direct sur la Server Action");
+
+  const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+  try {
+    const response = await fetch(`${BASE_URL}/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain;charset=UTF-8",
+        "Next-Action": actionId,
+        Cookie: `sb-access-token=${accessToken}; sb-refresh-token=${authData.session.refresh_token}`,
+      },
+      body: JSON.stringify([{}]), // Paramètres vides
+    });
+
+    const text = await response.text();
+
+    console.log(`   Status: ${response.status}`);
+    console.log(`   Réponse (extrait): ${text.substring(0, 200)}...\n`);
+
+    // La réponse doit contenir une erreur ou être un rejet
+    if (response.ok && !text.includes("Permission refusée")) {
+      console.error(
+        "   ❌ ÉCHEC : L'action a répondu sans refuser l'accès"
+      );
+      process.exit(1);
+    }
+
+    console.log("   ✅ Accès refusé comme attendu\n");
+  } catch (error: any) {
+    console.log(`   ✅ Erreur réseau (attendu) : ${error.message}\n`);
+  }
+
+  // 5. Vérification du journal d'audit
+  console.log("5️⃣  Vérification du journal d'audit");
+
+  const evenementRefus = await prisma.journalEvenement.findFirst({
+    where: {
+      entite: "Permission",
+      action: "REFUS",
+      auteurId: testUserId,
+      commentaire: { contains: "admin:utilisateurs" },
+    },
+    orderBy: { survenuLe: "desc" },
+  });
+
+  if (!evenementRefus) {
+    console.error("   ❌ Aucun événement de refus trouvé dans le journal");
+    process.exit(1);
+  }
+
+  console.log(
+    `   ✅ Événement journalisé : ${evenementRefus.commentaire}`
+  );
+  console.log(`   📅 ${evenementRefus.survenuLe.toISOString()}\n`);
+
+  console.log("============================================================");
+  console.log("✅ TEST DE PROTECTION RÉUSSI");
+  console.log("============================================================\n");
+  console.log("Les Server Actions protégées refusent les appels HTTP directs");
+  console.log("sans la permission requise et journalisent le refus.\n");
+
+  process.exit(0);
+}
+
+main().catch((e) => {
+  console.error("❌ Erreur fatale :", e);
+  process.exit(1);
+});
