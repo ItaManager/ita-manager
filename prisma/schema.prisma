@@ -251,6 +251,53 @@ enum StatutDerogation {
   REFUSEE
 }
 
+// =====================================================================
+// M4 — RÉMUNÉRATION
+// =====================================================================
+
+enum StatutGrille {
+  BROUILLON
+  PUBLIEE
+  ARCHIVEE
+}
+
+// =====================================================================
+// M5 — PROJETS ET PLANNING
+// =====================================================================
+
+enum StatutProjet {
+  BROUILLON
+  OUVERT
+  EN_COURS
+  SUSPENDU
+  CLOTURE
+}
+
+enum CyclePaie {
+  HEBDOMADAIRE
+  QUINZAINE
+  MENSUEL
+}
+
+enum TypeValidateur {
+  INTERNE
+  MAITRE_OEUVRE
+  MAITRE_OUVRAGE
+}
+
+enum StatutJalon {
+  ATTENTE
+  VALIDE
+  ABANDONNE
+}
+
+enum RoleFonctionnel {
+  CONDUCTEUR
+  CHEF_CHANTIER
+  CHEF_EQUIPE
+  OPERATEUR
+}
+
 model Direction {
   id           String  @id @default(cuid())
   code         String  @unique // DG, DFC, DT, DAR
@@ -963,8 +1010,8 @@ model GrilleSalariale {
   /// V1, V2, V3…
   version Int
 
-  /// BROUILLON, PUBLIE, ARCHIVE
-  statut String @default("BROUILLON")
+  /// BROUILLON, PUBLIEE, ARCHIVEE
+  statut StatutGrille @default(BROUILLON)
 
   /// Date d'effet — première paie concernée
   /// Ex: v2 votée le 15 mars, dateEffet = 2026-04-01 → appliquée à la paie d'avril
@@ -991,7 +1038,7 @@ model EchelonGrille {
   grille   GrilleSalariale @relation(fields: [grilleId], references: [id], onDelete: Cascade)
 
   /// DIRECTION, CADRE, SUPPORT, OPERATIONNEL
-  niveau String
+  niveau NiveauHierarchique
 
   /// Fourchette en FCFA
   min Decimal @db.Decimal(12, 0)
@@ -1016,7 +1063,7 @@ model Projet {
   description String?
 
   /// BROUILLON, OUVERT, EN_COURS, SUSPENDU, CLOTURE
-  statut String @default("BROUILLON")
+  statut StatutProjet @default(BROUILLON)
 
   /// Maitre d'ouvrage
   maitreOuvrage String?
@@ -1031,7 +1078,7 @@ model Projet {
   /// Cycle de paie pour les journaliers sur ce projet
   /// HEBDOMADAIRE, QUINZAINE, MENSUEL
   /// Figé après la première période de paie
-  cyclePaie String?
+  cyclePaie CyclePaie?
 
   /// Relations
   taches        Tache[]
@@ -1086,13 +1133,13 @@ model Jalon {
   datePrevisionnelle DateTime
 
   /// INTERNE (DT/DG), MAITRE_OEUVRE, MAITRE_OUVRAGE
-  typeValidateur String
+  typeValidateur TypeValidateur
 
   /// Nom du validateur externe si applicable
   validateurExterne String?
 
   /// ATTENTE, VALIDE, ABANDONNE
-  statut String @default("ATTENTE")
+  statut StatutJalon @default(ATTENTE)
 
   /// Pièce justificative obligatoire pour validation externe
   pieceId String? @db.Uuid
@@ -1118,7 +1165,7 @@ model AffectationChantier {
   employe   Employe @relation(fields: [employeId], references: [id])
 
   /// Rôle sur le chantier: CONDUCTEUR, CHEF_CHANTIER, CHEF_EQUIPE, OPERATEUR
-  roleFonctionnel String
+  roleFonctionnel RoleFonctionnel
 
   dateDebut DateTime
   dateFin   DateTime?

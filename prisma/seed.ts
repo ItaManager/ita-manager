@@ -274,6 +274,18 @@ async function seedSuperAdmin() {
     console.log(`  Compte Super Admin déjà existant : ${SUPER_ADMIN_EMAIL}`);
   }
 
+  // S'assurer que le profil existe dans la table profils (peut ne pas exister
+  // après un reset si le trigger n'a pas été rejoué)
+  await prisma.profil.upsert({
+    where: { id: userId },
+    create: {
+      id: userId,
+      email: SUPER_ADMIN_EMAIL,
+      actif: true,
+    },
+    update: {},
+  });
+
   const adminRole = await prisma.role.findUniqueOrThrow({ where: { code: "ADMIN" } });
 
   await prisma.profilRole.upsert({
