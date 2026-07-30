@@ -167,7 +167,106 @@ export const demarrerProjet = actionProtegee(
 );
 
 /**
- * Clôturer un projet — EN_COURS → CLOTURE
+ * Suspendre un projet — EN_COURS → SUSPENDU
+ *
+ * RÈGLE MÉTIER (M5 §8.1) : Un chantier peut être suspendu (intempéries, litige)
+ */
+export const suspendreProjet = actionProtegee(
+  "projet:creer",
+  async (session, projetId: string, motif: string) => {
+    if (!motif || motif.trim().length < 20) {
+      throw new Error(
+        "Un motif substantiel (minimum 20 caractères) est requis pour suspendre un projet"
+      );
+    }
+
+    const projet = await prisma.projet.findUnique({
+      where: { id: projetId },
+    });
+
+    if (!projet) {
+      throw new Error("Projet introuvable");
+    }
+
+    if (projet.statut !== "EN_COURS") {
+      throw new Error(
+        `Impossible de suspendre un projet au statut ${projet.statut}`
+      );
+    }
+
+    const projetMisAJour = await prisma.projet.update({
+      where: { id: projetId },
+      data: {
+        statut: "SUSPENDU",
+      },
+    });
+
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "Projet",
+        entiteId: projetId,
+        action: "SUSPENSION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        details: { motif },
+        commentaire: `Projet suspendu : ${projet.code} — Motif : ${motif}`,
+      },
+    });
+
+    revalidatePath("/projets");
+    revalidatePath(`/projets/${projetId}`);
+    return projetMisAJour;
+  }
+);
+
+/**
+ * Reprendre un projet suspendu — SUSPENDU → EN_COURS
+ *
+ * RÈGLE MÉTIER (M5 §8.1) : SUSPENDU ⇄ EN_COURS
+ */
+export const reprendreProjet = actionProtegee(
+  "projet:creer",
+  async (session, projetId: string) => {
+    const projet = await prisma.projet.findUnique({
+      where: { id: projetId },
+    });
+
+    if (!projet) {
+      throw new Error("Projet introuvable");
+    }
+
+    if (projet.statut !== "SUSPENDU") {
+      throw new Error(
+        `Impossible de reprendre un projet au statut ${projet.statut}`
+      );
+    }
+
+    const projetMisAJour = await prisma.projet.update({
+      where: { id: projetId },
+      data: {
+        statut: "EN_COURS",
+      },
+    });
+
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "Projet",
+        entiteId: projetId,
+        action: "REPRISE",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        commentaire: `Projet repris : ${projet.code}`,
+      },
+    });
+
+    revalidatePath("/projets");
+    revalidatePath(`/projets/${projetId}`);
+    return projetMisAJour;
+  }
+);
+
+/**
+ * Clôturer un projet — EN_COURS ou SUSPENDU → CLOTURE
  *
  * RÈGLE MÉTIER (M5 §8.2) : Conditions de clôture
  * - Tous les relevés d'activité sont visés
