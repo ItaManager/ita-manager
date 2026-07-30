@@ -45,7 +45,7 @@ export const PERMISSIONS = {
   "reglesConges:modifier": {
     code: "reglesConges:modifier",
     libelle: "Modifier les règles de congés",
-    domaine: "RH",
+    domaine: "ADMIN",
   },
   "grille:modifier": { code: "grille:modifier", libelle: "Modifier la grille salariale", domaine: "PAIE" },
   "derogation:valider": {
@@ -112,6 +112,21 @@ export const PERMISSIONS = {
     code: "admin:journal",
     libelle: "Consulter le journal d'audit",
     domaine: "ADMIN",
+  },
+  "presence:gererCodes": {
+    code: "presence:gererCodes",
+    libelle: "Gérer les codes de pointage",
+    domaine: "ADMIN",
+  },
+  "presence:gererBornes": {
+    code: "presence:gererBornes",
+    libelle: "Gérer les appareils de pointage",
+    domaine: "ADMIN",
+  },
+  "presence:corriger": {
+    code: "presence:corriger",
+    libelle: "Corriger un pointage",
+    domaine: "RH",
   },
 } as const;
 

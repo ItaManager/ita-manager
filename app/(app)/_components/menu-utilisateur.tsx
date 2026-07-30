@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { User as UserIcon, LogOut, Settings } from "lucide-react";
+import { deconnecter } from "@/lib/actions/auth";
 
 interface MenuUtilisateurProps {
   user: User;
@@ -58,18 +59,15 @@ export function MenuUtilisateur({ user }: MenuUtilisateurProps) {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <button
-            onClick={async () => {
-              const { createClient } = await import("@/lib/supabase/client");
-              const supabase = createClient();
-              await supabase.auth.signOut();
-              window.location.href = "/connexion";
-            }}
-            className="flex w-full cursor-pointer items-center justify-start"
-          >
-            <LogOut className="mr-2 size-4" aria-hidden="true" />
-            Déconnexion
-          </button>
+          <form action={deconnecter} className="w-full">
+            <button
+              type="submit"
+              className="flex w-full cursor-pointer items-center justify-start"
+            >
+              <LogOut className="mr-2 size-4" aria-hidden="true" />
+              Déconnexion
+            </button>
+          </form>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -1,18 +1,16 @@
-import { createClient } from "@/lib/supabase/server";
+import { Suspense } from "react";
+import { verifierAccesPage } from "@/lib/auth/page-access";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { statistiquesTableauDeBord, alertesTableauDeBord, activiteRecente } from "@/lib/actions/pilotage";
+import { Users, Building2, Briefcase, FileText, AlertCircle, TrendingUp } from "lucide-react";
+import Link from "next/link";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 export default async function TableauDeBord() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  await verifierAccesPage("/");
 
-  if (!user) {
-    return null;
-  }
-
-  // Date du jour
   const dateOptions: Intl.DateTimeFormatOptions = {
     weekday: "long",
     day: "numeric",
@@ -23,343 +21,225 @@ export default async function TableauDeBord() {
 
   return (
     <div className="space-y-6">
-      {/* En-tête */}
       <div>
         <h1 className="text-2xl font-semibold">Tableau de bord</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {dateFormatee.charAt(0).toUpperCase() + dateFormatee.slice(1)} — vue
-          d'ensemble du personnel ITA SARL
+          {dateFormatee.charAt(0).toUpperCase() + dateFormatee.slice(1)} — vue d'ensemble ITA SARL
         </p>
       </div>
 
-      {/* Grille d'indicateurs */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {/* Effectif total */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              EFFECTIF TOTAL
-            </CardTitle>
+      <Suspense fallback={<SqueletteStatistiques />}>
+        <Statistiques />
+      </Suspense>
+
+      <Suspense fallback={<SqueletteAlertes />}>
+        <Alertes />
+      </Suspense>
+
+      <Suspense fallback={<SqueletteActivite />}>
+        <ActiviteRecente />
+      </Suspense>
+    </div>
+  );
+}
+
+async function Statistiques() {
+  const stats = await statistiquesTableauDeBord();
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <Link href="/organisation/directions">
+        <Card className="hover:border-primary transition-colors cursor-pointer">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm font-medium text-muted-foreground">ORGANISATION</CardTitle>
+            <Building2 className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">22</div>
+            <div className="text-2xl font-bold">{stats.organisation.directions}</div>
             <p className="mt-1 text-xs text-muted-foreground">
-              +3 ce trimestre
+              directions · {stats.organisation.services} services · {stats.organisation.postes} postes
             </p>
           </CardContent>
         </Card>
+      </Link>
 
-        {/* Congés à valider */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              CONGÉS À VALIDER
-            </CardTitle>
+      <Link href="/employes">
+        <Card className="hover:border-primary transition-colors cursor-pointer">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm font-medium text-muted-foreground">EMPLOYÉS</CardTitle>
+            <Users className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">3</div>
+            <div className="text-2xl font-bold">{stats.employes.actifs}</div>
             <p className="mt-1 text-xs text-muted-foreground">
-              congés et permissions
+              actifs sur {stats.employes.total} au total
             </p>
           </CardContent>
         </Card>
+      </Link>
 
-        {/* Paie chantier */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              PAIE CHANTIER
-            </CardTitle>
+      <Link href="/appels-offres">
+        <Card className="hover:border-primary transition-colors cursor-pointer">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm font-medium text-muted-foreground">APPELS D'OFFRES</CardTitle>
+            <Briefcase className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">2</div>
+            <div className="text-2xl font-bold">{stats.appelsOffres.gagnes}</div>
             <p className="mt-1 text-xs text-muted-foreground">
-              clôtures et validations
+              gagnés · {stats.appelsOffres.soumis} soumis · taux {stats.appelsOffres.tauxReussite}%
             </p>
           </CardContent>
         </Card>
+      </Link>
 
-        {/* Contrats à échéance */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              CONTRATS À ÉCHÉANCE
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-amber-600">5</div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              sous 120 jours
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Dérogations salariales */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              DÉROGATIONS SALARIALES
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">1</div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              à valider par la DFC
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Masse salariale */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              MASSE SALARIALE
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">14 580 000 F</div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              mensuelle brute
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Effectif par direction */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Effectif par direction</CardTitle>
+        <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-sm font-medium text-muted-foreground">UTILISATEURS</CardTitle>
+          <FileText className="size-4 text-muted-foreground" />
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span>Direction Générale</span>
-              <span className="font-medium">1</span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-gray-100">
-              <div
-                className="h-full bg-blue-600"
-                style={{ width: "4.5%" }}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span>Direction Financière et Comptable</span>
-              <span className="font-medium">3</span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-gray-100">
-              <div
-                className="h-full bg-blue-600"
-                style={{ width: "13.6%" }}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span>Direction Technique</span>
-              <span className="font-medium">12</span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-gray-100">
-              <div
-                className="h-full bg-blue-600"
-                style={{ width: "54.5%" }}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span>Direction Administrative et RH</span>
-              <span className="font-medium">6</span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-gray-100">
-              <div
-                className="h-full bg-blue-600"
-                style={{ width: "27.3%" }}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Chantiers et cycles de paie */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Chantiers et cycles de paie</CardTitle>
-          <button className="text-sm text-blue-600 hover:underline">
-            Tout voir
-          </button>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-start justify-between border-b pb-3">
-            <div className="flex items-start gap-3">
-              <div className="mt-1 size-2 rounded-full bg-blue-600" />
-              <div>
-                <div className="text-sm font-medium">Adduction Bouaké Nord</div>
-                <div className="text-xs text-muted-foreground">
-                  cycle 16 | clôture le 21/07/2026
-                </div>
-              </div>
-            </div>
-            <Badge variant="secondary" className="text-xs">
-              J–4
-            </Badge>
-          </div>
-
-          <div className="flex items-start justify-between border-b pb-3">
-            <div className="flex items-start gap-3">
-              <div className="mt-1 size-2 rounded-full bg-green-600" />
-              <div>
-                <div className="text-sm font-medium">Réhabilitation voirie Yopougon</div>
-                <div className="text-xs text-muted-foreground">
-                  cycle 7 | clôture le 27/07/2026
-                </div>
-              </div>
-            </div>
-            <Badge variant="outline" className="border-amber-500 text-xs text-amber-700">
-              à clôturer
-            </Badge>
-          </div>
-
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-3">
-              <div className="mt-1 size-2 rounded-full bg-amber-600" />
-              <div>
-                <div className="text-sm font-medium">Assainissement Marcory Zone 4</div>
-                <div className="text-xs text-muted-foreground">
-                  cycle 30 | clôture le 30/08/2026
-                </div>
-              </div>
-            </div>
-            <Badge variant="secondary" className="text-xs">
-              J–34
-            </Badge>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Demandes à valider */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Demandes à valider</CardTitle>
-          <button className="text-sm text-blue-600 hover:underline">
-            Tout voir
-          </button>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="flex items-center justify-between border-b py-2">
-            <div>
-              <div className="text-sm font-medium">DIALLO Mariam</div>
-              <div className="text-xs text-muted-foreground">
-                Congé annuel · 12 j
-              </div>
-            </div>
-            <Badge variant="outline" className="border-amber-500 text-xs text-amber-700">
-              En attente
-            </Badge>
-          </div>
-
-          <div className="flex items-center justify-between border-b py-2">
-            <div>
-              <div className="text-sm font-medium">KOFFI Alain</div>
-              <div className="text-xs text-muted-foreground">
-                Permission décès · 3 j 🔗 pièce jointe
-              </div>
-            </div>
-            <Badge variant="outline" className="border-amber-500 text-xs text-amber-700">
-              En attente
-            </Badge>
-          </div>
-
-          <div className="flex items-center justify-between py-2">
-            <div>
-              <div className="text-sm font-medium">N'GUESSAN Léa</div>
-              <div className="text-xs text-muted-foreground">
-                Congé maternité / paternité · 85 j 🔗 pièce jointe
-              </div>
-            </div>
-            <Badge variant="outline" className="border-amber-500 text-xs text-amber-700">
-              En attente
-            </Badge>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Dossiers à compléter */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Dossiers à compléter</CardTitle>
-          <button className="text-sm text-blue-600 hover:underline">
-            Tout voir
-          </button>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="flex items-center justify-between border-b py-2">
-            <div>
-              <div className="text-sm font-medium">DIALLO Mariam</div>
-              <div className="text-xs text-muted-foreground">Assistant QHSE</div>
-            </div>
-            <Badge variant="outline" className="text-xs text-amber-700">
-              5 / 7 pièces
-            </Badge>
-          </div>
-
-          <div className="flex items-center justify-between border-b py-2">
-            <div>
-              <div className="text-sm font-medium">N'GUESSAN Léa</div>
-              <div className="text-xs text-muted-foreground">
-                Chargé d'études et travaux
-              </div>
-            </div>
-            <Badge variant="outline" className="text-xs text-amber-700">
-              4 / 7 pièces
-            </Badge>
-          </div>
-
-          <div className="flex items-center justify-between border-b py-2">
-            <div>
-              <div className="text-sm font-medium">GNAHORÉ Pascal</div>
-              <div className="text-xs text-muted-foreground">Ouvrier</div>
-            </div>
-            <Badge variant="outline" className="text-xs text-amber-700">
-              2 / 7 pièces
-            </Badge>
-          </div>
-
-          <div className="flex items-center justify-between border-b py-2">
-            <div>
-              <div className="text-sm font-medium">ZADI Estelle</div>
-              <div className="text-xs text-muted-foreground">Assistant RH</div>
-            </div>
-            <Badge variant="outline" className="text-xs text-amber-700">
-              5 / 7 pièces
-            </Badge>
-          </div>
-
-          <div className="flex items-center justify-between border-b py-2">
-            <div>
-              <div className="text-sm font-medium">BROU Kevin</div>
-              <div className="text-xs text-muted-foreground">Relais QHSE</div>
-            </div>
-            <Badge variant="outline" className="text-xs text-amber-700">
-              3 / 7 pièces
-            </Badge>
-          </div>
-
-          <div className="flex items-center justify-between py-2">
-            <div>
-              <div className="text-sm font-medium">AKA Rose</div>
-              <div className="text-xs text-muted-foreground">Coursier</div>
-            </div>
-            <Badge variant="outline" className="text-xs text-amber-700">
-              6 / 7 pièces
-            </Badge>
-          </div>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.systeme.utilisateursActifs}</div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            comptes actifs sur {stats.systeme.utilisateurs}
+          </p>
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+async function Alertes() {
+  const alertes = await alertesTableauDeBord();
+
+  if (alertes.aoEnAttenteDecision === 0 && alertes.aoProchesEcheance === 0) {
+    return null;
+  }
+
+  return (
+    <Card className="border-warning-border bg-warning-soft/30">
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <AlertCircle className="size-5 text-warning" />
+          Éléments nécessitant attention
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {alertes.aoEnAttenteDecision > 0 && (
+          <Link href="/appels-offres?statut=VEILLE" className="block">
+            <div className="flex items-center justify-between py-2 hover:bg-background rounded px-2 -mx-2 transition-colors">
+              <span className="text-sm">Appels d'offres en attente de décision go/no-go</span>
+              <Badge variant="outline" className="border-warning text-warning">
+                {alertes.aoEnAttenteDecision}
+              </Badge>
+            </div>
+          </Link>
+        )}
+
+        {alertes.aoProchesEcheance > 0 && (
+          <Link href="/appels-offres" className="block">
+            <div className="flex items-center justify-between py-2 hover:bg-background rounded px-2 -mx-2 transition-colors">
+              <span className="text-sm">Appels d'offres proches de l'échéance (&lt; 15 jours)</span>
+              <Badge variant="outline" className="border-warning text-warning">
+                {alertes.aoProchesEcheance}
+              </Badge>
+            </div>
+          </Link>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+async function ActiviteRecente() {
+  const evenements = await activiteRecente(5);
+
+  if (evenements.length === 0) {
+    return null;
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <TrendingUp className="size-4" />
+          Activité récente
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {evenements.map((evt) => (
+          <div key={evt.id} className="flex items-start justify-between border-b last:border-0 pb-3 last:pb-0">
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium">{evt.entite}</div>
+              <div className="text-xs text-muted-foreground line-clamp-1">
+                {evt.commentaire || evt.action}
+              </div>
+            </div>
+            <div className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+              {format(new Date(evt.survenuLe), "d MMM HH:mm", { locale: fr })}
+            </div>
+          </div>
+        ))}
+
+        <Link href="/journal" className="block text-center pt-2">
+          <button className="text-sm text-primary hover:underline">
+            Voir tout le journal d'audit
+          </button>
+        </Link>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SqueletteStatistiques() {
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Card key={i} className="animate-pulse">
+          <CardHeader className="pb-3">
+            <div className="h-4 bg-muted rounded w-24" />
+          </CardHeader>
+          <CardContent>
+            <div className="h-8 bg-muted rounded w-16 mb-2" />
+            <div className="h-3 bg-muted rounded w-32" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function SqueletteAlertes() {
+  return (
+    <Card className="animate-pulse">
+      <CardHeader>
+        <div className="h-5 bg-muted rounded w-48" />
+      </CardHeader>
+      <CardContent>
+        <div className="h-4 bg-muted rounded w-full mb-2" />
+        <div className="h-4 bg-muted rounded w-3/4" />
+      </CardContent>
+    </Card>
+  );
+}
+
+function SqueletteActivite() {
+  return (
+    <Card className="animate-pulse">
+      <CardHeader>
+        <div className="h-5 bg-muted rounded w-32" />
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="h-4 bg-muted rounded w-24 mb-1" />
+              <div className="h-3 bg-muted rounded w-48" />
+            </div>
+            <div className="h-3 bg-muted rounded w-16" />
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }

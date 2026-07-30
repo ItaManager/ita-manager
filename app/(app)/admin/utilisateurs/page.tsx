@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { ListeUtilisateurs } from "./_components/liste-utilisateurs";
 import { SqueletteUtilisateurs } from "./_components/squelette-utilisateurs";
+import { verifierAccesPage } from "@/lib/auth/page-access";
 
 export const metadata = {
   title: "Utilisateurs — ITA Manager",
@@ -14,6 +15,7 @@ interface PageProps {
 }
 
 export default async function PageUtilisateurs({ searchParams }: PageProps) {
+  await verifierAccesPage("/admin/utilisateurs");
   const params = await searchParams;
 
   return (

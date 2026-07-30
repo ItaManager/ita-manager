@@ -17,6 +17,9 @@ export const NAV_PERMISSIONS: Record<string, string[]> = {
 
   // TEMPS & ABSENCES
   "/conges": ["absence:demander", "absence:valider"],
+  "/conges/a-valider": [], // Accessible à tous, contrôle par lien de données dans l'action
+  "/conges/controle": ["absence:valider"],
+  "/conges/calendrier": ["employe:lire"],
   "/planning": ["planning:modifier", "projet:creer"],
   "/releves": ["releve:saisir", "releve:viser"],
   "/presences": ["employe:lire"],

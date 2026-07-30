@@ -403,6 +403,19 @@ model Employe {
   /// Lien vers le profil applicatif (null si l'employé n'a pas de compte)
   profil Profil?
 
+  /// M3 — Congés et permissions
+  absences           Absence[]
+  soldeCongés        SoldeConge[]
+  delegationsMandant Delegation[] @relation("Mandant")
+  delegationsDeleg   Delegation[] @relation("Delegataire")
+
+  /// M12 — Présences bureau
+  codePointage    CodePointage?
+  pointagesBureau PointageBureau[]
+
+  /// M5 — Projets (chaîne fonctionnelle)
+  affectationsChantier AffectationChantier[]
+
   creeLe    DateTime  @default(now())
   modifieLe DateTime  @updatedAt
   /// Archivage, jamais suppression. Motif stocké dans JournalEvenement.
@@ -587,3 +600,550 @@ model DerogationSalariale {
   @@index([statut])
   @@map("derogations_salariales")
 }
+
+// =====================================================================
+// CONGÉS ET PERMISSIONS — M3
+// =====================================================================
+
+enum StatutAbsence {
+  BROUILLON    // Demande en cours de rédaction
+  ATTENTE_N1   // Soumise, en attente de décision du supérieur
+  ATTENTE_RH   // Validée par N+1, en attente de décision RH
+  VALIDEE      // Validée par RH, absence accordée
+  REFUSEE      // Refusée (soit par N+1, soit par RH)
+  ANNULEE      // Annulée par le demandeur ou RH
+}
+
+enum TypeMouvementSolde {
+  DOTATION      // Dotation annuelle ou mensuelle acquise
+  MAJORATION    // Majoration d'ancienneté
+  REPORT        // Report du solde de l'exercice précédent
+  CONSOMMATION  // Jours pris pour une absence validée
+}
+
+/// Types d'absence référentiels. 4 types de base créés au seed.
+model TypeAbsence {
+  id String @id @default(cuid())
+
+  /// Ex: "Congé annuel", "Congé maladie", "Permission exceptionnelle"
+  libelle String @unique
+
+  /// Si true, les jours sont décomptés du solde de congés
+  decompte Boolean @default(true)
+
+  /// Si true, une pièce justificative est requise
+  pieceRequise Boolean @default(false)
+
+  /// Si true, la pièce est de classification PARTICULIER (accès DRH seule)
+  /// Utilisé pour les certificats médicaux.
+  pieceClassification Boolean @default(false)
+
+  actif Boolean @default(true)
+
+  absences Absence[]
+
+  @@map("types_absence")
+}
+
+/// Demande d'absence (congé ou permission). Circuit à 2 étapes.
+model Absence {
+  id String @id @default(cuid())
+
+  employeId String
+  employe   Employe @relation(fields: [employeId], references: [id])
+
+  typeAbsenceId String
+  typeAbsence   TypeAbsence @relation(fields: [typeAbsenceId], references: [id])
+
+  /// Bornes incluses
+  dateDebut DateTime @db.Date
+  dateFin   DateTime @db.Date
+
+  /// Calculé (jamais saisi) — exclut fériés et non-ouvrables
+  nombreJours Decimal @db.Decimal(5, 1)
+
+  statut StatutAbsence @default(BROUILLON)
+
+  /// Motif de la demande (facultatif)
+  motif String? @db.Text
+
+  /// FIGÉ À LA SOUMISSION (décision 7.2)
+  /// Si l'employé change de service, la demande reste chez ce supérieur.
+  superieurId String?
+
+  /// Décision du supérieur (N+1)
+  decisionN1      String? // "VALIDE" | "REFUSE"
+  decisionN1Le    DateTime?
+  decisionN1ParId String? @db.Uuid
+  motifRefusN1    String? @db.Text
+
+  /// Décision de la Direction RH
+  decisionRH      String? // "VALIDE" | "REFUSE"
+  decisionRHLe    DateTime?
+  decisionRHParId String? @db.Uuid
+  motifRefusRH    String? @db.Text
+
+  /// Pièce justificative (certificat médical, convocation, etc.)
+  /// Référence vers DocumentEmploye.
+  pieceId String?
+
+  creeLe    DateTime @default(now())
+  soumieLe  DateTime?
+  annuleeLe DateTime?
+
+  @@index([employeId])
+  @@index([statut])
+  @@index([superieurId])
+  @@map("absences")
+}
+
+/// Mouvements de solde de congés (JAMAIS un total stocké — voir §6.1).
+/// Le solde se calcule en sommant les mouvements.
+model SoldeConge {
+  id String @id @default(cuid())
+
+  employeId String
+  employe   Employe @relation(fields: [employeId], references: [id])
+
+  /// Exercice concerné (année civile)
+  exercice Int
+
+  typeMouvement TypeMouvementSolde
+
+  /// Nombre de jours (positif pour dotation/majoration/report, négatif pour consommation)
+  jours Decimal @db.Decimal(5, 1)
+
+  /// Référence vers l'absence si typeMouvement = CONSOMMATION
+  absenceId String?
+
+  /// Commentaire libre (ex: "Dotation 2026", "Majoration 10 ans ancienneté")
+  commentaire String?
+
+  enregistreLe  DateTime @default(now())
+  enregistreParId String @db.Uuid
+
+  @@index([employeId])
+  @@index([exercice])
+  @@map("soldes_conges")
+}
+
+/// Délégation nommée (décision B-03). Un responsable désigne son délégataire
+/// à l'avance pour une période. Pendant celle-ci, les demandes lui parviennent aussi.
+model Delegation {
+  id String @id @default(cuid())
+
+  /// Le mandant (celui qui délègue)
+  mandantId String
+  mandant   Employe @relation("Mandant", fields: [mandantId], references: [id])
+
+  /// Le délégataire (celui qui reçoit la délégation)
+  delegataireId String
+  delegataire   Employe @relation("Delegataire", fields: [delegataireId], references: [id])
+
+  dateDebut DateTime @db.Date
+  dateFin   DateTime @db.Date
+
+  /// Si false, la délégation est suspendue sans être supprimée
+  actif Boolean @default(true)
+
+  creeLe DateTime @default(now())
+
+  @@index([mandantId])
+  @@index([delegataireId])
+  @@index([actif])
+  @@map("delegations")
+}
+
+/// Paramètres des règles de congés (dotation, report, etc.).
+/// Clé-valeur pour flexibilité. Modifiable uniquement par ADMIN.
+model RegleConge {
+  id String @id @default(cuid())
+
+  /// Ex: "dotation.annuelle", "report.plafond", "majoration.10ans"
+  cle String @unique
+
+  /// Valeur stockée sous forme texte (à parser selon la clé)
+  valeur String
+
+  /// Description affichée dans l'interface d'administration
+  description String? @db.Text
+
+  modifieLe  DateTime @default(now())
+  modifieParId String @db.Uuid
+
+  @@map("regles_conges")
+}
+
+/// Jours fériés. Fixes (ex: 1er mai) ou mobiles (ex: Aïd el-Fitr).
+/// Les fériés musulmans suivent le calendrier lunaire et doivent être
+/// saisis manuellement chaque année (voir §1.3).
+model JourFerie {
+  id String @id @default(cuid())
+
+  date    DateTime @db.Date
+  libelle String
+
+  /// Si true, date mobile (calculée ou saisie chaque année)
+  mobile Boolean @default(false)
+
+  creeLe DateTime @default(now())
+
+  @@unique([date])
+  @@index([date])
+  @@map("jours_feries")
+}
+
+// =====================================================================
+// APPELS D'OFFRES — M9
+// =====================================================================
+
+enum StatutAppelOffres {
+  VEILLE       // Repéré, pas encore arbitré
+  GO           // DG a validé la participation
+  ABANDONNE    // No-go ou dépassé sans soumission
+  CONSTITUTION // Dossier en cours de constitution
+  SOUMIS       // Déposé
+  GAGNE        // Attributaire
+  PERDU        // Concurrent attributaire
+}
+
+enum TypeMarche {
+  PUBLIC
+  PRIVE
+  INTERNATIONAL
+}
+
+model AppelOffres {
+  id String @id @default(cuid())
+
+  reference       String  // Référence de l'AO
+  maitreOuvrage   String  // Nom du maître d'ouvrage
+  objet           String  @db.Text
+  montantEstime   Decimal? @db.Decimal(15, 2)
+  dateLimiteDepot DateTime
+  lieu            String?
+  typeMarche      TypeMarche @default(PUBLIC)
+
+  statut StatutAppelOffres @default(VEILLE)
+
+  /// Go/No-go du Directeur Général
+  goNoGoDecidePar   String?   @db.Uuid
+  goNoGoDecideLe    DateTime?
+  goNoGoMotif       String?   @db.Text
+
+  /// Résultat
+  montantAttribution Decimal? @db.Decimal(15, 2)
+  attributaire       String?  // Nom du concurrent si perdu
+  dateNotification   DateTime?
+
+  /// Relations
+  pieces      PieceAO[]
+  concurrents ConcurrentAO[]
+
+  creePar   String   @db.Uuid
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([statut])
+  @@index([dateLimiteDepot])
+  @@map("appels_offres")
+}
+
+model PieceAO {
+  id            String @id @default(cuid())
+  appelOffresId String
+  appelOffres   AppelOffres @relation(fields: [appelOffresId], references: [id], onDelete: Cascade)
+
+  libelle       String
+  obligatoire   Boolean @default(false)
+  fichierUrl    String?
+  deposeLe      DateTime?
+
+  @@index([appelOffresId])
+  @@map("pieces_ao")
+}
+
+model ConcurrentAO {
+  id            String @id @default(cuid())
+  appelOffresId String
+  appelOffres   AppelOffres @relation(fields: [appelOffresId], references: [id], onDelete: Cascade)
+
+  nom           String
+  montantSoumis Decimal? @db.Decimal(15, 2)
+  remarque      String?  @db.Text
+
+  @@index([appelOffresId])
+  @@map("concurrents_ao")
+}
+
+// =====================================================================
+// MODÈLES M12 — PRÉSENCES BUREAU
+// =====================================================================
+
+/// Appareil autorisé à accéder à la borne de pointage.
+/// Jeton unique, généré à l'installation, révocable depuis l'administration.
+model AppareilBorne {
+  id String @id @default(cuid())
+
+  /// Jeton secret unique, généré à la création, haché en base.
+  /// Présenté par l'appareil à chaque requête à /borne.
+  jetonHash String @unique
+
+  libelle       String // Ex: "Tablette accueil - Rez-de-chaussée"
+  emplacement   String? // Ex: "Accueil principal"
+
+  actif         Boolean  @default(true)
+  dernierAcces  DateTime?
+
+  creePar   String   @db.Uuid
+  creeLe    DateTime @default(now())
+  revoqueLe DateTime?
+  revoquePar String? @db.Uuid
+
+  @@map("appareils_borne")
+}
+
+/// Code de pointage à 5 chiffres pour un employé.
+/// Haché en base, jamais stocké en clair.
+/// Distinct du mot de passe applicatif.
+model CodePointage {
+  id        String @id @default(cuid())
+  employeId String @unique
+
+  employe Employe @relation(fields: [employeId], references: [id], onDelete: Cascade)
+
+  /// Code haché (bcrypt). Le code en clair n'est jamais stocké.
+  codeHash String
+
+  /// Régénération : l'ancien code devient invalide.
+  genereParId String   @db.Uuid
+  genereLe    DateTime @default(now())
+
+  @@index([employeId])
+  @@map("codes_pointage")
+}
+
+enum TypePointage {
+  ARRIVEE
+  DEPART
+}
+
+/// Pointage bureau d'un employé.
+/// Append-only : une correction ajoute une ligne, ne modifie pas l'existante.
+model PointageBureau {
+  id        String @id @default(cuid())
+  employeId String
+
+  employe Employe @relation(fields: [employeId], references: [id])
+
+  type       TypePointage
+  horodatage DateTime     @default(now())
+
+  /// Si correction manuelle par DRH
+  estCorrection Boolean  @default(false)
+  corrigePar    String?  @db.Uuid
+  motif         String?  @db.Text
+
+  /// Anomalie : 3e pointage le même jour
+  estAnomalie Boolean @default(false)
+
+  @@index([employeId])
+  @@index([horodatage])
+  @@map("pointages_bureau")
+}
+
+// ====================================================================
+// M4 — RÉMUNÉRATION
+// ====================================================================
+
+/// Version de la grille salariale — immuable une fois publiée
+model GrilleSalariale {
+  id String @id @default(cuid())
+
+  /// V1, V2, V3…
+  version Int
+
+  /// BROUILLON, PUBLIE, ARCHIVE
+  statut String @default("BROUILLON")
+
+  /// Date d'effet — première paie concernée
+  /// Ex: v2 votée le 15 mars, dateEffet = 2026-04-01 → appliquée à la paie d'avril
+  dateEffet DateTime?
+
+  /// Date de vote DFC — obligatoire pour publier
+  valideLe DateTime?
+  validePar String? @db.Uuid
+
+  echelons EchelonGrille[]
+
+  creeLe DateTime @default(now())
+  creePar String @db.Uuid
+
+  @@unique([version])
+  @@map("grilles_salariales")
+}
+
+/// Échelon dans une version de grille (un par niveau hiérarchique)
+model EchelonGrille {
+  id String @id @default(cuid())
+
+  grilleId String
+  grille   GrilleSalariale @relation(fields: [grilleId], references: [id], onDelete: Cascade)
+
+  /// DIRECTION, CADRE, SUPPORT, OPERATIONNEL
+  niveau String
+
+  /// Fourchette en FCFA
+  min Decimal @db.Decimal(12, 0)
+  med Decimal @db.Decimal(12, 0)
+  max Decimal @db.Decimal(12, 0)
+
+  @@unique([grilleId, niveau])
+  @@map("echelons_grille")
+}
+
+// ====================================================================
+// M5 — PROJETS ET PLANNING
+// ====================================================================
+
+/// Projet (chantier)
+model Projet {
+  id String @id @default(cuid())
+
+  /// Code unique: CH-AAAA-NNN (ex: CH-2026-001)
+  code String @unique
+  nom  String
+  description String?
+
+  /// BROUILLON, OUVERT, EN_COURS, SUSPENDU, CLOTURE
+  statut String @default("BROUILLON")
+
+  /// Maitre d'ouvrage
+  maitreOuvrage String?
+
+  /// Montant du marché en FCFA
+  montantMarche Decimal? @db.Decimal(15, 2)
+
+  /// Dates prévisionnelles
+  dateDebut DateTime?
+  dateFin   DateTime?
+
+  /// Cycle de paie pour les journaliers sur ce projet
+  /// HEBDOMADAIRE, QUINZAINE, MENSUEL
+  /// Figé après la première période de paie
+  cyclePaie String?
+
+  /// Relations
+  taches        Tache[]
+  jalons        Jalon[]
+  affectations  AffectationChantier[]
+  lieuLivraison LieuLivraison?
+
+  creeLe  DateTime @default(now())
+  creePar String   @db.Uuid
+
+  @@map("projets")
+}
+
+/// Tâche dans un projet (pour Gantt)
+model Tache {
+  id String @id @default(cuid())
+
+  projetId String
+  projet   Projet @relation(fields: [projetId], references: [id], onDelete: Cascade)
+
+  libelle     String
+  description String?
+
+  dateDebut DateTime
+  dateFin   DateTime
+
+  /// Avancement planifié (0-100)
+  avancementPlanifie Int @default(0)
+
+  /// Avancement constaté depuis relevés (0-100)
+  avancementConstate Int?
+
+  /// Tâche prédécesseur (dépendance)
+  predecesseurId String?
+  predecesseur   Tache?  @relation("Dependances", fields: [predecesseurId], references: [id], onDelete: SetNull)
+  successeurs    Tache[] @relation("Dependances")
+
+  creeLe DateTime @default(now())
+
+  @@map("taches")
+}
+
+/// Jalon (milestone) - validé en interne ou par tiers externe
+model Jalon {
+  id String @id @default(cuid())
+
+  projetId String
+  projet   Projet @relation(fields: [projetId], references: [id], onDelete: Cascade)
+
+  libelle            String
+  description        String?
+  datePrevisionnelle DateTime
+
+  /// INTERNE (DT/DG), MAITRE_OEUVRE, MAITRE_OUVRAGE
+  typeValidateur String
+
+  /// Nom du validateur externe si applicable
+  validateurExterne String?
+
+  /// ATTENTE, VALIDE, ABANDONNE
+  statut String @default("ATTENTE")
+
+  /// Pièce justificative obligatoire pour validation externe
+  pieceId String? @db.Uuid
+
+  valideLe DateTime?
+  /// Auteur de la saisie (distinct du validateur externe)
+  validePar String? @db.Uuid
+
+  creeLe DateTime @default(now())
+
+  @@map("jalons")
+}
+
+/// Affectation d'employé à un chantier (chaîne fonctionnelle)
+/// DISTINCT de Affectation (chaîne hiérarchique)
+model AffectationChantier {
+  id String @id @default(cuid())
+
+  projetId String
+  projet   Projet @relation(fields: [projetId], references: [id], onDelete: Cascade)
+
+  employeId String
+  employe   Employe @relation(fields: [employeId], references: [id])
+
+  /// Rôle sur le chantier: CONDUCTEUR, CHEF_CHANTIER, CHEF_EQUIPE, OPERATEUR
+  roleFonctionnel String
+
+  dateDebut DateTime
+  dateFin   DateTime?
+
+  creeLe  DateTime @default(now())
+  creePar String   @db.Uuid
+
+  @@map("affectations_chantier")
+}
+
+/// Lieu de livraison — créé automatiquement à l'ouverture du projet
+model LieuLivraison {
+  id String @id @default(cuid())
+
+  /// Lien 1:1 avec Projet
+  projetId String? @unique
+  projet   Projet? @relation(fields: [projetId], references: [id])
+
+  libelle     String
+  adresse     String?
+  coordonnees String? /// GPS ou autre
+
+  creeLe  DateTime @default(now())
+  creePar String   @db.Uuid
+
+  @@map("lieux_livraison")
+}
+

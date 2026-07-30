@@ -1,6 +1,8 @@
 import { ModuleEnDev } from "../_components/module-en-dev";
+import { verifierAccesPage } from "@/lib/auth/page-access";
 
-export default function NotificationsPage() {
+export default async function NotificationsPage() {
+  await verifierAccesPage("/notifications");
   return (
     <ModuleEnDev
       moduleNumero="M10"

@@ -1,6 +1,8 @@
 import { ModuleEnDev } from "../_components/module-en-dev";
+import { verifierAccesPage } from "@/lib/auth/page-access";
 
-export default function CalendrierPage() {
+export default async function CalendrierPage() {
+  await verifierAccesPage("/calendrier");
   return (
     <ModuleEnDev
       moduleNumero="M10"

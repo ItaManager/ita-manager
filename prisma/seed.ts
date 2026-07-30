@@ -84,6 +84,9 @@ const MATRICE: Record<PermissionCode, readonly string[]> = {
   "admin:utilisateurs": ["ADMIN", "DRH"],
   "admin:parametres": ["ADMIN"],
   "admin:journal": ["ADMIN"],
+  "presence:gererCodes": ["ADMIN", "DRH"],
+  "presence:gererBornes": ["ADMIN"],
+  "presence:corriger": ["ADMIN", "DRH"],
 };
 
 // Compte Super Admin — accès technique de maintenance, sans Employe

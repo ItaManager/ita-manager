@@ -1,12 +1,14 @@
 import { Suspense } from "react";
 import { ControlesCoherence } from "./_components/controles-coherence";
 import { SqueletteCoherence } from "./_components/squelette-coherence";
+import { verifierAccesPage } from "@/lib/auth/page-access";
 
 export const metadata = {
   title: "Contrôle de cohérence — ITA Manager",
 };
 
-export default function PageCoherence() {
+export default async function PageCoherence() {
+  await verifierAccesPage("/organisation/coherence");
   return (
     <div className="container mx-auto py-8">
       <div className="mb-6">

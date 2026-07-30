@@ -2,12 +2,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { BookOpen, Info, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { verifierAccesPage } from "@/lib/auth/page-access";
 
 export const metadata = {
   title: "Aide — ITA Manager",
 };
 
-export default function AidePage() {
+export default async function AidePage() {
+  await verifierAccesPage("/aide");
   return (
     <div className="container mx-auto py-8 max-w-4xl">
       <div className="mb-6">

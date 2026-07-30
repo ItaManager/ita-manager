@@ -18,12 +18,14 @@ import { OngletContrats } from "./_components/onglet-contrats";
 import { OngletHistorique } from "./_components/onglet-historique";
 import { BoutonModifierEmploye } from "./_components/bouton-modifier-employe";
 import { BoutonArchiverEmploye } from "./_components/bouton-archiver-employe";
+import { verifierAccesPage } from "@/lib/auth/page-access";
 
 interface PageDetailEmployeProps {
   params: Promise<{ id: string }>;
 }
 
 export default async function PageDetailEmploye({ params }: PageDetailEmployeProps) {
+  await verifierAccesPage("/employes");
   const { id } = await params;
 
   return (

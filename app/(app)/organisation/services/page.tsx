@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { ListeServices } from "./_components/liste-services";
 import { SqueletteListeServices } from "./_components/squelette-liste-services";
+import { verifierAccesPage } from "@/lib/auth/page-access";
 
 export const metadata = {
   title: "Services — ITA Manager",
@@ -15,6 +16,7 @@ interface PageProps {
 }
 
 export default async function PageServices({ searchParams }: PageProps) {
+  await verifierAccesPage("/organisation/services");
   const params = await searchParams;
 
   return (

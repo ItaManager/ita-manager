@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { ListePostes } from "./_components/liste-postes";
 import { SqueletteListePostes } from "./_components/squelette-liste-postes";
+import { verifierAccesPage } from "@/lib/auth/page-access";
 
 export const metadata = {
   title: "Postes — ITA Manager",
@@ -17,6 +18,7 @@ interface PageProps {
 }
 
 export default async function PagePostes({ searchParams }: PageProps) {
+  await verifierAccesPage("/organisation/postes");
   const params = await searchParams;
 
   return (

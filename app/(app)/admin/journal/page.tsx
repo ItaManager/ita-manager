@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { ListeEvenements } from "./_components/liste-evenements";
 import { SqueletteJournal } from "./_components/squelette-journal";
 import { StatistiquesAudit } from "./_components/statistiques-audit";
+import { verifierAccesPage } from "@/lib/auth/page-access";
 
 export const metadata = {
   title: "Journal d'audit — ITA Manager",
@@ -18,6 +19,7 @@ interface PageProps {
 }
 
 export default async function PageJournal({ searchParams }: PageProps) {
+  await verifierAccesPage("/admin/journal");
   const params = await searchParams;
 
   return (

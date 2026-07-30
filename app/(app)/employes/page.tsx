@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { ListeEmployes } from "./_components/liste-employes";
 import { SqueletteListeEmployes } from "./_components/squelette-liste-employes";
+import { verifierAccesPage } from "@/lib/auth/page-access";
 
 export const metadata = {
   title: "Employés — ITA Manager",
@@ -18,6 +19,7 @@ interface PageProps {
 }
 
 export default async function PageEmployes({ searchParams }: PageProps) {
+  await verifierAccesPage("/employes");
   const params = await searchParams;
 
   return (

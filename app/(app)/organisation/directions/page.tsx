@@ -1,12 +1,14 @@
 import { Suspense } from "react";
 import { ListeDirections } from "./_components/liste-directions";
 import { SqueletteDirections } from "./_components/squelette-directions";
+import { verifierAccesPage } from "@/lib/auth/page-access";
 
 export const metadata = {
   title: "Directions — ITA Manager",
 };
 
-export default function PageDirections() {
+export default async function PageDirections() {
+  await verifierAccesPage("/organisation/directions");
   return (
     <div className="container mx-auto py-8">
       <div className="mb-6">

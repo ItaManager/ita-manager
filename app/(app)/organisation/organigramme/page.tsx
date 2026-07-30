@@ -1,12 +1,14 @@
 import { Suspense } from "react";
 import { VueOrganigramme } from "./_components/vue-organigramme";
 import { SqueletteOrganigramme } from "./_components/squelette-organigramme";
+import { verifierAccesPage } from "@/lib/auth/page-access";
 
 export const metadata = {
   title: "Organigramme — ITA Manager",
 };
 
-export default function PageOrganigramme() {
+export default async function PageOrganigramme() {
+  await verifierAccesPage("/organisation/organigramme");
   return (
     <div className="container mx-auto py-8">
       <div className="mb-6">
