@@ -634,6 +634,64 @@ export const supprimerConcurrent = actionProtegee(
 );
 
 /**
+ * Marquer automatiquement comme ABANDONNE les dossiers dépassés
+ *
+ * RÈGLE MÉTIER (M9 §6) : Un dossier dépassé sans soumission passe en ABANDONNE
+ * automatiquement
+ *
+ * À exécuter quotidiennement via cron job ou Edge Function
+ */
+export const abandonnerDossiersDepasses = actionProtegee(
+  "ao:creer",
+  async (session) => {
+    const aujourd'hui = new Date();
+
+    // Trouver tous les AO en VEILLE, GO ou CONSTITUTION dont la date limite est dépassée
+    const dossiersDepasses = await prisma.appelOffres.findMany({
+      where: {
+        statut: { in: ["VEILLE", "GO", "CONSTITUTION"] },
+        dateLimiteDepot: { lt: aujourd'hui },
+      },
+    });
+
+    const resultats = [];
+
+    for (const ao of dossiersDepasses) {
+      const aoAb and onné = await prisma.appelOffres.update({
+        where: { id: ao.id },
+        data: { statut: "ABANDONNE" },
+      });
+
+      await prisma.journalEvenement.create({
+        data: {
+          entite: "AppelOffres",
+          entiteId: ao.id,
+          action: "ABANDON_AUTO",
+          auteurId: null, // Action système
+          auteurNom: "Système (abandon automatique)",
+          commentaire: `Dossier abandonné automatiquement : ${ao.reference} — date limite dépassée (${ao.dateLimiteDepot.toLocaleDateString()})`,
+        },
+      });
+
+      resultats.push({
+        id: ao.id,
+        reference: ao.reference,
+        dateLimite: ao.dateLimiteDepot,
+      });
+    }
+
+    if (resultats.length > 0) {
+      revalidatePath("/appels-offres");
+    }
+
+    return {
+      count: resultats.length,
+      dossiers: resultats,
+    };
+  }
+);
+
+/**
  * Statistiques pour le tableau de bord
  */
 export const statistiquesAppelsOffres = actionProtegee(
