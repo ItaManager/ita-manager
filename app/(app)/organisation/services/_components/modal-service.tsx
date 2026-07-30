@@ -42,7 +42,7 @@ const schemaFormulaire = z.object({
     .min(1, "Le libellé est requis")
     .max(100, "100 caractères maximum"),
   directionId: z.string().min(1, "La direction est requise"),
-  ordre: z.coerce.number().int().min(0).default(0),
+  ordre: z.number().int().min(0),
 });
 
 type FormData = z.infer<typeof schemaFormulaire>;
@@ -130,7 +130,7 @@ export function ModalService({
 
   return (
     <Dialog open={ouvert} onOpenChange={annuler}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:!max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
             {service ? "Modifier le service" : "Nouveau service"}

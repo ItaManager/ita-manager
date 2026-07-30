@@ -1,0 +1,11 @@
+import { ModuleEnDev } from "../_components/module-en-dev";
+
+export default function DocumentsPage() {
+  return (
+    <ModuleEnDev
+      moduleNumero="M2"
+      moduleNom="Employés"
+      titre="Documents"
+    />
+  );
+}

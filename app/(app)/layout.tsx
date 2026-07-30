@@ -1,70 +1,38 @@
-import Link from "next/link";
-import { Building2, Briefcase, FileText, Users, ScrollText } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { BarreLaterale } from "./_components/barre-laterale";
+import { EnTete } from "./_components/en-tete";
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default async function AppLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  // Contrôle d'accès : redirection si non authentifié
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/connexion");
+  }
+
   return (
-    <div className="flex min-h-screen flex-col">
-      {/* Barre de navigation temporaire M1 */}
-      <header className="sticky top-0 z-40 border-b bg-background">
-        <div className="container mx-auto flex h-14 items-center gap-4 px-4">
-          <div className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">
-              ITA
-            </div>
-            <span className="font-semibold text-foreground">Manager</span>
-          </div>
+    <div className="flex h-screen overflow-hidden bg-gray-50">
+      {/* Barre latérale */}
+      <BarreLaterale />
 
-          <nav className="ml-6 flex gap-1" aria-label="Navigation principale">
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/organisation/organigramme" className="gap-2">
-                <Building2 className="size-4" aria-hidden="true" />
-                Organigramme
-              </Link>
-            </Button>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/organisation/services" className="gap-2">
-                <FileText className="size-4" aria-hidden="true" />
-                Services
-              </Link>
-            </Button>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/organisation/postes" className="gap-2">
-                <Briefcase className="size-4" aria-hidden="true" />
-                Postes
-              </Link>
-            </Button>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/admin/utilisateurs" className="gap-2">
-                <Users className="size-4" aria-hidden="true" />
-                Utilisateurs
-              </Link>
-            </Button>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/admin/journal" className="gap-2">
-                <ScrollText className="size-4" aria-hidden="true" />
-                Journal
-              </Link>
-            </Button>
-          </nav>
+      {/* Zone principale */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* En-tête */}
+        <EnTete />
 
-          <div className="ml-auto">
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/securite/2fa">Profil</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Contenu principal */}
-      <main className="flex-1">{children}</main>
-
-      {/* Pied de page simple */}
-      <footer className="border-t py-4">
-        <div className="container mx-auto px-4 text-center text-xs text-muted-foreground">
-          ITA Manager v0.2.0 (M1) · Ingénierie &amp; Travaux SARL
-        </div>
-      </footer>
+        {/* Contenu avec scroll */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="container mx-auto px-6 py-6">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }

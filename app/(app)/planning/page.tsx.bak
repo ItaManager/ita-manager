@@ -1,0 +1,11 @@
+import { ModuleEnDev } from "../_components/module-en-dev";
+
+export default function PlanningPage() {
+  return (
+    <ModuleEnDev
+      moduleNumero="M5"
+      moduleNom="Projets"
+      titre="Planning chantier"
+    />
+  );
+}

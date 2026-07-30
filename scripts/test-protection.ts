@@ -12,6 +12,8 @@
  * 4. Vérification du refus (erreur retournée)
  * 5. Vérification de la ligne au journal d'audit
  *
+ * DÉVELOPPEMENT UNIQUEMENT — refusé en production
+ *
  * Usage: npx dotenv -e .env.dev -- npx tsx scripts/test-protection.ts
  */
 
@@ -24,12 +26,32 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const SUPABASE_SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
+// Projet Supabase de développement (fpbtkbfvgqbevwfnsywu)
+const DEV_SUPABASE_PROJECT_ID = "fpbtkbfvgqbevwfnsywu";
+
 // Compte test : utilisateur sans permission admin:utilisateurs
 const TEST_USER_EMAIL = "test-protection@ita-sarl.local";
 const TEST_USER_PASSWORD = "TestProtection2026!";
 
 async function main() {
   console.log("🔐 Test de protection des Server Actions\n");
+
+  // GARDE-FOU : refus explicite en production
+  if (process.env.NODE_ENV === "production") {
+    console.error("❌ INTERDIT : Ce script ne peut s'exécuter en production");
+    console.error("   Un compte au mot de passe connu ne doit jamais atteindre la base réelle.");
+    process.exit(1);
+  }
+
+  // GARDE-FOU : vérification du projet Supabase (développement uniquement)
+  if (!SUPABASE_URL.includes(DEV_SUPABASE_PROJECT_ID)) {
+    console.error("❌ INTERDIT : URL Supabase ne correspond pas au projet de développement");
+    console.error(`   Attendu : ${DEV_SUPABASE_PROJECT_ID}`);
+    console.error(`   Reçu    : ${SUPABASE_URL}`);
+    process.exit(1);
+  }
+
+  console.log("✅ Garde-fous validés : environnement de développement\n");
 
   // 1. Créer/récupérer compte test
   console.log("1️⃣  Préparation du compte test");
@@ -134,41 +156,54 @@ async function main() {
   const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
   const actions = manifest.node || manifest.edge || {};
 
-  // Chercher l'action listerUtilisateurs
+  // Chercher une action de lib/actions/utilisateurs.ts
   const actionEntry = Object.entries(actions).find(([key, value]: [string, any]) =>
-    value?.workers?.["app-pages-browser"]?.some((w: string) =>
-      w.includes("listerUtilisateurs")
-    )
+    JSON.stringify(value).includes("utilisateurs")
   );
 
   if (!actionEntry) {
-    console.error("   ❌ Action listerUtilisateurs introuvable dans le manifest");
+    console.error("   ❌ Aucune action utilisateurs introuvable dans le manifest");
     process.exit(1);
   }
 
   const actionId = actionEntry[0];
-  console.log(`   ✅ Action ID : ${actionId}\n`);
+  console.log(`   ✅ Action ID trouvée : ${actionId}`);
+  console.log(`   (action provenant de lib/actions/utilisateurs.ts)\n`);
 
   // 4. Appel HTTP direct
   console.log("4️⃣  POST direct sur la Server Action");
 
-  const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  // Force localhost en développement (NEXT_PUBLIC_APP_URL peut pointer vers prod)
+  const BASE_URL = "http://localhost:3000";
+  const url = `${BASE_URL}/admin/utilisateurs`; // Page qui déclare l'action
+  const headers = {
+    "Content-Type": "text/plain;charset=UTF-8",
+    "Next-Action": actionId,
+    Cookie: `sb-access-token=${accessToken}; sb-refresh-token=${authData.session.refresh_token}`,
+  };
+  // Arguments valides pour listerUtilisateurs (params optionnel)
+  const body = JSON.stringify([{ recherche: "", actifSeulement: true }]);
+
+  console.log(`   URL: ${url}`);
+  console.log(`   Method: POST`);
+  console.log(`   Headers:`);
+  console.log(`     Content-Type: ${headers["Content-Type"]}`);
+  console.log(`     Next-Action: ${headers["Next-Action"]}`);
+  console.log(`     Cookie: ${headers.Cookie.substring(0, 50)}...`);
+  console.log(`   Body: ${body}\n`);
 
   try {
-    const response = await fetch(`${BASE_URL}/`, {
+    const response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "text/plain;charset=UTF-8",
-        "Next-Action": actionId,
-        Cookie: `sb-access-token=${accessToken}; sb-refresh-token=${authData.session.refresh_token}`,
-      },
-      body: JSON.stringify([{}]), // Paramètres vides
+      headers,
+      body,
     });
 
     const text = await response.text();
 
-    console.log(`   Status: ${response.status}`);
-    console.log(`   Réponse (extrait): ${text.substring(0, 200)}...\n`);
+    console.log(`   Status HTTP: ${response.status}`);
+    console.log(`   Réponse (200 premiers caractères):`);
+    console.log(`   ${text.substring(0, 200)}...\n`);
 
     // La réponse doit contenir une erreur ou être un rejet
     if (response.ok && !text.includes("Permission refusée")) {

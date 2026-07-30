@@ -1,0 +1,11 @@
+import { ModuleEnDev } from "../_components/module-en-dev";
+
+export default function AppelsOffresPage() {
+  return (
+    <ModuleEnDev
+      moduleNumero="M9"
+      moduleNom="Appels d'offres"
+      titre="Appels d'offres"
+    />
+  );
+}

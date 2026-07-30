@@ -14,7 +14,7 @@ import { prisma } from "@/lib/db/prisma";
 import { actionProtegee } from "@/lib/auth/guard";
 
 export const listerUtilisateurs = actionProtegee(
-  "admin:utilisateurs" as const,
+  "admin:utilisateurs",
   async (session, params?: { recherche?: string; actifSeulement?: boolean }) => {
     const where = {
       ...(params?.actifSeulement !== false && { actif: true }),
@@ -40,7 +40,7 @@ export const listerUtilisateurs = actionProtegee(
 );
 
 export const modifierRolesUtilisateur = actionProtegee(
-  "admin:utilisateurs" as const,
+  "admin:utilisateurs",
   async (session, profilId: string, nouveauxRolesIds: string[]) => {
     // GARDE-FOU 3 : Impossible de retirer son propre rôle ADMIN
     if (profilId === session.userId) {
@@ -142,7 +142,7 @@ export const modifierRolesUtilisateur = actionProtegee(
 );
 
 export const desactiverUtilisateur = actionProtegee(
-  "admin:utilisateurs" as const,
+  "admin:utilisateurs",
   async (session, profilId: string) => {
     // GARDE-FOU 2 : Impossible de désactiver son propre compte
     if (profilId === session.userId) {
@@ -171,7 +171,7 @@ export const desactiverUtilisateur = actionProtegee(
 );
 
 export const reactiverUtilisateur = actionProtegee(
-  "admin:utilisateurs" as const,
+  "admin:utilisateurs",
   async (session, profilId: string) => {
     await prisma.profil.update({
       where: { id: profilId },
@@ -195,7 +195,7 @@ export const reactiverUtilisateur = actionProtegee(
 );
 
 export const listerRolesDisponibles = actionProtegee(
-  "admin:utilisateurs" as const,
+  "admin:utilisateurs",
   async (session) => {
     const roles = await prisma.role.findMany({
       orderBy: { libelle: "asc" },

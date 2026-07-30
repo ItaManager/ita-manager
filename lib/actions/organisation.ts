@@ -14,11 +14,6 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
 import { actionProtegee } from "@/lib/auth/guard";
-
-const PERMISSIONS = {
-  ORGANISATION_CONSULTER: "organisation:consulter" as const,
-  ORGANISATION_MODIFIER: "organisation:modifier" as const,
-};
 import type { NiveauHierarchique } from "@prisma/client";
 
 // =====================================================================
@@ -62,7 +57,7 @@ const SchemaPoste = z.object({
 // =====================================================================
 
 export const listerServices = actionProtegee(
-  PERMISSIONS.ORGANISATION_CONSULTER,
+  "employe:lire",
   async (
     session,
     params?: {
@@ -113,7 +108,7 @@ export const listerServices = actionProtegee(
 );
 
 export const creerService = actionProtegee(
-  PERMISSIONS.ORGANISATION_MODIFIER,
+  "referentiel:creer",
   async (session, data: z.infer<typeof SchemaService>) => {
     const valide = SchemaService.parse(data);
 
@@ -156,7 +151,7 @@ export const creerService = actionProtegee(
 );
 
 export const modifierService = actionProtegee(
-  PERMISSIONS.ORGANISATION_MODIFIER,
+  "referentiel:creer",
   async (
     session,
     id: string,
@@ -195,7 +190,7 @@ export const modifierService = actionProtegee(
 );
 
 export const archiverService = actionProtegee(
-  PERMISSIONS.ORGANISATION_MODIFIER,
+  "referentiel:creer",
   async (session, id: string) => {
     const service = await prisma.service.findUnique({
       where: { id },
@@ -242,7 +237,7 @@ export const archiverService = actionProtegee(
 // =====================================================================
 
 export const listerPostes = actionProtegee(
-  PERMISSIONS.ORGANISATION_CONSULTER,
+  "employe:lire",
   async (
     session,
     params?: {
@@ -300,7 +295,7 @@ export const listerPostes = actionProtegee(
 );
 
 export const creerPoste = actionProtegee(
-  PERMISSIONS.ORGANISATION_MODIFIER,
+  "referentiel:creer",
   async (session, data: z.infer<typeof SchemaPoste>) => {
     const valide = SchemaPoste.parse(data);
 
@@ -358,7 +353,7 @@ export const creerPoste = actionProtegee(
 );
 
 export const modifierPoste = actionProtegee(
-  PERMISSIONS.ORGANISATION_MODIFIER,
+  "referentiel:creer",
   async (session, id: string, data: Partial<z.infer<typeof SchemaPoste>>) => {
     const poste = await prisma.poste.findUnique({
       where: { id },
@@ -414,7 +409,7 @@ export const modifierPoste = actionProtegee(
 );
 
 export const archiverPoste = actionProtegee(
-  PERMISSIONS.ORGANISATION_MODIFIER,
+  "referentiel:creer",
   async (session, id: string) => {
     const poste = await prisma.poste.findUnique({
       where: { id },
@@ -472,7 +467,7 @@ export const archiverPoste = actionProtegee(
 // =====================================================================
 
 export const listerDirections = actionProtegee(
-  PERMISSIONS.ORGANISATION_CONSULTER,
+  "employe:lire",
   async (session) => {
     const directions = await prisma.direction.findMany({
       where: { archiveLe: null },
@@ -492,7 +487,7 @@ export const listerDirections = actionProtegee(
 );
 
 export const obtenirDirection = actionProtegee(
-  PERMISSIONS.ORGANISATION_CONSULTER,
+  "employe:lire",
   async (session, id: string) => {
     const direction = await prisma.direction.findUnique({
       where: { id },

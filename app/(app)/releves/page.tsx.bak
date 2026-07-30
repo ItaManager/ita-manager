@@ -1,0 +1,11 @@
+import { ModuleEnDev } from "../_components/module-en-dev";
+
+export default function RelevesPage() {
+  return (
+    <ModuleEnDev
+      moduleNumero="M6"
+      moduleNom="Relevés d'activité"
+      titre="Relevés d'activité"
+    />
+  );
+}

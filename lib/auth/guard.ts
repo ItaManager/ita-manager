@@ -15,117 +15,107 @@
 import { prisma } from "@/lib/db/prisma";
 import { createClient } from "@/lib/supabase/server";
 
-export const PERMISSIONS = [
-  { code: "employe:lire", libelle: "Consulter les employés", domaine: "RH" },
-  { code: "employe:creer", libelle: "Créer un employé", domaine: "RH" },
-  { code: "employe:modifier", libelle: "Modifier un employé", domaine: "RH" },
-  { code: "employe:archiver", libelle: "Archiver un employé", domaine: "RH" },
-  {
+export const PERMISSIONS = {
+  "employe:lire": { code: "employe:lire", libelle: "Consulter les employés", domaine: "RH" },
+  "employe:creer": { code: "employe:creer", libelle: "Créer un employé", domaine: "RH" },
+  "employe:modifier": { code: "employe:modifier", libelle: "Modifier un employé", domaine: "RH" },
+  "employe:archiver": { code: "employe:archiver", libelle: "Archiver un employé", domaine: "RH" },
+  "employe:donneesSensibles": {
     code: "employe:donneesSensibles",
     libelle: "Consulter les données sensibles d'un employé",
     domaine: "RH",
   },
-  {
-    code: "organisation:consulter",
-    libelle: "Consulter l'organigramme",
-    domaine: "REFERENTIEL",
-  },
-  {
-    code: "organisation:modifier",
-    libelle: "Modifier l'organigramme (services, postes)",
-    domaine: "REFERENTIEL",
-  },
-  {
+  "referentiel:creer": {
     code: "referentiel:creer",
     libelle: "Créer une valeur de référentiel",
     domaine: "REFERENTIEL",
   },
-  { code: "direction:creer", libelle: "Créer une direction", domaine: "REFERENTIEL" },
-  {
+  "direction:creer": { code: "direction:creer", libelle: "Créer une direction", domaine: "REFERENTIEL" },
+  "posteDirection:affecter": {
     code: "posteDirection:affecter",
     libelle: "Affecter un poste à une direction",
     domaine: "REFERENTIEL",
   },
-  { code: "absence:demander", libelle: "Demander une absence", domaine: "RH" },
-  {
+  "absence:demander": { code: "absence:demander", libelle: "Demander une absence", domaine: "RH" },
+  "absence:valider": {
     code: "absence:valider",
     libelle: "Valider une demande d'absence",
     domaine: "RH",
   },
-  {
+  "reglesConges:modifier": {
     code: "reglesConges:modifier",
     libelle: "Modifier les règles de congés",
     domaine: "RH",
   },
-  { code: "grille:modifier", libelle: "Modifier la grille salariale", domaine: "PAIE" },
-  {
+  "grille:modifier": { code: "grille:modifier", libelle: "Modifier la grille salariale", domaine: "PAIE" },
+  "derogation:valider": {
     code: "derogation:valider",
     libelle: "Valider une dérogation salariale",
     domaine: "PAIE",
   },
-  {
+  "paie:ouvrirPeriode": {
     code: "paie:ouvrirPeriode",
     libelle: "Ouvrir une période de paie",
     domaine: "PAIE",
   },
-  {
+  "paie:validerDT": {
     code: "paie:validerDT",
     libelle: "Valider la paie (Direction Technique)",
     domaine: "PAIE",
   },
-  { code: "paie:validerDFC", libelle: "Valider la paie (DFC)", domaine: "PAIE" },
-  { code: "paie:exporter", libelle: "Exporter la paie", domaine: "PAIE" },
-  { code: "ao:creer", libelle: "Créer un appel d'offres", domaine: "TECHNIQUE" },
-  {
+  "paie:validerDFC": { code: "paie:validerDFC", libelle: "Valider la paie (DFC)", domaine: "PAIE" },
+  "paie:exporter": { code: "paie:exporter", libelle: "Exporter la paie", domaine: "PAIE" },
+  "ao:creer": { code: "ao:creer", libelle: "Créer un appel d'offres", domaine: "TECHNIQUE" },
+  "ao:soumettre": {
     code: "ao:soumettre",
     libelle: "Soumettre un appel d'offres",
     domaine: "TECHNIQUE",
   },
-  {
+  "ao:validerDG": {
     code: "ao:validerDG",
     libelle: "Valider un appel d'offres (Direction Générale)",
     domaine: "TECHNIQUE",
   },
-  { code: "projet:creer", libelle: "Créer un projet", domaine: "TECHNIQUE" },
-  {
+  "projet:creer": { code: "projet:creer", libelle: "Créer un projet", domaine: "TECHNIQUE" },
+  "planning:modifier": {
     code: "planning:modifier",
     libelle: "Modifier le planning",
     domaine: "TECHNIQUE",
   },
-  { code: "jalon:valider", libelle: "Valider un jalon", domaine: "TECHNIQUE" },
-  {
+  "jalon:valider": { code: "jalon:valider", libelle: "Valider un jalon", domaine: "TECHNIQUE" },
+  "releve:saisir": {
     code: "releve:saisir",
     libelle: "Saisir un relevé d'activité",
     domaine: "TECHNIQUE",
   },
-  {
+  "releve:viser": {
     code: "releve:viser",
     libelle: "Viser un relevé d'activité",
     domaine: "TECHNIQUE",
   },
-  {
+  "ressource:demander": {
     code: "ressource:demander",
     libelle: "Demander une ressource",
     domaine: "TECHNIQUE",
   },
-  {
+  "admin:utilisateurs": {
     code: "admin:utilisateurs",
     libelle: "Administrer les utilisateurs",
     domaine: "ADMIN",
   },
-  {
+  "admin:parametres": {
     code: "admin:parametres",
     libelle: "Administrer les paramètres",
     domaine: "ADMIN",
   },
-  {
+  "admin:journal": {
     code: "admin:journal",
     libelle: "Consulter le journal d'audit",
     domaine: "ADMIN",
   },
-] as const;
+} as const;
 
-export type PermissionCode = (typeof PERMISSIONS)[number]["code"];
+export type PermissionCode = keyof typeof PERMISSIONS;
 
 export class PermissionRefusee extends Error {
   constructor(code: PermissionCode) {

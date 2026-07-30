@@ -69,7 +69,7 @@ export function BoutonModifierRoles({
       </Button>
 
       <Dialog open={ouvert} onOpenChange={setOuvert}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:!max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Modifier les rôles</DialogTitle>
             <DialogDescription>{utilisateur.email}</DialogDescription>

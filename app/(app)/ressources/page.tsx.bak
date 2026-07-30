@@ -1,0 +1,11 @@
+import { ModuleEnDev } from "../_components/module-en-dev";
+
+export default function RessourcesPage() {
+  return (
+    <ModuleEnDev
+      moduleNumero="M8"
+      moduleNom="Ressources"
+      titre="Ressources"
+    />
+  );
+}

@@ -55,14 +55,12 @@ const schemaFormulaire = z.object({
     .string()
     .min(1, "Le libellé est requis")
     .max(100, "100 caractères maximum"),
-  niveau: z.enum(["DIRECTION", "CADRE", "SUPPORT", "OPERATIONNEL"], {
-    required_error: "Le niveau est requis",
-  }),
+  niveau: z.enum(["DIRECTION", "CADRE", "SUPPORT", "OPERATIONNEL"]),
   directionId: z.string().min(1, "La direction est requise"),
   serviceId: z.string().nullable(),
-  reserveAdmin: z.boolean().default(false),
-  titulaireUnique: z.boolean().default(false),
-  ouvreDroitConges: z.boolean().default(true),
+  reserveAdmin: z.boolean(),
+  titulaireUnique: z.boolean(),
+  ouvreDroitConges: z.boolean(),
 });
 
 type FormData = z.infer<typeof schemaFormulaire>;
@@ -163,7 +161,7 @@ export function ModalPoste({
 
   return (
     <Dialog open={ouvert} onOpenChange={annuler}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:!max-w-[600px]">
         <DialogHeader>
           <DialogTitle>
             {poste ? "Modifier le poste" : "Nouveau poste"}

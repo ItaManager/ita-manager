@@ -36,35 +36,6 @@ datasource db {
 // du compte Supabase.
 // =====================================================================
 
-model Profil {
-  /// UUID identique à auth.users.id (Supabase)
-  id String @id @db.Uuid
-
-  email        String    @unique
-  actif        Boolean   @default(true)
-  derniereConn DateTime?
-
-  /// Rattachement à un employé — colonne scalaire en M0 car le modèle
-  /// Employe n'existe pas encore. Sera promue en vraie relation
-  /// (@relation) quand Employe sera introduit. `null` pour les comptes
-  /// techniques (ex. Super Admin, hors organigramme).
-  employeId String? @unique
-
-  /// Délégation de pouvoir (décision B-03)
-  delegataireId   String?   @db.Uuid
-  delegationDebut DateTime? @db.Date
-  delegationFin   DateTime? @db.Date
-
-  roles          ProfilRole[]
-  evenements     JournalEvenement[]
-  codesSecoursMfa CodeSecoursMfa[]
-
-  creeLe    DateTime  @default(now())
-  modifieLe DateTime  @updatedAt
-  archiveLe DateTime?
-
-  @@map("profils")
-}
 
 /// Rôle applicatif. Distinct du poste : un Chef Chantier peut porter
 /// le rôle de saisie des relevés sans que le poste ne l'implique.
@@ -238,6 +209,48 @@ enum NiveauHierarchique {
   OPERATIONNEL
 }
 
+// =====================================================================
+// EMPLOYÉS — M2
+//
+// Type de main-d'œuvre : PERMANENT (dossier complet) vs JOURNALIER
+// (4 champs seulement). Décision A-11, A-12.
+// =====================================================================
+
+enum TypeMainOeuvre {
+  PERMANENT
+  JOURNALIER
+}
+
+enum TypeContrat {
+  CDI
+  CDD
+  INTERIM
+  STAGE
+}
+
+enum SituationMatrimoniale {
+  CELIBATAIRE
+  MARIE
+  DIVORCE
+  VEUF
+}
+
+enum Sexe {
+  MASCULIN
+  FEMININ
+}
+
+enum ModePaiement {
+  VIREMENT
+  WAVE
+}
+
+enum StatutDerogation {
+  EN_ATTENTE
+  VALIDEE
+  REFUSEE
+}
+
 model Direction {
   id           String  @id @default(cuid())
   code         String  @unique // DG, DFC, DT, DAR
@@ -302,6 +315,8 @@ model Poste {
   /// Ouvre un compteur de congés annuels (DECISIONS.md)
   ouvreDroitConges Boolean @default(true)
 
+  affectations Affectation[]
+
   creeLe    DateTime  @default(now())
   modifieLe DateTime  @updatedAt
   archiveLe DateTime?
@@ -309,4 +324,266 @@ model Poste {
   @@index([directionId])
   @@index([serviceId])
   @@map("postes")
+}
+
+// =====================================================================
+// MODÈLES M2 — EMPLOYÉS
+// =====================================================================
+
+/// Table de référence des nationalités. Modifiable via création inline.
+model Nationalite {
+  id      String @id @default(cuid())
+  libelle String @unique
+
+  employes Employe[]
+
+  @@map("nationalites")
+}
+
+/// Employé ITA. Deux dossiers distincts selon typeMainOeuvre :
+/// - PERMANENT : dossier complet (~40 champs)
+/// - JOURNALIER : 4 champs seulement (décision A-12)
+model Employe {
+  id String @id @default(cuid())
+
+  /// Format ITA-AAAA-NNNN. Généré par le serveur, conservé à vie.
+  matricule String @unique
+
+  typeMainOeuvre TypeMainOeuvre
+
+  // --- Identité (obligatoire pour tous) ---
+  nom    String
+  prenom String
+  sexe   Sexe?
+
+  // --- Identité (PERMANENT uniquement) ---
+  dateNaissance    DateTime?            @db.Date
+  lieuNaissance    String?
+  nationaliteId    String?
+  nationalite      Nationalite?         @relation(fields: [nationaliteId], references: [id])
+  situationMatrimoniale SituationMatrimoniale?
+  nombreEnfants    Int?                 @default(0)
+
+  /// Donnée SENSIBLE. Unique parmi les permanents actifs (non archivés).
+  numeroCnps String? @unique
+
+  // --- Contact ---
+  telephone          String // Obligatoire pour tous
+  telephoneSecondaire String?
+  email              String?
+  /// Donnée SENSIBLE
+  adresse            String?
+
+  // --- Contact d'urgence (PERMANENT) ---
+  urgenceNom String?
+  urgenceTel String?
+
+  // --- Paiement ---
+  /// Donnée SENSIBLE. Pour JOURNALIER, obligatoire si modePaiement = WAVE.
+  /// Double confirmation obligatoire. Toute modification journalisée.
+  numeroWave  String?
+  modePaiement ModePaiement?
+
+  /// RIB pour permanents. Donnée SENSIBLE.
+  rib String?
+
+  // --- Référence interne (optionnel) ---
+  /// Code utilisé avant ITA Manager (ex: "OP-052", "DG-001").
+  referenceInterne String?
+
+  // --- Relations ---
+  affectations         Affectation[]
+  contrats             Contrat[]
+  documents            DocumentEmploye[]
+  derogationsSalariales DerogationSalariale[]
+
+  /// Hiérarchie employé : subordonnes directs
+  subordonnesEmploye Affectation[] @relation("HierarchieEmploye")
+
+  /// Lien vers le profil applicatif (null si l'employé n'a pas de compte)
+  profil Profil?
+
+  creeLe    DateTime  @default(now())
+  modifieLe DateTime  @updatedAt
+  /// Archivage, jamais suppression. Motif stocké dans JournalEvenement.
+  archiveLe DateTime?
+
+  @@index([matricule])
+  @@index([typeMainOeuvre])
+  @@index([nationaliteId])
+  @@map("employes")
+}
+
+/// Promouvoir Profil.employeId en vraie relation
+model Profil {
+  /// UUID identique à auth.users.id (Supabase)
+  id String @id @db.Uuid
+
+  email        String    @unique
+  actif        Boolean   @default(true)
+  derniereConn DateTime?
+
+  /// Rattachement à un employé. `null` pour les comptes techniques
+  /// (ex. Super Admin, hors organigramme).
+  employeId String? @unique
+  employe   Employe? @relation(fields: [employeId], references: [id])
+
+  /// Délégation de pouvoir (décision B-03)
+  delegataireId   String?   @db.Uuid
+  delegationDebut DateTime? @db.Date
+  delegationFin   DateTime? @db.Date
+
+  roles          ProfilRole[]
+  evenements     JournalEvenement[]
+  codesSecoursMfa CodeSecoursMfa[]
+
+  creeLe    DateTime  @default(now())
+  modifieLe DateTime  @updatedAt
+  archiveLe DateTime?
+
+  @@map("profils")
+}
+
+/// Affectation d'un employé à un poste. Un employé peut avoir plusieurs
+/// affectations successives (historique). Une seule active à la fois.
+model Affectation {
+  id String @id @default(cuid())
+
+  employeId String
+  employe   Employe @relation(fields: [employeId], references: [id])
+
+  posteId String
+  poste   Poste  @relation(fields: [posteId], references: [id])
+
+  /// Supérieur hiérarchique RÉEL (personne par personne).
+  /// Proposé depuis Poste.superieurPosteId, mais modifiable.
+  /// Obligatoire sauf pour le Directeur Général (décision B-09).
+  superieurId String?
+  superieur   Employe?  @relation("HierarchieEmploye", fields: [superieurId], references: [id])
+
+  dateDebut DateTime @db.Date
+  dateFin   DateTime? @db.Date
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([employeId])
+  @@index([posteId])
+  @@index([superieurId])
+  @@map("affectations")
+}
+
+/// Contrat de travail. Jamais modifié après signature : toute modification
+/// donne lieu à un Avenant (historique lisible).
+model Contrat {
+  id String @id @default(cuid())
+
+  employeId String
+  employe   Employe @relation(fields: [employeId], references: [id])
+
+  typeContrat TypeContrat
+  dateDebut   DateTime    @db.Date
+  /// Obligatoire pour CDD et STAGE, null pour CDI et INTERIM
+  dateFin     DateTime?   @db.Date
+
+  /// Salaire mensuel brut (PERMANENT) ou taux journalier (JOURNALIER).
+  /// Donnée SENSIBLE. Si hors grille, déclenche DerogationSalariale.
+  salaire Decimal @db.Decimal(10, 2)
+
+  /// Contrat signé déposé dans DocumentEmploye
+  signe Boolean @default(false)
+
+  avenants Avenant[]
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([employeId])
+  @@index([typeContrat])
+  @@index([dateFin]) // Pour alertes CDD
+  @@map("contrats")
+}
+
+/// Avenant à un contrat (changement de poste, salaire, durée).
+/// Jamais de réécriture du contrat : l'historique doit rester lisible.
+model Avenant {
+  id String @id @default(cuid())
+
+  contratId String
+  contrat   Contrat @relation(fields: [contratId], references: [id])
+
+  motif         String // "Changement de poste", "Augmentation salariale"
+  dateEffet     DateTime @db.Date
+  nouveauSalaire Decimal? @db.Decimal(10, 2)
+  nouvelleDateFin DateTime? @db.Date
+
+  creeLe DateTime @default(now())
+
+  @@index([contratId])
+  @@map("avenants")
+}
+
+/// Document justificatif (pièce d'identité, diplôme, etc.).
+/// Stocké dans Supabase Storage (bucket privé). Accès par URL signée courte.
+model DocumentEmploye {
+  id String @id @default(cuid())
+
+  employeId String
+  employe   Employe @relation(fields: [employeId], references: [id])
+
+  /// Type de document : PIECE_IDENTITE, EXTRAIT_NAISSANCE, DIPLOME,
+  /// CERTIFICAT_TRAVAIL, ATTESTATION_CNPS, VISITE_MEDICALE, CONTRAT_SIGNE, PHOTO
+  typeDocument String
+
+  /// Nom original du fichier
+  nomFichier String
+  /// Chemin dans le bucket Supabase Storage
+  cheminStorage String
+
+  /// Taille en octets
+  taille Int
+
+  /// Les pièces médicales sont de classification PARTICULIER.
+  /// Accès restreint à la DRH, consultation journalisée.
+  estMedical Boolean @default(false)
+
+  deposeParId String @db.Uuid
+  deposeLe    DateTime @default(now())
+
+  @@index([employeId])
+  @@index([typeDocument])
+  @@map("documents_employes")
+}
+
+/// Dérogation salariale (salaire hors de la fourchette du niveau).
+/// Circuit de validation : RH demande → DFC statue.
+/// Tant que EN_ATTENTE, l'employé est exclu des exports de paie.
+model DerogationSalariale {
+  id String @id @default(cuid())
+
+  employeId String
+  employe   Employe @relation(fields: [employeId], references: [id])
+
+  montant Decimal @db.Decimal(10, 2)
+  /// Fourchette du niveau au moment de la demande
+  niveauMin Decimal @db.Decimal(10, 2)
+  niveauMax Decimal @db.Decimal(10, 2)
+
+  /// Motif substantiel (≥ 40 caractères). Ex: "Recrutement en tension,
+  /// seul candidat titulaire du CACES 4 et de l'habilitation soudure PE."
+  motif String @db.Text
+
+  statut StatutDerogation @default(EN_ATTENTE)
+
+  demandeParId String   @db.Uuid
+  demandeLe    DateTime @default(now())
+
+  /// Décision de la Direction Financière
+  decideParId    String?   @db.Uuid
+  decideLe       DateTime?
+  commentaire    String?   @db.Text
+
+  @@index([employeId])
+  @@index([statut])
+  @@map("derogations_salariales")
 }

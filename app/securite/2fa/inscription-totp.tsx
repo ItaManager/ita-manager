@@ -83,7 +83,7 @@ export function InscriptionTotp() {
   }
 
   const ETAPES = ["Configuration", "Vérification", "Codes de secours"];
-  const etapeNum = etape === "demarrage" ? 1 : etape === "qr" ? 2 : 3;
+  const etapeNum = etape === "qr" ? 2 : 3;
 
   if (etape === "qr") {
     return (

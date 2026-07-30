@@ -14,7 +14,7 @@ import { actionProtegee } from "@/lib/auth/guard";
 const LIMITE_PAR_PAGE = 50;
 
 export const listerEvenements = actionProtegee(
-  "admin:journal" as const,
+  "admin:journal",
   async (
     session,
     params?: {
@@ -77,7 +77,7 @@ export const listerEvenements = actionProtegee(
 );
 
 export const obtenirStatistiquesAudit = actionProtegee(
-  "admin:journal" as const,
+  "admin:journal",
   async (session) => {
     const [total, parAction, derniers7jours] = await Promise.all([
       // Total événements

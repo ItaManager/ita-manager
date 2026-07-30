@@ -22,6 +22,14 @@ interface VerificationScript {
 
 const VERIFICATIONS: VerificationScript[] = [
   {
+    name: "Type checking (tsc)",
+    path: "tsc-check", // Special case
+  },
+  {
+    name: "Build production",
+    path: "build", // Special case
+  },
+  {
     name: "Permissions et rôles",
     path: join(__dirname, "verify-post-seed.ts"),
   },
@@ -37,6 +45,10 @@ const VERIFICATIONS: VerificationScript[] = [
     name: "Grille M1 complète",
     path: join(__dirname, "verify-m1-grille.ts"),
   },
+  {
+    name: "M2 — Nationalités et Permissions",
+    path: join(__dirname, "verify-m2.ts"),
+  },
 ];
 
 async function runScript(script: VerificationScript): Promise<boolean> {
@@ -45,14 +57,25 @@ async function runScript(script: VerificationScript): Promise<boolean> {
     console.log(`▶ ${script.name}`);
     console.log(`${"=".repeat(60)}\n`);
 
-    const child = spawn(
-      "npx",
-      ["dotenv", "-e", ".env.dev", "--", "npx", "tsx", script.path],
-      {
-        stdio: "inherit",
-        cwd: join(__dirname, ".."),
-      }
-    );
+    // Special cases: tsc and build
+    let command: string;
+    let args: string[];
+
+    if (script.path === "tsc-check") {
+      command = "npx";
+      args = ["tsc", "--noEmit"];
+    } else if (script.path === "build") {
+      command = "npm";
+      args = ["run", "build"];
+    } else {
+      command = "npx";
+      args = ["dotenv", "-e", ".env.dev", "--", "npx", "tsx", script.path];
+    }
+
+    const child = spawn(command, args, {
+      stdio: "inherit",
+      cwd: join(__dirname, ".."),
+    });
 
     child.on("close", (code) => {
       if (code === 0) {
@@ -72,7 +95,7 @@ async function runScript(script: VerificationScript): Promise<boolean> {
 }
 
 async function main() {
-  console.log("🔍 Vérifications post-seed — M0 + M1\n");
+  console.log("🔍 Vérifications post-seed — M0 + M1 + M2\n");
 
   const resultats: boolean[] = [];
 

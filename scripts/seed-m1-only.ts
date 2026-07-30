@@ -4,7 +4,7 @@
  * Usage: npx dotenv -e .env.dev -- npx tsx scripts/seed-m1-only.ts
  */
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, type NiveauHierarchique } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -81,9 +81,18 @@ async function seedPostes() {
   const logistique = await prisma.service.findUniqueOrThrow({ where: { code: "LOGISTIQUE" } });
   const qhse = await prisma.service.findUniqueOrThrow({ where: { code: "QHSE" } });
 
-  const postes = [
+  const postes: Array<{
+    code: string;
+    libelle: string;
+    niveau: NiveauHierarchique;
+    directionId: string;
+    serviceId: string | null;
+    reserveAdmin?: boolean;
+    titulaireUnique?: boolean;
+    ouvreDroitConges?: boolean;
+  }> = [
     // DG — 2 postes sans service
-    { code: "DIR_GENERAL", libelle: "Directeur Général", niveau: "DIRECTION", directionId: DG.id, serviceId: null, reserveAdmin: true, titulaireUnique: true },
+    { code: "DIR_GENERAL", libelle: "Directeur Général", niveau: "DIRECTION" as NiveauHierarchique, directionId: DG.id, serviceId: null, reserveAdmin: true, titulaireUnique: true },
     { code: "ASST_DG", libelle: "Assistante de Direction", niveau: "SUPPORT", directionId: DG.id, serviceId: null },
 
     // DFC — 1 direction + 2 postes avec service
@@ -123,20 +132,29 @@ async function seedPostes() {
     { code: "CHEF_QHSE", libelle: "Chef de Service QHSE", niveau: "CADRE", directionId: DAR.id, serviceId: qhse.id },
     { code: "ASST_QHSE", libelle: "Assistant QHSE", niveau: "SUPPORT", directionId: DAR.id, serviceId: qhse.id },
     { code: "RELAIS_QHSE", libelle: "Relais QHSE", niveau: "OPERATIONNEL", directionId: DAR.id, serviceId: qhse.id },
-  ] as const;
+  ];
 
   for (const poste of postes) {
     await prisma.poste.upsert({
       where: { code: poste.code },
-      create: poste,
+      create: {
+        code: poste.code,
+        libelle: poste.libelle,
+        niveau: poste.niveau,
+        directionId: poste.directionId,
+        serviceId: poste.serviceId,
+        reserveAdmin: "reserveAdmin" in poste ? poste.reserveAdmin : false,
+        titulaireUnique: "titulaireUnique" in poste ? poste.titulaireUnique : false,
+        ouvreDroitConges: "ouvreDroitConges" in poste ? poste.ouvreDroitConges : true,
+      },
       update: {
         libelle: poste.libelle,
         niveau: poste.niveau,
         directionId: poste.directionId,
         serviceId: poste.serviceId,
-        reserveAdmin: poste.reserveAdmin ?? false,
-        titulaireUnique: poste.titulaireUnique ?? false,
-        ouvreDroitConges: poste.ouvreDroitConges ?? true,
+        reserveAdmin: "reserveAdmin" in poste ? poste.reserveAdmin : false,
+        titulaireUnique: "titulaireUnique" in poste ? poste.titulaireUnique : false,
+        ouvreDroitConges: "ouvreDroitConges" in poste ? poste.ouvreDroitConges : true,
       },
     });
   }

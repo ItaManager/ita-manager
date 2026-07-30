@@ -38,13 +38,13 @@ export async function ControlesCoherence() {
   const detecterBoucles = () => {
     for (const p of postes) {
       const visite = new Set<string>();
-      let courant = p;
+      let courant: typeof postes[number] | undefined = p;
       while (courant?.superieurPosteId) {
         if (visite.has(courant.id)) {
           return { detectee: true, poste: p };
         }
         visite.add(courant.id);
-        courant = postes.find((x) => x.id === courant.superieurPosteId);
+        courant = postes.find((x) => x.id === courant!.superieurPosteId);
       }
     }
     return { detectee: false, poste: null };
@@ -72,7 +72,7 @@ export async function ControlesCoherence() {
     .sort((a, b) => b.count - a.count);
 
   // 5. POSTES HORS PDF (pour référence)
-  const horsP DF = postes.filter((p) => {
+  const horsPDF = postes.filter((p) => {
     // Postes ajoutés selon DECISIONS.md A-04
     const codesAjoutes = [
       "DIR_GENERAL",

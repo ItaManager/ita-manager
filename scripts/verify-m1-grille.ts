@@ -220,11 +220,11 @@ async function main() {
   const detecterBoucles = () => {
     for (const p of postes) {
       const visite = new Set<string>();
-      let courant = p;
+      let courant: typeof postes[number] | null = p;
       while (courant?.superieurPosteId) {
         if (visite.has(courant.id)) return true; // Boucle détectée
         visite.add(courant.id);
-        courant = postes.find((x) => x.id === courant.superieurPosteId) || null;
+        courant = postes.find((x) => x.id === courant!.superieurPosteId) || null;
       }
     }
     return false;

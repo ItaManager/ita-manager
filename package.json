@@ -14,6 +14,7 @@
     "verify": "dotenv -e .env.dev -- tsx scripts/verify-all.ts"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.5.7",
     "@prisma/client": "^6.19.3",
     "@react-email/components": "^1.0.12",
     "@supabase/ssr": "^0.12.3",
@@ -30,6 +31,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-email": "^6.9.1",
+    "react-hook-form": "^7.83.0",
     "resend": "^6.18.0",
     "server-only": "^0.0.1",
     "shadcn": "^4.16.0",
