@@ -293,9 +293,9 @@ enum StatutJalon {
 
 enum RoleFonctionnel {
   CONDUCTEUR
+  CHARGE_ETUDES
   CHEF_CHANTIER
   CHEF_EQUIPE
-  OPERATEUR
 }
 
 model Direction {

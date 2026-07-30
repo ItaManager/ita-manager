@@ -59,16 +59,16 @@ export async function obtenirSuperieurHierarchique(
 /**
  * Obtenir le référent fonctionnel d'un employé sur un projet donné.
  *
- * SOURCE : table `affectations_chantier`, rôle CONDUCTEUR
+ * SOURCE : table `affectations_chantier`, rôle CONDUCTEUR ou CHARGE_ETUDES
  * USAGE : visa des relevés d'activité, suivi du planning
  *
- * Le référent fonctionnel est le CONDUCTEUR du projet. Il vise les relevés
- * d'activité de tous les employés affectés au chantier, quelle que soit leur
- * position hiérarchique.
+ * Le référent fonctionnel est le CONDUCTEUR du projet OU le CHARGE_ETUDES
+ * (décision A-08 bis). Il vise les relevés d'activité de tous les employés
+ * affectés au chantier, quelle que soit leur position hiérarchique.
  *
  * @param employeId L'ID de l'employé
  * @param projetId L'ID du projet
- * @returns L'ID du conducteur du projet, ou null si le projet n'a pas de conducteur
+ * @returns L'ID du conducteur ou chargé d'études du projet, ou null si absent
  * @throws Si l'employé n'est pas affecté au projet
  */
 export async function obtenirReferentFonctionnel(
@@ -93,11 +93,11 @@ export async function obtenirReferentFonctionnel(
     );
   }
 
-  // Trouver le conducteur du projet
-  const conducteur = await prisma.affectationChantier.findFirst({
+  // Trouver le conducteur OU le chargé d'études du projet (par ordre de priorité)
+  const referent = await prisma.affectationChantier.findFirst({
     where: {
       projetId,
-      roleFonctionnel: "CONDUCTEUR",
+      roleFonctionnel: { in: ["CONDUCTEUR", "CHARGE_ETUDES"] },
       OR: [
         { dateFin: null },
         { dateFin: { gte: new Date() } },
@@ -107,7 +107,7 @@ export async function obtenirReferentFonctionnel(
     select: { employeId: true },
   });
 
-  return conducteur?.employeId || null;
+  return referent?.employeId || null;
 }
 
 /**
@@ -140,20 +140,20 @@ export async function listerSubordonnesHierarchiques(
  *
  * USAGE : visa des relevés d'activité
  *
- * @param conducteurId L'ID du conducteur
+ * @param referentId L'ID du conducteur ou chargé d'études
  * @param projetId L'ID du projet
  * @returns Liste des IDs des employés affectés au projet
  */
 export async function listerEquipeFonctionnelle(
-  conducteurId: string,
+  referentId: string,
   projetId: string
 ): Promise<string[]> {
-  // Vérifier que je suis bien conducteur du projet
-  const maConductionActive = await prisma.affectationChantier.findFirst({
+  // Vérifier que je suis bien conducteur OU chargé d'études du projet
+  const monRoleReferent = await prisma.affectationChantier.findFirst({
     where: {
-      employeId: conducteurId,
+      employeId: referentId,
       projetId,
-      roleFonctionnel: "CONDUCTEUR",
+      roleFonctionnel: { in: ["CONDUCTEUR", "CHARGE_ETUDES"] },
       OR: [
         { dateFin: null },
         { dateFin: { gte: new Date() } },
@@ -161,9 +161,9 @@ export async function listerEquipeFonctionnelle(
     },
   });
 
-  if (!maConductionActive) {
+  if (!monRoleReferent) {
     throw new Error(
-      `Employé ${conducteurId} : non conducteur du projet ${projetId}. Impossible de lister l'équipe fonctionnelle.`
+      `Employé ${referentId} : non référent fonctionnel du projet ${projetId}. Impossible de lister l'équipe fonctionnelle.`
     );
   }
 
