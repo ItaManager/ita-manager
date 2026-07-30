@@ -1,9 +1,21 @@
 /**
  * Seed des règles de congés et jours fériés (M3 Phase 8)
  *
- * IMPORTANT : Les valeurs ci-dessous sont des HYPOTHÈSES DE TRAVAIL (M3 §1)
- * à valider par la Direction RH et vérifier contre le Code du travail ivoirien
- * et la convention collective du BTP.
+ * ⚠️  VALEURS NON CONFIRMÉES — dossier M3 §1, en attente de la Direction RH.
+ *     NE PAS METTRE EN PRODUCTION.
+ *
+ * Les onze valeurs de ce fichier sont des HYPOTHÈSES DE TRAVAIL qui doivent
+ * être validées par la Direction RH et vérifiées contre :
+ * - Le Code du travail ivoirien
+ * - La convention collective du BTP
+ * - Les décisions bloquantes M3 §1.1 à §1.5
+ *
+ * DÉCISIONS BLOQUANTES NON TRANCHÉES :
+ * §1.1 — Dotation annuelle (2,2 jours/mois, majoration ancienneté)
+ * §1.2 — Jours ouvrables ou calendaires, samedi ouvrable ?
+ * §1.3 — Liste complète des jours fériés ivoiriens 2026
+ * §1.4 — Report du solde : intégral, plafonné, ou perte totale
+ * §1.5 — Durées des permissions exceptionnelles
  */
 
 import { PrismaClient } from "@prisma/client";
