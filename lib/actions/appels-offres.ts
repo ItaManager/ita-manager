@@ -417,6 +417,8 @@ export const detailAppelOffres = actionProtegee(
 
 /**
  * Ajouter une pièce au dossier
+ *
+ * RÈGLE MÉTIER (M9 §6) : Un dossier soumis est figé
  */
 export const ajouterPieceAO = actionProtegee(
   "ao:creer",
@@ -429,6 +431,22 @@ export const ajouterPieceAO = actionProtegee(
       fichierUrl?: string;
     }
   ) => {
+    // Vérifier que le dossier n'est pas déjà soumis
+    const ao = await prisma.appelOffres.findUnique({
+      where: { id: appelOffresId },
+      select: { statut: true, reference: true },
+    });
+
+    if (!ao) {
+      throw new Error("Appel d'offres introuvable");
+    }
+
+    if (["SOUMIS", "GAGNE", "PERDU", "ABANDONNE"].includes(ao.statut)) {
+      throw new Error(
+        `Impossible de modifier les pièces : le dossier ${ao.reference} est au statut ${ao.statut}. Un dossier soumis est figé.`
+      );
+    }
+
     const piece = await prisma.pieceAO.create({
       data: {
         appelOffresId,
@@ -454,11 +472,37 @@ export const ajouterPieceAO = actionProtegee(
 
 /**
  * Marquer une pièce comme déposée
+ *
+ * RÈGLE MÉTIER (M9 §6) : Un dossier soumis est figé
  */
 export const marquerPieceDeposee = actionProtegee(
   "ao:creer",
   async (session, pieceId: string, fichierUrl: string) => {
-    const piece = await prisma.pieceAO.update({
+    // Vérifier que le dossier n'est pas déjà soumis
+    const piece = await prisma.pieceAO.findUnique({
+      where: { id: pieceId },
+      include: {
+        appelOffres: {
+          select: { statut: true, reference: true },
+        },
+      },
+    });
+
+    if (!piece) {
+      throw new Error("Pièce introuvable");
+    }
+
+    if (
+      ["SOUMIS", "GAGNE", "PERDU", "ABANDONNE"].includes(
+        piece.appelOffres.statut
+      )
+    ) {
+      throw new Error(
+        `Impossible de modifier les pièces : le dossier ${piece.appelOffres.reference} est au statut ${piece.appelOffres.statut}. Un dossier soumis est figé.`
+      );
+    }
+
+    const pieceUpdated = await prisma.pieceAO.update({
       where: { id: pieceId },
       data: {
         fichierUrl,
@@ -469,16 +513,16 @@ export const marquerPieceDeposee = actionProtegee(
     await prisma.journalEvenement.create({
       data: {
         entite: "PieceAO",
-        entiteId: piece.id,
+        entiteId: pieceUpdated.id,
         action: "DEPOT",
         auteurId: session.userId,
         auteurNom: session.email,
-        commentaire: `Pièce déposée : ${piece.libelle}`,
+        commentaire: `Pièce déposée : ${pieceUpdated.libelle}`,
       },
     });
 
-    revalidatePath(`/appels-offres/${piece.appelOffresId}`);
-    return piece;
+    revalidatePath(`/appels-offres/${pieceUpdated.appelOffresId}`);
+    return pieceUpdated;
   }
 );
 
