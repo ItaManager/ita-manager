@@ -1632,6 +1632,88 @@ export const supprimerDocumentEmploye = actionProtegee(
 // ===========================================================================
 
 /**
+ * Liste TOUS les contrats (vue globale RH)
+ * Avec alertes échéances CDD (60j et 30j)
+ */
+export const listerTousContrats = actionProtegee(
+  "employe:lire",
+  async (session) => {
+    const maintenant = new Date();
+    const dans30j = new Date(maintenant);
+    dans30j.setDate(dans30j.getDate() + 30);
+    const dans60j = new Date(maintenant);
+    dans60j.setDate(dans60j.getDate() + 60);
+
+    // Vérifier permission données sensibles
+    const rolePerms = await prisma.rolePermission.findMany({
+      where: {
+        role: { profils: { some: { profilId: session.userId } } },
+        permission: { code: "employe:donneesSensibles" },
+      },
+    });
+    const aDonneesSensibles = rolePerms.length > 0;
+
+    // Récupérer tous les contrats actifs
+    const contrats = await prisma.contrat.findMany({
+      where: {
+        employe: { archiveLe: null }, // Employés actifs uniquement
+      },
+      orderBy: [
+        { dateFin: "asc" }, // CDD proches échéance en premier
+        { dateDebut: "desc" },
+      ],
+      select: {
+        id: true,
+        typeContrat: true,
+        dateDebut: true,
+        dateFin: true,
+        signe: true,
+        salaire: aDonneesSensibles,
+        employe: {
+          select: {
+            id: true,
+            nom: true,
+            prenom: true,
+            matricule: true,
+            typeMainOeuvre: true,
+          },
+        },
+        avenants: {
+          orderBy: { dateEffet: "desc" },
+          take: 1,
+        },
+      },
+    });
+
+    // Déterminer contrat actif + niveau alerte
+    return contrats.map((c) => {
+      const debut = new Date(c.dateDebut);
+      const fin = c.dateFin ? new Date(c.dateFin) : null;
+      const actif = debut <= maintenant && (!fin || fin >= maintenant);
+
+      let niveauAlerte: "danger" | "warning" | null = null;
+      if (c.typeContrat === "CDD" && fin) {
+        if (fin <= dans30j) niveauAlerte = "danger";
+        else if (fin <= dans60j) niveauAlerte = "warning";
+      }
+
+      return {
+        id: c.id,
+        employe: c.employe,
+        typeContrat: c.typeContrat,
+        dateDebut: c.dateDebut,
+        dateFin: c.dateFin ?? undefined,
+        signe: c.signe,
+        salaire: aDonneesSensibles ? c.salaire?.toNumber() ?? undefined : undefined,
+        derniersAvenants: c.avenants.length,
+        actif,
+        niveauAlerte,
+      };
+    });
+  }
+);
+
+/**
  * Liste les contrats et avenants d'un employé
  * Données SENSIBLES (salaire) masquées si pas de permission employe:donneesSensibles
  */
