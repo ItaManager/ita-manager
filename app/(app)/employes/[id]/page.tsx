@@ -16,6 +16,8 @@ import { fr } from "date-fns/locale";
 import { OngletDocuments } from "./_components/onglet-documents";
 import { OngletContrats } from "./_components/onglet-contrats";
 import { OngletHistorique } from "./_components/onglet-historique";
+import { BoutonModifierEmploye } from "./_components/bouton-modifier-employe";
+import { BoutonArchiverEmploye } from "./_components/bouton-archiver-employe";
 
 interface PageDetailEmployeProps {
   params: Promise<{ id: string }>;
@@ -72,6 +74,23 @@ async function DetailEmploye({ employeId }: { employeId: string }) {
               </span>
             )}
           </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <BoutonModifierEmploye
+            employeId={employe.id}
+            typeMainOeuvre={employe.typeMainOeuvre}
+            disabled={estArchive}
+          />
+
+          {!estArchive && (
+            <BoutonArchiverEmploye
+              employeId={employe.id}
+              nom={employe.nom}
+              prenom={employe.prenom}
+              matricule={employe.matricule}
+            />
+          )}
         </div>
       </div>
 
