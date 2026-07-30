@@ -96,7 +96,7 @@ async function main() {
   // Créer un projet
   const projet = await prisma.projet.create({
     data: {
-      code: "CH-2026-TEST",
+      code: `CH-2026-TEST-${timestamp}`,
       nom: "Chantier Test",
       statut: "EN_COURS",
       creePar: "00000000-0000-0000-0000-000000000000",
