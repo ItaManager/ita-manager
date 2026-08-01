@@ -34,7 +34,8 @@ function normaliser(texte: string): string {
     .trim();
 }
 
-// 10 familles relevées dans les fichiers du Service Logistique
+// 12 familles relevées dans les fichiers du Service Logistique
+// Chaque TypeMateriel a au moins une famille (contrôle verify-m13.ts)
 const FAMILLES = [
   { code: 'AK-BUL', libelle: 'Bulldozer', type: 'ENGIN' },
   { code: 'AK-CHG', libelle: 'Chargeuse', type: 'ENGIN' },
@@ -46,11 +47,13 @@ const FAMILLES = [
   { code: 'AK-PL', libelle: 'Poids lourd', type: 'VEHICULE_LOURD' },
   { code: 'AK-MV', libelle: 'Moteur vibreur', type: 'PETIT_MATERIEL' },
   { code: 'AK-MP', libelle: 'Motopompe', type: 'PETIT_MATERIEL' },
+  { code: 'AK-CMA', libelle: 'Conteneur', type: 'CONTENEUR' },
+  { code: 'AK-IMP', libelle: 'Immobilier bureau', type: 'MOBILIER' },
 ];
 
 async function main() {
   console.log('📝 Seed familles matériel M13 L1\n');
-  console.log('10 familles relevées dans les codes réels (AK-BUL01, AK-CHG02, etc.)\n');
+  console.log('12 familles — chaque TypeMateriel a au moins une famille\n');
 
   let created = 0;
   let skipped = 0;
@@ -83,8 +86,15 @@ async function main() {
   }
 
   console.log(`\n✅ Seed terminé : ${created} créés, ${skipped} existants\n`);
+  console.log('Répartition (codes réels du tableur) :');
+  console.log('  • ENGIN : AK-BUL, AK-CHG, AK-CPT, AK-NIV, AK-PELL');
+  console.log('  • VEHICULE_LEGER : AK-PICK, AK-VL');
+  console.log('  • VEHICULE_LOURD : AK-PL');
+  console.log('  • PETIT_MATERIEL : AK-MV, AK-MP');
+  console.log('  • CONTENEUR : AK-CMA');
+  console.log('  • MOBILIER : AK-IMP\n');
   console.log('Note : Référentiel avec création inline (R-04).');
-  console.log('       La reprise (étape 1.7) complétera avec les préfixes réellement présents dans le tableur.\n');
+  console.log('       La reprise (étape 1.7) corrigera les préfixes sur données réelles.\n');
 }
 
 main()
