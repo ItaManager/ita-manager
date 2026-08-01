@@ -432,9 +432,11 @@ export async function executerPaiementLogique(
   // Les sept contrôles sont passés — exécution autorisée
   // ───────────────────────────────────────────────────────────────────
 
-  // Import dynamique du client Wave simulé
-  const { creerClientSimule } = await import('@/lib/paiements/wave/client-simule');
-  const client = creerClientSimule();
+  // Import du client Wave (bascule auto simulé/réel selon environnement)
+  const { obtenirClientWaveSingleton } = await import(
+    '@/lib/paiements/wave/factory'
+  );
+  const client = obtenirClientWaveSingleton();
 
   // Récupérer toutes les lignes de la demande avec leurs tentatives
   const lignes = await prisma.lignePaiement.findMany({
@@ -632,17 +634,19 @@ export const verifierBeneficiaires = actionProtegee(
       throw new Error('Demande introuvable');
     }
 
-    // Importer le client simulé dynamiquement
-    const { creerClientSimule } = await import(
-      '@/lib/paiements/wave/client-simule'
+    // Importer le client Wave (bascule auto simulé/réel selon environnement)
+    const { obtenirClientWaveSingleton } = await import(
+      '@/lib/paiements/wave/factory'
     );
-    const client = creerClientSimule();
+    const client = obtenirClientWaveSingleton();
 
-    // Programmer les scénarios pour les numéros de test
-    // NO_MATCH : +2250566778899
-    client.programmer('+2250566778899', 'NO_MATCH');
-    // RECIPIENT_LIMIT : +2250744556677
-    client.programmer('+2250744556677', 'RECIPIENT_LIMIT');
+    // Programmer les scénarios pour les numéros de test (mode simulé uniquement)
+    if ('programmer' in client && typeof client.programmer === 'function') {
+      // NO_MATCH : +2250566778899
+      client.programmer('+2250566778899', 'NO_MATCH');
+      // RECIPIENT_LIMIT : +2250744556677
+      client.programmer('+2250744556677', 'RECIPIENT_LIMIT');
+    }
 
     const maintenant = new Date();
     let nombreBloquees = 0;

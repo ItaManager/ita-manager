@@ -25,19 +25,19 @@ const prisma = new PrismaClient({
 async function main() {
   console.log('📝 Seed paiements démo M15\n');
 
-  // Récupérer un profil DFC pour préparateur
-  const dfc = await prisma.profil.findFirst({
+  // Récupérer un profil DFC ou ADMIN pour préparateur
+  const preparateur = await prisma.profil.findFirst({
     where: {
       roles: {
         some: {
-          role: { code: 'DFC' },
+          role: { code: { in: ['DFC', 'ADMIN'] } },
         },
       },
     },
   });
 
-  if (!dfc) {
-    console.error('❌ Aucun profil DFC trouvé');
+  if (!preparateur) {
+    console.error('❌ Aucun profil DFC ou ADMIN trouvé');
     console.log('   Exécutez d\'abord : npm run db:seed');
     process.exit(1);
   }
@@ -62,7 +62,7 @@ async function main() {
       categorie: 'SALAIRES',
       sourceId: 'demo-m7',
       sourceType: 'M7 · Paie chantier',
-      prepareeParId: dfc.id,
+      prepareeParId: preparateur.id,
       montantTotal: new Decimal(1143700),
       lignes: {
         create: [
@@ -138,7 +138,7 @@ async function main() {
       },
       autorisation: {
         create: {
-          demandeeParId: dfc.id,
+          demandeeParId: preparateur.id,
           montantFige: new Decimal(1143700),
         },
       },
