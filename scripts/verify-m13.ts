@@ -224,6 +224,85 @@ async function main() {
   }
 
   // ===========================================================================
+  // 7. ATTRIBUTIONS PERMISSIONS AUX RÔLES
+  // ===========================================================================
+
+  console.log('\n📋 Attributions permissions M13 aux rôles');
+
+  const ATTRIBUTIONS_ATTENDUES = [
+    {
+      roleCode: 'ADMIN',
+      permCodes: [
+        'materiel:lire',
+        'materiel:creer',
+        'materiel:modifier',
+        'typePiece:gerer',
+        'materiel:coutsAdministratifs',
+        'logistique:parametres',
+      ],
+    },
+    {
+      roleCode: 'DG',
+      permCodes: ['materiel:lire', 'materiel:coutsAdministratifs'],
+    },
+    {
+      roleCode: 'DFC',
+      permCodes: ['materiel:lire', 'materiel:coutsAdministratifs'],
+    },
+    {
+      roleCode: 'DT',
+      permCodes: [
+        'materiel:lire',
+        'materiel:creer',
+        'materiel:modifier',
+        'typePiece:gerer',
+        'materiel:coutsAdministratifs',
+      ],
+    },
+  ];
+
+  for (const { roleCode, permCodes } of ATTRIBUTIONS_ATTENDUES) {
+    const role = await prisma.role.findUnique({
+      where: { code: roleCode },
+      select: { id: true },
+    });
+
+    if (!role) {
+      console.log(`   ⚠️  Rôle ${roleCode} introuvable (non critique pour M13)`);
+      continue;
+    }
+
+    for (const permCode of permCodes) {
+      const permission = await prisma.permission.findUnique({
+        where: { code: permCode },
+        select: { id: true },
+      });
+
+      if (!permission) {
+        console.log(`   ❌ Permission ${permCode} introuvable pour ${roleCode}`);
+        erreurs++;
+        continue;
+      }
+
+      const attribution = await prisma.rolePermission.findUnique({
+        where: {
+          roleId_permissionId: {
+            roleId: role.id,
+            permissionId: permission.id,
+          },
+        },
+      });
+
+      if (!attribution) {
+        console.log(`   ❌ ${roleCode} → ${permCode} : attribution manquante`);
+        erreurs++;
+      } else {
+        console.log(`   ✅ ${roleCode} → ${permCode}`);
+      }
+    }
+  }
+
+  // ===========================================================================
   // RÉSULTAT FINAL
   // ===========================================================================
 
