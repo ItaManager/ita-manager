@@ -262,7 +262,7 @@ export async function reprendreEnAttente(): Promise<{
 export async function doitReprendreLigne(ligneId: string): Promise<boolean> {
   const ligne = await prisma.lignePaiement.findUnique({
     where: { id: ligneId },
-    include: { tentatives: { orderBy: { createdAt: 'desc' } } },
+    include: { tentatives: { orderBy: { envoyeeLe: 'desc' } } },
   });
 
   if (!ligne || ligne.statut !== 'EN_ATTENTE') {
@@ -277,7 +277,7 @@ export async function doitReprendreLigne(ligneId: string): Promise<boolean> {
   const derniereTentative = ligne.tentatives[0];
   const maintenant = new Date();
   const ecouleSec =
-    (maintenant.getTime() - derniereTentative.createdAt.getTime()) / 1000;
+    (maintenant.getTime() - derniereTentative.envoyeeLe.getTime()) / 1000;
 
   // Délais de reprise selon le numéro de tentative
   const delais = [

@@ -284,6 +284,26 @@ export class ClientWaveSimuleImpl implements ClientWaveSimule {
     };
   }
 
+  /**
+   * Annuler un paiement (reverse) — Simulation
+   */
+  async annuler(
+    payoutId: string,
+    cleIdempotence: string
+  ): Promise<ReponseWave> {
+    // Simuler un délai
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Dans la simulation, on retourne toujours un succès d'annulation
+    // En production réelle, Wave peut refuser si >3 jours ou déjà annulé
+    return {
+      httpStatus: 200,
+      status: 'reversed',
+      payout_id: payoutId,
+      success: true,
+    };
+  }
+
   obtenirAppelsPayout(): AppelPayout[] {
     return this._appelsPayout;
   }

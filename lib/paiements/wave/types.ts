@@ -95,7 +95,7 @@ export interface ClientWave {
   rechercher(clientReference: string): Promise<ReponseRecherche>;
   payoutBatch(params: ParamsBatch, cleIdempotence: string): Promise<ReponseBatch>;
   recupererBatch(batchId: string): Promise<ReponseRecuperationBatch>;
-  annuler?(payoutId: string, cleIdempotence: string): Promise<ReponseWave>;
+  annuler(payoutId: string, cleIdempotence: string): Promise<ReponseWave>;
 }
 
 export interface ClientWaveSimule extends ClientWave {
