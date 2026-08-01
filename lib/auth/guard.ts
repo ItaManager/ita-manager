@@ -308,6 +308,34 @@ export async function exigerPermission(
 }
 
 /**
+ * Vérifier si un utilisateur possède une permission (non bloquant)
+ *
+ * Contrairement à `exigerPermission`, cette fonction ne lève pas d'erreur
+ * et ne journalise pas de refus. À utiliser pour masquer/afficher des
+ * éléments optionnels (ex: coûts d'acquisition).
+ */
+export async function verifierPermission(
+  userId: string,
+  code: PermissionCode,
+): Promise<boolean> {
+  const profil = await prisma.profil.findUnique({
+    where: { id: userId },
+    include: {
+      roles: {
+        include: { role: { include: { permissions: { include: { permission: true } } } } },
+      },
+    },
+  });
+
+  return (
+    !!profil?.actif &&
+    profil.roles.some((profilRole) =>
+      profilRole.role.permissions.some((rp) => rp.permission.code === code),
+    )
+  );
+}
+
+/**
  * Enveloppe standard de toute Server Action protégée. `exigerPermission`
  * s'exécute avant toute lecture/validation des paramètres reçus
  * (SECURITE.md §4).
