@@ -200,6 +200,66 @@ export const autoriserPaiement = actionProtegee(
   autoriserPaiementLogique
 );
 
+/**
+ * Server Action - Refuse une demande de paiement
+ *
+ * Permission : paiement:autoriser
+ *
+ * Marque l'autorisation comme refusée avec la date et le motif.
+ */
+export const refuserPaiement = actionProtegee(
+  'paiement:autoriser',
+  async (session: Session, demandePaiementId: string, motif?: string) => {
+    const maintenant = new Date();
+
+    // Récupérer la demande avec son autorisation
+    const demande = await prisma.demandePaiement.findUnique({
+      where: { id: demandePaiementId },
+      include: {
+        autorisation: true,
+      },
+    });
+
+    if (!demande) {
+      throw new Error('Demande de paiement introuvable');
+    }
+
+    if (!demande.autorisation) {
+      throw new Error('Aucune autorisation en attente');
+    }
+
+    // Marquer comme refusée
+    await prisma.autorisationPaiement.update({
+      where: { demandePaiementId },
+      data: {
+        refuseeLe: maintenant,
+        motifRefus: motif || `Refusé par ${session.email}`,
+      },
+    });
+
+    // Journal
+    await prisma.journalEvenement.create({
+      data: {
+        entite: 'DemandePaiement',
+        entiteId: demandePaiementId,
+        action: 'REFUS',
+        auteurId: session.userId,
+        auteurNom: session.email,
+        details: {
+          referenceIta: demande.referenceIta,
+          montantTotal: demande.montantTotal.toString(),
+          motif: motif || 'Refusé par le DG',
+        },
+        commentaire: `Autorisation refusée par ${session.email}`,
+      },
+    });
+
+    // TODO: Envoyer notification au préparateur
+
+    return { success: true };
+  }
+);
+
 // ═══════════════════════════════════════════════════════════════════════
 // EXÉCUTER UN PAIEMENT
 // ═══════════════════════════════════════════════════════════════════════
