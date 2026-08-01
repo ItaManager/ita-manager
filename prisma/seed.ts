@@ -102,6 +102,13 @@ const MATRICE: Record<PermissionCode, readonly string[]> = {
   "paiement:executer": ["ADMIN", "DFC"], // NE peut PAS autoriser
   "paiement:annuler": ["ADMIN", "DFC"],
   "paiement:parametres": ["ADMIN"],
+  // M13 — Logistique L1
+  "materiel:lire": ["ADMIN", "DG", "DFC", "DT"],
+  "materiel:creer": ["ADMIN", "DT"],
+  "materiel:modifier": ["ADMIN", "DT"],
+  "typePiece:gerer": ["ADMIN", "DT"],
+  "materiel:coutsAdministratifs": ["ADMIN", "DG", "DFC", "DT"],
+  "logistique:parametres": ["ADMIN"],
 };
 
 // Compte Super Admin — accès technique de maintenance, sans Employe

@@ -195,6 +195,37 @@ export const PERMISSIONS = {
     libelle: "Configurer les paramètres de paiement",
     domaine: "PAIEMENT",
   },
+  // M13 — Logistique
+  "materiel:lire": {
+    code: "materiel:lire",
+    libelle: "Consulter le registre matériel et les échéances",
+    domaine: "TECHNIQUE",
+  },
+  "materiel:creer": {
+    code: "materiel:creer",
+    libelle: "Créer une fiche matériel",
+    domaine: "TECHNIQUE",
+  },
+  "materiel:modifier": {
+    code: "materiel:modifier",
+    libelle: "Modifier une fiche matériel",
+    domaine: "TECHNIQUE",
+  },
+  "typePiece:gerer": {
+    code: "typePiece:gerer",
+    libelle: "Créer et désactiver un type de pièce administrative",
+    domaine: "TECHNIQUE",
+  },
+  "materiel:coutsAdministratifs": {
+    code: "materiel:coutsAdministratifs",
+    libelle: "Consulter les coûts d'acquisition et montants des pièces",
+    domaine: "TECHNIQUE",
+  },
+  "logistique:parametres": {
+    code: "logistique:parametres",
+    libelle: "Configurer les paramètres logistiques (seuils, délais)",
+    domaine: "ADMIN",
+  },
 } as const;
 
 export type PermissionCode = keyof typeof PERMISSIONS;
