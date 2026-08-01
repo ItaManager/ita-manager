@@ -171,6 +171,43 @@ async function main() {
   }
 
   // ===========================================================================
+  // 6. FORMATS DE CODE (décision 1.1)
+  // ===========================================================================
+
+  console.log('\n📋 Formats de code famille');
+
+  const familles = await prisma.familleMateriel.findMany({
+    where: { actif: true },
+    select: {
+      code: true,
+      formatCode: true,
+      prochainNumero: true,
+      _count: {
+        select: { materiel: true },
+      },
+    },
+  });
+
+  for (const famille of familles) {
+    // Vérifier que le format contient {SEQ:n}
+    if (!/{SEQ:\d+}/.test(famille.formatCode)) {
+      console.log(`   ❌ ${famille.code} : format sans {SEQ:n} → "${famille.formatCode}"`);
+      erreurs++;
+      continue;
+    }
+
+    // Vérifier que prochainNumero est cohérent avec les codes existants
+    if (famille._count.materiel > 0 && famille.prochainNumero < famille._count.materiel) {
+      console.log(
+        `   ⚠️  ${famille.code} : prochainNumero=${famille.prochainNumero} < ${famille._count.materiel} matériels`
+      );
+      // Pas une erreur bloquante, juste un avertissement
+    }
+
+    console.log(`   ✅ ${famille.code} : "${famille.formatCode}" (prochain: ${famille.prochainNumero})`);
+  }
+
+  // ===========================================================================
   // RÉSULTAT FINAL
   // ===========================================================================
 

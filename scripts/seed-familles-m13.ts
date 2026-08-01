@@ -93,8 +93,8 @@ async function main() {
   console.log('  • PETIT_MATERIEL : AK-MV, AK-MP');
   console.log('  • CONTENEUR : AK-CMA');
   console.log('  • MOBILIER : AK-IMP\n');
-  console.log('Note : Référentiel avec création inline (R-04).');
-  console.log('       La reprise (étape 1.7) corrigera les préfixes sur données réelles.\n');
+  console.log('Note : Codes relevés dans le tableur (ITA - CODE MATERIELS ITA INVENTORIES.xlsx).');
+  console.log('       Référentiel avec création inline (R-04).\n');
 }
 
 main()

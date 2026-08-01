@@ -1638,6 +1638,11 @@ model FamilleMateriel {
   type             TypeMateriel
   actif            Boolean       @default(true)
 
+  // Format de code (décision 1.1 — format flexible)
+  // Jetons : {FAMILLE} {SEQ:n} {ANNEE}
+  formatCode       String        @default("{FAMILLE}{SEQ:3}")
+  prochainNumero   Int           @default(1)
+
   materiel Materiel[]
 
   creeLe    DateTime @default(now())
