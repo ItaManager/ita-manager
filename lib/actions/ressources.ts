@@ -293,9 +293,9 @@ export const validerDemandeService = actionProtegee(
           });
 
           // M8 §5 : Matériel en panne ne peut pas être affecté
-          if (materiel?.etat === "EN_PANNE") {
+          if (materiel?.statut === "EN_PANNE") {
             throw new Error(
-              `Le matériel ${materiel.libelle} est en panne et ne peut pas être affecté`
+              `Le matériel ${materiel.designation} est en panne et ne peut pas être affecté`
             );
           }
 
@@ -306,7 +306,7 @@ export const validerDemandeService = actionProtegee(
             materiel.affectations.length > 0
           ) {
             throw new Error(
-              `Le matériel ${materiel.libelle} est déjà affecté sur cette période`
+              `Le matériel ${materiel.designation} est déjà affecté sur cette période`
             );
           }
         }
@@ -425,7 +425,7 @@ export const affecterMateriel = actionProtegee(
       throw new Error("Matériel introuvable");
     }
 
-    if (materiel.etat === "EN_PANNE") {
+    if (materiel.statut === "EN_PANNE") {
       throw new Error("Ce matériel est en panne et ne peut pas être affecté");
     }
 
@@ -481,7 +481,7 @@ export const affecterMateriel = actionProtegee(
         action: "CREATION",
         auteurId: session.userId,
         auteurNom: session.email,
-        commentaire: `Affectation ${materiel.libelle} au projet ${affectation.projet.code}`,
+        commentaire: `Affectation ${materiel.designation} au projet ${affectation.projet.code}`,
       },
     });
 
@@ -496,13 +496,13 @@ export const affecterMateriel = actionProtegee(
 
 export type MaterielListItem = {
   id: string;
-  code: string;
-  libelle: string;
-  categorie: {
+  codeIta: string;
+  designation: string;
+  famille: {
     id: string;
     libelle: string;
   };
-  etat: string;
+  statut: string;
   partageable: boolean;
   affectations: number;
 };
@@ -514,11 +514,11 @@ export async function listerMateriel(): Promise<MaterielListItem[]> {
   const materiel = await prisma.materiel.findMany({
     select: {
       id: true,
-      code: true,
-      libelle: true,
-      etat: true,
+      codeIta: true,
+      designation: true,
+      statut: true,
       partageable: true,
-      categorie: {
+      famille: {
         select: {
           id: true,
           libelle: true,
@@ -531,17 +531,17 @@ export async function listerMateriel(): Promise<MaterielListItem[]> {
       },
     },
     orderBy: [
-      { categorie: { libelle: 'asc' } },
-      { code: 'asc' },
+      { famille: { libelle: 'asc' } },
+      { codeIta: 'asc' },
     ],
   });
 
   return materiel.map((m) => ({
     id: m.id,
-    code: m.code,
-    libelle: m.libelle,
-    categorie: m.categorie,
-    etat: m.etat,
+    codeIta: m.codeIta,
+    designation: m.designation,
+    famille: m.famille,
+    statut: m.statut,
     partageable: m.partageable,
     affectations: m._count.affectations,
   }));

@@ -1107,6 +1107,9 @@ model Projet {
   affectationsMateriel AffectationMateriel[]
   demandesRessource    DemandeRessource[]
 
+  /// M13 L1 — Lieux de stockage sur ce projet (si nature=CHANTIER)
+  lieuxStockage LieuStockage[]
+
   creeLe  DateTime @default(now())
   creePar String   @db.Uuid
 
@@ -1573,14 +1576,38 @@ model ExportPaie {
 }
 
 // =====================================================================
-// M8 — RESSOURCES ET MATÉRIEL
+// M8 — RESSOURCES ET MATÉRIEL (demandes)
+// M13 — LOGISTIQUE ET PARC (matériel, pièces administratives)
 // =====================================================================
 
-enum EtatMateriel {
-  EN_SERVICE
-  EN_PANNE
-  EN_MAINTENANCE
-  REFORME
+/// M13 L1 — Type de matériel individuel (6 types)
+enum TypeMateriel {
+  VEHICULE_LEGER
+  VEHICULE_LOURD
+  ENGIN
+  PETIT_MATERIEL
+  CONTENEUR
+  MOBILIER
+}
+
+/// M13 L1 — Statut opérationnel du matériel
+enum StatutMateriel {
+  DISPONIBLE       // Au garage, libre
+  EN_MISSION       // Affecté à un chantier
+  DEMOBILISE       // Revenu de chantier, attend réaffectation
+  EN_MAINTENANCE   // En réparation
+  EN_PANNE         // Cassé
+  HORS_SERVICE     // Inutilisable définitivement
+  REFORME          // Hors circuit
+}
+
+/// M13 L1 — Nature de lieu de stockage
+enum NatureLieu {
+  SITE       // Siège social
+  CHANTIER   // Projet actif (pointe vers Projet)
+  GARAGE     // Garage central
+  MAGASIN    // Magasin de stockage
+  BUREAU     // Bureau régional
 }
 
 enum NatureDemandeRessource {
@@ -1599,63 +1626,189 @@ enum StatutDemandeRessource {
 }
 
 /**
- * Catégorie de matériel (engins, véhicules, outils)
- */
-model CategorieMateriel {
-  id      String     @id @default(cuid())
-  code    String     @unique
-  libelle String
-  materiel Materiel[]
-
-  @@map("categories_materiel")
-}
-
-/**
- * Matériel du parc
+ * M13 L1 — Famille de matériel (remplace CategorieMateriel M8)
  *
- * M8 §1.2 : Indicateur partageable (affectation simultanée possible)
- * M8 §5 : État EN_PANNE bloque l'affectation
+ * Référentiel créable inline (R-04). 21 familles au seed initial.
  */
-model Materiel {
-  id String @id @default(cuid())
+model FamilleMateriel {
+  id               String        @id @default(cuid())
+  code             String        @unique  // AK-PICK, AK-VL, AK-BUL
+  libelle          String        @unique
+  libelleNormalise String        @unique  // Création inline sans doublon
+  type             TypeMateriel
+  actif            Boolean       @default(true)
 
-  /// Code unique (ex: PEL-01, CAM-05)
-  code String @unique
-
-  /// Désignation
-  libelle String
-
-  /// Catégorie
-  categorieId String
-  categorie   CategorieMateriel @relation(fields: [categorieId], references: [id])
-
-  /// Caractéristiques techniques
-  marque       String?
-  modele       String?
-  immatriculation String? @unique
-  anneeFabrication Int?
-
-  /// M8 §1.2 : Peut être affecté à plusieurs chantiers simultanément
-  partageable Boolean @default(false)
-
-  /// M8 §5 : État actuel
-  etat EtatMateriel @default(EN_SERVICE)
-
-  /// Observations
-  commentaire String?
-
-  /// Affectations
-  affectations AffectationMateriel[]
-
-  /// Demandes de ressource
-  lignesDemandeRessource LigneDemandeRessource[]
+  materiel Materiel[]
 
   creeLe    DateTime @default(now())
   modifieLe DateTime @updatedAt
 
-  @@index([categorieId])
-  @@index([etat])
+  @@map("familles_materiel")
+}
+
+/**
+ * M13 L1 — Lieu de stockage (garage, chantier, magasin)
+ *
+ * DISTINCT de LieuLivraison (M5) — cycles de vie différents
+ */
+model LieuStockage {
+  id       String     @id @default(cuid())
+  libelle  String     @unique
+  nature   NatureLieu
+
+  /// Si nature=CHANTIER, pointe vers le projet
+  projetId String?
+  projet   Projet? @relation(fields: [projetId], references: [id])
+
+  actif Boolean @default(true)
+
+  materiel Materiel[]
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([nature])
+  @@map("lieux_stockage")
+}
+
+/**
+ * M13 L1 — Type de pièce administrative (référentiel, pas enum)
+ *
+ * 14 types au seed : assurance, visite technique, VGP, etc.
+ * Créable inline par Chef Logistique (permission typePiece:gerer)
+ */
+model TypePieceAdministrative {
+  id               String         @id @default(cuid())
+  libelle          String         @unique
+  libelleNormalise String         @unique
+
+  /// Périodicité en mois (propose expiration, ne l'impose pas)
+  periodiciteMois  Int?
+
+  /// Délai d'alerte en jours (ex: 60j pour assurance)
+  delaiAlerteJours Int            @default(30)
+
+  /// Types de matériel concernés (JSON array de TypeMateriel)
+  typesMateriel    String         @default("[]") // ["VEHICULE_LEGER", "VEHICULE_LOURD"]
+
+  /// Pièce bloquante (empêche sortie si périmée)
+  bloquante        Boolean        @default(false)
+
+  actif            Boolean        @default(true)
+  ordreAffichage   Int            @default(0)
+
+  pieces PieceAdministrative[]
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@map("types_piece_administrative")
+}
+
+/**
+ * M13 L1 — Matériel du parc (individuel, code unique)
+ *
+ * Nature INDIVIDUEL : chaque objet porte son code (AK-PICK001)
+ * M8 §1.2 : partageable = affectation simultanée à plusieurs chantiers
+ * M13 §3 : 3 codes recherchables (codeIta, numeroParcAncien, codeLong)
+ */
+model Materiel {
+  id String @id @default(cuid())
+
+  /// M13 §3 — Trois codes recherchables (tous uniques)
+  codeIta          String  @unique  // Code ITA (ex: AK-PICK001)
+  numeroParcAncien String? @unique  // Ancien N° Parc (ex: A11157)
+  codeLong         String? @unique  // Format long optionnel
+
+  /// Type et famille
+  type      TypeMateriel
+  familleId String
+  famille   FamilleMateriel @relation(fields: [familleId], references: [id])
+
+  /// Identification
+  designation String
+  marque      String?
+  modele      String?
+  numeroSerie String? @unique
+  immatriculation String? @unique  // Si véhicule
+  anneeFabrication Int?
+
+  /// Acquisition (SENSIBLE)
+  dateAcquisition DateTime? @db.Date
+  coutAcquisition Decimal?  @db.Decimal(12, 0)
+
+  /// Localisation de base
+  lieuBaseId String
+  lieuBase   LieuStockage @relation(fields: [lieuBaseId], references: [id])
+
+  /// Statut opérationnel
+  statut StatutMateriel @default(DISPONIBLE)
+
+  /// M8 §1.2 : Peut être affecté à plusieurs chantiers simultanément
+  /// M13 §8 : camion navette oui, pelle mécanique non
+  partageable Boolean @default(false)
+
+  /// Observations
+  commentaire String?
+
+  /// Relations M8
+  affectations           AffectationMateriel[]
+  lignesDemandeRessource LigneDemandeRessource[]
+
+  /// Relations M13 L1
+  piecesAdministratives PieceAdministrative[]
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([type])
+  @@index([familleId])
+  @@index([lieuBaseId])
+  @@index([statut])
   @@map("materiel")
+}
+
+/**
+ * M13 L1 — Pièce administrative (assurance, visite technique, etc.)
+ *
+ * CRITIQUE : L'état (VALIDE/ALERTE/PERIME) se CALCULE dynamiquement,
+ * jamais stocké. Seule dateExpiration est persistée.
+ *
+ * Chaîne de renouvellement via remplaceId (historique complet).
+ */
+model PieceAdministrative {
+  id         String @id @default(cuid())
+  materielId String
+  materiel   Materiel @relation(fields: [materielId], references: [id], onDelete: Cascade)
+
+  typeId String
+  type   TypePieceAdministrative @relation(fields: [typeId], references: [id])
+
+  /// Identifiants de la pièce
+  numero   String?  // N° de police, PV, patente
+  emetteur String?  // Compagnie, centre de contrôle
+
+  /// Dates (LE champ qui pilote tout)
+  dateEdition    DateTime @db.Date
+  dateExpiration DateTime @db.Date
+
+  /// Montant (SENSIBLE)
+  montant Decimal? @db.Decimal(12, 0)
+
+  /// Scan PDF (Supabase Storage)
+  fichierId String?
+
+  /// Renouvellement — chaîne historique (1:1 avec ancienne pièce)
+  remplaceId String?                 @unique
+  remplace   PieceAdministrative?    @relation("Renouvellement", fields: [remplaceId], references: [id])
+  renouvele  PieceAdministrative?    @relation("Renouvellement")
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([materielId, dateExpiration])
+  @@index([typeId])
+  @@map("pieces_administratives")
 }
 
 /**

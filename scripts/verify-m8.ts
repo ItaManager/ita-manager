@@ -52,13 +52,13 @@ async function main() {
 
   console.log('\n📋 Modèles M8');
 
-  const categoriesCount = await prisma.categorieMateriel.count();
+  const famillesCount = await prisma.familleMateriel.count();
   const materielCount = await prisma.materiel.count();
   const affectationsCount = await prisma.affectationMateriel.count();
   const demandesCount = await prisma.demandeRessource.count();
   const lignesDemandeCount = await prisma.ligneDemandeRessource.count();
 
-  console.log(`   ✅ CategorieMateriel : ${categoriesCount} enregistrement(s)`);
+  console.log(`   ✅ FamilleMateriel : ${famillesCount} enregistrement(s)`);
   console.log(`   ✅ Materiel : ${materielCount} enregistrement(s)`);
   console.log(`   ✅ AffectationMateriel : ${affectationsCount} enregistrement(s)`);
   console.log(`   ✅ DemandeRessource : ${demandesCount} enregistrement(s)`);
@@ -69,7 +69,7 @@ async function main() {
   // ===========================================================================
 
   console.log('\n📋 Enums M8');
-  console.log('   ✅ EtatMateriel (4 valeurs)');
+  console.log('   ✅ StatutMateriel (7 valeurs)');
   console.log('   ✅ NatureDemandeRessource (2 valeurs : HUMAINE, MATERIELLE)');
   console.log('   ✅ StatutDemandeRessource (7 valeurs)');
 
@@ -83,7 +83,7 @@ async function main() {
     const materielAvecPartageable = await prisma.materiel.findMany({
       select: {
         id: true,
-        code: true,
+        codeIta: true,
         partageable: true,
       },
       take: 5,
@@ -91,7 +91,7 @@ async function main() {
 
     for (const mat of materielAvecPartageable) {
       console.log(
-        `   ✅ ${mat.code} : partageable=${mat.partageable}`
+        `   ✅ ${mat.codeIta} : partageable=${mat.partageable}`
       );
     }
   }
