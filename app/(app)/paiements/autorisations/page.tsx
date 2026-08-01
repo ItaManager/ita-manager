@@ -21,10 +21,10 @@ export default async function PageAutorisations() {
     redirect('/connexion');
   }
 
-  // Récupérer toutes les demandes (on filtrera côté serveur plus tard)
-  const toutesLesDemandes = await listerDemandesPaiement();
-  // TODO: Filtrer uniquement celles en attente d'autorisation
-  const demandes = toutesLesDemandes;
+  // Récupérer uniquement les demandes en attente d'autorisation
+  const demandes = await listerDemandesPaiement({
+    enAttenteAutorisation: true,
+  });
 
   return (
     <div className="container mx-auto p-6">

@@ -571,8 +571,44 @@ export const executerPaiement = actionProtegee(
  */
 export const listerDemandesPaiement = actionProtegee(
   'paiement:consulter',
-  async () => {
+  async (
+    _session,
+    filtre?: {
+      enAttenteAutorisation?: boolean;
+      autorisees?: boolean;
+      executees?: boolean;
+    }
+  ) => {
+    // Construction du filtre Prisma
+    const where: any = {};
+
+    if (filtre?.enAttenteAutorisation) {
+      where.autorisation = null; // Pas encore autorisées
+      where.lignes = {
+        some: {
+          statut: 'PREPARE', // Au moins une ligne préparée
+        },
+      };
+    }
+
+    if (filtre?.autorisees) {
+      where.autorisation = {
+        isNot: null, // Autorisées
+      };
+    }
+
+    if (filtre?.executees) {
+      where.lignes = {
+        some: {
+          statut: {
+            in: ['REUSSI', 'ECHOUE', 'ANNULE'],
+          },
+        },
+      };
+    }
+
     const demandes = await prisma.demandePaiement.findMany({
+      where,
       include: {
         lignes: {
           select: {
@@ -833,18 +869,13 @@ export const preparerDemande = actionProtegee(
 
 export const consulterSolde = actionProtegee(
   'paiement:consulter',
-  async (session) => {
-    const { obtenirClientWaveSingleton } = await import(
-      '@/lib/paiements/wave/factory'
-    );
-    const client = obtenirClientWaveSingleton();
+  async (_session) => {
+    // Note: Wave API n'expose pas directement le solde dans Payout API
+    // Il faut utiliser Business API ou consulter depuis le dashboard
+    // Pour l'instant, on retourne une valeur factice
+    // TODO: Implémenter l'appel réel à Wave Business API
 
     try {
-      // Note: Wave API n'expose pas directement le solde dans Payout API
-      // Il faut utiliser Business API ou consulter depuis le dashboard
-      // Pour l'instant, on retourne une valeur factice
-      // TODO: Implémenter l'appel réel à Wave Business API
-
       return {
         success: true,
         solde: 0,
@@ -993,7 +1024,7 @@ export const annulerPaiement = actionProtegee(
 
 export const executerLot = actionProtegee(
   'paiement:executer',
-  async (session, demandePaiementId: string) => {
+  async (_session, demandePaiementId: string) => {
     const demande = await prisma.demandePaiement.findUnique({
       where: { id: demandePaiementId },
       include: {
@@ -1072,7 +1103,7 @@ export const executerLot = actionProtegee(
 
 export const interrogerLot = actionProtegee(
   'paiement:executer',
-  async (session, batchId: string) => {
+  async (_session, batchId: string) => {
     const { obtenirClientWaveSingleton } = await import(
       '@/lib/paiements/wave/factory'
     );
