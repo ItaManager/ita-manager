@@ -292,7 +292,7 @@ export async function executerPaiementLogique(
     ignoreCreneau?: boolean;
     ignoreVerification?: boolean;
   } = {}
-): Promise<{ success: boolean }> {
+): Promise<{ success: boolean; nombreReussis: number; nombreEchecs: number }> {
   const {
     ignoreEchecs = false,
     ignoreAutorisateur = false,
@@ -432,8 +432,103 @@ export async function executerPaiementLogique(
   // Les sept contrôles sont passés — exécution autorisée
   // ───────────────────────────────────────────────────────────────────
 
-  // TODO: Appel Wave + mise à jour des lignes
-  // (sera implémenté dans les étapes suivantes)
+  // Import dynamique du client Wave simulé
+  const { creerClientSimule } = await import('@/lib/paiements/wave/client-simule');
+  const client = creerClientSimule();
+
+  // Récupérer toutes les lignes de la demande avec leurs tentatives
+  const lignes = await prisma.lignePaiement.findMany({
+    where: { demandePaiementId },
+    include: {
+      tentatives: true,
+    },
+  });
+
+  // Filtrer les lignes exécutables (non bloquées, non déjà exécutées)
+  const lignesExecutables = lignes.filter(
+    (l) =>
+      l.nameMatch !== 'NO_MATCH' &&
+      l.withinLimits !== false &&
+      !l.executeLe
+  );
+
+  let nombreReussis = 0;
+  let nombreEchecs = 0;
+
+  // Exécuter chaque ligne
+  for (const ligne of lignesExecutables) {
+    const numeroTentative = ligne.tentatives.length + 1;
+
+    try {
+      // Appel Wave payout
+      const reponse = await client.payout(
+        {
+          amount: ligne.montant.toString(),
+          currency: 'XOF',
+          recipient: ligne.beneficiaireMobile,
+          payment_reason: ligne.motifPaiement,
+          client_reference: ligne.referenceIta,
+        },
+        ligne.cleIdempotence
+      );
+
+      // Mettre à jour la ligne
+      await prisma.lignePaiement.update({
+        where: { id: ligne.id },
+        data: {
+          executeLe: maintenant,
+          wavePayoutId: reponse.payout_id || null,
+          statut: 'REUSSI',
+          fraisWave: reponse.fees ? new Decimal(reponse.fees) : null,
+        },
+      });
+
+      // Enregistrer la tentative réussie
+      await prisma.tentativePaiement.create({
+        data: {
+          lignePaiementId: ligne.id,
+          numero: numeroTentative,
+          httpStatus: reponse.httpStatus || 200,
+          reponseBrute: reponse as any,
+          erreurCode: null,
+        },
+      });
+
+      nombreReussis++;
+    } catch (erreur: any) {
+      // Enregistrer la tentative échouée
+      await prisma.tentativePaiement.create({
+        data: {
+          lignePaiementId: ligne.id,
+          numero: numeroTentative,
+          httpStatus: erreur.httpStatus || null,
+          reponseBrute: erreur.response || erreur,
+          erreurCode: erreur.errorCode || erreur.code || 'ERROR',
+        },
+      });
+
+      // Mettre à jour le statut de la ligne si échec définitif
+      await prisma.lignePaiement.update({
+        where: { id: ligne.id },
+        data: {
+          statut: 'ECHOUE',
+          waveErrorCode: erreur.errorCode || erreur.code,
+        },
+      });
+
+      nombreEchecs++;
+    }
+  }
+
+  // Mettre à jour le compteur d'échecs sur l'autorisation
+  if (nombreEchecs > 0) {
+    await prisma.autorisationPaiement.update({
+      where: { demandePaiementId },
+      data: {
+        nombreEchecs: autorisation.nombreEchecs + nombreEchecs,
+      },
+    });
+  }
 
   // Journaliser
   await prisma.journalEvenement.create({
@@ -443,11 +538,16 @@ export async function executerPaiementLogique(
       action: 'EXECUTION',
       auteurId: session.userId,
       auteurNom: session.email,
-      commentaire: `Exécution lancée — ${autorisation.demandePaiement.lignes.length} ligne(s)`,
+      details: {
+        nombreReussis,
+        nombreEchecs,
+        lignesExecutables: lignesExecutables.length,
+      },
+      commentaire: `Exécution — ${nombreReussis} réussi(s), ${nombreEchecs} échec(s)`,
     },
   });
 
-  return { success: true };
+  return { success: true, nombreReussis, nombreEchecs };
 }
 
 /**
