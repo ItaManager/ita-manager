@@ -49,6 +49,46 @@ const VERIFICATIONS: VerificationScript[] = [
     name: "M2 — Nationalités et Permissions",
     path: join(__dirname, "verify-m2.ts"),
   },
+  {
+    name: "M3 — Congés et Absences",
+    path: join(__dirname, "verify-m3.ts"),
+  },
+  {
+    name: "M4 — Rémunération",
+    path: join(__dirname, "verify-m4.ts"),
+  },
+  {
+    name: "M5 — Projets et Planning",
+    path: join(__dirname, "verify-m5.ts"),
+  },
+  {
+    name: "M6 — Relevés d'activité",
+    path: join(__dirname, "verify-m6.ts"),
+  },
+  {
+    name: "M7 — Paie chantier",
+    path: join(__dirname, "verify-m7.ts"),
+  },
+  {
+    name: "M8 — Ressources et matériel",
+    path: join(__dirname, "verify-m8.ts"),
+  },
+  {
+    name: "M9 — Appels d'offres",
+    path: join(__dirname, "verify-m9.ts"),
+  },
+  {
+    name: "M10 — Pilotage",
+    path: join(__dirname, "verify-m10.ts"),
+  },
+  {
+    name: "M11 — Administration",
+    path: join(__dirname, "verify-m11.ts"),
+  },
+  {
+    name: "M12 — Présences bureau",
+    path: join(__dirname, "verify-m12.ts"),
+  },
 ];
 
 async function runScript(script: VerificationScript): Promise<boolean> {
@@ -95,7 +135,7 @@ async function runScript(script: VerificationScript): Promise<boolean> {
 }
 
 async function main() {
-  console.log("🔍 Vérifications post-seed — M0 + M1 + M2\n");
+  console.log("🔍 Vérifications post-seed — M0→M12 (tous modules)\n");
 
   const resultats: boolean[] = [];
 

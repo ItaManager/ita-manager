@@ -249,6 +249,7 @@ enum StatutDerogation {
   EN_ATTENTE
   VALIDEE
   REFUSEE
+  SANS_OBJET // Dérogation devenue obsolète (changement de poste, nouvelle grille, etc.)
 }
 
 // =====================================================================
@@ -463,6 +464,17 @@ model Employe {
   /// M5 — Projets (chaîne fonctionnelle)
   affectationsChantier AffectationChantier[]
 
+  /// M6 — Relevés d'activité
+  relevesChefChantier ReleveActivite[]
+  pointages           Pointage[]
+
+  /// M7 — Paie chantier
+  lignesPaie LignePaie[]
+
+  /// M14 — Achats
+  demandesAchatDemandeur    DemandeAchat[] @relation("DemandesDemandeur")
+  demandesAchatBeneficiaire DemandeAchat[] @relation("DemandesBeneficiaire")
+
   creeLe    DateTime  @default(now())
   modifieLe DateTime  @updatedAt
   /// Archivage, jamais suppression. Motif stocké dans JournalEvenement.
@@ -496,6 +508,11 @@ model Profil {
   roles          ProfilRole[]
   evenements     JournalEvenement[]
   codesSecoursMfa CodeSecoursMfa[]
+
+  /// M15 — Relations paiements
+  demandesPaiement        DemandePaiement[]       @relation("PreparateurPaiement")
+  autorisationsDemandees  AutorisationPaiement[]  @relation("DemandeurAutorisation")
+  autorisationsAccordees  AutorisationPaiement[]  @relation("AutorisateurPaiement")
 
   creeLe    DateTime  @default(now())
   modifieLe DateTime  @updatedAt
@@ -1085,6 +1102,10 @@ model Projet {
   jalons        Jalon[]
   affectations  AffectationChantier[]
   lieuLivraison LieuLivraison?
+  releves       ReleveActivite[]
+  periodesPaie  PeriodePaie[]
+  affectationsMateriel AffectationMateriel[]
+  demandesRessource    DemandeRessource[]
 
   creeLe  DateTime @default(now())
   creePar String   @db.Uuid
@@ -1115,6 +1136,9 @@ model Tache {
   predecesseurId String?
   predecesseur   Tache?  @relation("Dependances", fields: [predecesseurId], references: [id], onDelete: SetNull)
   successeurs    Tache[] @relation("Dependances")
+
+  /// M6 — Travaux réalisés
+  travauxRealises TravauxRealises[]
 
   creeLe DateTime @default(now())
 
@@ -1192,5 +1216,926 @@ model LieuLivraison {
   creePar String   @db.Uuid
 
   @@map("lieux_livraison")
+}
+
+// ============================================================================
+// M6 — RELEVÉS D'ACTIVITÉ
+// ============================================================================
+
+/// Statut du relevé d'activité
+enum StatutReleve {
+  BROUILLON
+  SOUMIS
+  VISE
+  REFUSE
+}
+
+/// État du pointage d'un agent
+enum EtatPointage {
+  PRESENT
+  ABSENT_JUSTIFIE
+  ABSENT_NON_JUSTIFIE
+  RETARD
+  REPOS
+}
+
+/// Relevé d'activité quotidien d'un chantier
+/// M6 §8.1 : Un relevé par chantier et par jour (contrainte d'unicité)
+model ReleveActivite {
+  id String @id @default(cuid())
+
+  /// Date du relevé (YYYY-MM-DD)
+  date DateTime @db.Date
+
+  /// Chantier concerné
+  projetId String
+  projet   Projet @relation(fields: [projetId], references: [id])
+
+  /// Chef de chantier qui saisit
+  chefChantier   Employe @relation(fields: [chefChantierId], references: [id])
+  chefChantierId String
+
+  /// Statut : BROUILLON → SOUMIS → VISE / REFUSE
+  statut StatutReleve @default(BROUILLON)
+
+  /// Si refusé, motif obligatoire (M6 §1.3)
+  motifRefus String?
+
+  /// Conducteur qui vise (ou refuse)
+  conducteurId String?   @db.Uuid
+  viseLe       DateTime?
+
+  /// Blocs du relevé
+  pointages            Pointage[]
+  travauxRealises      TravauxRealises[]
+  utilisationsMateriel UtilisationMateriel[]
+  consommations        ConsommationMateriau[]
+  incidents            Incident[]
+
+  /// Synchronisation hors ligne
+  /// M6 §3.3 : brouillon local d'abord, synchronisation différée
+  derniereSyncLocale DateTime?
+  derniereSync       DateTime?
+  syncEnAttente      Boolean  @default(false)
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  /// Contrainte M6 §8.1 : un seul relevé par chantier et par jour
+  @@unique([projetId, date])
+  @@index([chefChantierId])
+  @@index([statut])
+  @@index([date])
+  @@map("releves_activite")
+}
+
+/// Pointage d'un agent sur un relevé
+/// M6 §3.2 : Pointage par exception, tous présents par défaut
+model Pointage {
+  id String @id @default(cuid())
+
+  releveId String
+  releve   ReleveActivite @relation(fields: [releveId], references: [id], onDelete: Cascade)
+
+  employeId String
+  employe   Employe @relation(fields: [employeId], references: [id])
+
+  /// État : PRESENT par défaut (M6 §3.2)
+  etat EtatPointage @default(PRESENT)
+
+  /// Heures préremplies avec les heures théoriques du jour
+  heuresTheoretiques Decimal @db.Decimal(5, 2)
+  heuresReelles      Decimal @db.Decimal(5, 2)
+  heuresSup          Decimal @default(0) @db.Decimal(5, 2)
+
+  /// Observation facultative
+  observation String?
+
+  /// Un seul pointage par employé par relevé
+  @@unique([releveId, employeId])
+  @@map("pointages")
+}
+
+/// Travaux réalisés dans la journée
+/// Alimente Tache.avancementConstate (M6 §8.4)
+model TravauxRealises {
+  id String @id @default(cuid())
+
+  releveId String
+  releve   ReleveActivite @relation(fields: [releveId], references: [id], onDelete: Cascade)
+
+  tacheId String?
+  tache   Tache?  @relation(fields: [tacheId], references: [id])
+
+  /// Si pas de tâche liée, description libre
+  description String
+
+  /// Avancement déclaré (%)
+  avancementDeclare Decimal? @db.Decimal(5, 2)
+
+  /// Observation du chef de chantier
+  observation String?
+
+  @@map("travaux_realises")
+}
+
+/// Utilisation de matériel (engins)
+/// M6 §8.5 : Enregistrer pour analyser plus tard
+model UtilisationMateriel {
+  id String @id @default(cuid())
+
+  releveId String
+  releve   ReleveActivite @relation(fields: [releveId], references: [id], onDelete: Cascade)
+
+  /// Référence au matériel (M8 - à créer)
+  /// Pour l'instant, description libre
+  materielDescription String
+
+  /// Heures de fonctionnement
+  heuresFonctionnement Decimal? @db.Decimal(6, 2)
+
+  /// Carburant consommé (litres)
+  carburant Decimal? @db.Decimal(8, 2)
+
+  observation String?
+
+  @@map("utilisations_materiel")
+}
+
+/// Consommation de matériaux
+model ConsommationMateriau {
+  id String @id @default(cuid())
+
+  releveId String
+  releve   ReleveActivite @relation(fields: [releveId], references: [id], onDelete: Cascade)
+
+  /// Article (M8 - à créer)
+  /// Pour l'instant, description libre
+  articleDescription String
+
+  /// Quantité et unité
+  quantite Decimal @db.Decimal(10, 3)
+  unite    String /// m³, tonnes, unités, etc.
+
+  observation String?
+
+  @@map("consommations_materiaux")
+}
+
+/// Incident sur le chantier
+model Incident {
+  id String @id @default(cuid())
+
+  releveId String
+  releve   ReleveActivite @relation(fields: [releveId], references: [id], onDelete: Cascade)
+
+  /// Nature de l'incident
+  nature String
+
+  /// Description détaillée
+  description String
+
+  /// Photo (pièce jointe)
+  pieceId String?
+
+  /// M6 §8.6 : Si blessure, classification PARTICULIER
+  contientBlessure Boolean @default(false)
+
+  creeLe DateTime @default(now())
+
+  @@map("incidents")
+}
+
+// =====================================================================
+// M7 — PAIE CHANTIER
+// =====================================================================
+
+enum TypeEvenementPeriodePaie {
+  OUVERTURE
+  VALIDATION_RH
+  VALIDATION_DT
+  VALIDATION_DFC
+  REFUS
+  EXPORT
+  CLOTURE
+  ANNULATION
+}
+
+enum MoyenPaiement {
+  VIREMENT
+  WAVE
+}
+
+/**
+ * Période de paie pour un chantier
+ *
+ * M7 §3 : Circuit de validation à 3 niveaux (RH → DT → DFC)
+ * M7 §8.4 : Clôturée = immuable
+ * M7 §8.5 : Pas de chevauchement sur même chantier
+ */
+model PeriodePaie {
+  id String @id @default(cuid())
+
+  /// Chantier et période
+  projetId  String
+  projet    Projet   @relation(fields: [projetId], references: [id])
+  dateDebut DateTime @db.Date
+  dateFin   DateTime @db.Date
+
+  /// Ouverture
+  ouvertParId String   @db.Uuid
+  ouvertLe    DateTime @default(now())
+
+  /// Lignes de paie
+  lignes LignePaie[]
+
+  /// M7 §5.1 : Historique du circuit (statut déduit du dernier événement)
+  evenements EvenementPeriodePaie[]
+
+  /// Exports
+  exports ExportPaie[]
+
+  /// Montants totaux (calculés)
+  montantBrutTotal Decimal @default(0) @db.Decimal(12, 2)
+  montantNetTotal  Decimal @default(0) @db.Decimal(12, 2)
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  /// M7 §8.5 : Contrainte basique (chevauchement complet détecté en logique métier)
+  @@index([projetId])
+  @@index([ouvertParId])
+  @@index([dateDebut])
+  @@index([dateFin])
+  @@map("periodes_paie")
+}
+
+/**
+ * Ligne de paie individuelle
+ *
+ * M7 §5.2 : Toutes les données figées au calcul
+ */
+model LignePaie {
+  id String @id @default(cuid())
+
+  periodeId String
+  periode   PeriodePaie @relation(fields: [periodeId], references: [id], onDelete: Cascade)
+
+  /// Employé
+  employeId String
+  employe   Employe @relation(fields: [employeId], references: [id])
+
+  /// M7 §5.2 : Copies figées au calcul (l'employé peut changer de poste ensuite)
+  nomEmploye   String
+  posteLibelle String
+
+  /// Calculs
+  tauxJournalier Decimal @db.Decimal(10, 2)
+  joursPointes   Decimal @db.Decimal(5, 2)
+  heuresSupp     Decimal @default(0) @db.Decimal(5, 2)
+  montantBrut    Decimal @db.Decimal(10, 2)
+  retenues       Decimal @default(0) @db.Decimal(10, 2)
+  montantNet     Decimal @db.Decimal(10, 2)
+
+  /// M7 §5.2 : Moyen de paiement figé (RIB ou numéro Wave)
+  moyenPaiement     MoyenPaiement
+  compteDestination String
+
+  /// Anomalies détectées (M7 §4.2)
+  signalZeroJour       Boolean @default(false)
+  signalDerogation     Boolean @default(false)
+  signalEcartImportant Boolean @default(false)
+  commentaireSignal    String?
+
+  creeLe DateTime @default(now())
+
+  @@unique([periodeId, employeId])
+  @@index([employeId])
+  @@map("lignes_paie")
+}
+
+/**
+ * Événement du circuit de validation
+ *
+ * M7 §5.1 : Le statut courant se déduit du dernier événement
+ */
+model EvenementPeriodePaie {
+  id String @id @default(cuid())
+
+  periodeId String
+  periode   PeriodePaie @relation(fields: [periodeId], references: [id], onDelete: Cascade)
+
+  type TypeEvenementPeriodePaie
+
+  /// Auteur (profil UUID)
+  auteurId  String @db.Uuid
+  auteurNom String
+
+  /// Contexte
+  commentaire String?
+  motifRefus  String?
+
+  creeLe DateTime @default(now())
+
+  @@index([periodeId])
+  @@index([type])
+  @@map("evenements_periode_paie")
+}
+
+/**
+ * Trace d'export de paie
+ *
+ * M7 §8.7 : Chaque génération tracée avec condensat
+ */
+model ExportPaie {
+  id String @id @default(cuid())
+
+  periodeId String
+  periode   PeriodePaie @relation(fields: [periodeId], references: [id], onDelete: Cascade)
+
+  /// Type d'export
+  typeExport String /// VIREMENT_BANQUE, WAVE, COMPTABILITE
+
+  /// Traçabilité
+  genereParId  String   @db.Uuid
+  genereParNom String
+  genereLe     DateTime @default(now())
+
+  /// Contenu
+  fichierNom   String
+  fichierUrl   String? /// URL Supabase Storage
+  condensat    String /// SHA-256 du fichier
+  montantTotal Decimal @db.Decimal(12, 2)
+  nombreLignes Int
+
+  @@index([periodeId])
+  @@map("exports_paie")
+}
+
+// =====================================================================
+// M8 — RESSOURCES ET MATÉRIEL
+// =====================================================================
+
+enum EtatMateriel {
+  EN_SERVICE
+  EN_PANNE
+  EN_MAINTENANCE
+  REFORME
+}
+
+enum NatureDemandeRessource {
+  HUMAINE
+  MATERIELLE
+}
+
+enum StatutDemandeRessource {
+  BROUILLON
+  SOUMISE
+  VALIDEE_N1
+  VALIDEE_SERVICE
+  AFFECTEE
+  REFUSEE
+  ANNULEE
+}
+
+/**
+ * Catégorie de matériel (engins, véhicules, outils)
+ */
+model CategorieMateriel {
+  id      String     @id @default(cuid())
+  code    String     @unique
+  libelle String
+  materiel Materiel[]
+
+  @@map("categories_materiel")
+}
+
+/**
+ * Matériel du parc
+ *
+ * M8 §1.2 : Indicateur partageable (affectation simultanée possible)
+ * M8 §5 : État EN_PANNE bloque l'affectation
+ */
+model Materiel {
+  id String @id @default(cuid())
+
+  /// Code unique (ex: PEL-01, CAM-05)
+  code String @unique
+
+  /// Désignation
+  libelle String
+
+  /// Catégorie
+  categorieId String
+  categorie   CategorieMateriel @relation(fields: [categorieId], references: [id])
+
+  /// Caractéristiques techniques
+  marque       String?
+  modele       String?
+  immatriculation String? @unique
+  anneeFabrication Int?
+
+  /// M8 §1.2 : Peut être affecté à plusieurs chantiers simultanément
+  partageable Boolean @default(false)
+
+  /// M8 §5 : État actuel
+  etat EtatMateriel @default(EN_SERVICE)
+
+  /// Observations
+  commentaire String?
+
+  /// Affectations
+  affectations AffectationMateriel[]
+
+  /// Demandes de ressource
+  lignesDemandeRessource LigneDemandeRessource[]
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([categorieId])
+  @@index([etat])
+  @@map("materiel")
+}
+
+/**
+ * Affectation d'un matériel à un projet
+ *
+ * M8 §5 : Les dates sont obligatoires
+ */
+model AffectationMateriel {
+  id String @id @default(cuid())
+
+  materielId String
+  materiel   Materiel @relation(fields: [materielId], references: [id])
+
+  projetId String
+  projet   Projet @relation(fields: [projetId], references: [id])
+
+  /// M8 §5 : Dates obligatoires pour le planning du parc
+  dateDebut DateTime @db.Date
+  dateFin   DateTime @db.Date
+
+  /// Observations
+  commentaire String?
+
+  /// Traçabilité
+  affecteParId String   @db.Uuid
+  affecteLe    DateTime @default(now())
+
+  @@index([materielId])
+  @@index([projetId])
+  @@index([dateDebut])
+  @@index([dateFin])
+  @@map("affectations_materiel")
+}
+
+/**
+ * Demande de ressource (humaine ou matérielle)
+ *
+ * M8 §4 : Deux natures avec circuits différents
+ * M8 §5 : Circuit B-01 (N+1 puis service compétent)
+ */
+model DemandeRessource {
+  id String @id @default(cuid())
+
+  /// Nature de la demande
+  nature NatureDemandeRessource
+
+  /// Projet demandeur
+  projetId String
+  projet   Projet @relation(fields: [projetId], references: [id])
+
+  /// Demandeur
+  demandeurId String @db.Uuid
+  demandeurNom String
+
+  /// Période demandée
+  dateDebut DateTime @db.Date
+  dateFin   DateTime @db.Date
+
+  /// Justification
+  motif String
+
+  /// Statut
+  statut StatutDemandeRessource @default(BROUILLON)
+
+  /// Validation N+1
+  valideN1ParId String?   @db.Uuid
+  valideN1Le    DateTime?
+  motifRefusN1  String?
+
+  /// Validation service compétent
+  valideServiceParId String?   @db.Uuid
+  valideServiceLe    DateTime?
+  motifRefusService  String?
+
+  /// Lignes de demande
+  lignes LigneDemandeRessource[]
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([projetId])
+  @@index([nature])
+  @@index([statut])
+  @@map("demandes_ressource")
+}
+
+/**
+ * Ligne de demande (individuelle)
+ *
+ * Soit une compétence (maçon, électricien) avec quantité,
+ * soit un matériel spécifique
+ */
+model LigneDemandeRessource {
+  id String @id @default(cuid())
+
+  demandeId String
+  demande   DemandeRessource @relation(fields: [demandeId], references: [id], onDelete: Cascade)
+
+  /// Pour demande HUMAINE : description compétence
+  competence String?
+  quantite   Int?
+
+  /// Pour demande MATERIELLE : matériel spécifique
+  materielId String?
+  materiel   Materiel? @relation(fields: [materielId], references: [id])
+
+  /// Observations
+  commentaire String?
+
+  creeLe DateTime @default(now())
+
+  @@index([demandeId])
+  @@index([materielId])
+  @@map("lignes_demande_ressource")
+}
+
+// =====================================================================
+// M14 — ACHATS
+// =====================================================================
+
+/// Unité de mesure pour articles
+model Unite {
+  id       String    @id @default(cuid())
+  libelle  String    @unique
+  creeLe   DateTime  @default(now())
+  creePar  String
+  articles Article[]
+
+  @@map("unites")
+}
+
+/// Article du bordereau de prix
+model Article {
+  id                    String             @id @default(cuid())
+  designation           String             // "Ciment CPA 45 — sac 50 kg"
+  designationNormalisee String             @unique // Normalisation sans accent ni casse
+  uniteId               String
+  unite                 Unite              @relation(fields: [uniteId], references: [id])
+  actif                 Boolean            @default(true)
+  creeLe                DateTime           @default(now())
+  creePar               String
+  prix                  PrixFournisseur[]
+  lignes                LigneAchat[]
+
+  @@index([designation])
+  @@map("articles")
+}
+
+/// Fournisseur
+model Fournisseur {
+  id            String             @id @default(cuid())
+  nom           String
+  nomNormalise  String             @unique // Normalisation sans accent ni casse
+  numeroWave    String?            // Identifiant Wave Money pour paiement mobile (donnée sensible)
+  actif         Boolean            @default(true)
+  creeLe        DateTime           @default(now())
+  creePar       String
+  prix          PrixFournisseur[]
+  lignes        LigneAchat[]
+
+  @@index([nom])
+  @@map("fournisseurs")
+}
+
+/// Prix d'un article chez un fournisseur
+model PrixFournisseur {
+  id            String      @id @default(cuid())
+  articleId     String
+  article       Article     @relation(fields: [articleId], references: [id])
+  fournisseurId String
+  fournisseur   Fournisseur @relation(fields: [fournisseurId], references: [id])
+  prixHT        Decimal     @db.Decimal(12, 2)
+  actif         Boolean     @default(true)
+  creeLe        DateTime    @default(now())
+  creePar       String
+
+  @@unique([articleId, fournisseurId])
+  @@index([articleId])
+  @@index([fournisseurId])
+  @@map("prix_fournisseur")
+}
+
+enum TypeDemande {
+  INITIALE
+  REGULARISATION
+}
+
+enum StatutDemandeAchat {
+  BROUILLON
+  ATTENTE_N1
+  ATTENTE_ACHATS
+  ATTENTE_COMITE
+  BC_EMIS
+  PARTIELLE
+  SOLDEE
+  REFUSEE
+}
+
+enum StatutReception {
+  CONFORME
+  RESERVE
+  REFUS
+}
+
+enum TypeEvenementAchat {
+  SOUMISSION
+  VALIDATION_N1
+  REFUS_N1
+  INSTRUCTION
+  TRANSMISSION_COMITE
+  AVIS_COMITE
+  EMISSION_BC
+  TRANSMISSION_LOG
+  RECEPTION
+  VALIDATION_CONFORMITE
+  FACTURATION
+  REFUS
+}
+
+enum EtatAvis {
+  ATTENTE
+  FAVORABLE
+  DEFAVORABLE
+}
+
+/// Demande d'achat
+model DemandeAchat {
+  id             String              @id @default(cuid())
+  ref            String              @unique // DA-2026-047
+  type           TypeDemande
+  demandeurId    String
+  demandeur      Employe             @relation("DemandesDemandeur", fields: [demandeurId], references: [id])
+  beneficiaireId String
+  beneficiaire   Employe             @relation("DemandesBeneficiaire", fields: [beneficiaireId], references: [id])
+  destinationId  String              // Projet ou Service
+  description    String
+  dateBesoin     DateTime            @db.Date
+  urgent         Boolean             @default(false)
+  creeLe         DateTime            @default(now())
+
+  /// Références renseignées lors du circuit
+  refBC          String?             /// Renseigné à l'émission du bon de commande
+  refFacture     String?             /// Renseigné par la DFC à la facturation
+
+  lignes         LigneAchat[]
+  evenements     EvenementAchat[]
+  avisComite     AvisComite[]
+
+  @@index([ref])
+  @@index([demandeurId])
+  @@index([beneficiaireId])
+  @@map("demandes_achat")
+}
+
+/// Ligne d'article commandé
+model LigneAchat {
+  id              String           @id @default(cuid())
+  demandeId       String
+  demande         DemandeAchat     @relation(fields: [demandeId], references: [id], onDelete: Cascade)
+  articleId       String?
+  article         Article?         @relation(fields: [articleId], references: [id])
+  designation     String           // Figé à la commande
+  quantite        Decimal          @db.Decimal(10, 3)
+  unite           String           // Figé
+  fournisseurId   String?
+  fournisseur     Fournisseur?     @relation(fields: [fournisseurId], references: [id])
+  prixUnitaire    Decimal?         @db.Decimal(12, 2) // Figé à l'instruction
+  tauxTva         Decimal?         @db.Decimal(5, 2)  // Figé à l'instruction (ex: 18.00)
+  quantiteRecue   Decimal?         @db.Decimal(10, 3)
+  statutReception StatutReception?
+  numBC           String?
+  facture         String?
+  criteres        String?          // Motif de sélection du fournisseur
+
+  @@index([demandeId])
+  @@map("lignes_achat")
+}
+
+/// Événement dans le circuit de validation
+model EvenementAchat {
+  id         String              @id @default(cuid())
+  demandeId  String
+  demande    DemandeAchat        @relation(fields: [demandeId], references: [id], onDelete: Cascade)
+  type       TypeEvenementAchat
+  auteurId   String
+  auteurNom  String
+  timestamp  DateTime            @default(now())
+  details    Json?
+
+  @@index([demandeId, timestamp])
+  @@map("evenements_achat")
+}
+
+/// Avis d'un membre du comité
+model AvisComite {
+  id         String       @id @default(cuid())
+  demandeId  String
+  demande    DemandeAchat @relation(fields: [demandeId], references: [id], onDelete: Cascade)
+  role       String       // DG, DRH, DFC, DT
+  validateur String       // Nom complet
+  etat       EtatAvis     @default(ATTENTE)
+  timestamp  DateTime?
+  motif      String?
+
+  @@unique([demandeId, role])
+  @@index([demandeId])
+  @@map("avis_comite")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// M15 — ITAPAY : Exécution des paiements via Wave
+// ═══════════════════════════════════════════════════════════════════════
+
+/// Demande de paiement - peut provenir de la paie, d'achats, etc.
+model DemandePaiement {
+  id               String              @id @default(cuid())
+  referenceIta     String              @unique /// Format: PAI-2026-001
+  categorie        CategoriePaiement
+
+  /// Source de la demande (ex: période de paie, bon de commande)
+  sourceId         String
+  sourceType       String              /// PAIE, ACHAT, FOURNISSEUR, DIVERS
+
+  /// Préparation
+  prepareeParId    String              @db.Uuid
+  preparateur      Profil              @relation("PreparateurPaiement", fields: [prepareeParId], references: [id])
+  prepareeLe       DateTime            @default(now())
+
+  montantTotal     Decimal             @db.Decimal(12, 2)
+
+  /// Relations
+  lignes           LignePaiement[]
+  autorisation     AutorisationPaiement?
+  releve           RelevePaiement?
+
+  @@index([prepareeParId])
+  @@index([categorie])
+  @@map("demandes_paiement")
+}
+
+/// Ligne de paiement individuelle - un bénéficiaire, un montant
+model LignePaiement {
+  id                  String              @id @default(uuid())
+  demandePaiementId   String
+  demandePaiement     DemandePaiement     @relation(fields: [demandePaiementId], references: [id], onDelete: Cascade)
+
+  /// Clé d'idempotence — générée À LA CRÉATION, jamais à l'appel
+  cleIdempotence      String              @unique @default(uuid())
+
+  /// Copies figées — le bénéficiaire peut changer de numéro ensuite
+  beneficiaireNom     String
+  beneficiaireMobile  String              /// E.164 format: +2250701234567
+  montant             Decimal             @db.Decimal(12, 2)
+  motifPaiement       String              /// 40 caractères max, visible du destinataire
+  referenceIta        String              /// → client_reference Wave
+
+  /// Vérification préalable (verify_recipient)
+  verifieLe           DateTime?
+  nameMatch           NameMatch?
+  withinLimits        Boolean?
+
+  /// Résultat
+  statut              StatutPaiement      @default(PREPARE)
+  wavePayoutId        String?
+  waveErrorCode       String?
+  fraisWave           Decimal?            @db.Decimal(12, 2)
+  executeLe           DateTime?
+
+  /// Relations
+  tentatives          TentativePaiement[]
+
+  @@index([demandePaiementId])
+  @@index([statut])
+  @@map("lignes_paiement")
+}
+
+/// Autorisation de paiement par le DG
+model AutorisationPaiement {
+  demandePaiementId String          @unique
+  demandePaiement   DemandePaiement @relation(fields: [demandePaiementId], references: [id], onDelete: Cascade)
+
+  /// Demande
+  demandeeParId     String          @db.Uuid
+  demandeur         Profil          @relation("DemandeurAutorisation", fields: [demandeeParId], references: [id])
+  demandeeLe        DateTime        @default(now())
+
+  /// Autorisation
+  autoriseeParId    String?         @db.Uuid
+  autorisateur      Profil?         @relation("AutorisateurPaiement", fields: [autoriseeParId], references: [id])
+  autoriseeLe       DateTime?
+  expireLe          DateTime?       /// = autoriseeLe + durée, plafonné à 14 h
+
+  /// Montant figé — si le montant change, l'autorisation tombe
+  montantFige       Decimal         @db.Decimal(12, 2)
+  nombreEchecs      Int             @default(0)
+
+  /// Refus
+  refuseeLe         DateTime?
+  motifRefus        String?         @db.Text
+
+  @@index([demandeeParId])
+  @@index([autoriseeParId])
+  @@map("autorisations_paiement")
+}
+
+/// Tentative d'appel à Wave - conserve la réponse brute
+model TentativePaiement {
+  id              String        @id @default(cuid())
+  lignePaiementId String
+  lignePaiement   LignePaiement @relation(fields: [lignePaiementId], references: [id], onDelete: Cascade)
+
+  numero          Int           /// 1, 2, 3...
+  envoyeeLe       DateTime      @default(now())
+  httpStatus      Int?
+  reponseBrute    Json          /// Réponse Wave complète, telle que reçue
+  erreurCode      String?
+
+  @@unique([lignePaiementId, numero])
+  @@index([lignePaiementId])
+  @@map("tentatives_paiement")
+}
+
+/// Relevé de paiement - pièce comptable
+model RelevePaiement {
+  id                  String           @id @default(cuid())
+  demandePaiementId   String           @unique
+  demandePaiement     DemandePaiement  @relation(fields: [demandePaiementId], references: [id], onDelete: Cascade)
+
+  numeroReleve        String           @unique /// REL-2026-001
+  genereeLe           DateTime         @default(now())
+  montantTotal        Decimal          @db.Decimal(12, 2)
+  fraisTotaux         Decimal          @db.Decimal(12, 2)
+  nombreLignes        Int
+
+  /// Pièce comptable
+  pdfUrl              String?
+
+  @@index([numeroReleve])
+  @@map("releves_paiement")
+}
+
+/// Solde du portefeuille Wave - historique quotidien
+model SoldeWave {
+  id          String   @id @default(cuid())
+  date        DateTime @db.Date
+  solde       Decimal  @db.Decimal(12, 2)
+  devise      String   @default("XOF")
+  interrogeLe DateTime @default(now())
+
+  @@unique([date])
+  @@index([date])
+  @@map("soldes_wave")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ENUMS M15
+// ═══════════════════════════════════════════════════════════════════════
+
+enum StatutPaiement {
+  PREPARE       /// Ligne créée, pas encore vérifiée
+  VERIFIE       /// verify_recipient appelé
+  AUTORISE      /// Autorisation accordée
+  EN_COURS      /// Paiement en cours chez Wave (processing)
+  EN_ATTENTE    /// État inconnu — NE JAMAIS rejouer sans la même clé
+  REUSSI        /// Paiement réussi (succeeded)
+  ECHOUE        /// Échec définitif
+  ANNULE        /// Annulé (reversed)
+}
+
+enum CategoriePaiement {
+  SALAIRES      /// Paie mensuelle
+  PRIMES        /// Primes et avantages
+  FOURNISSEURS  /// Paiement fournisseur
+  PRESTATAIRES  /// Prestataires externes
+  DIVERS        /// Autres paiements
+}
+
+enum NameMatch {
+  MATCH             /// Le nom correspond
+  NO_MATCH          /// Le nom ne correspond pas — BLOQUE la ligne
+  NAME_NOT_KNOWN    /// Wave ne connaît pas le nom
 }
 

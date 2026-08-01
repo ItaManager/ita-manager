@@ -77,12 +77,127 @@ export const creerBrouillonGrille = actionProtegee(
 );
 
 /**
+ * [INTERNE] Décompter les employés hors grille
+ * Fonction interne appelée par decompterEmployesHorsGrille et publierGrille
+ */
+async function decompterEmployesHorsGrilleInterne(grilleId: string) {
+  const grille = await prisma.grilleSalariale.findUnique({
+    where: { id: grilleId },
+    include: { echelons: true },
+  });
+
+  if (!grille) {
+    throw new Error("Grille introuvable");
+  }
+
+  // Récupérer tous les employés permanents avec leur affectation et contrat actif
+  const employes = await prisma.employe.findMany({
+    where: {
+      typeMainOeuvre: "PERMANENT",
+      archiveLe: null,
+    },
+    select: {
+      id: true,
+      matricule: true,
+      nom: true,
+      prenom: true,
+      affectations: {
+        where: {
+          OR: [{ dateFin: null }, { dateFin: { gte: new Date() } }],
+        },
+        include: {
+          poste: {
+            select: { niveau: true },
+          },
+        },
+        orderBy: { dateDebut: "desc" },
+        take: 1,
+      },
+      contrats: {
+        where: {
+          dateDebut: { lte: new Date() },
+          OR: [{ dateFin: null }, { dateFin: { gte: new Date() } }],
+        },
+        orderBy: { dateDebut: "desc" },
+        take: 1,
+      },
+    },
+  });
+
+  const horsGrille = [];
+
+  for (const emp of employes) {
+    if (emp.affectations.length === 0 || emp.contrats.length === 0) {
+      continue;
+    }
+
+    const affectation = emp.affectations[0];
+    const contrat = emp.contrats[0];
+    const niveau = affectation.poste.niveau;
+
+    // Trouver l'échelon correspondant dans la nouvelle grille
+    const echelon = grille.echelons.find((e) => e.niveau === niveau);
+
+    if (!echelon) {
+      continue;
+    }
+
+    const salaire = Number(contrat.salaire);
+    const min = Number(echelon.min);
+    const max = Number(echelon.max);
+
+    // Vérifier si le salaire sort de la fourchette
+    if (salaire < min || salaire > max) {
+      horsGrille.push({
+        employeId: emp.id,
+        matricule: emp.matricule,
+        nom: emp.nom,
+        prenom: emp.prenom,
+        niveau,
+        salaireActuel: salaire,
+        min,
+        max,
+        ecart: salaire < min ? salaire - min : salaire - max,
+      });
+    }
+  }
+
+  return {
+    total: horsGrille.length,
+    employes: horsGrille,
+  };
+}
+
+/**
+ * Décompter les employés hors nouvelle grille
+ *
+ * RÈGLE MÉTIER (M4 §7) : Décompte avant publication pour éviter de mettre
+ * quinze personnes en dérogation sans que personne l'ait vu
+ */
+export const decompterEmployesHorsGrille = actionProtegee(
+  "grille:modifier",
+  async (session, grilleId: string) => {
+    return decompterEmployesHorsGrilleInterne(grilleId);
+  }
+);
+
+/**
  * Publier une grille brouillon
- * Passe statut BROUILLON → PUBLIE, archive l'ancienne version
+ * Passe statut BROUILLON → PUBLIEE, archive l'ancienne version
+ *
+ * RÈGLE MÉTIER (M4 §7) : Le décompte doit être présenté avant publication
  */
 export const publierGrille = actionProtegee(
   "grille:modifier",
-  async (session, grilleId: string, dateEffet: Date) => {
+  async (
+    session,
+    grilleId: string,
+    dateEffet: Date,
+    confirmation: {
+      employesHorsGrilleCompris: boolean;
+      nombreEmployesHorsGrille: number;
+    }
+  ) => {
     const grille = await prisma.grilleSalariale.findUnique({
       where: { id: grilleId },
       include: { echelons: true },
@@ -96,17 +211,32 @@ export const publierGrille = actionProtegee(
       throw new Error("Seul un brouillon peut être publié");
     }
 
+    if (!confirmation.employesHorsGrilleCompris) {
+      throw new Error(
+        "La publication nécessite une confirmation explicite après avoir vu le décompte des employés hors grille"
+      );
+    }
+
+    // Vérifier que le décompte fourni correspond à la réalité
+    const decompte = await decompterEmployesHorsGrilleInterne(grilleId);
+
+    if (decompte.total !== confirmation.nombreEmployesHorsGrille) {
+      throw new Error(
+        `Le décompte a changé : ${decompte.total} employés hors grille actuellement, mais ${confirmation.nombreEmployesHorsGrille} attendus. Veuillez revoir le décompte.`
+      );
+    }
+
     // Archiver la version actuelle publiée
     await prisma.grilleSalariale.updateMany({
-      where: { statut: "PUBLIE" },
-      data: { statut: "ARCHIVE" },
+      where: { statut: "PUBLIEE" },
+      data: { statut: "ARCHIVEE" },
     });
 
     // Publier la nouvelle version
     const grillePubliee = await prisma.grilleSalariale.update({
       where: { id: grilleId },
       data: {
-        statut: "PUBLIE",
+        statut: "PUBLIEE",
         dateEffet,
         valideLe: new Date(),
         validePar: session.userId,
@@ -153,7 +283,7 @@ export const obtenirGrillePubliee = actionProtegee(
   "employe:donneesSensibles",
   async () => {
     const grille = await prisma.grilleSalariale.findFirst({
-      where: { statut: "PUBLIE" },
+      where: { statut: "PUBLIEE" },
       include: { echelons: true },
     });
 
@@ -213,7 +343,7 @@ export const verifierConformiteGrille = actionProtegee(
     salaire: number
   ) => {
     const grillePubliee = await prisma.grilleSalariale.findFirst({
-      where: { statut: "PUBLIE" },
+      where: { statut: "PUBLIEE" },
       include: { echelons: true },
     });
 
@@ -343,3 +473,157 @@ export const statuerDerogation = actionProtegee(
     return derogationMiseAJour;
   }
 );
+
+/**
+ * Réévaluer une dérogation salariale suite à un changement de poste
+ *
+ * RÈGLE MÉTIER (M4 §8.3) : Lorsqu'un employé change de poste, le système
+ * vérifie automatiquement si sa dérogation salariale est toujours pertinente.
+ *
+ * Cas 1 : Le salaire rentre maintenant dans la fourchette du nouveau niveau
+ *         → Clôture la dérogation comme SANS_OBJET
+ *
+ * Cas 2 : Le salaire reste hors fourchette du nouveau niveau
+ *         → Crée une nouvelle dérogation EN_ATTENTE pour le nouveau niveau
+ *
+ * Cette fonction est appelée automatiquement lors d'un changement d'affectation.
+ *
+ * @param employeId ID de l'employé qui change de poste
+ * @param nouveauNiveau Nouveau niveau hiérarchique du poste
+ * @param auteurId ID de l'auteur du changement de poste
+ * @param auteurNom Nom de l'auteur (pour journalisation)
+ */
+export async function reevaluerDerogationChangementPoste(
+  employeId: string,
+  nouveauNiveau: "DIRECTION" | "CADRE" | "SUPPORT" | "OPERATIONNEL",
+  auteurId: string,
+  auteurNom: string
+): Promise<void> {
+  // Trouver la dérogation active (EN_ATTENTE ou VALIDEE)
+  const derogationActive = await prisma.derogationSalariale.findFirst({
+    where: {
+      employeId,
+      statut: { in: ["EN_ATTENTE", "VALIDEE"] },
+    },
+    include: {
+      employe: {
+        select: {
+          id: true,
+          matricule: true,
+          nom: true,
+          prenom: true,
+          contrats: {
+            where: {
+              dateDebut: { lte: new Date() },
+              OR: [{ dateFin: null }, { dateFin: { gte: new Date() } }],
+            },
+            orderBy: { dateDebut: "desc" },
+            take: 1,
+          },
+        },
+      },
+    },
+  });
+
+  // Pas de dérogation active → rien à faire
+  if (
+    !derogationActive ||
+    derogationActive.employe.contrats.length === 0
+  ) {
+    return;
+  }
+
+  const contratActif = derogationActive.employe.contrats[0];
+  const salaire = Number(contratActif.salaire);
+
+  // Récupérer la grille publiée
+  const grillePubliee = await prisma.grilleSalariale.findFirst({
+    where: { statut: "PUBLIEE" },
+    include: { echelons: true },
+  });
+
+  if (!grillePubliee) {
+    return; // Pas de grille publiée → impossible de réévaluer
+  }
+
+  // Trouver l'échelon du nouveau niveau
+  const echelon = grillePubliee.echelons.find((e) => e.niveau === nouveauNiveau);
+
+  if (!echelon) {
+    return; // Niveau introuvable → impossible de réévaluer
+  }
+
+  const min = Number(echelon.min);
+  const max = Number(echelon.max);
+
+  const salaireConforme = salaire >= min && salaire <= max;
+
+  if (salaireConforme) {
+    // CAS 1 : Le salaire rentre dans la fourchette → Clôture comme SANS_OBJET
+    await prisma.derogationSalariale.update({
+      where: { id: derogationActive.id },
+      data: {
+        statut: "SANS_OBJET",
+        commentaire: `Dérogation devenue sans objet suite au changement de poste vers niveau ${nouveauNiveau}. Le salaire est maintenant dans la fourchette.`,
+      },
+    });
+
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "DerogationSalariale",
+        entiteId: derogationActive.id,
+        action: "CLOTURE_AUTO",
+        auteurId,
+        auteurNom,
+        details: {
+          ancienneDerogationId: derogationActive.id,
+          nouveauNiveau,
+          salaire,
+          fourchette: { min, max },
+        },
+        commentaire: `Dérogation ${derogationActive.id} clôturée automatiquement (salaire conforme après changement de poste vers ${nouveauNiveau})`,
+      },
+    });
+  } else {
+    // CAS 2 : Le salaire reste hors fourchette → Nouvelle dérogation EN_ATTENTE
+    const nouvelleDerogation = await prisma.derogationSalariale.create({
+      data: {
+        employeId,
+        montant: salaire,
+        niveauMin: min,
+        niveauMax: max,
+        motif: `Réévaluation automatique suite au changement de poste vers niveau ${nouveauNiveau}. Salaire hors fourchette (${min} - ${max} FCFA).`,
+        statut: "EN_ATTENTE",
+        demandeLe: new Date(),
+        demandeParId: auteurId,
+      },
+    });
+
+    // Clôturer l'ancienne dérogation
+    await prisma.derogationSalariale.update({
+      where: { id: derogationActive.id },
+      data: {
+        statut: "SANS_OBJET",
+        commentaire: `Remplacée par dérogation ${nouvelleDerogation.id} après changement de poste`,
+      },
+    });
+
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "DerogationSalariale",
+        entiteId: nouvelleDerogation.id,
+        action: "REEVALUATION_AUTO",
+        auteurId,
+        auteurNom,
+        details: {
+          ancienneDerogationId: derogationActive.id,
+          nouveauNiveau,
+          salaire,
+          fourchette: { min, max },
+          ecart: salaire < min ? salaire - min : salaire - max,
+        },
+        commentaire: `Nouvelle dérogation créée automatiquement après changement de poste vers ${nouveauNiveau} (salaire hors fourchette)`,
+      },
+    });
+  }
+}

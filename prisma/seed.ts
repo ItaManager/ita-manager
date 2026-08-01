@@ -55,7 +55,7 @@ const ROLES = [
 
 // Matrice rôle × permission (M0-SOCLE.md §5), transcrite verbatim.
 const MATRICE: Record<PermissionCode, readonly string[]> = {
-  "employe:lire": ["ADMIN", "DG", "DRH", "RH", "DFC", "DT", "CT"],
+  "employe:lire": ["ADMIN", "DG", "DRH", "RH", "DFC", "DT", "CT", "CC", "CE"],
   "employe:creer": ["ADMIN", "DRH", "RH"],
   "employe:modifier": ["ADMIN", "DRH", "RH"],
   "employe:archiver": ["ADMIN", "DRH"],
@@ -87,6 +87,21 @@ const MATRICE: Record<PermissionCode, readonly string[]> = {
   "presence:gererCodes": ["ADMIN", "DRH"],
   "presence:gererBornes": ["ADMIN"],
   "presence:corriger": ["ADMIN", "DRH"],
+  // M14 — Achats
+  "achat:demander": ["ADMIN", "DG", "DRH", "RH", "DFC", "DT", "CT", "CC", "CE"],
+  "achat:instruire": ["ADMIN", "DT"], // Pilote : Chef Service Achats à créer
+  "achat:valider": ["ADMIN", "DG", "DRH", "DFC", "DT"],
+  "achat:receptionner": ["ADMIN"], // Pilote : Service Logistique à créer
+  "achat:facturer": ["ADMIN", "DFC"],
+  "achat:regulariser": ["ADMIN"], // Pilote : rôles désignés à définir
+  "achat:parametres": ["ADMIN", "DFC"],
+  // M15 — ItaPay (SECURITE-M15.md § 1 : séparation des rôles)
+  "paiement:consulter": ["ADMIN", "DG", "DFC"],
+  "paiement:preparer": ["ADMIN", "DFC"], // NE peut PAS autoriser
+  "paiement:autoriser": ["DG"], // NE peut PAS exécuter
+  "paiement:executer": ["ADMIN", "DFC"], // NE peut PAS autoriser
+  "paiement:annuler": ["ADMIN", "DFC"],
+  "paiement:parametres": ["ADMIN"],
 };
 
 // Compte Super Admin — accès technique de maintenance, sans Employe
@@ -271,11 +286,13 @@ async function seedSuperAdmin() {
       },
     });
   } else {
-    console.log(`  Compte Super Admin déjà existant : ${SUPER_ADMIN_EMAIL}`);
+    console.log(`  Compte auth.users déjà existant : ${SUPER_ADMIN_EMAIL}`);
   }
 
-  // S'assurer que le profil existe dans la table profils (peut ne pas exister
-  // après un reset si le trigger n'a pas été rejoué)
+  // S'assurer que le profil existe dans la table profils
+  // (Si le trigger n'a pas fonctionné ou après un reset Prisma, le profil peut manquer)
+  const profilAvant = await prisma.profil.findUnique({ where: { id: userId } });
+
   await prisma.profil.upsert({
     where: { id: userId },
     create: {
@@ -285,6 +302,10 @@ async function seedSuperAdmin() {
     },
     update: {},
   });
+
+  if (!profilAvant) {
+    console.log(`  Profil créé pour un compte auth antérieur au trigger`);
+  }
 
   const adminRole = await prisma.role.findUniqueOrThrow({ where: { code: "ADMIN" } });
 

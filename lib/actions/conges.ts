@@ -149,6 +149,14 @@ export const creerAbsence = actionProtegee(
       throw new Error("Aucun employé associé à ce compte");
     }
 
+    // RÈGLE MÉTIER (M3 §7.1, décision A-13) : Les journaliers ne bénéficient pas de congés payés
+    if (profil.employe.typeMainOeuvre === "JOURNALIER") {
+      throw new Error(
+        "Un journalier n'ouvre aucun compteur de congés. Un jour non pointé " +
+        "est un jour non payé — décision A-13."
+      );
+    }
+
     // Vérifier que le type d'absence existe
     const typeAbsence = await prisma.typeAbsence.findUnique({
       where: { id: input.typeAbsenceId },
@@ -370,7 +378,7 @@ export const soumettreAbsence = actionProtegee(
       );
     }
 
-    // Vérifier pièce justificative si requise (Phase 7: vérification complète)
+    // RÈGLE MÉTIER (M3 §7.5) : Vérifier pièce justificative si requise
     if (absence.typeAbsence.pieceRequise && !absence.pieceId) {
       throw new Error(
         "Une pièce justificative est requise pour ce type d'absence. Ajoutez-la avant de soumettre."

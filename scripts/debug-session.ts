@@ -64,7 +64,7 @@ async function main() {
 
     if (profil) {
       console.log(`   ✓ Profil trouvé (actif: ${profil.actif})`);
-      console.log(`   Rôles: ${profil.roles.map((r) => r.role.nom).join(", ")}`);
+      console.log(`   Rôles: ${profil.roles.map((r) => r.role.libelle).join(", ")}`);
 
       const perms = new Set<string>();
       profil.roles.forEach((pr) => {

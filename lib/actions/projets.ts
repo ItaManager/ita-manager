@@ -3,11 +3,24 @@
 import { prisma } from "@/lib/db/prisma";
 import { actionProtegee } from "@/lib/auth/guard";
 import { revalidatePath } from "next/cache";
-import { StatutProjet, CyclePaie } from "@prisma/client";
+import { StatutProjet, CyclePaie, Projet } from "@prisma/client";
 
 // =====================================================================
 // M5 — PROJETS ET PLANNING
 // =====================================================================
+
+/**
+ * Convertir les champs Decimal d'un projet en numbers pour la sérialisation client
+ */
+function serializeProjet<T extends Projet | null>(
+  projet: T
+): T extends null ? null : Omit<Projet, "montantMarche"> & { montantMarche: number | null } {
+  if (!projet) return null as any;
+  return {
+    ...projet,
+    montantMarche: projet.montantMarche ? Number(projet.montantMarche) : null,
+  } as any;
+}
 
 /**
  * Créer un projet
@@ -43,7 +56,7 @@ export const creerProjet = actionProtegee(
           create: {
             libelle: `Chantier ${donnees.nom}`,
             adresse: "",
-            actif: true,
+            creePar: session.userId,
           },
         },
       },
@@ -64,7 +77,7 @@ export const creerProjet = actionProtegee(
     });
 
     revalidatePath("/projets");
-    return projet;
+    return serializeProjet(projet);
   }
 );
 
@@ -110,7 +123,7 @@ export const ouvrirProjet = actionProtegee(
 
     revalidatePath("/projets");
     revalidatePath(`/projets/${projetId}`);
-    return projetMisAJour;
+    return serializeProjet(projetMisAJour);
   }
 );
 
@@ -141,14 +154,6 @@ export const demarrerProjet = actionProtegee(
       },
     });
 
-    // Activer le lieu de livraison
-    if (projet.id) {
-      await prisma.lieuLivraison.updateMany({
-        where: { projetId: projet.id },
-        data: { actif: true },
-      });
-    }
-
     await prisma.journalEvenement.create({
       data: {
         entite: "Projet",
@@ -162,7 +167,7 @@ export const demarrerProjet = actionProtegee(
 
     revalidatePath("/projets");
     revalidatePath(`/projets/${projetId}`);
-    return projetMisAJour;
+    return serializeProjet(projetMisAJour);
   }
 );
 
@@ -215,7 +220,7 @@ export const suspendreProjet = actionProtegee(
 
     revalidatePath("/projets");
     revalidatePath(`/projets/${projetId}`);
-    return projetMisAJour;
+    return serializeProjet(projetMisAJour);
   }
 );
 
@@ -261,7 +266,7 @@ export const reprendreProjet = actionProtegee(
 
     revalidatePath("/projets");
     revalidatePath(`/projets/${projetId}`);
-    return projetMisAJour;
+    return serializeProjet(projetMisAJour);
   }
 );
 
@@ -311,12 +316,6 @@ export const cloturerProjet = actionProtegee(
       },
     });
 
-    // Désactiver le lieu de livraison (M5 §5.2)
-    await prisma.lieuLivraison.updateMany({
-      where: { projetId: projet.id },
-      data: { actif: false },
-    });
-
     await prisma.journalEvenement.create({
       data: {
         entite: "Projet",
@@ -330,7 +329,7 @@ export const cloturerProjet = actionProtegee(
 
     revalidatePath("/projets");
     revalidatePath(`/projets/${projetId}`);
-    return projetMisAJour;
+    return serializeProjet(projetMisAJour);
   }
 );
 
@@ -369,12 +368,6 @@ export const rouvrirProjet = actionProtegee(
       },
     });
 
-    // Réactiver le lieu de livraison
-    await prisma.lieuLivraison.updateMany({
-      where: { projetId: projet.id },
-      data: { actif: true },
-    });
-
     await prisma.journalEvenement.create({
       data: {
         entite: "Projet",
@@ -389,7 +382,7 @@ export const rouvrirProjet = actionProtegee(
 
     revalidatePath("/projets");
     revalidatePath(`/projets/${projetId}`);
-    return projetMisAJour;
+    return serializeProjet(projetMisAJour);
   }
 );
 
@@ -488,3 +481,88 @@ export const creerTache = actionProtegee(
     return tache;
   }
 );
+
+// =====================================================================
+// CONSULTATION
+// =====================================================================
+
+export type ProjetListItem = {
+  id: string;
+  code: string;
+  nom: string;
+  statut: StatutProjet;
+  maitreOuvrage: string | null;
+  montantMarche: number | null;
+  dateDebut: Date | null;
+  dateFin: Date | null;
+  creeLe: Date;
+};
+
+/**
+ * Lister les projets
+ */
+export async function listerProjets(): Promise<ProjetListItem[]> {
+  const projets = await prisma.projet.findMany({
+    select: {
+      id: true,
+      code: true,
+      nom: true,
+      statut: true,
+      maitreOuvrage: true,
+      montantMarche: true,
+      dateDebut: true,
+      dateFin: true,
+      creeLe: true,
+    },
+    orderBy: [
+      { statut: 'asc' }, // BROUILLON, OUVERT, EN_COURS en premier
+      { creeLe: 'desc' },
+    ],
+  });
+
+  return projets.map((p) => ({
+    ...p,
+    montantMarche: p.montantMarche ? Number(p.montantMarche) : null,
+  }));
+}
+
+/**
+ * Obtenir un projet avec ses relations
+ */
+export async function obtenirProjet(projetId: string) {
+  const projet = await prisma.projet.findUnique({
+    where: { id: projetId },
+    include: {
+      lieuLivraison: true,
+      jalons: {
+        orderBy: { datePrevisionnelle: 'asc' },
+      },
+      taches: {
+        orderBy: { dateDebut: 'asc' },
+        take: 10, // Limiter pour la page de détail
+      },
+      affectations: {
+        where: { dateFin: null },
+        include: {
+          employe: {
+            select: {
+              id: true,
+              matricule: true,
+              nom: true,
+              prenom: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!projet) {
+    return null;
+  }
+
+  return {
+    ...projet,
+    montantMarche: projet.montantMarche ? Number(projet.montantMarche) : null,
+  };
+}

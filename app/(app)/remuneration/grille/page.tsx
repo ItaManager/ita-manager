@@ -13,9 +13,9 @@ export default async function GrilleSalarialeListPage() {
 
   const grilles = await listerGrilles();
 
-  const grillePubliee = grilles.find((g) => g.statut === "PUBLIE");
+  const grillePubliee = grilles.find((g) => g.statut === "PUBLIEE");
   const brouillons = grilles.filter((g) => g.statut === "BROUILLON");
-  const archives = grilles.filter((g) => g.statut === "ARCHIVE");
+  const archives = grilles.filter((g) => g.statut === "ARCHIVEE");
 
   return (
     <div className="space-y-6">

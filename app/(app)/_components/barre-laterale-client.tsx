@@ -26,6 +26,7 @@ import {
   ScrollText,
   Settings,
   HelpCircle,
+  ShoppingCart,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -49,7 +50,7 @@ interface NavSection {
   items: NavItem[];
 }
 
-const navigation: NavSection[] = [
+const buildNavigation = (compteursAchats: CompteursBadges): NavSection[] => [
   {
     title: "PILOTAGE",
     items: [
@@ -85,6 +86,20 @@ const navigation: NavSection[] = [
     ],
   },
   {
+    title: "ACHATS",
+    items: [
+      { label: "Mes demandes", href: "/achats/demandes", icon: ShoppingCart, moduleNumber: "M14", moduleName: "Achats" },
+      { label: "À valider", href: "/achats/a-valider", icon: CheckSquare, badge: compteursAchats.aValider, moduleNumber: "M14", moduleName: "Achats" },
+      { label: "À instruire", href: "/achats/instruction", icon: ClipboardList, badge: compteursAchats.aInstruire, moduleNumber: "M14", moduleName: "Achats" },
+      { label: "Bons de commande", href: "/achats/commandes", icon: FileText, badge: compteursAchats.commandes, moduleNumber: "M14", moduleName: "Achats" },
+      { label: "Réceptions", href: "/achats/receptions", icon: PackageSearch, badge: compteursAchats.receptions, moduleNumber: "M14", moduleName: "Achats" },
+      { label: "Facturation", href: "/achats/facturation", icon: DollarSign, badge: compteursAchats.factures, moduleNumber: "M14", moduleName: "Achats" },
+      { label: "Suivi commandes", href: "/achats/suivi", icon: BarChart3, moduleNumber: "M14", moduleName: "Achats" },
+      { label: "Bordereau de prix", href: "/achats/articles", icon: Briefcase, moduleNumber: "M14", moduleName: "Achats" },
+      { label: "Fournisseurs", href: "/achats/fournisseurs", icon: Building2, moduleNumber: "M14", moduleName: "Achats" },
+    ],
+  },
+  {
     title: "ADMINISTRATION",
     items: [
       { label: "Documents", href: "/documents", icon: FileStack, moduleNumber: "M2", moduleName: "Employés" },
@@ -102,12 +117,24 @@ const bottomNav: NavItem[] = [
   { label: "Aide", href: "/aide", icon: HelpCircle, moduleNumber: "M0", moduleName: "Socle" },
 ];
 
-interface BarreLateraleClientProps {
-  userPermissions: string[];
+interface CompteursBadges {
+  aValider: number;
+  aInstruire: number;
+  commandes: number;
+  receptions: number;
+  factures: number;
 }
 
-export function BarreLateraleClient({ userPermissions }: BarreLateraleClientProps) {
+interface BarreLateraleClientProps {
+  userPermissions: string[];
+  compteursAchats: CompteursBadges;
+}
+
+export function BarreLateraleClient({ userPermissions, compteursAchats }: BarreLateraleClientProps) {
   const pathname = usePathname();
+
+  // Construire la navigation avec les compteurs dynamiques
+  const navigation = buildNavigation(compteursAchats);
 
   // Filtrer les sections en fonction des permissions
   const filteredNavigation = navigation.map((section) => ({

@@ -128,6 +128,73 @@ export const PERMISSIONS = {
     libelle: "Corriger un pointage",
     domaine: "RH",
   },
+  // M14 — Achats
+  "achat:demander": {
+    code: "achat:demander",
+    libelle: "Créer une demande d'achat",
+    domaine: "TECHNIQUE",
+  },
+  "achat:instruire": {
+    code: "achat:instruire",
+    libelle: "Instruire une demande d'achat (prix, fournisseurs)",
+    domaine: "TECHNIQUE",
+  },
+  "achat:valider": {
+    code: "achat:valider",
+    libelle: "Valider une demande au comité",
+    domaine: "TECHNIQUE",
+  },
+  "achat:receptionner": {
+    code: "achat:receptionner",
+    libelle: "Réceptionner et contrôler une livraison",
+    domaine: "TECHNIQUE",
+  },
+  "achat:facturer": {
+    code: "achat:facturer",
+    libelle: "Enregistrer facture et paiement",
+    domaine: "PAIE",
+  },
+  "achat:regulariser": {
+    code: "achat:regulariser",
+    libelle: "Créer une régularisation d'achat",
+    domaine: "TECHNIQUE",
+  },
+  "achat:parametres": {
+    code: "achat:parametres",
+    libelle: "Modifier les paramètres d'achat (seuils, plafonds)",
+    domaine: "ADMIN",
+  },
+  // M15 — ItaPay
+  "paiement:consulter": {
+    code: "paiement:consulter",
+    libelle: "Consulter les paiements",
+    domaine: "PAIEMENT",
+  },
+  "paiement:preparer": {
+    code: "paiement:preparer",
+    libelle: "Préparer une demande de paiement",
+    domaine: "PAIEMENT",
+  },
+  "paiement:autoriser": {
+    code: "paiement:autoriser",
+    libelle: "Autoriser un paiement",
+    domaine: "PAIEMENT",
+  },
+  "paiement:executer": {
+    code: "paiement:executer",
+    libelle: "Exécuter un paiement",
+    domaine: "PAIEMENT",
+  },
+  "paiement:annuler": {
+    code: "paiement:annuler",
+    libelle: "Annuler un paiement (< 3 jours)",
+    domaine: "PAIEMENT",
+  },
+  "paiement:parametres": {
+    code: "paiement:parametres",
+    libelle: "Configurer les paramètres de paiement",
+    domaine: "PAIEMENT",
+  },
 } as const;
 
 export type PermissionCode = keyof typeof PERMISSIONS;
@@ -140,16 +207,31 @@ export class PermissionRefusee extends Error {
 }
 
 async function journaliserRefus(code: PermissionCode, userId: string | null, email: string | null) {
-  await prisma.journalEvenement.create({
-    data: {
-      entite: "Permission",
-      entiteId: userId ?? "anonyme",
-      action: "REFUS",
-      auteurId: userId,
-      auteurNom: email ?? "anonyme",
-      commentaire: `Permission refusée : ${code}`,
-    },
-  });
+  try {
+    // Vérifier si le profil existe avant de journaliser
+    let auteurId: string | null = null;
+    if (userId) {
+      const profil = await prisma.profil.findUnique({
+        where: { id: userId },
+        select: { id: true },
+      });
+      auteurId = profil ? userId : null;
+    }
+
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "Permission",
+        entiteId: userId ?? "anonyme",
+        action: "REFUS",
+        auteurId: auteurId,
+        auteurNom: email ?? "anonyme",
+        commentaire: `Permission refusée : ${code}`,
+      },
+    });
+  } catch (error) {
+    // Échec de journalisation : écrire en console sans remonter
+    console.error("[journaliserRefus] Échec de journalisation:", error);
+  }
 }
 
 /**

@@ -810,6 +810,34 @@ Motif : tous les ouvriers n'ont pas d'adresse électronique.
 Un projet **est** un chantier. Un seul modèle porte le marché, le planning
 et le cycle de paie.
 
+### D-09 · Statut SANS_OBJET pour les dérogations salariales — **Arrêtée**
+
+`StatutDerogation` compte quatre valeurs : `EN_ATTENTE`, `VALIDEE`, `REFUSEE`,
+et **`SANS_OBJET`**.
+
+Le quatrième statut existe pour un cas métier précis (M4 §8.3) : lorsqu'un
+employé bénéficiant d'une dérogation salariale change de poste, le système
+**réévalue automatiquement** la pertinence de cette dérogation.
+
+**Deux scénarios** :
+
+1. Le nouveau poste porte le salaire dans la fourchette du nouvel échelon
+   → la dérogation devient inutile. Elle passe en `SANS_OBJET` et se clôt.
+
+2. Le salaire reste hors fourchette du nouvel échelon
+   → le système crée une nouvelle dérogation `EN_ATTENTE` et clôt l'ancienne
+   en `SANS_OBJET`.
+
+Un statut `REFUSEE` aurait induit en erreur : le DFC n'a rien refusé, la
+dérogation est simplement devenue obsolète suite à un changement structurel.
+
+Le statut s'applique aussi si une nouvelle grille salariale ramène le salaire
+dans la fourchette.
+
+**Journalisation** : toute clôture automatique en `SANS_OBJET` génère un
+événement dans le journal, avec l'identifiant de la dérogation remplacée
+et la cause (changement de poste, nouvelle grille, etc.).
+
 ---
 
 ## E — Conventions d'interface

@@ -99,6 +99,10 @@
 }
 
 @theme inline {
+  /* Polices — M14 */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -181,8 +185,11 @@
   }
 
   /* Les montants en FCFA et les compteurs de jours s'alignent mieux
-     en chiffres tabulaires — indispensable dans les tableaux de paie. */
-  table {
+     en chiffres tabulaires — indispensable dans les tableaux de paie.
+     M14 — TYPOGRAPHIE §1.2 : table, .montant, .tabulaire */
+  table,
+  .montant,
+  .tabulaire {
     font-variant-numeric: tabular-nums;
   }
 }

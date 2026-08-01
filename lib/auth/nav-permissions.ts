@@ -29,6 +29,17 @@ export const NAV_PERMISSIONS: Record<string, string[]> = {
   "/appels-offres": ["ao:creer", "ao:soumettre", "ao:validerDG"],
   "/ressources": ["ressource:demander"],
 
+  // ACHATS
+  "/achats/demandes": ["achat:demander"],
+  "/achats/a-valider": [], // Contrôle par lien de données
+  "/achats/instruction": ["achat:instruire"],
+  "/achats/commandes": ["achat:instruire"],
+  "/achats/receptions": ["achat:receptionner"],
+  "/achats/facturation": ["achat:facturer"],
+  "/achats/suivi": ["achat:demander", "achat:instruire", "achat:valider"],
+  "/achats/articles": ["referentiel:creer"],
+  "/achats/fournisseurs": ["referentiel:creer"],
+
   // ADMINISTRATION
   "/documents": ["employe:lire"],
   "/paie": [

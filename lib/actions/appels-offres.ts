@@ -253,6 +253,8 @@ export const marquerSoumis = actionProtegee(
 
 /**
  * Enregistrer le résultat (gagné/perdu)
+ *
+ * RÈGLE MÉTIER (M9 §1.1) : Un marché remporté peut créer un projet automatiquement
  */
 export const enregistrerResultat = actionProtegee(
   "ao:creer",
@@ -264,6 +266,7 @@ export const enregistrerResultat = actionProtegee(
       montantAttribution?: number;
       attributaire?: string;
       dateNotification?: Date;
+      creerProjet?: boolean; // Si true, créer le projet automatiquement
     }
   ) => {
     const ao = await prisma.appelOffres.findUnique({
@@ -302,6 +305,7 @@ export const enregistrerResultat = actionProtegee(
         details: {
           montantAttribution: donnees.montantAttribution,
           attributaire: donnees.attributaire,
+          creerProjet: donnees.creerProjet,
         },
         commentaire: donnees.gagne
           ? `Marché attribué : ${ao.reference}`
@@ -309,9 +313,69 @@ export const enregistrerResultat = actionProtegee(
       },
     });
 
+    // Si marché gagné ET création de projet demandée
+    let projetCree = null;
+    if (donnees.gagne && donnees.creerProjet) {
+      // Générer un code projet basé sur l'année
+      const annee = new Date().getFullYear();
+      const compteProjets = await prisma.projet.count({
+        where: {
+          code: {
+            startsWith: `CH-${annee}-`,
+          },
+        },
+      });
+      const numero = String(compteProjets + 1).padStart(3, "0");
+      const codeProjet = `CH-${annee}-${numero}`;
+
+      projetCree = await prisma.projet.create({
+        data: {
+          code: codeProjet,
+          nom: ao.objet,
+          description: `Projet créé depuis l'appel d'offres ${ao.reference}`,
+          maitreOuvrage: ao.maitreOuvrage || undefined,
+          montantMarche: donnees.montantAttribution
+            ? donnees.montantAttribution
+            : undefined,
+          statut: "BROUILLON",
+          creePar: session.userId,
+          // Création automatique du lieu de livraison
+          lieuLivraison: {
+            create: {
+              libelle: `Chantier ${ao.objet}`,
+              adresse: ao.lieu || "",
+              creePar: session.userId,
+            },
+          },
+        },
+      });
+
+      await prisma.journalEvenement.create({
+        data: {
+          entite: "Projet",
+          entiteId: projetCree.id,
+          action: "CREATION",
+          auteurId: session.userId,
+          auteurNom: session.email,
+          details: {
+            source: "AppelOffres",
+            appelOffresId: ao.id,
+            appelOffresReference: ao.reference,
+          },
+          commentaire: `Projet créé depuis l'appel d'offres ${ao.reference}`,
+        },
+      });
+
+      revalidatePath("/projets");
+    }
+
     revalidatePath("/appels-offres");
     revalidatePath(`/appels-offres/${id}`);
-    return aoMisAJour;
+
+    return {
+      appelOffres: aoMisAJour,
+      projet: projetCree,
+    };
   }
 );
 
@@ -644,20 +708,20 @@ export const supprimerConcurrent = actionProtegee(
 export const abandonnerDossiersDepasses = actionProtegee(
   "ao:creer",
   async (session) => {
-    const aujourd'hui = new Date();
+    const aujourdhui = new Date();
 
     // Trouver tous les AO en VEILLE, GO ou CONSTITUTION dont la date limite est dépassée
     const dossiersDepasses = await prisma.appelOffres.findMany({
       where: {
         statut: { in: ["VEILLE", "GO", "CONSTITUTION"] },
-        dateLimiteDepot: { lt: aujourd'hui },
+        dateLimiteDepot: { lt: aujourdhui },
       },
     });
 
     const resultats = [];
 
     for (const ao of dossiersDepasses) {
-      const aoAb and onné = await prisma.appelOffres.update({
+      const aoAbandonne = await prisma.appelOffres.update({
         where: { id: ao.id },
         data: { statut: "ABANDONNE" },
       });
@@ -687,6 +751,69 @@ export const abandonnerDossiersDepasses = actionProtegee(
     return {
       count: resultats.length,
       dossiers: resultats,
+    };
+  }
+);
+
+/**
+ * Vérifier les alertes sur les dossiers proches de leur date limite
+ *
+ * RÈGLE MÉTIER (M9 §6) : Alerte à J−15 et J−7 pour les dossiers non soumis
+ *
+ * Retourne les dossiers nécessitant une alerte (à traiter par le système de
+ * notifications M10)
+ *
+ * À exécuter quotidiennement via cron job ou Edge Function
+ */
+export const verifierAlertesEcheance = actionProtegee(
+  "ao:creer",
+  async (session) => {
+    const aujourdhui = new Date();
+    const dans15jours = new Date();
+    dans15jours.setDate(aujourdhui.getDate() + 15);
+    const dans7jours = new Date();
+    dans7jours.setDate(aujourdhui.getDate() + 7);
+
+    // Dossiers à J-15
+    const alertes15j = await prisma.appelOffres.findMany({
+      where: {
+        statut: { in: ["GO", "CONSTITUTION"] },
+        dateLimiteDepot: {
+          gte: aujourdhui,
+          lte: dans15jours,
+        },
+      },
+      select: {
+        id: true,
+        reference: true,
+        objet: true,
+        dateLimiteDepot: true,
+        statut: true,
+      },
+    });
+
+    // Dossiers à J-7 (urgents)
+    const alertes7j = await prisma.appelOffres.findMany({
+      where: {
+        statut: { in: ["GO", "CONSTITUTION"] },
+        dateLimiteDepot: {
+          gte: aujourdhui,
+          lte: dans7jours,
+        },
+      },
+      select: {
+        id: true,
+        reference: true,
+        objet: true,
+        dateLimiteDepot: true,
+        statut: true,
+      },
+    });
+
+    return {
+      alertes15jours: alertes15j,
+      alertes7jours: alertes7j,
+      total: alertes15j.length + alertes7j.length,
     };
   }
 );

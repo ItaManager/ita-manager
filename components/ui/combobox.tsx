@@ -111,7 +111,10 @@ export function Combobox({
                     variant="outline"
                     size="sm"
                     className="mt-3"
-                    onClick={handleCreate}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleCreate();
+                    }}
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     {createLabel} "{searchValue.trim()}"
@@ -143,7 +146,13 @@ export function Combobox({
             {/* Bouton de création en bas de liste si résultats existent */}
             {allowCreate && searchValue.trim() && onCreateNew && filteredOptions.length > 0 && (
               <CommandGroup>
-                <CommandItem onSelect={handleCreate} className="border-t">
+                <CommandItem
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleCreate();
+                  }}
+                  className="border-t"
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   {createLabel} "{searchValue.trim()}"
                 </CommandItem>
