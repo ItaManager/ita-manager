@@ -50,8 +50,16 @@ export default async function PageReleves() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">Exporter CSV</Button>
-          <Button variant="outline">Exporter PDF</Button>
+          <Button variant="outline" asChild>
+            <a href="/api/exports/releves-csv" download>
+              Exporter CSV
+            </a>
+          </Button>
+          <Button variant="outline" asChild>
+            <a href="/api/exports/releves-pdf" target="_blank" rel="noopener noreferrer">
+              Exporter PDF
+            </a>
+          </Button>
         </div>
       </div>
 
