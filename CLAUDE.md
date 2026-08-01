@@ -36,6 +36,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Livraison 3: Reprise paiements EN_ATTENTE + vérifications sécurité (390 lines)
 - Livraison 4: Écrans principaux + Server Actions complètes (787 insertions)
 - Livraison 5: Écrans finalisés à 100% (371 insertions)
+- Livraison 6: Backend à 100% — Cron reprise + filtres + corrections (154 insertions)
+
+**M15 Backend** ✅ 100% Complete:
+- 11 Server Actions (preparerDemande, autoriser, refuser, executer, verifier, consulter, annuler, executerLot, interrogerLot, lister, demanderAutorisation)
+- Route cron `/api/cron/reprise-paiements` (reprise automatique horaire)
+- Client Wave API réel avec retry et monitoring
+- Vérification bénéficiaires (verify_recipient)
+- Filtrage demandes d'autorisation
+- Lots asynchrones (batch payments)
+- Annulation sous 3 jours
+- Build production validé (61 pages)
 
 **Stack**: Next.js (App Router) · React 19 · Tailwind v4 · shadcn/ui · Prisma · Supabase (PostgreSQL + Auth + Storage) · Resend · Cloudflare · Wave API
 
