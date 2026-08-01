@@ -179,6 +179,7 @@ async function main() {
   const familles = await prisma.familleMateriel.findMany({
     where: { actif: true },
     select: {
+      id: true,
       code: true,
       formatCode: true,
       prochainNumero: true,
@@ -197,11 +198,26 @@ async function main() {
     }
 
     // Vérifier que prochainNumero est cohérent avec les codes existants
-    if (famille._count.materiel > 0 && famille.prochainNumero < famille._count.materiel) {
-      console.log(
-        `   ⚠️  ${famille.code} : prochainNumero=${famille.prochainNumero} < ${famille._count.materiel} matériels`
-      );
-      // Pas une erreur bloquante, juste un avertissement
+    if (famille._count.materiel > 0) {
+      // Chercher le dernier code pour valider la cohérence
+      const dernier = await prisma.materiel.findFirst({
+        where: { familleId: famille.id },
+        orderBy: { codeIta: 'desc' },
+        select: { codeIta: true },
+      });
+
+      if (dernier) {
+        const matches = dernier.codeIta.match(/\d+/g);
+        if (matches && matches.length > 0) {
+          const dernierNumero = parseInt(matches[matches.length - 1], 10);
+          if (famille.prochainNumero <= dernierNumero) {
+            console.log(
+              `   ⚠️  ${famille.code} : prochainNumero=${famille.prochainNumero} ≤ dernier code ${dernierNumero} (${dernier.codeIta})`
+            );
+            // Pas une erreur bloquante, juste un avertissement
+          }
+        }
+      }
     }
 
     console.log(`   ✅ ${famille.code} : "${famille.formatCode}" (prochain: ${famille.prochainNumero})`);

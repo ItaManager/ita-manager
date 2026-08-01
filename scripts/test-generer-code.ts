@@ -35,9 +35,10 @@ async function main() {
 
   for (const famille of familles) {
     try {
-      const code = genererCode(famille);
+      const resultat = genererCode(famille);
       const valide = validerFormat(famille.formatCode);
-      console.log(`✅ ${famille.code.padEnd(8)} : "${famille.formatCode}" → ${code} ${valide ? '✓' : '✗'}`);
+      const warning = resultat.warning ? ` (${resultat.warning})` : '';
+      console.log(`✅ ${famille.code.padEnd(8)} : "${famille.formatCode}" → ${resultat.code}${warning} ${valide ? '✓' : '✗'}`);
     } catch (error) {
       console.log(`❌ ${famille.code.padEnd(8)} : ERREUR → ${error instanceof Error ? error.message : error}`);
     }
@@ -52,9 +53,9 @@ async function main() {
   };
 
   try {
-    const code1 = genererCode(familleAvecAnnee, 2022);
-    console.log(`✅ Format avec année : ITA-VE0001-2022 (attendu)`);
-    console.log(`   Généré : ${code1}`);
+    const resultat = genererCode(familleAvecAnnee, 2022);
+    console.log(`✅ Format avec année : ITA-AK-VL0001-2022 (attendu)`);
+    console.log(`   Généré : ${resultat.code}${resultat.warning ? ' (' + resultat.warning + ')' : ''}`);
   } catch (error) {
     console.log(`❌ Erreur : ${error instanceof Error ? error.message : error}`);
   }
@@ -68,10 +69,11 @@ async function main() {
   };
 
   try {
-    const code = genererCode(familleJetonManquant); // Sans annee
-    console.log(`❌ Devrait échouer : ${code}`);
+    const resultat = genererCode(familleJetonManquant); // Sans annee
+    console.log(`✅ Année courante utilisée : ${resultat.code}`);
+    console.log(`   Warning : ${resultat.warning || 'aucun'}`);
   } catch (error) {
-    console.log(`✅ Erreur attendue : ${error instanceof Error ? error.message : error}`);
+    console.log(`❌ Erreur inattendue : ${error instanceof Error ? error.message : error}`);
   }
 
   console.log('\n=== Test format invalide ===\n');
