@@ -128,7 +128,96 @@ async function main() {
   }
 
   // ===========================================================================
-  // 4. TEST DES 8 INTERDITS
+  // 4. SÉCURITÉ — CLÉ WAVE NON EXPOSÉE (SECURITE-M15.md §2.2)
+  // ===========================================================================
+
+  console.log('\n📋 Sécurité — Clé Wave absente du bundle client');
+
+  try {
+    const result = execSync(
+      `grep -r "WAVE_API_KEY\\|wave_test_\\|wave_live_" .next/static/ 2>/dev/null || true`,
+      { encoding: 'utf-8', cwd: process.cwd() }
+    ).trim();
+
+    if (result.length > 0) {
+      console.log('   ❌ CLÉ WAVE EXPOSÉE dans le bundle client');
+      console.log(result);
+      console.log('   ⚠️  NE PAS DÉPLOYER — la clé Wave est accessible au client');
+      erreurs++;
+    } else {
+      console.log('   ✅ Clé Wave absente du bundle client');
+    }
+  } catch (error: any) {
+    // grep retourne code 1 si rien trouvé (c'est ce qu'on veut)
+    if (error.status === 1) {
+      console.log('   ✅ Clé Wave absente du bundle client');
+    } else if (error.message.includes('No such file')) {
+      console.log('   ⚠️  .next/static introuvable — exécutez `npm run build` d\'abord');
+    } else {
+      console.log('   ❌ Erreur lors de la vérification du bundle');
+      erreurs++;
+    }
+  }
+
+  // ===========================================================================
+  // 5. SÉCURITÉ — IDEMPOTENCE NON GÉNÉRÉE DANS LE CODE (SECURITE-M15.md §3.2)
+  // ===========================================================================
+
+  console.log('\n📋 Sécurité — Idempotence générée uniquement par Prisma');
+
+  try {
+    const result = execSync(
+      `grep -rn "randomUUID\\|uuidv4\\|crypto.randomUUID" lib/paiements/ 2>/dev/null | grep -v node_modules || true`,
+      { encoding: 'utf-8', cwd: process.cwd() }
+    ).trim();
+
+    if (result.length > 0) {
+      console.log('   ❌ UUID généré dans lib/paiements/ — risque de double paiement');
+      console.log(result);
+      console.log('   ⚠️  La clé doit être générée par Prisma @default(uuid())');
+      erreurs++;
+    } else {
+      console.log('   ✅ Idempotence générée uniquement par Prisma');
+    }
+  } catch (error: any) {
+    if (error.status === 1) {
+      console.log('   ✅ Idempotence générée uniquement par Prisma');
+    } else {
+      console.log('   ❌ Erreur lors de la vérification de l\'idempotence');
+      erreurs++;
+    }
+  }
+
+  // ===========================================================================
+  // 6. SÉCURITÉ — PAS DE NEXT_PUBLIC_WAVE
+  // ===========================================================================
+
+  console.log('\n📋 Sécurité — Pas de NEXT_PUBLIC_WAVE dans le code');
+
+  try {
+    const result = execSync(
+      `grep -r "NEXT_PUBLIC_WAVE" . --exclude-dir=node_modules --exclude-dir=.next 2>/dev/null || true`,
+      { encoding: 'utf-8', cwd: process.cwd() }
+    ).trim();
+
+    if (result.length > 0) {
+      console.log('   ❌ NEXT_PUBLIC_WAVE trouvé — expose la clé au client');
+      console.log(result);
+      erreurs++;
+    } else {
+      console.log('   ✅ Aucun NEXT_PUBLIC_WAVE dans le code');
+    }
+  } catch (error: any) {
+    if (error.status === 1) {
+      console.log('   ✅ Aucun NEXT_PUBLIC_WAVE dans le code');
+    } else {
+      console.log('   ❌ Erreur lors de la vérification');
+      erreurs++;
+    }
+  }
+
+  // ===========================================================================
+  // 7. TEST DES 8 INTERDITS
   // ===========================================================================
 
   console.log('\n📋 Test des 8 interdits en dur (SECURITE-M15.md § 1)');
