@@ -1,7 +1,9 @@
 import { Suspense } from "react";
 import { verifierAccesPage } from "@/lib/auth/page-access";
+import { prisma } from "@/lib/db/prisma";
 import { Wrench } from "lucide-react";
 import { RegistreMateriel } from "./_components/registre-materiel";
+import { FormNouveauMateriel } from "./_components/form-nouveau-materiel";
 
 export const metadata = {
   title: "Registre Matériel — ITA Manager",
@@ -18,6 +20,27 @@ export default async function RessourcesPage(props: {
   const page = parseInt((searchParams.page as string) || "1");
   const recherche = (searchParams.q as string) || "";
 
+  // Charger les familles et lieux pour le formulaire
+  const familles = await prisma.familleMateriel.findMany({
+    where: { actif: true },
+    select: {
+      id: true,
+      code: true,
+      libelle: true,
+      type: true,
+    },
+    orderBy: { libelle: "asc" },
+  });
+
+  const lieux = await prisma.lieuStockage.findMany({
+    where: { actif: true },
+    select: {
+      id: true,
+      libelle: true,
+    },
+    orderBy: { libelle: "asc" },
+  });
+
   return (
     <div className="container mx-auto py-8 max-w-7xl">
       <div className="mb-6 flex items-center justify-between">
@@ -31,7 +54,7 @@ export default async function RessourcesPage(props: {
           </p>
         </div>
 
-        {/* TODO: Bouton nouveau matériel */}
+        <FormNouveauMateriel familles={familles} lieux={lieux} />
       </div>
 
       <Suspense

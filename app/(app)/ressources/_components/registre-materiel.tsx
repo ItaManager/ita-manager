@@ -56,8 +56,6 @@ export async function RegistreMateriel({
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[120px]">Code ITA</TableHead>
-                  <TableHead className="w-[120px]">N° Parc</TableHead>
-                  <TableHead className="w-[120px]">Code long</TableHead>
                   <TableHead>Désignation</TableHead>
                   <TableHead className="w-[140px]">Famille</TableHead>
                   <TableHead className="w-[120px]">Type</TableHead>
@@ -78,12 +76,6 @@ export async function RegistreMateriel({
                       >
                         {item.codeIta}
                       </Link>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">
-                      {item.numeroParcAncien || "—"}
-                    </TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">
-                      {item.codeLong || "—"}
                     </TableCell>
                     <TableCell className="font-medium">
                       {item.designation}
