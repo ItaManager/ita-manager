@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **ITA Manager** — Internal ERP for ITA SARL, a construction company in Ivory Coast. Complete rebuild from scratch built with Next.js 16, React 19, Tailwind v4, Prisma, Supabase, and deployed on Vercel.
 
-**Current Status**: M15 (ItaPay) in development. The application implements authentication, TOTP 2FA, session locking, role-based permissions, audit logging, organizational structure management, and payment execution via Wave API.
+**Current Status**: M15 (ItaPay) completed. The application implements authentication, TOTP 2FA, session locking, role-based permissions, audit logging, organizational structure management, and payment execution via Wave API.
 
 **M0 corrections (v0.1.1 - July 2026)**:
 - QR code TOTP generated client-side with `qrcode.react`
@@ -21,7 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Combobox with inline creation (R-04 compliance)
 - Permissions: `organisation:consulter`, `organisation:modifier`
 
-**M15 features (ItaPay - August 2026)**:
+**M15 features (ItaPay - August 2026)** ✅ Complete:
 - Payment execution via Wave API (Côte d'Ivoire mobile money)
 - 8 hard-coded security interdits (SECURITE-M15.md)
 - Four-eyes principle: prepare ≠ authorize ≠ execute
@@ -29,6 +29,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Automatic resumption of EN_ATTENTE payments
 - Execution window: 8h-14h weekdays only
 - Permissions: `paiement:consulter`, `paiement:preparer`, `paiement:autoriser`, `paiement:executer`
+
+**M15 Deliveries**:
+- Livraison 1: 8 interdits + tests + seed démo
+- Livraison 2: Client Wave API réel + retry + monitoring (685 lines)
+- Livraison 3: Reprise paiements EN_ATTENTE + vérifications sécurité (390 lines)
+- Livraison 4: Écrans principaux + Server Actions complètes (787 insertions)
+- Livraison 5: Écrans finalisés à 100% (371 insertions)
 
 **Stack**: Next.js (App Router) · React 19 · Tailwind v4 · shadcn/ui · Prisma · Supabase (PostgreSQL + Auth + Storage) · Resend · Cloudflare · Wave API
 
