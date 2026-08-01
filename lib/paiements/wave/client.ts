@@ -70,9 +70,6 @@ function verifierEnvironnement() {
   }
 }
 
-// Vérifier au chargement du module
-verifierEnvironnement();
-
 // ═══════════════════════════════════════════════════════════════════════
 // CLIENT WAVE RÉEL
 // ═══════════════════════════════════════════════════════════════════════
@@ -273,5 +270,7 @@ export class ClientWaveReel implements ClientWave {
  * Factory : crée le client Wave réel
  */
 export function creerClientWave(apiKey?: string): ClientWave {
+  // Vérifier l'environnement avant de créer le client
+  verifierEnvironnement();
   return new ClientWaveReel(apiKey);
 }
