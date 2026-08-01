@@ -11,26 +11,13 @@ import { actionProtegee } from '@/lib/auth/guard';
 import { prisma } from '@/lib/db/prisma';
 import { Decimal } from '@prisma/client/runtime/library';
 import { utilisateurATotpActif } from '@/lib/auth/verifier-totp';
+import { InterditPaiement } from '@/lib/paiements/erreurs';
 
 // ═══════════════════════════════════════════════════════════════════════
 // TYPE SESSION
 // ═══════════════════════════════════════════════════════════════════════
 
 type Session = { userId: string; email: string };
-
-// ═══════════════════════════════════════════════════════════════════════
-// ERREURS MÉTIER
-// ═══════════════════════════════════════════════════════════════════════
-
-export class InterditPaiement extends Error {
-  constructor(
-    public code: string,
-    message: string
-  ) {
-    super(message);
-    this.name = 'InterditPaiement';
-  }
-}
 
 // ═══════════════════════════════════════════════════════════════════════
 // CONSTANTES DE CONFIGURATION
@@ -409,4 +396,208 @@ export async function executerPaiementLogique(
 export const executerPaiement = actionProtegee(
   'paiement:executer',
   executerPaiementLogique
+);
+
+// ═══════════════════════════════════════════════════════════════════════
+// ÉCRAN DE PRÉPARATION
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * Liste les demandes de paiement
+ *
+ * Permission : paiement:consulter
+ */
+export const listerDemandesPaiement = actionProtegee(
+  'paiement:consulter',
+  async () => {
+    const demandes = await prisma.demandePaiement.findMany({
+      include: {
+        lignes: {
+          select: {
+            id: true,
+            beneficiaireNom: true,
+            beneficiaireMobile: true,
+            montant: true,
+            motifPaiement: true,
+            verifieLe: true,
+            nameMatch: true,
+            withinLimits: true,
+            statut: true,
+          },
+        },
+        autorisation: {
+          select: {
+            autoriseeParId: true,
+            autoriseeLe: true,
+            expireLe: true,
+            montantFige: true,
+            nombreEchecs: true,
+          },
+        },
+        preparateur: {
+          select: {
+            email: true,
+          },
+        },
+      },
+      orderBy: { prepareeLe: 'desc' },
+      take: 50,
+    });
+
+    return demandes;
+  }
+);
+
+/**
+ * Vérifie les bénéficiaires via Wave verify_recipient (client simulé)
+ *
+ * Permission : paiement:preparer
+ *
+ * Pour chaque ligne :
+ * - Appelle verify_recipient
+ * - Enregistre nameMatch et withinLimits
+ * - Marque verifieLe
+ *
+ * Retourne : nombre de lignes vérifiées, nombre bloquées
+ */
+export const verifierBeneficiaires = actionProtegee(
+  'paiement:preparer',
+  async (_session, demandePaiementId: string) => {
+    const demande = await prisma.demandePaiement.findUnique({
+      where: { id: demandePaiementId },
+      include: { lignes: true },
+    });
+
+    if (!demande) {
+      throw new Error('Demande introuvable');
+    }
+
+    // Importer le client simulé dynamiquement
+    const { creerClientSimule } = await import(
+      '@/lib/paiements/wave/client-simule'
+    );
+    const client = creerClientSimule();
+
+    // Programmer les scénarios pour les numéros de test
+    // NO_MATCH : +2250566778899
+    client.programmer('+2250566778899', 'NO_MATCH');
+    // RECIPIENT_LIMIT : +2250744556677
+    client.programmer('+2250744556677', 'RECIPIENT_LIMIT');
+
+    const maintenant = new Date();
+    let nombreBloquees = 0;
+
+    // Vérifier chaque ligne
+    for (const ligne of demande.lignes) {
+      const reponse = await client.verifierDestinataire({
+        recipient: ligne.beneficiaireMobile,
+        name: ligne.beneficiaireNom,
+        amount: ligne.montant.toString(),
+      });
+
+      const bloquee =
+        reponse.name_match === 'NO_MATCH' ||
+        reponse.within_limits === false;
+
+      if (bloquee) {
+        nombreBloquees++;
+      }
+
+      await prisma.lignePaiement.update({
+        where: { id: ligne.id },
+        data: {
+          verifieLe: maintenant,
+          nameMatch: reponse.name_match,
+          withinLimits: reponse.within_limits,
+          statut: 'VERIFIE',
+        },
+      });
+    }
+
+    return {
+      nombreVerifiees: demande.lignes.length,
+      nombreBloquees,
+    };
+  }
+);
+
+/**
+ * Demande l'autorisation du DG
+ *
+ * Permission : paiement:preparer
+ *
+ * Crée AutorisationPaiement avec :
+ * - demandeeParId = session.userId
+ * - montantFige = sum(lignes non bloquées)
+ * - expireLe calculée selon fenêtre
+ *
+ * TODO: Envoyer notification email au DG
+ */
+export const demanderAutorisation = actionProtegee(
+  'paiement:preparer',
+  async (session, demandePaiementId: string) => {
+    const demande = await prisma.demandePaiement.findUnique({
+      where: { id: demandePaiementId },
+      include: {
+        lignes: {
+          where: {
+            statut: { not: 'ANNULE' },
+          },
+        },
+        autorisation: true,
+      },
+    });
+
+    if (!demande) {
+      throw new Error('Demande introuvable');
+    }
+
+    // Vérifier que toutes les lignes sont vérifiées
+    const nonVerifiees = demande.lignes.filter((l) => !l.verifieLe);
+    if (nonVerifiees.length > 0) {
+      throw new Error(
+        'Toutes les lignes doivent être vérifiées avant de demander l\'autorisation'
+      );
+    }
+
+    // Calculer le montant des lignes exécutables (non bloquées)
+    const lignesExecutables = demande.lignes.filter(
+      (l) =>
+        l.nameMatch !== 'NO_MATCH' &&
+        l.withinLimits !== false
+    );
+
+    const montantFige = lignesExecutables.reduce(
+      (acc, l) => acc.add(l.montant),
+      new Decimal(0)
+    );
+
+    // Créer ou mettre à jour l'autorisation
+    if (demande.autorisation) {
+      await prisma.autorisationPaiement.update({
+        where: { demandePaiementId },
+        data: {
+          demandeeParId: session.userId,
+          montantFige,
+          autoriseeParId: null,
+          autoriseeLe: null,
+          expireLe: null,
+          refuseeLe: null,
+          motifRefus: null,
+        },
+      });
+    } else {
+      await prisma.autorisationPaiement.create({
+        data: {
+          demandePaiementId,
+          demandeeParId: session.userId,
+          montantFige,
+        },
+      });
+    }
+
+    // TODO: Envoyer notification email au DG
+
+    return { success: true, montantFige };
+  }
 );

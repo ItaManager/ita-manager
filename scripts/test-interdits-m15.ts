@@ -12,8 +12,8 @@ import { Decimal } from '@prisma/client/runtime/library';
 import {
   autoriserPaiementLogique,
   executerPaiementLogique,
-  InterditPaiement,
 } from '../lib/actions/paiements';
+import { InterditPaiement } from '../lib/paiements/erreurs';
 import { randomUUID } from 'crypto';
 
 // ═══════════════════════════════════════════════════════════════════════
