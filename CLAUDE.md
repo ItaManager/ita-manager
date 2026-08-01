@@ -37,8 +37,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Livraison 4: Écrans principaux + Server Actions complètes (787 insertions)
 - Livraison 5: Écrans finalisés à 100% (371 insertions)
 - Livraison 6: Backend à 100% — Cron reprise + filtres + corrections (154 insertions)
+- Livraison 7: Finalisation — Exports PDF/CSV + scripts test + cron Vercel (888 insertions)
 
-**M15 Backend** ✅ 100% Complete:
+**M15 ItaPay** ✅ 100% COMPLET:
+
+**Backend** (100%):
 - 11 Server Actions (preparerDemande, autoriser, refuser, executer, verifier, consulter, annuler, executerLot, interrogerLot, lister, demanderAutorisation)
 - Route cron `/api/cron/reprise-paiements` (reprise automatique horaire)
 - Client Wave API réel avec retry et monitoring
@@ -46,7 +49,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Filtrage demandes d'autorisation
 - Lots asynchrones (batch payments)
 - Annulation sous 3 jours
-- Build production validé (61 pages)
+
+**Frontend** (100%):
+- 8 écrans fonctionnels
+- Exports PDF/CSV des relevés
+- Routes API : `/api/exports/releves-csv`, `/api/exports/releves-pdf`
+
+**Infrastructure** (100%):
+- Cron Vercel : reprise horaire (0 * * * *)
+- Scripts de test : `seed-paiements-complet.ts`, `test-flow-m15.ts`
+- Build production validé (63 pages)
 
 **Stack**: Next.js (App Router) · React 19 · Tailwind v4 · shadcn/ui · Prisma · Supabase (PostgreSQL + Auth + Storage) · Resend · Cloudflare · Wave API
 
