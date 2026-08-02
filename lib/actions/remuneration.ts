@@ -13,6 +13,7 @@
 
 import { prisma } from "@/lib/db/prisma";
 import { actionProtegee, PERMISSIONS } from "@/lib/auth/guard";
+import { revalidatePath } from "next/cache";
 import type { Decimal } from "@prisma/client/runtime/library";
 
 // ====================================================================
@@ -627,3 +628,200 @@ export async function reevaluerDerogationChangementPoste(
     });
   }
 }
+
+/**
+ * Archiver une grille publiée
+ * Change le statut de PUBLIEE à ARCHIVEE
+ */
+export const archiverGrille = actionProtegee(
+  "grille:modifier",
+  async (session, grilleId: string) => {
+    const grille = await prisma.grilleSalariale.findUnique({
+      where: { id: grilleId },
+    });
+
+    if (!grille) {
+      throw new Error("Grille introuvable");
+    }
+
+    if (grille.statut === "BROUILLON") {
+      throw new Error("Un brouillon doit être supprimé, pas archivé");
+    }
+
+    if (grille.statut === "ARCHIVEE") {
+      throw new Error("Cette grille est déjà archivée");
+    }
+
+    const grilleArchivee = await prisma.grilleSalariale.update({
+      where: { id: grilleId },
+      data: { statut: "ARCHIVEE" },
+      include: { echelons: true },
+    });
+
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "GrilleSalariale",
+        entiteId: grilleId,
+        action: "ARCHIVAGE",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        commentaire: `Grille version ${grille.version} archivée`,
+      },
+    });
+
+    revalidatePath("/remuneration");
+    return grilleArchivee;
+  }
+);
+
+/**
+ * Lister les dérogations en attente de validation
+ * Filtre automatique sur statut EN_ATTENTE avec pagination
+ */
+export const listerDerogationsPendantes = actionProtegee(
+  "derogation:valider",
+  async (session, page: number = 1) => {
+    const limit = 25;
+    const offset = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      prisma.derogationSalariale.findMany({
+        where: { statut: "EN_ATTENTE" },
+        include: {
+          employe: {
+            select: {
+              id: true,
+              matricule: true,
+              nom: true,
+              prenom: true,
+            },
+          },
+        },
+        orderBy: { demandeLe: "asc" },
+        take: limit,
+        skip: offset,
+      }),
+      prisma.derogationSalariale.count({
+        where: { statut: "EN_ATTENTE" },
+      }),
+    ]);
+
+    return {
+      items,
+      total,
+      pages: Math.ceil(total / limit),
+      currentPage: page,
+    };
+  }
+);
+
+/**
+ * Créer une dérogation salariale
+ * Appelée lors d'un recrutement ou d'un changement de salaire hors grille
+ */
+export const creerDerogation = actionProtegee(
+  "employe:modifier",
+  async (
+    session,
+    data: {
+      employeId: string;
+      montant: number;
+      motif: string;
+    }
+  ) => {
+    const employe = await prisma.employe.findUnique({
+      where: { id: data.employeId },
+      include: {
+        affectations: {
+          where: {
+            OR: [{ dateFin: null }, { dateFin: { gte: new Date() } }],
+          },
+          include: {
+            poste: {
+              select: { niveau: true },
+            },
+          },
+          orderBy: { dateDebut: "desc" },
+          take: 1,
+        },
+      },
+    });
+
+    if (!employe) {
+      throw new Error("Employé introuvable");
+    }
+
+    if (employe.affectations.length === 0) {
+      throw new Error("L'employé n'a pas d'affectation active");
+    }
+
+    const niveau = employe.affectations[0].poste.niveau;
+
+    const grillePubliee = await prisma.grilleSalariale.findFirst({
+      where: { statut: "PUBLIEE" },
+      include: { echelons: true },
+    });
+
+    if (!grillePubliee) {
+      throw new Error("Aucune grille salariale publiée");
+    }
+
+    const echelon = grillePubliee.echelons.find((e) => e.niveau === niveau);
+
+    if (!echelon) {
+      throw new Error(`Niveau ${niveau} introuvable dans la grille`);
+    }
+
+    const min = Number(echelon.min);
+    const max = Number(echelon.max);
+
+    if (data.montant >= min && data.montant <= max) {
+      throw new Error(
+        `Le salaire ${data.montant} FCFA est dans la fourchette ${min}-${max} FCFA. Aucune dérogation nécessaire.`
+      );
+    }
+
+    const derogation = await prisma.derogationSalariale.create({
+      data: {
+        employeId: data.employeId,
+        montant: data.montant,
+        niveauMin: min,
+        niveauMax: max,
+        motif: data.motif,
+        statut: "EN_ATTENTE",
+        demandeLe: new Date(),
+        demandeParId: session.userId,
+      },
+      include: {
+        employe: {
+          select: {
+            id: true,
+            matricule: true,
+            nom: true,
+            prenom: true,
+          },
+        },
+      },
+    });
+
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "DerogationSalariale",
+        entiteId: derogation.id,
+        action: "CREATION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        details: {
+          employeMatricule: employe.matricule,
+          montant: data.montant,
+          fourchette: { min, max },
+          niveau,
+        },
+        commentaire: `Demande de dérogation pour ${employe.prenom} ${employe.nom} (${data.montant} FCFA hors fourchette ${min}-${max} FCFA)`,
+      },
+    });
+
+    revalidatePath("/remuneration/derogations");
+    return derogation;
+  }
+);
