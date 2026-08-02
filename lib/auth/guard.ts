@@ -265,6 +265,27 @@ export const PERMISSIONS = {
     libelle: "Arbitrer les demandes de ressources",
     domaine: "TECHNIQUE",
   },
+  // M10 — Pilotage (Dashboards)
+  "pilotage:dg": {
+    code: "pilotage:dg",
+    libelle: "Accéder au tableau de bord Direction Générale",
+    domaine: "PILOTAGE",
+  },
+  "pilotage:drh": {
+    code: "pilotage:drh",
+    libelle: "Accéder au tableau de bord RH",
+    domaine: "PILOTAGE",
+  },
+  "pilotage:dfc": {
+    code: "pilotage:dfc",
+    libelle: "Accéder au tableau de bord Financier",
+    domaine: "PILOTAGE",
+  },
+  "pilotage:dt": {
+    code: "pilotage:dt",
+    libelle: "Accéder au tableau de bord Technique",
+    domaine: "PILOTAGE",
+  },
 } as const;
 
 export type PermissionCode = keyof typeof PERMISSIONS;

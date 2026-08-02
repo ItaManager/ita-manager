@@ -122,6 +122,11 @@ const MATRICE: Record<PermissionCode, readonly string[]> = {
   "transport:demander": ["ADMIN", "DG", "DT", "CT", "CC"],
   "entretien:planifier": ["ADMIN", "DT"],
   "ressource:arbitrer": ["ADMIN", "DG", "DT"],
+  // M10 — Pilotage (Dashboards)
+  "pilotage:dg": ["ADMIN", "DG"],
+  "pilotage:drh": ["ADMIN", "DRH"],
+  "pilotage:dfc": ["ADMIN", "DFC"],
+  "pilotage:dt": ["ADMIN", "DT"],
 };
 
 // Compte Super Admin — accès technique de maintenance, sans Employe

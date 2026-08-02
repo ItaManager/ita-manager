@@ -4,10 +4,10 @@
  */
 
 export const NAV_PERMISSIONS: Record<string, string[]> = {
-  // PILOTAGE - accessible à tous
-  "/": [],
-  "/notifications": [],
-  "/calendrier": [],
+  // PILOTAGE
+  "/": ["pilotage:dg", "pilotage:drh", "pilotage:dfc", "pilotage:dt"], // Tableau de bord principal (accès selon rôle)
+  "/notifications": [], // Accessible à tous
+  "/calendrier": [], // Accessible à tous
 
   // PERSONNEL - nécessite employe:lire
   "/employes": ["employe:lire", "employe:creer", "employe:modifier"],
