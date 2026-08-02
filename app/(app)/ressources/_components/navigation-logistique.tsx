@@ -84,7 +84,7 @@ const menuItems: MenuItem[] = [
     icon: FileSpreadsheet,
     permission: "stock:mouvementer",
     livraison: "L2",
-    disponible: false,
+    disponible: true,
   },
   {
     label: "Inspections",
@@ -92,7 +92,7 @@ const menuItems: MenuItem[] = [
     icon: Search,
     permission: "materiel:inspecter",
     livraison: "L2",
-    disponible: false,
+    disponible: true,
   },
   {
     label: "Réceptions",
@@ -100,7 +100,7 @@ const menuItems: MenuItem[] = [
     icon: Inbox,
     permission: "reception:controler",
     livraison: "L2",
-    disponible: false,
+    disponible: true,
   },
   {
     label: "Entretien",
@@ -180,9 +180,9 @@ export function NavigationLogistique() {
           type="button"
           className="ml-auto flex items-center gap-2 border-b-2 border-transparent pb-3 pt-1 text-sm font-medium text-gray-400 cursor-not-allowed"
           disabled
-          title="Fonctionnalités L2/L3 en cours de développement"
+          title="Fonctionnalités L2/L3 à venir"
         >
-          <span className="text-xs">+ 10 autres</span>
+          <span className="text-xs">+ 7 autres</span>
           <Badge variant="outline" className="text-xs">
             L2/L3
           </Badge>
