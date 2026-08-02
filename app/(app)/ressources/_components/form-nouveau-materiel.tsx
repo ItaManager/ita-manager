@@ -28,6 +28,7 @@ import {
   creerMateriel,
   genererCodeMateriel,
   verifierCodeExistant,
+  verifierFormatCode,
 } from "@/lib/actions/logistique";
 import type { TypeMateriel, StatutMateriel } from "@prisma/client";
 
@@ -55,6 +56,7 @@ export function FormNouveauMateriel({
   const [loading, setLoading] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [codeWarning, setCodeWarning] = useState<string | null>(null);
+  const [formatWarning, setFormatWarning] = useState<string | null>(null);
   const [codeGenere, setCodeGenere] = useState<string>("");
   const [familleSelectionnee, setFamilleSelectionnee] = useState<string>("");
 
@@ -92,12 +94,13 @@ export function FormNouveauMateriel({
     }
   }
 
-  // Vérifier si le code existe quand l'utilisateur modifie
+  // Vérifier si le code existe ET s'il respecte le format
   useEffect(() => {
-    if (codeIta && codeIta !== codeGenere) {
+    if (codeIta && codeIta !== codeGenere && familleSelectionnee) {
       verifierCode();
+      verifierFormat();
     }
-  }, [codeIta]);
+  }, [codeIta, familleSelectionnee]);
 
   async function verifierCode() {
     if (!codeIta) return;
@@ -111,6 +114,24 @@ export function FormNouveauMateriel({
       }
     } catch (error) {
       console.error("Erreur vérification code:", error);
+    }
+  }
+
+  async function verifierFormat() {
+    if (!codeIta || !familleSelectionnee) return;
+
+    try {
+      const resultat = await verifierFormatCode({
+        codeIta,
+        familleId: familleSelectionnee,
+      });
+      if (!resultat.conforme && resultat.message) {
+        setFormatWarning(resultat.message);
+      } else {
+        setFormatWarning(null);
+      }
+    } catch (error) {
+      console.error("Erreur vérification format:", error);
     }
   }
 
@@ -138,6 +159,7 @@ export function FormNouveauMateriel({
         familleId: familleSelectionnee,
         type: famille.type,
         statut: data.statut || "DISPONIBLE",
+        partageable: data.partageable || false,
         lieuBaseId: data.lieuBaseId || undefined,
         numeroParcAncien: data.numeroParcAncien || undefined,
         numeroSerie: data.numeroSerie || undefined,
@@ -220,6 +242,12 @@ export function FormNouveauMateriel({
                 <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                   <Info className="size-3" />
                   {codeWarning}
+                </p>
+              )}
+              {formatWarning && (
+                <p className="text-xs text-yellow-600 mt-1 flex items-center gap-1">
+                  <Info className="size-3" />
+                  {formatWarning}
                 </p>
               )}
               {erreur && (
@@ -320,6 +348,19 @@ export function FormNouveauMateriel({
               {...register("numeroParcAncien")}
               placeholder="Ex: A10CI1"
             />
+          </div>
+
+          {/* Partageable */}
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="partageable"
+              {...register("partageable")}
+              className="rounded border-input"
+            />
+            <Label htmlFor="partageable" className="font-normal">
+              Partageable (peut être affecté à plusieurs chantiers)
+            </Label>
           </div>
 
           <DialogFooter>

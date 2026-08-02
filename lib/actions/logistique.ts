@@ -11,6 +11,7 @@ import { prisma } from "@/lib/db/prisma";
 import { actionProtegee, verifierPermission, PERMISSIONS } from "@/lib/auth/guard";
 import { revalidatePath } from "next/cache";
 import { genererCode, validerFormat, type ResultatGeneration } from "@/lib/logistique/code";
+import { calculerEtatPiece } from "@/lib/logistique/echeances";
 import { Prisma, type TypeMateriel, type StatutMateriel } from "@prisma/client";
 
 // =====================================================================
@@ -201,6 +202,51 @@ export const genererCodeMateriel = actionProtegee(
 );
 
 /**
+ * Vérifier si un code correspond au format de sa famille
+ *
+ * M13 L1 — Contrôle 2 décision 1.1 (warning, non bloquant)
+ */
+export const verifierFormatCode = actionProtegee(
+  "materiel:creer",
+  async (
+    session,
+    params: {
+      codeIta: string;
+      familleId: string;
+    }
+  ): Promise<{ conforme: boolean; message?: string }> => {
+    const famille = await prisma.familleMateriel.findUnique({
+      where: { id: params.familleId },
+      select: { code: true, formatCode: true },
+    });
+
+    if (!famille) {
+      return { conforme: false, message: "Famille introuvable" };
+    }
+
+    // Construire regex depuis formatCode
+    // {FAMILLE}{SEQ:3} → AK-VL\d{3}
+    // {FAMILLE}{SEQ:2}-{ANNEE} → AK-BUL\d{2}-\d{4}
+    let regex = famille.formatCode
+      .replace(/{FAMILLE}/g, famille.code)
+      .replace(/{SEQ:(\d+)}/g, (_, digits) => `\\d{${digits}}`)
+      .replace(/{ANNEE}/g, "\\d{4}");
+
+    const pattern = new RegExp(`^${regex}$`);
+    const conforme = pattern.test(params.codeIta);
+
+    if (!conforme) {
+      return {
+        conforme: false,
+        message: `Ce code ne suit pas le format ${famille.formatCode.replace(/{FAMILLE}/g, famille.code)} de la famille. Il sera enregistré tel quel.`,
+      };
+    }
+
+    return { conforme: true };
+  }
+);
+
+/**
  * Créer un matériel
  *
  * M13 L1 — Création avec contrôles décision 1.1
@@ -215,6 +261,7 @@ export const creerMateriel = actionProtegee(
       familleId: string;
       type: TypeMateriel;
       statut: StatutMateriel;
+      partageable: boolean;
       lieuBaseId?: string;
       numeroParcAncien?: string;
       codeLong?: string;
@@ -237,43 +284,30 @@ export const creerMateriel = actionProtegee(
       );
     }
 
-    // Contrôle 2 : Format du code (warning seulement)
-    const famille = await prisma.familleMateriel.findUnique({
-      where: { id: donnees.familleId },
-      select: { formatCode: true },
-    });
-
-    if (famille && !validerFormat(famille.formatCode)) {
-      // Ne pas bloquer, juste logger
-      console.warn(
-        `Format invalide pour famille ${donnees.familleId}: ${famille.formatCode}`
-      );
-    }
+    // Contrôle 2 : Code hors format (warning, non bloquant)
+    // Décision 1.1 : avertir si le code ne suit pas le format attendu
+    // Permet d'importer A10CI1 tout en signalant l'écart
 
     // Créer le matériel
-    const data: any = {
-      codeIta: donnees.codeIta,
-      designation: donnees.designation,
-      familleId: donnees.familleId,
-      type: donnees.type,
-      statut: donnees.statut,
-      partageable: false, // Par défaut
-    };
-
-    // Champs optionnels
-    if (donnees.lieuBaseId) data.lieuBaseId = donnees.lieuBaseId;
-    if (donnees.numeroParcAncien)
-      data.numeroParcAncien = donnees.numeroParcAncien;
-    if (donnees.codeLong) data.codeLong = donnees.codeLong;
-    if (donnees.numeroSerie) data.numeroSerie = donnees.numeroSerie;
-    if (donnees.marque) data.marque = donnees.marque;
-    if (donnees.modele) data.modele = donnees.modele;
-    if (donnees.dateAcquisition) data.dateAcquisition = donnees.dateAcquisition;
-    if (donnees.coutAcquisition)
-      data.coutAcquisition = new Prisma.Decimal(donnees.coutAcquisition);
-
     const materiel = await prisma.materiel.create({
-      data,
+      data: {
+        codeIta: donnees.codeIta,
+        designation: donnees.designation,
+        familleId: donnees.familleId,
+        type: donnees.type,
+        statut: donnees.statut,
+        lieuBaseId: donnees.lieuBaseId,
+        numeroParcAncien: donnees.numeroParcAncien,
+        codeLong: donnees.codeLong,
+        numeroSerie: donnees.numeroSerie,
+        marque: donnees.marque,
+        modele: donnees.modele,
+        dateAcquisition: donnees.dateAcquisition,
+        coutAcquisition: donnees.coutAcquisition
+          ? new Prisma.Decimal(donnees.coutAcquisition)
+          : undefined,
+        partageable: donnees.partageable,
+      },
       include: {
         famille: true,
       },
@@ -293,5 +327,549 @@ export const creerMateriel = actionProtegee(
 
     revalidatePath("/ressources");
     return materiel;
+  }
+);
+
+// =====================================================================
+// M13 L1 — ÉCHÉANCES PIÈCES ADMINISTRATIVES
+// =====================================================================
+
+export type PieceEcheance = {
+  id: string;
+  materiel: {
+    id: string;
+    codeIta: string;
+    designation: string;
+    type: TypeMateriel;
+    lieuBase: {
+      libelle: string;
+    } | null;
+  };
+  type: {
+    libelle: string;
+    delaiAlerteJours: number;
+  };
+  numero: string | null;
+  emetteur: string | null;
+  dateEdition: Date;
+  dateExpiration: Date;
+};
+
+/**
+ * Lister les échéances pièces administratives
+ *
+ * M13 L1 — Étape 4
+ * - État CALCULÉ depuis dateExpiration et delaiAlerteJours du type
+ * - Tri : périmés (plus ancien), alertes (plus proche), valides
+ * - Filtres : type pièce, type matériel, état, lieu
+ */
+export const listerEcheances = actionProtegee(
+  "materiel:lire",
+  async (
+    session,
+    params: {
+      typePieceId?: string;
+      typeMateriel?: TypeMateriel;
+      lieu?: string;
+      etat?: 'PERIME' | 'EN_ALERTE' | 'VALIDE';
+    } = {}
+  ): Promise<PieceEcheance[]> => {
+    // Construire le where pour les filtres
+    const where: any = {};
+
+    if (params.typePieceId) {
+      where.typeId = params.typePieceId;
+    }
+
+    if (params.typeMateriel) {
+      where.materiel = { type: params.typeMateriel };
+    }
+
+    if (params.lieu) {
+      where.materiel = {
+        ...where.materiel,
+        lieuBase: { libelle: params.lieu },
+      };
+    }
+
+    // Récupérer toutes les pièces (le filtre par état se fera en mémoire)
+    const pieces = await prisma.pieceAdministrative.findMany({
+      where,
+      select: {
+        id: true,
+        numero: true,
+        emetteur: true,
+        dateEdition: true,
+        dateExpiration: true,
+        materiel: {
+          select: {
+            id: true,
+            codeIta: true,
+            designation: true,
+            type: true,
+            lieuBase: {
+              select: {
+                libelle: true,
+              },
+            },
+          },
+        },
+        type: {
+          select: {
+            libelle: true,
+            delaiAlerteJours: true,
+          },
+        },
+      },
+    });
+
+    return pieces;
+  }
+);
+
+// =====================================================================
+// M13 L1 — TABLEAU PIÈCES ADMINISTRATIVES
+// =====================================================================
+
+export type CellulePiece = {
+  applicable: boolean; // false = "s.o."
+  piece?: {
+    id: string;
+    numero: string | null;
+    emetteur: string | null;
+    dateExpiration: Date;
+    montant: number | null;
+  };
+  etat?: 'PERIME' | 'EN_ALERTE' | 'VALIDE'; // absent si !piece
+  libelle?: string; // absent si !piece
+};
+
+export type LigneTableauPieces = {
+  materiel: {
+    id: string;
+    codeIta: string;
+    designation: string;
+    type: TypeMateriel;
+  };
+  pieces: Record<string, CellulePiece>; // typeId → cellule
+  totalAnnuel: number | null; // null si pas permission
+};
+
+export type TypeColonne = {
+  id: string;
+  libelle: string;
+  ordreAffichage: number;
+};
+
+/**
+ * Tableau croisé matériels × types de pièces
+ *
+ * M13 L1 — Étape 5 (§6.3)
+ * - Colonnes adaptatives selon types applicables
+ * - 5 états par cellule : valide, alerte, périmé, —, s.o.
+ * - Total annuel masqué sans permission
+ */
+export const listerTableauPieces = actionProtegee(
+  "materiel:lire",
+  async (
+    session,
+    params: {
+      typeMateriel?: TypeMateriel;
+      lieu?: string;
+      recherche?: string;
+    } = {}
+  ): Promise<{
+    lignes: LigneTableauPieces[];
+    colonnes: TypeColonne[];
+  }> => {
+    // Vérifier permission pour les coûts
+    const peutVoirCouts = await verifierPermission(
+      session.userId,
+      "materiel:coutsAdministratifs"
+    );
+
+    // Construire le where pour les matériels
+    const whereMateriel: any = {};
+    if (params.typeMateriel) {
+      whereMateriel.type = params.typeMateriel;
+    }
+    if (params.lieu) {
+      whereMateriel.lieuBase = { libelle: params.lieu };
+    }
+
+    // Recherche sur code, désignation, immatriculation, lieu
+    if (params.recherche) {
+      const rechercheNormalisee = params.recherche.toLowerCase();
+      whereMateriel.OR = [
+        { codeIta: { contains: rechercheNormalisee, mode: 'insensitive' } },
+        { designation: { contains: rechercheNormalisee, mode: 'insensitive' } },
+        { immatriculation: { contains: rechercheNormalisee, mode: 'insensitive' } },
+        { lieuBase: { libelle: { contains: rechercheNormalisee, mode: 'insensitive' } } },
+      ];
+    }
+
+    // Récupérer les matériels
+    const materiels = await prisma.materiel.findMany({
+      where: whereMateriel,
+      select: {
+        id: true,
+        codeIta: true,
+        designation: true,
+        type: true,
+      },
+      orderBy: {
+        codeIta: 'asc',
+      },
+    });
+
+    // Récupérer les pièces pour tous les matériels
+    const pieces = await prisma.pieceAdministrative.findMany({
+      where: {
+        materielId: {
+          in: materiels.map((m) => m.id),
+        },
+      },
+      select: {
+        id: true,
+        materielId: true,
+        typeId: true,
+        numero: true,
+        emetteur: true,
+        dateExpiration: true,
+        montant: true,
+        type: {
+          select: {
+            delaiAlerteJours: true,
+          },
+        },
+      },
+      orderBy: {
+        dateExpiration: 'desc',
+      },
+    });
+
+    // Grouper les pièces par matériel
+    const piecesParMateriel = materiels.map((materiel) => ({
+      ...materiel,
+      pieces: pieces.filter((p) => p.materielId === materiel.id),
+    }));
+
+    // Déterminer les types TypeMateriel présents
+    const typesPresents = Array.from(
+      new Set(materiels.map((m) => m.type))
+    );
+
+    // Récupérer les types de pièce actifs applicables
+    const typesPiece = await prisma.typePieceAdministrative.findMany({
+      where: { actif: true },
+      select: {
+        id: true,
+        libelle: true,
+        ordreAffichage: true,
+        typesMateriel: true, // JSON array
+      },
+      orderBy: {
+        ordreAffichage: 'asc',
+      },
+    });
+
+    // Filtrer les types applicables aux matériels affichés
+    const typesApplicables = typesPiece.filter((type) => {
+      const typesMaterielArray = JSON.parse(type.typesMateriel) as string[];
+      // Si vide → applicable à tous
+      if (typesMaterielArray.length === 0) return true;
+      // Sinon → au moins un type présent dans les matériels
+      return typesPresents.some((t) => typesMaterielArray.includes(t));
+    });
+
+    const colonnes: TypeColonne[] = typesApplicables.map((t) => ({
+      id: t.id,
+      libelle: t.libelle,
+      ordreAffichage: t.ordreAffichage,
+    }));
+
+    // Construire les lignes
+    const lignes: LigneTableauPieces[] = piecesParMateriel.map((materiel) => {
+      const pieces: Record<string, CellulePiece> = {};
+      let totalAnnuel = 0;
+
+      for (const typeCol of typesApplicables) {
+        const typesMaterielArray = JSON.parse(typeCol.typesMateriel) as string[];
+        const applicable =
+          typesMaterielArray.length === 0 ||
+          typesMaterielArray.includes(materiel.type);
+
+        if (!applicable) {
+          pieces[typeCol.id] = { applicable: false };
+          continue;
+        }
+
+        // Chercher la pièce la plus récente pour ce type
+        const pieceRecente = materiel.pieces.find(
+          (p) => p.typeId === typeCol.id
+        );
+
+        if (!pieceRecente) {
+          pieces[typeCol.id] = { applicable: true }; // — (applicable non renseignée)
+          continue;
+        }
+
+        // Calculer l'état
+        const infoEtat = calculerEtatPiece(
+          pieceRecente.dateExpiration,
+          pieceRecente.type.delaiAlerteJours
+        );
+
+        pieces[typeCol.id] = {
+          applicable: true,
+          piece: {
+            id: pieceRecente.id,
+            numero: pieceRecente.numero,
+            emetteur: pieceRecente.emetteur,
+            dateExpiration: pieceRecente.dateExpiration,
+            montant: pieceRecente.montant
+              ? pieceRecente.montant.toNumber()
+              : null,
+          },
+          etat: infoEtat.etat,
+          libelle: infoEtat.libelle,
+        };
+
+        // Ajouter au total annuel si valide
+        if (
+          infoEtat.etat === 'VALIDE' &&
+          pieceRecente.montant &&
+          peutVoirCouts
+        ) {
+          totalAnnuel += pieceRecente.montant.toNumber();
+        }
+      }
+
+      return {
+        materiel: {
+          id: materiel.id,
+          codeIta: materiel.codeIta,
+          designation: materiel.designation,
+          type: materiel.type,
+        },
+        pieces,
+        totalAnnuel: peutVoirCouts ? totalAnnuel : null,
+      };
+    });
+
+    return {
+      lignes,
+      colonnes,
+    };
+  }
+);
+
+/**
+ * Consulter les détails d'une pièce administrative
+ *
+ * Retourne la pièce avec sa chaîne de renouvellement (pieces précédentes)
+ * et le type de pièce complet.
+ */
+export type PieceDetaillee = {
+  id: string;
+  numero: string;
+  emetteur: string;
+  dateEdition: Date;
+  dateExpiration: Date;
+  montant: number | null;
+  etat: "VALIDE" | "EN_ALERTE" | "PERIME";
+  libelle: string;
+  materiel: {
+    id: string;
+    codeIta: string;
+    designation: string;
+    lieuBase: string | null;
+  };
+  type: {
+    id: string;
+    libelle: string;
+    delaiAlerteJours: number;
+    periodiciteMois: number | null;
+    bloquante: boolean;
+    ordreAffichage: number;
+    typesMateriel: string[];
+  };
+  renouvellementDe: {
+    id: string;
+    numero: string;
+    dateExpiration: Date;
+  } | null;
+  renouvellements: Array<{
+    id: string;
+    numero: string;
+    dateExpiration: Date;
+  }>;
+};
+
+export const consulterPieceAdministrative = actionProtegee(
+  "materiel:lire",
+  async (session, pieceId: string): Promise<PieceDetaillee> => {
+    const piece = await prisma.pieceAdministrative.findUnique({
+      where: { id: pieceId },
+      select: {
+        id: true,
+        numero: true,
+        emetteur: true,
+        dateEdition: true,
+        dateExpiration: true,
+        montant: true,
+        materiel: {
+          select: {
+            id: true,
+            codeIta: true,
+            designation: true,
+            lieuBase: {
+              select: {
+                libelle: true,
+              },
+            },
+          },
+        },
+        type: {
+          select: {
+            id: true,
+            libelle: true,
+            delaiAlerteJours: true,
+            periodiciteMois: true,
+            bloquante: true,
+            ordreAffichage: true,
+            typesMateriel: true,
+          },
+        },
+        renouvellementDe: {
+          select: {
+            id: true,
+            numero: true,
+            dateExpiration: true,
+          },
+        },
+        renouvellements: {
+          select: {
+            id: true,
+            numero: true,
+            dateExpiration: true,
+          },
+          orderBy: {
+            dateExpiration: 'asc',
+          },
+        },
+      },
+    });
+
+    if (!piece) {
+      throw new Error("Pièce administrative introuvable");
+    }
+
+    // Vérifier permission pour les coûts
+    const peutVoirCouts = await verifierPermission(
+      session.userId,
+      "materiel:coutsAdministratifs"
+    );
+
+    // Calculer l'état
+    const infoEtat = calculerEtatPiece(
+      piece.dateExpiration,
+      piece.type.delaiAlerteJours
+    );
+
+    return {
+      id: piece.id,
+      numero: piece.numero,
+      emetteur: piece.emetteur,
+      dateEdition: piece.dateEdition,
+      dateExpiration: piece.dateExpiration,
+      montant: peutVoirCouts && piece.montant ? piece.montant.toNumber() : null,
+      etat: infoEtat.etat,
+      libelle: infoEtat.libelle,
+      materiel: {
+        id: piece.materiel.id,
+        codeIta: piece.materiel.codeIta,
+        designation: piece.materiel.designation,
+        lieuBase: piece.materiel.lieuBase?.libelle || null,
+      },
+      type: {
+        id: piece.type.id,
+        libelle: piece.type.libelle,
+        delaiAlerteJours: piece.type.delaiAlerteJours,
+        periodiciteMois: piece.type.periodiciteMois,
+        bloquante: piece.type.bloquante,
+        ordreAffichage: piece.type.ordreAffichage,
+        typesMateriel: JSON.parse(piece.type.typesMateriel) as string[],
+      },
+      renouvellementDe: piece.renouvellementDe,
+      renouvellements: piece.renouvellements,
+    };
+  }
+);
+
+/**
+ * Renouveler une pièce administrative
+ *
+ * Crée une nouvelle pièce administrative en renouvellement de la pièce actuelle.
+ * Propose automatiquement la date d'expiration basée sur periodiciteMois.
+ */
+export const renouvelerPieceAdministrative = actionProtegee(
+  "materiel:creer",
+  async (
+    session,
+    pieceId: string,
+    donnees: {
+      numero: string;
+      emetteur: string;
+      dateEdition: Date;
+      dateExpiration: Date;
+      montant?: number;
+    }
+  ): Promise<{ id: string }> => {
+    // Récupérer la pièce originale
+    const pieceOriginale = await prisma.pieceAdministrative.findUnique({
+      where: { id: pieceId },
+      select: {
+        materielId: true,
+        typeId: true,
+      },
+    });
+
+    if (!pieceOriginale) {
+      throw new Error("Pièce administrative introuvable");
+    }
+
+    // Créer la nouvelle pièce
+    const nouvellePiece = await prisma.pieceAdministrative.create({
+      data: {
+        numero: donnees.numero,
+        emetteur: donnees.emetteur,
+        dateEdition: donnees.dateEdition,
+        dateExpiration: donnees.dateExpiration,
+        montant: donnees.montant,
+        materielId: pieceOriginale.materielId,
+        typeId: pieceOriginale.typeId,
+        renouvellementDeId: pieceId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    // Journaliser
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "PieceAdministrative",
+        entiteId: nouvellePiece.id,
+        action: "CREATION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        commentaire: `Renouvellement de pièce ${donnees.numero}`,
+      },
+    });
+
+    revalidatePath("/ressources/pieces");
+
+    return { id: nouvellePiece.id };
   }
 );
