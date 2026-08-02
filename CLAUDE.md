@@ -60,7 +60,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Scripts de test : `seed-paiements-complet.ts`, `test-flow-m15.ts`
 - Build production validé (63 pages)
 
-**Stack**: Next.js (App Router) · React 19 · Tailwind v4 · shadcn/ui · Prisma · Supabase (PostgreSQL + Auth + Storage) · Resend · Cloudflare · Wave API
+**M13 features (Logistique — Gestion du matériel - August 2026)** ✅ Livraison 1 Complete:
+- Material registry with server-side pagination (25 items/page)
+- 3-level data entry: basic info, administrative documents, costs
+- Flexible code generation per famille (supports 4 historical formats)
+- Administrative document renewal with chain tracking (self-referential 1:1)
+- Daily email alerts for expired/expiring documents (CRITIQUE/HAUTE urgency)
+- Data migration in 3 passes: normalization, correspondence tables, import
+- Permissions: `materiel:lire`, `materiel:creer`, `materiel:modifier`, `materiel:coutsAdministratifs`, `logistique:parametres`
+
+**M13 L1 Deliveries**:
+- Livraison 1.1: DB model + migration (FamilleMateriel, TypePieceAdministrative, LieuStockage, PieceAdministrative)
+- Livraison 1.2: Permissions + seed (6 permissions, 14 document types, 12 familles, 3 storage locations)
+- Livraison 1.3: Material registry + 3-level forms (list, detail, renewal modal)
+- Livraison 1.4: Email alerts + daily cron (template + detection logic)
+- Livraison 1.5: Data migration 3 passes (959 items analyzed, 65 code conflicts, 17 status variants)
+
+**Stack**: Next.js (App Router) · React 19 · Tailwind v4 · shadcn/ui · Prisma · Supabase (PostgreSQL + Auth + Storage) · Resend · Cloudflare · Wave API · XLSX
 
 ## Key Documentation (Read in Order)
 
@@ -313,6 +329,8 @@ Application built module by module:
 - **M10** (Planned) — Dashboards
 - **M11** (Planned) — Administration
 - **M12** (Planned) — Office attendance
+- **M13 L1** (✅ Complete v0.3.0) — Logistics: material registry, admin documents, alerts, data migration
+- **M15** (✅ Complete v0.4.0) — ItaPay: payment execution via Wave API
 
 ## Schema Modifications
 
