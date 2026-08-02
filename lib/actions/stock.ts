@@ -203,6 +203,131 @@ export const listerArticlesStock = actionProtegee(
   },
 );
 
+// ========== Bons de mouvement ==========
+
+/**
+ * Créer un bon de mouvement
+ */
+export const creerBonMouvement = actionProtegee(
+  PERMISSIONS["stock:mouvementer"].code,
+  async (
+    session,
+    sens: SensMouvement,
+    lieuOrigineId: string | null,
+    lieuDestinationId: string | null,
+    motif: string,
+    dateMouvement: Date,
+  ) => {
+    // Générer une référence unique
+    const count = await prisma.bonMouvement.count();
+    const prefix = sens === "ENTREE" ? "BE" : sens === "SORTIE" ? "BS" : "ADJ";
+    const reference = `${prefix}-${String(count + 1).padStart(5, "0")}`;
+
+    const bon = await prisma.bonMouvement.create({
+      data: {
+        reference,
+        sens,
+        lieuOrigineId,
+        lieuDestinationId,
+        motif,
+        emetteurId: session.userId,
+        emetteurNom: session.email,
+        dateMouvement,
+      },
+    });
+
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "BonMouvement",
+        entiteId: bon.id,
+        action: "CREATION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        details: { reference, sens, motif },
+        commentaire: `Bon de mouvement ${reference} créé`,
+      },
+    });
+
+    return { success: true, bonId: bon.id, reference };
+  },
+);
+
+/**
+ * Lister les bons de mouvement avec pagination
+ */
+export const listerBonsMouvement = actionProtegee(
+  PERMISSIONS["stock:lire"].code,
+  async (
+    _session,
+    page: number = 1,
+    sens?: SensMouvement,
+    lieuId?: string,
+  ) => {
+    const limite = 25;
+    const offset = (page - 1) * limite;
+
+    const where = {
+      ...(sens && { sens }),
+      ...(lieuId && {
+        OR: [{ lieuOrigineId: lieuId }, { lieuDestinationId: lieuId }],
+      }),
+    };
+
+    const [bons, total] = await Promise.all([
+      prisma.bonMouvement.findMany({
+        where,
+        include: {
+          lieuOrigine: { select: { libelle: true } },
+          lieuDestination: { select: { libelle: true } },
+          mouvements: {
+            select: { id: true },
+          },
+        },
+        orderBy: { dateMouvement: "desc" },
+        skip: offset,
+        take: limite,
+      }),
+      prisma.bonMouvement.count({ where }),
+    ]);
+
+    return {
+      bons,
+      total,
+      pages: Math.ceil(total / limite),
+      page,
+    };
+  },
+);
+
+/**
+ * Consulter un bon de mouvement avec ses lignes
+ */
+export const consulterBonMouvement = actionProtegee(
+  PERMISSIONS["stock:lire"].code,
+  async (_session, bonId: string) => {
+    const bon = await prisma.bonMouvement.findUnique({
+      where: { id: bonId },
+      include: {
+        lieuOrigine: { select: { libelle: true } },
+        lieuDestination: { select: { libelle: true } },
+        mouvements: {
+          include: {
+            articleStock: {
+              select: { reference: true, designation: true, unite: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!bon) {
+      return { success: false, error: "Bon de mouvement non trouvé" };
+    }
+
+    return { success: true, bon };
+  },
+);
+
 // ========== Mouvements de stock ==========
 
 /**

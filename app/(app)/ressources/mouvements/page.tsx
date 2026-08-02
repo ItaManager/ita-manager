@@ -1,10 +1,26 @@
 import { Suspense } from "react";
 import { exigerPermission, PERMISSIONS } from "@/lib/auth/guard";
+import { listerBonsMouvement } from "@/lib/actions/stock";
+import { TableauBonsMouvement } from "../_components/tableau-bons-mouvement";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
-export default async function PageMouvements() {
+type SearchParams = Promise<{
+  page?: string;
+}>;
+
+export default async function PageMouvements({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   await exigerPermission(PERMISSIONS["stock:lire"].code);
+
+  const params = await searchParams;
+  const page = parseInt(params.page || "1", 10);
+
+  const result = await listerBonsMouvement(page);
+  const { bons, total, pages } = result;
 
   return (
     <div className="space-y-6">
@@ -12,7 +28,7 @@ export default async function PageMouvements() {
         <div>
           <h1 className="text-3xl font-bold">Bons de mouvement</h1>
           <p className="text-muted-foreground mt-2">
-            Gérer les entrées, sorties et ajustements de stock
+            {total} bon{total > 1 ? "s" : ""} de mouvement
           </p>
         </div>
         <Button>
@@ -22,19 +38,12 @@ export default async function PageMouvements() {
       </div>
 
       <Suspense fallback={<div>Chargement...</div>}>
-        <div className="rounded-md border p-8">
-          <div className="text-center text-muted-foreground">
-            <p className="text-lg font-medium mb-2">Fonctionnalité en cours de développement</p>
-            <p className="text-sm">
-              Les bons de mouvement permettront de tracer toutes les opérations de stock :
-            </p>
-            <ul className="text-sm mt-4 space-y-2 max-w-md mx-auto text-left">
-              <li>• <strong>ENTREE</strong> : Réceptions fournisseurs, retours chantier</li>
-              <li>• <strong>SORTIE</strong> : Affectations chantier, consommations</li>
-              <li>• <strong>AJUSTEMENT</strong> : Corrections après inventaire</li>
-            </ul>
-          </div>
-        </div>
+        <TableauBonsMouvement
+          bons={bons}
+          total={total}
+          pages={pages}
+          pageActuelle={page}
+        />
       </Suspense>
     </div>
   );

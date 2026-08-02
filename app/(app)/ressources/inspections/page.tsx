@@ -1,10 +1,26 @@
 import { Suspense } from "react";
 import { exigerPermission, PERMISSIONS } from "@/lib/auth/guard";
+import { listerInspections } from "@/lib/actions/inspection";
+import { TableauInspections } from "../_components/tableau-inspections";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
-export default async function PageInspections() {
+type SearchParams = Promise<{
+  page?: string;
+}>;
+
+export default async function PageInspections({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   await exigerPermission(PERMISSIONS["materiel:inspecter"].code);
+
+  const params = await searchParams;
+  const page = parseInt(params.page || "1", 10);
+
+  const result = await listerInspections(page);
+  const { inspections, total, pages } = result;
 
   return (
     <div className="space-y-6">
@@ -12,7 +28,7 @@ export default async function PageInspections() {
         <div>
           <h1 className="text-3xl font-bold">Inspections matériel</h1>
           <p className="text-muted-foreground mt-2">
-            Contrôles d'entrée et de sortie des véhicules et engins
+            {total} inspection{total > 1 ? "s" : ""} enregistrée{total > 1 ? "s" : ""}
           </p>
         </div>
         <Button>
@@ -22,20 +38,12 @@ export default async function PageInspections() {
       </div>
 
       <Suspense fallback={<div>Chargement...</div>}>
-        <div className="rounded-md border p-8">
-          <div className="text-center text-muted-foreground">
-            <p className="text-lg font-medium mb-2">Fonctionnalité en cours de développement</p>
-            <p className="text-sm">
-              Les inspections permettent de documenter l'état du matériel :
-            </p>
-            <ul className="text-sm mt-4 space-y-2 max-w-md mx-auto text-left">
-              <li>• <strong>ENTREE</strong> : État au retour de mission (km, carburant, anomalies)</li>
-              <li>• <strong>SORTIE</strong> : État avant départ (check-list sécurité, documents)</li>
-              <li>• <strong>3 grilles</strong> : Physique, Documents, Équipements</li>
-              <li>• <strong>Relevé compteur</strong> : Kilométrage ou heures (détection anomalies)</li>
-            </ul>
-          </div>
-        </div>
+        <TableauInspections
+          inspections={inspections}
+          total={total}
+          pages={pages}
+          pageActuelle={page}
+        />
       </Suspense>
     </div>
   );
