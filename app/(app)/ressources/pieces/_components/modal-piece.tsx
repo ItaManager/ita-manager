@@ -86,7 +86,7 @@ export function ModalPiece({ pieceId, onClose }: ModalPieceProps) {
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="piece">La pièce</TabsTrigger>
                   <TabsTrigger value="historique">
-                    Historique ({(piece.renouvellementDe ? 1 : 0) + piece.renouvellements.length + 1})
+                    Historique ({piece.remplace ? 2 : 1})
                   </TabsTrigger>
                   <TabsTrigger value="type">Le type</TabsTrigger>
                 </TabsList>
@@ -170,7 +170,7 @@ export function ModalPiece({ pieceId, onClose }: ModalPieceProps) {
                 {/* Onglet 2 : Historique */}
                 <TabsContent value="historique" className="space-y-6 mt-6">
                   <p className="text-sm text-muted-foreground">
-                    {(piece.renouvellementDe ? 1 : 0) + piece.renouvellements.length + 1} versions successives.
+                    {piece.remplace ? 2 : 1} version{piece.remplace ? "s successives" : ""}.
                     Renouveler crée une nouvelle pièce — les précédentes restent consultables.
                   </p>
 
@@ -204,17 +204,17 @@ export function ModalPiece({ pieceId, onClose }: ModalPieceProps) {
                     </Card>
 
                     {/* Pièce précédente */}
-                    {piece.renouvellementDe && (
+                    {piece.remplace && (
                       <Card>
                         <CardContent className="pt-6">
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
-                                <p className="text-lg font-semibold font-mono">{piece.renouvellementDe.numero}</p>
+                                <p className="text-lg font-semibold font-mono">{piece.remplace.numero}</p>
                                 <Badge variant="outline">remplacée</Badge>
                               </div>
                               <p className="text-sm text-muted-foreground">
-                                Expirait le {formaterDateCivile(piece.renouvellementDe.dateExpiration)}
+                                Expirait le {formaterDateCivile(piece.remplace.dateExpiration)}
                               </p>
                             </div>
                           </div>
@@ -227,7 +227,7 @@ export function ModalPiece({ pieceId, onClose }: ModalPieceProps) {
                   {piece.montant !== null && (
                     <div className="border-t pt-4 flex items-center justify-between">
                       <p className="text-sm text-muted-foreground">
-                        Cumul sur {(piece.renouvellementDe ? 1 : 0) + 1} année{(piece.renouvellementDe ? 1 : 0) + 1 > 1 ? "s" : ""}
+                        Cumul sur {piece.remplace ? 2 : 1} année{piece.remplace ? "s" : ""}
                       </p>
                       <p className="text-lg font-bold tabular-nums">
                         {piece.montant.toLocaleString("fr-FR")} F

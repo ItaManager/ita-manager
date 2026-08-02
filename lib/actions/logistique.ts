@@ -694,16 +694,11 @@ export type PieceDetaillee = {
     ordreAffichage: number;
     typesMateriel: string[];
   };
-  renouvellementDe: {
+  remplace: {
     id: string;
     numero: string;
     dateExpiration: Date;
   } | null;
-  renouvellements: Array<{
-    id: string;
-    numero: string;
-    dateExpiration: Date;
-  }>;
 };
 
 export const consulterPieceAdministrative = actionProtegee(
@@ -741,21 +736,11 @@ export const consulterPieceAdministrative = actionProtegee(
             typesMateriel: true,
           },
         },
-        renouvellementDe: {
+        remplace: {
           select: {
             id: true,
             numero: true,
             dateExpiration: true,
-          },
-        },
-        renouvellements: {
-          select: {
-            id: true,
-            numero: true,
-            dateExpiration: true,
-          },
-          orderBy: {
-            dateExpiration: 'asc',
           },
         },
       },
@@ -801,8 +786,7 @@ export const consulterPieceAdministrative = actionProtegee(
         ordreAffichage: piece.type.ordreAffichage,
         typesMateriel: JSON.parse(piece.type.typesMateriel) as string[],
       },
-      renouvellementDe: piece.renouvellementDe,
-      renouvellements: piece.renouvellements,
+      remplace: piece.remplace,
     };
   }
 );
@@ -849,7 +833,7 @@ export const renouvelerPieceAdministrative = actionProtegee(
         montant: donnees.montant,
         materielId: pieceOriginale.materielId,
         typeId: pieceOriginale.typeId,
-        renouvellementDeId: pieceId,
+        remplaceId: pieceId,
       },
       select: {
         id: true,
