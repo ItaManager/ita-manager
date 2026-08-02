@@ -194,6 +194,9 @@ export const autoriserPaiementLogique = actionProtegee(
   return { success: true, expireLe };
 });
 
+// Alias pour compatibilité avec pages existantes
+export const autoriserPaiement = autoriserPaiementLogique;
+
 /**
  * Server Action - Refuse une demande de paiement
  *
@@ -547,6 +550,9 @@ export const executerPaiementLogique = actionProtegee(
 
   return { success: true, nombreReussis, nombreEchecs };
 });
+
+// Alias pour compatibilité avec pages existantes
+export const executerPaiement = executerPaiementLogique;
 
 // ═══════════════════════════════════════════════════════════════════════
 // ÉCRAN DE PRÉPARATION

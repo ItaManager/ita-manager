@@ -21,9 +21,9 @@ export async function ListeDirections() {
 
   return (
     <div className="space-y-4">
-      <Alert className="bg-blue-50 border-blue-200">
-        <Lock className="size-4 text-blue-600" aria-hidden="true" />
-        <AlertDescription className="text-sm text-blue-900">
+      <Alert className="bg-primary-soft border-primary/20">
+        <Lock className="size-4 text-primary" aria-hidden="true" />
+        <AlertDescription className="text-sm text-primary">
           <strong>Lecture seule.</strong> La création et la modification des
           directions sont réservées au Super Admin pour éviter les
           réorganisations non maîtrisées.

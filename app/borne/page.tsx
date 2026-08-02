@@ -7,15 +7,15 @@
 
 export default function BornePage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <div className="max-w-md text-center">
-        <h1 className="text-2xl font-semibold text-slate-900">
+        <h1 className="text-2xl font-semibold text-gray-900">
           Borne de pointage
         </h1>
-        <p className="mt-4 text-slate-600">
+        <p className="mt-4 text-gray-600">
           Fonctionnalité en cours d'implémentation.
         </p>
-        <p className="mt-2 text-sm text-slate-500">
+        <p className="mt-2 text-sm text-gray-500">
           La borne tactile nécessite une architecture hors session utilisateur
           et sera livrée dans un prochain sprint.
         </p>

@@ -30,7 +30,7 @@ export function MenuUtilisateur({ user }: MenuUtilisateurProps) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="gap-2" size="sm">
-          <div className="flex size-8 items-center justify-center rounded-full bg-green-600 text-xs font-semibold text-white">
+          <div className="flex size-8 items-center justify-center rounded-full bg-success text-xs font-semibold text-white">
             {initiales}
           </div>
           <div className="text-left">

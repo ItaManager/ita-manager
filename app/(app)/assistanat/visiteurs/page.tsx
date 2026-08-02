@@ -132,7 +132,7 @@ export default function RegistreVisiteursPage() {
                 key={visite.id}
                 className={
                   nonClose
-                    ? "border-amber-500 border-2 bg-amber-50/50"
+                    ? "border-warning border-2 bg-warning-soft/50"
                     : undefined
                 }
               >
@@ -140,7 +140,7 @@ export default function RegistreVisiteursPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-3">
                       {present ? (
-                        <CircleDot className="h-5 w-5 text-green-600 mt-1 flex-shrink-0" />
+                        <CircleDot className="h-5 w-5 text-success mt-1 flex-shrink-0" />
                       ) : (
                         <Circle className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
                       )}
@@ -171,7 +171,7 @@ export default function RegistreVisiteursPage() {
                             {getLabelTemps(visite)}
                           </span>
                           {nonClose && (
-                            <Badge variant="outline" className="bg-amber-100 text-amber-900 border-amber-300">
+                            <Badge variant="outline" className="bg-warning-soft text-warning border-warning/20">
                               Non clos depuis {format(new Date(visite.arriveeLe), "HH'h'mm", { locale: fr })}
                             </Badge>
                           )}

@@ -201,7 +201,7 @@ export default function PageConnexionTest() {
             </div>
             <div>
               <p className="font-semibold text-white">ITA Manager</p>
-              <p className="text-xs text-slate-300">
+              <p className="text-xs text-gray-300">
                 Ingénierie &amp; Travaux SARL
               </p>
             </div>
@@ -212,13 +212,13 @@ export default function PageConnexionTest() {
             <h1 className="text-4xl font-bold leading-tight mb-4">
               Gérez vos projets <br />de construction avec <br />simplicité
             </h1>
-            <p className="text-slate-300 text-lg">
+            <p className="text-gray-300 text-lg">
               Plateforme intégrée pour le pilotage de vos chantiers et la gestion RH.
             </p>
           </div>
 
           {/* Footer */}
-          <div className="text-xs text-slate-400">
+          <div className="text-xs text-gray-400">
             © 2026 ITA SARL. Tous droits réservés.
           </div>
         </div>

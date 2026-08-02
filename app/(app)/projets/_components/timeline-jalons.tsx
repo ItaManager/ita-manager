@@ -56,9 +56,9 @@ export function TimelineJalons({ jalons }: TimelineJalonsProps) {
               <div
                 className={`relative z-10 flex items-center justify-center size-16 rounded-full ${
                   jalon.statut === "VALIDE"
-                    ? "bg-green-100 text-green-700"
+                    ? "bg-success-soft text-success"
                     : jalon.statut === "ABANDONNE"
-                    ? "bg-red-100 text-red-700"
+                    ? "bg-destructive-soft text-destructive"
                     : "bg-muted text-muted-foreground"
                 }`}
               >
@@ -77,7 +77,7 @@ export function TimelineJalons({ jalons }: TimelineJalonsProps) {
                       })}
                     </p>
                     {jalon.valideLe && (
-                      <p className="text-sm text-green-700 mt-1">
+                      <p className="text-sm text-success mt-1">
                         Validé le{" "}
                         {format(new Date(jalon.valideLe), "d MMMM yyyy", {
                           locale: fr,

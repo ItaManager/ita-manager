@@ -13,10 +13,10 @@ const LIBELLES_NIVEAU: Record<NiveauHierarchique, string> = {
 };
 
 const COULEURS_NIVEAU: Record<NiveauHierarchique, string> = {
-  DIRECTION: "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300",
-  CADRE: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
-  SUPPORT: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300",
-  OPERATIONNEL: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
+  DIRECTION: "bg-accent-soft text-accent dark:bg-accent dark:text-accent",
+  CADRE: "bg-primary-soft text-primary dark:bg-primary dark:text-primary",
+  SUPPORT: "bg-success-soft text-success dark:bg-success dark:text-success",
+  OPERATIONNEL: "bg-warning-soft text-warning dark:bg-warning dark:text-warning",
 };
 
 export async function VueOrganigramme() {

@@ -16,11 +16,11 @@ interface ListeEvenementsProps {
 }
 
 const COULEURS_ACTION: Record<string, string> = {
-  CREATION: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300",
-  MODIFICATION: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
-  ARCHIVAGE: "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300",
-  REFUS: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
-  VALIDATION: "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300",
+  CREATION: "bg-success-soft text-success dark:bg-success dark:text-success",
+  MODIFICATION: "bg-primary-soft text-primary dark:bg-primary dark:text-primary",
+  ARCHIVAGE: "bg-warning-soft text-warning dark:bg-warning dark:text-warning",
+  REFUS: "bg-destructive-soft text-destructive dark:bg-destructive dark:text-destructive",
+  VALIDATION: "bg-accent-soft text-accent dark:bg-accent dark:text-accent",
 };
 
 export async function ListeEvenements({

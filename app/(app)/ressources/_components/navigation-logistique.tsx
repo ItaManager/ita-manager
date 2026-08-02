@@ -164,7 +164,7 @@ export function NavigationLogistique() {
               className={cn(
                 "flex items-center gap-2 border-b-2 pb-3 pt-1 text-sm font-medium transition-colors",
                 isActive
-                  ? "border-blue-600 text-blue-600"
+                  ? "border-primary text-primary"
                   : "border-transparent text-gray-600 hover:border-gray-300 hover:text-gray-900"
               )}
               aria-current={isActive ? "page" : undefined}

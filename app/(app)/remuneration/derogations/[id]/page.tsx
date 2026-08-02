@@ -81,7 +81,7 @@ export default async function DerogationDetailPage({ params }: PageProps) {
       );
     } else if (absEcart < 20) {
       return (
-        <Badge variant="outline" className="border-red-500 text-red-500 text-lg px-3 py-1">
+        <Badge variant="outline" className="border-destructive text-destructive text-lg px-3 py-1">
           +{ecartPourcent}%
         </Badge>
       );

@@ -22,18 +22,18 @@ async function TableauChauffeurs() {
   return (
     <div className="space-y-4">
       {/* Alerte explicative */}
-      <div className="rounded-md bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 p-4">
+      <div className="rounded-md bg-warning-soft dark:bg-warning border border-warning/20 dark:border-warning p-4">
         <div className="flex gap-3">
-          <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+          <AlertCircle className="h-5 w-5 text-warning dark:text-warning mt-0.5 flex-shrink-0" />
           <div className="space-y-2">
-            <h3 className="font-semibold text-amber-900 dark:text-amber-100">
+            <h3 className="font-semibold text-warning dark:text-warning-soft">
               Écran en développement — Champs permis non disponibles
             </h3>
-            <p className="text-sm text-amber-800 dark:text-amber-200">
+            <p className="text-sm text-warning dark:text-warning-soft">
               Les informations de permis de conduire et visite médicale seront
               disponibles après extension du modèle Employe (M2).
             </p>
-            <div className="text-sm text-amber-700 dark:text-amber-300 space-y-1">
+            <div className="text-sm text-warning dark:text-warning space-y-1">
               <p className="font-medium">Champs à ajouter au modèle Employe :</p>
               <ul className="list-disc list-inside ml-2 space-y-0.5">
                 <li>

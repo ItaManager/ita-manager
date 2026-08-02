@@ -16,8 +16,12 @@ import { useState } from "react";
 import type { ArticleStock } from "@prisma/client";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+type ArticleStockConverted = Omit<ArticleStock, "seuilAlerte"> & {
+  seuilAlerte: number | null;
+};
+
 type TableauArticlesProps = {
-  articles: ArticleStock[];
+  articles: ArticleStockConverted[];
   total: number;
   pages: number;
   pageActuelle: number;

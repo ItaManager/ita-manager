@@ -210,17 +210,17 @@ export function ModaleCreationEmployeV2({
           <div className="flex items-center justify-between mb-4">
             <div>
               <DialogTitle className="text-xl text-white">Création d'un nouveau compte</DialogTitle>
-              <p className="text-blue-100 text-sm mt-1">
+              <p className="text-primary-soft text-sm mt-1">
                 Étape {etapeActuelle} sur {ETAPES.length} — {ETAPES[etapeActuelle - 1].titre}
               </p>
             </div>
-            <Button variant="ghost" size="icon" onClick={onFermer} className="text-white hover:bg-blue-800">
+            <Button variant="ghost" size="icon" onClick={onFermer} className="text-white hover:bg-primary">
               <X className="size-5" />
             </Button>
           </div>
 
           {/* Barre de progression */}
-          <div className="w-full bg-blue-800/30 rounded-full h-2">
+          <div className="w-full bg-primary/30 rounded-full h-2">
             <div
               className="bg-white h-2 rounded-full transition-all duration-300 shadow-sm"
               style={{ width: `${progressPourcentage}%` }}
@@ -241,7 +241,7 @@ export function ModaleCreationEmployeV2({
                 {/* Nom */}
                 <div>
                   <Label htmlFor="nom">
-                    Nom <span className="text-red-500">*</span>
+                    Nom <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="nom"
@@ -253,7 +253,7 @@ export function ModaleCreationEmployeV2({
                 {/* Prénom */}
                 <div>
                   <Label htmlFor="prenom">
-                    Prénom <span className="text-red-500">*</span>
+                    Prénom <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="prenom"
@@ -264,7 +264,7 @@ export function ModaleCreationEmployeV2({
 
                 {/* Email professionnel */}
                 <div>
-                  <Label htmlFor="email">Email professionnel <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="email">Email professionnel <span className="text-destructive">*</span></Label>
                   <Input
                     id="email"
                     type="email"
@@ -276,7 +276,7 @@ export function ModaleCreationEmployeV2({
                 {/* Nationalité */}
                 <div>
                   <Label htmlFor="nationalite">
-                    Nationalité <span className="text-red-500">*</span>
+                    Nationalité <span className="text-destructive">*</span>
                   </Label>
                   <Controller
                     name="nationaliteId"
@@ -296,7 +296,7 @@ export function ModaleCreationEmployeV2({
                 {/* Sexe */}
                 <div>
                   <Label htmlFor="sexe">
-                    Sexe <span className="text-red-500">*</span>
+                    Sexe <span className="text-destructive">*</span>
                   </Label>
                   <Controller
                     name="sexe"
@@ -318,7 +318,7 @@ export function ModaleCreationEmployeV2({
                 {/* Date de naissance */}
                 <div>
                   <Label htmlFor="dateNaissance">
-                    Date de naissance <span className="text-red-500">*</span>
+                    Date de naissance <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="dateNaissance"
@@ -329,7 +329,7 @@ export function ModaleCreationEmployeV2({
 
                 {/* Lieu de naissance */}
                 <div>
-                  <Label htmlFor="lieuNaissance">Lieu de naissance <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="lieuNaissance">Lieu de naissance <span className="text-destructive">*</span></Label>
                   <Input
                     id="lieuNaissance"
                     {...register("lieuNaissance")}
@@ -351,7 +351,7 @@ export function ModaleCreationEmployeV2({
                 {/* Situation matrimoniale */}
                 <div>
                   <Label htmlFor="situationMatrimoniale">
-                    Situation matrimoniale <span className="text-red-500">*</span>
+                    Situation matrimoniale <span className="text-destructive">*</span>
                   </Label>
                   <Controller
                     name="situationMatrimoniale"
@@ -388,7 +388,7 @@ export function ModaleCreationEmployeV2({
                 {/* Téléphone principal */}
                 <div>
                   <Label htmlFor="telephone">
-                    Téléphone principal <span className="text-red-500">*</span>
+                    Téléphone principal <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="telephone"
@@ -446,7 +446,7 @@ export function ModaleCreationEmployeV2({
                           size="icon"
                           onClick={() => removeExperience(index)}
                         >
-                          <Trash2 className="size-4 text-red-600" />
+                          <Trash2 className="size-4 text-destructive" />
                         </Button>
                       </div>
 
@@ -544,7 +544,7 @@ export function ModaleCreationEmployeV2({
                         size="icon"
                         onClick={() => removeCompetence(index)}
                       >
-                        <Trash2 className="size-4 text-red-600" />
+                        <Trash2 className="size-4 text-destructive" />
                       </Button>
                     </div>
                   ))}
@@ -596,14 +596,14 @@ export function ModaleCreationEmployeV2({
               {/* Section Affectation */}
               <div className="border-t pt-4">
                 <h3 className="font-semibold mb-4 flex items-center gap-2">
-                  <span className="text-green-600">✓</span> Affectation
+                  <span className="text-success">✓</span> Affectation
                 </h3>
 
                 <div className="space-y-4">
                   {/* 1. Direction */}
                   <div>
                     <Label>
-                      1. Direction <span className="text-red-500">*</span>
+                      1. Direction <span className="text-destructive">*</span>
                     </Label>
                     <Controller
                       name="directionId"
@@ -627,7 +627,7 @@ export function ModaleCreationEmployeV2({
                   {/* 2. Service */}
                   <div>
                     <Label>
-                      2. Service <span className="text-red-500">*</span>
+                      2. Service <span className="text-destructive">*</span>
                     </Label>
                     <Controller
                       name="serviceId"
@@ -650,7 +650,7 @@ export function ModaleCreationEmployeV2({
                   {/* 3. Poste */}
                   <div>
                     <Label>
-                      3. Poste <span className="text-red-500">*</span>
+                      3. Poste <span className="text-destructive">*</span>
                     </Label>
                     <Controller
                       name="posteId"
@@ -669,8 +669,8 @@ export function ModaleCreationEmployeV2({
                   </div>
 
                   {directionId && (
-                    <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm">
-                      <p className="font-medium text-blue-900">
+                    <div className="bg-primary-soft border border-primary/20 rounded p-3 text-sm">
+                      <p className="font-medium text-primary">
                         Direction Financière et Comptable › Comptabilité
                       </p>
                     </div>
@@ -700,7 +700,7 @@ export function ModaleCreationEmployeV2({
               {/* Type de contrat */}
               <div>
                 <Label>
-                  Type de contrat <span className="text-red-500">*</span>
+                  Type de contrat <span className="text-destructive">*</span>
                 </Label>
                 <Controller
                   name="typeContrat"
@@ -726,7 +726,7 @@ export function ModaleCreationEmployeV2({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>
-                    Date d'embauche <span className="text-red-500">*</span>
+                    Date d'embauche <span className="text-destructive">*</span>
                   </Label>
                   <Input type="date" {...register("dateEmbauche", { required: true })} />
                 </div>
@@ -740,7 +740,7 @@ export function ModaleCreationEmployeV2({
 
                 <div className="col-span-2">
                   <Label>
-                    Salaire mensuel brut <span className="text-red-500">*</span>
+                    Salaire mensuel brut <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     type="number"
@@ -787,7 +787,7 @@ export function ModaleCreationEmployeV2({
                           size="icon"
                           onClick={() => removeFormation(index)}
                         >
-                          <Trash2 className="size-4 text-red-600" />
+                          <Trash2 className="size-4 text-destructive" />
                         </Button>
                       </div>
 

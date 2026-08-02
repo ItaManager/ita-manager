@@ -164,9 +164,9 @@ async function ContenuJalons({ projetId }: { projetId: string }) {
                         <Flag
                           className={`size-5 mt-0.5 ${
                             jalon.statut === "VALIDE"
-                              ? "text-green-600"
+                              ? "text-success"
                               : jalon.statut === "ABANDONNE"
-                              ? "text-red-600"
+                              ? "text-destructive"
                               : "text-muted-foreground"
                           }`}
                           aria-hidden="true"

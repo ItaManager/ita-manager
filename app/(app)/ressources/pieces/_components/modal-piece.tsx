@@ -47,8 +47,8 @@ export function ModalPiece({ pieceId, onClose }: ModalPieceProps) {
 
   function getBanniereClasses(etat: string) {
     if (etat === "PERIME") return "bg-destructive/10 text-destructive border-destructive/20";
-    if (etat === "EN_ALERTE") return "bg-orange-50 text-orange-900 border-orange-200";
-    return "bg-green-50 text-green-900 border-green-200";
+    if (etat === "EN_ALERTE") return "bg-warning-soft text-warning border-warning/20";
+    return "bg-success-soft text-success border-success/20";
   }
 
   function getLibelleEtat(piece: PieceDetaillee): string {
@@ -161,7 +161,7 @@ export function ModalPiece({ pieceId, onClose }: ModalPieceProps) {
                     <Button variant="outline" onClick={onClose}>
                       Fermer
                     </Button>
-                    <Button onClick={() => setShowRenouvelerModal(true)} className="bg-green-600 hover:bg-green-700">
+                    <Button onClick={() => setShowRenouvelerModal(true)} className="bg-success hover:bg-success">
                       Renouveler
                     </Button>
                   </div>
@@ -195,7 +195,7 @@ export function ModalPiece({ pieceId, onClose }: ModalPieceProps) {
                             )}
                           </div>
                         </div>
-                        <p className={`text-sm font-medium ${piece.etat === "PERIME" ? "text-destructive" : piece.etat === "EN_ALERTE" ? "text-orange-600" : "text-green-600"}`}>
+                        <p className={`text-sm font-medium ${piece.etat === "PERIME" ? "text-destructive" : piece.etat === "EN_ALERTE" ? "text-warning" : "text-success"}`}>
                           {piece.etat === "PERIME" && `périmé ${Math.abs(joursEntre(new Date(), piece.dateExpiration))} j`}
                           {piece.etat === "EN_ALERTE" && `J−${joursEntre(new Date(), piece.dateExpiration)}`}
                           {piece.etat === "VALIDE" && `valide`}
@@ -240,7 +240,7 @@ export function ModalPiece({ pieceId, onClose }: ModalPieceProps) {
                     <Button variant="outline" onClick={onClose}>
                       Fermer
                     </Button>
-                    <Button onClick={() => setShowRenouvelerModal(true)} className="bg-green-600 hover:bg-green-700">
+                    <Button onClick={() => setShowRenouvelerModal(true)} className="bg-success hover:bg-success">
                       Renouveler
                     </Button>
                   </div>
@@ -304,9 +304,9 @@ export function ModalPiece({ pieceId, onClose }: ModalPieceProps) {
                     </div>
                   </div>
 
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900">
+                  <div className="bg-primary-soft border border-primary/20 rounded-lg p-4 text-sm text-primary">
                     <p className="flex items-start gap-2">
-                      <span className="text-blue-600">ℹ</span>
+                      <span className="text-primary">ℹ</span>
                       <span>
                         L'état — valide, en alerte, périmé — se <strong>calcule</strong> depuis la date
                         d'expiration et le délai d'alerte du type. Il n'est jamais stocké : il serait faux dès le lendemain.
@@ -319,7 +319,7 @@ export function ModalPiece({ pieceId, onClose }: ModalPieceProps) {
                     <Button variant="outline" onClick={onClose}>
                       Fermer
                     </Button>
-                    <Button onClick={() => setShowRenouvelerModal(true)} className="bg-green-600 hover:bg-green-700">
+                    <Button onClick={() => setShowRenouvelerModal(true)} className="bg-success hover:bg-success">
                       Renouveler
                     </Button>
                   </div>

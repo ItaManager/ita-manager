@@ -65,7 +65,7 @@ export default async function PageAnomalies() {
         {/* Paiements EN_ATTENTE */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <Clock className="h-5 w-5 text-amber-500" />
+            <Clock className="h-5 w-5 text-warning" />
             <h2 className="text-lg font-semibold">
               Paiements en attente ({enAttente.length})
             </h2>

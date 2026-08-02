@@ -184,7 +184,7 @@ export const listerArticlesStock = actionProtegee(
         }
       : {};
 
-    const [articles, total] = await Promise.all([
+    const [articlesRaw, total] = await Promise.all([
       prisma.articleStock.findMany({
         where,
         orderBy: { reference: "asc" },
@@ -193,6 +193,12 @@ export const listerArticlesStock = actionProtegee(
       }),
       prisma.articleStock.count({ where }),
     ]);
+
+    // Convertir Decimal en number pour sérialisation Client Component
+    const articles = articlesRaw.map((a) => ({
+      ...a,
+      seuilAlerte: a.seuilAlerte ? a.seuilAlerte.toNumber() : null,
+    }));
 
     return {
       articles,
@@ -305,7 +311,7 @@ export const listerBonsMouvement = actionProtegee(
 export const consulterBonMouvement = actionProtegee(
   PERMISSIONS["stock:lire"].code,
   async (_session, bonId: string) => {
-    const bon = await prisma.bonMouvement.findUnique({
+    const bonRaw = await prisma.bonMouvement.findUnique({
       where: { id: bonId },
       include: {
         lieuOrigine: { select: { libelle: true } },
@@ -320,9 +326,19 @@ export const consulterBonMouvement = actionProtegee(
       },
     });
 
-    if (!bon) {
+    if (!bonRaw) {
       return { success: false, error: "Bon de mouvement non trouvé" };
     }
+
+    // Convertir Decimal en number pour sérialisation Client Component
+    const bon = {
+      ...bonRaw,
+      mouvements: bonRaw.mouvements.map((m) => ({
+        ...m,
+        quantite: m.quantite.toNumber(),
+        prixUnitaire: m.prixUnitaire ? m.prixUnitaire.toNumber() : null,
+      })),
+    };
 
     return { success: true, bon };
   },

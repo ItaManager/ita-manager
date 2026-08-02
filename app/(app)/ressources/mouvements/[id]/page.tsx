@@ -18,9 +18,9 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
 const SENS_CONFIG = {
-  ENTREE: { label: "Entrée", variant: "default" as const, color: "text-green-600" },
-  SORTIE: { label: "Sortie", variant: "destructive" as const, color: "text-red-600" },
-  AJUSTEMENT: { label: "Ajustement", variant: "secondary" as const, color: "text-orange-600" },
+  ENTREE: { label: "Entrée", variant: "default" as const, color: "text-success" },
+  SORTIE: { label: "Sortie", variant: "destructive" as const, color: "text-destructive" },
+  AJUSTEMENT: { label: "Ajustement", variant: "secondary" as const, color: "text-warning" },
 } as const;
 
 type PageParams = Promise<{
@@ -130,7 +130,7 @@ export default async function PageDetailMouvement({
                 <label className="text-sm font-medium text-muted-foreground">
                   Validation
                 </label>
-                <p className="text-base mt-1 text-green-600">
+                <p className="text-base mt-1 text-success">
                   Validé le {format(new Date(bon.valideLe), "PPP", { locale: fr })}
                 </p>
               </div>

@@ -92,7 +92,7 @@ async function ListeEvenements({ searchParams }: { searchParams: SearchParams })
                           evt.action === "CREATION"
                             ? "bg-success/10 text-success border-success"
                             : evt.action === "MODIFICATION"
-                            ? "bg-blue-500/10 text-blue-500 border-blue-500"
+                            ? "bg-primary/10 text-primary border-primary"
                             : evt.action === "VALIDATION"
                             ? "bg-success/10 text-success border-success"
                             : evt.action === "REFUS"

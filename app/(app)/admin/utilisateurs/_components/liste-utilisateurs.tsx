@@ -51,7 +51,7 @@ export async function ListeUtilisateurs({
                 <div
                   className={`flex size-10 shrink-0 items-center justify-center rounded-full ${
                     utilisateur.actif
-                      ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300"
+                      ? "bg-success-soft text-success dark:bg-success dark:text-success"
                       : "bg-gray-100 text-gray-700 dark:bg-gray-950 dark:text-gray-300"
                   }`}
                 >

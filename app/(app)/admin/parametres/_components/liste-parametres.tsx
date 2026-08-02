@@ -35,8 +35,8 @@ export async function ListeParametres() {
                     <div
                       className={`flex size-10 shrink-0 items-center justify-center rounded-full ${
                         estVerrouille
-                          ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
-                          : "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
+                          ? "bg-destructive-soft text-destructive dark:bg-destructive dark:text-destructive"
+                          : "bg-primary-soft text-primary dark:bg-primary dark:text-primary"
                       }`}
                     >
                       {estVerrouille ? (

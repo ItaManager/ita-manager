@@ -74,7 +74,7 @@ export default async function EcheancesPage(props: {
               piece.infoEtat.etat === "PERIME"
                 ? "border-destructive bg-destructive/5"
                 : piece.infoEtat.etat === "EN_ALERTE"
-                ? "border-orange-500 bg-orange-50 dark:bg-orange-950/20"
+                ? "border-warning bg-warning-soft dark:bg-warning/20"
                 : ""
             }
           >
@@ -121,7 +121,7 @@ export default async function EcheancesPage(props: {
                     <AlertTriangle className="size-3" />
                   )}
                   {piece.infoEtat.etat === "EN_ALERTE" && (
-                    <AlertTriangle className="size-3 text-orange-600" />
+                    <AlertTriangle className="size-3 text-warning" />
                   )}
                   {piece.infoEtat.etat === "VALIDE" && (
                     <CheckCircle2 className="size-3" />
@@ -142,7 +142,7 @@ export default async function EcheancesPage(props: {
                   piece.infoEtat.etat === "PERIME"
                     ? "text-sm font-medium text-destructive"
                     : piece.infoEtat.etat === "EN_ALERTE"
-                    ? "text-sm font-medium text-orange-600 dark:text-orange-500"
+                    ? "text-sm font-medium text-warning dark:text-warning"
                     : "text-sm text-muted-foreground"
                 }
               >

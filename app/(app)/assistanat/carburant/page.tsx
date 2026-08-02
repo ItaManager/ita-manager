@@ -201,7 +201,7 @@ export default function CarburantPage() {
                     <TableCell className="text-right tabular-nums">
                       <div className="flex items-center justify-end gap-1">
                         {dist.compteurAnomalie && (
-                          <AlertTriangle className="h-3 w-3 text-orange-500" />
+                          <AlertTriangle className="h-3 w-3 text-warning" />
                         )}
                         {Number(dist.compteur).toLocaleString("fr-FR")}
                       </div>

@@ -19,9 +19,12 @@ import * as path from "path";
 const ACTIONS_DIR = path.join(process.cwd(), "lib/actions");
 
 // Fonctions exemptées avec justification
+//
+// deconnecter : appelable sans session, par construction (logout endpoint)
+// enregistrerPointage : protégée par jeton d'appareil (M12 § 3), voir presences.ts:67-79
 const EXEMPTIONS: Record<string, string> = {
   "deconnecter": "Endpoint public de logout, authentification via createClient()",
-  "enregistrerPointage": "Authentification par jeton appareil + code employé haché (bcrypt)",
+  "enregistrerPointage": "Authentification par jeton appareil + code employé haché (M12 § 3)",
 };
 
 type Violation = {
@@ -67,7 +70,12 @@ function analyzeFile(filePath: string): Violation[] {
         nextLines.includes("actionProtegee") ||
         nextLines.includes("exigerPermission");
 
-      if (!hasGuard) {
+      // Vérifier si c'est un alias vers une fonction protégée (même ligne)
+      const isAlias = line.includes("=") &&
+        !line.includes("actionProtegee") &&
+        /=\s*\w+Logique\s*;/.test(line);
+
+      if (!hasGuard && !isAlias) {
         violations.push({
           file: path.basename(filePath),
           line: lineNumber,

@@ -77,7 +77,7 @@ export function DerogationCard({
       );
     } else if (absEcart < 20) {
       return (
-        <Badge variant="outline" className="border-red-500 text-red-500">
+        <Badge variant="outline" className="border-destructive text-destructive">
           +{ecartPourcent}%
         </Badge>
       );

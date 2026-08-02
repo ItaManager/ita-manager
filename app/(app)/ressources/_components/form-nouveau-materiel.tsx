@@ -245,7 +245,7 @@ export function FormNouveauMateriel({
                 </p>
               )}
               {formatWarning && (
-                <p className="text-xs text-yellow-600 mt-1 flex items-center gap-1">
+                <p className="text-xs text-warning mt-1 flex items-center gap-1">
                   <Info className="size-3" />
                   {formatWarning}
                 </p>

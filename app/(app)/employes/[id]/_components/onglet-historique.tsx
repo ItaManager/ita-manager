@@ -27,27 +27,27 @@ function BadgeAction({ action }: { action: EvenementJournal["action"] }) {
     CREATION: {
       label: "Création",
       icon: CheckCircle,
-      className: "bg-green-100 text-green-800 hover:bg-green-100",
+      className: "bg-success-soft text-success hover:bg-success-soft",
     },
     MODIFICATION: {
       label: "Modification",
       icon: Edit,
-      className: "bg-blue-100 text-blue-800 hover:bg-blue-100",
+      className: "bg-primary-soft text-primary hover:bg-primary-soft",
     },
     SUPPRESSION: {
       label: "Suppression",
       icon: Archive,
-      className: "bg-red-100 text-red-800 hover:bg-red-100",
+      className: "bg-destructive-soft text-destructive hover:bg-destructive-soft",
     },
     ARCHIVAGE: {
       label: "Archivage",
       icon: Archive,
-      className: "bg-orange-100 text-orange-800 hover:bg-orange-100",
+      className: "bg-warning-soft text-warning hover:bg-warning-soft",
     },
     VALIDATION: {
       label: "Validation",
       icon: CheckCircle,
-      className: "bg-purple-100 text-purple-800 hover:bg-purple-100",
+      className: "bg-accent-soft text-accent hover:bg-accent-soft",
     },
   };
 

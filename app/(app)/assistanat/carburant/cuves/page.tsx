@@ -110,7 +110,7 @@ export default function CuvesPage() {
                 </span>
               )}
               {articlesAttention > 0 && (
-                <span className="text-orange-600 font-medium">
+                <span className="text-warning font-medium">
                   {" "}
                   · {articlesAttention} en attention
                 </span>

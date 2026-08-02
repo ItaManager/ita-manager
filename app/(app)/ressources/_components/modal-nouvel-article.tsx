@@ -81,7 +81,7 @@ export function ModalNouvelArticle({ ouvert, onFermer }: ModalNouvelArticleProps
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {erreur && (
-            <div className="p-3 text-sm text-red-800 bg-red-50 border border-red-200 rounded">
+            <div className="p-3 text-sm text-destructive bg-destructive-soft border border-destructive/20 rounded">
               {erreur}
             </div>
           )}

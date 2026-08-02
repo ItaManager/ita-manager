@@ -88,11 +88,11 @@ export default async function TableauPiecesPage({
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Échéances proches
                 </p>
-                <p className="text-2xl font-bold text-orange-600 mt-1 tabular-nums">
+                <p className="text-2xl font-bold text-warning mt-1 tabular-nums">
                   {echeancesProches}
                 </p>
               </div>
-              <Clock className="size-8 text-orange-600/20" />
+              <Clock className="size-8 text-warning/20" />
             </div>
           </CardContent>
         </Card>

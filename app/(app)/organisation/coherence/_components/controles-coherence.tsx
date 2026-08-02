@@ -105,7 +105,7 @@ export async function ControlesCoherence() {
       {conformeSuperieur && !boucles.detectee ? (
         <Card className="border-l-4 border-l-green-500">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-green-700">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-success">
               <Check className="size-4" aria-hidden="true" />
               Chaîne hiérarchique complète
             </CardTitle>
@@ -161,7 +161,7 @@ export async function ControlesCoherence() {
       {/* 2. Postes sans titulaire */}
       <Card className="border-l-4 border-l-blue-500">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm font-medium text-blue-700">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-primary">
             <Info className="size-4" aria-hidden="true" />
             Postes sans titulaire
           </CardTitle>
@@ -182,7 +182,7 @@ export async function ControlesCoherence() {
       {surcharges.length > 0 ? (
         <Card className="border-l-4 border-l-amber-500">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-amber-700">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-warning">
               <Users className="size-4" aria-hidden="true" />
               Charge d'approbation élevée
             </CardTitle>
@@ -196,7 +196,7 @@ export async function ControlesCoherence() {
               {surcharges.map(({ poste, count }) => (
                 <div
                   key={poste.id}
-                  className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-3 py-2"
+                  className="flex items-center justify-between rounded-lg border border-warning/20 bg-warning-soft px-3 py-2"
                 >
                   <div className="flex-1">
                     <p className="text-sm font-medium">{poste.libelle}</p>
@@ -205,7 +205,7 @@ export async function ControlesCoherence() {
                       {poste.service && ` · ${poste.service.libelle}`}
                     </p>
                   </div>
-                  <Badge variant="outline" className="shrink-0 font-semibold text-amber-700">
+                  <Badge variant="outline" className="shrink-0 font-semibold text-warning">
                     {count} subordonnés
                   </Badge>
                 </div>
@@ -223,7 +223,7 @@ export async function ControlesCoherence() {
       ) : (
         <Card className="border-l-4 border-l-green-500">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-green-700">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-success">
               <Check className="size-4" aria-hidden="true" />
               Charge d'encadrement raisonnable
             </CardTitle>

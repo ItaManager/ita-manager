@@ -21,7 +21,7 @@ export default async function PageArticles({
   const recherche = params.recherche;
 
   const result = await listerArticlesStock(page, recherche);
-  const { articles, total, pages } = result;
+  const { articles, total, pages } = result as Awaited<ReturnType<typeof listerArticlesStock>>;
 
   return (
     <div className="space-y-6">

@@ -56,7 +56,7 @@ export function TableauPieces({ lignes, colonnes, masquerCouts = false }: Tablea
       return (
         <button
           onClick={() => setPieceSelectionnee(piece.id)}
-          className="text-xs font-medium text-orange-600 hover:underline text-left"
+          className="text-xs font-medium text-warning hover:underline text-left"
         >
           J−{joursRestants}
         </button>

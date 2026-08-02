@@ -164,7 +164,7 @@ export function BarreLateraleClient({ userPermissions, compteursAchats }: BarreL
       <aside className="flex w-64 flex-col border-r bg-white">
         {/* Logo */}
         <div className="flex h-16 items-center gap-2 border-b px-6">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-blue-600 text-xs font-bold text-white">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-xs font-bold text-white">
             ITA
           </div>
           <div>
@@ -194,7 +194,7 @@ export function BarreLateraleClient({ userPermissions, compteursAchats }: BarreL
                         className={cn(
                           "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
                           isActive
-                            ? "bg-blue-50 font-medium text-blue-700"
+                            ? "bg-primary-soft font-medium text-primary"
                             : "text-gray-700 hover:bg-gray-50"
                         )}
                       >
@@ -203,7 +203,7 @@ export function BarreLateraleClient({ userPermissions, compteursAchats }: BarreL
                         {item.badge && (
                           <Badge
                             variant="default"
-                            className="size-5 items-center justify-center rounded-full bg-green-600 p-0 text-xs"
+                            className="size-5 items-center justify-center rounded-full bg-success p-0 text-xs"
                           >
                             {item.badge}
                           </Badge>
@@ -249,7 +249,7 @@ export function BarreLateraleClient({ userPermissions, compteursAchats }: BarreL
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
                       isActive
-                        ? "bg-blue-50 font-medium text-blue-700"
+                        ? "bg-primary-soft font-medium text-primary"
                         : "text-gray-700 hover:bg-gray-50"
                     )}
                   >

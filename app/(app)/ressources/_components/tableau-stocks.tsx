@@ -15,8 +15,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import type { ArticleStock } from "@prisma/client";
 
+type ArticleStockConverted = Omit<ArticleStock, "seuilAlerte"> & {
+  seuilAlerte: number | null;
+};
+
 type TableauStocksProps = {
-  articles: ArticleStock[];
+  articles: ArticleStockConverted[];
   total: number;
   pages: number;
   pageActuelle: number;

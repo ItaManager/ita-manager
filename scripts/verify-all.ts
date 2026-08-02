@@ -141,30 +141,34 @@ async function runScript(script: VerificationScript): Promise<boolean> {
 async function main() {
   console.log("🔍 Vérifications post-seed — M0→M12 (tous modules)\n");
 
-  const resultats: boolean[] = [];
+  const resultats: Array<{ script: VerificationScript; succes: boolean }> = [];
 
   for (const script of VERIFICATIONS) {
     const succes = await runScript(script);
-    resultats.push(succes);
-
-    if (!succes) {
-      console.log("⚠️  Arrêt à la première erreur\n");
-      break;
-    }
+    resultats.push({ script, succes });
   }
 
-  const toutesReussies = resultats.every((r) => r === true);
-  const nbReussies = resultats.filter((r) => r === true).length;
+  const nbReussies = resultats.filter((r) => r.succes).length;
+  const nbEchecs = resultats.filter((r) => !r.succes).length;
 
-  console.log(`${"=".repeat(60)}`);
-  console.log(`RÉSULTAT : ${nbReussies}/${VERIFICATIONS.length} vérifications passées`);
+  console.log(`\n${"=".repeat(60)}`);
+  console.log(`RÉCAPITULATIF : ${nbReussies}/${VERIFICATIONS.length} vérifications passées`);
   console.log(`${"=".repeat(60)}\n`);
 
-  if (toutesReussies) {
+  if (nbEchecs > 0) {
+    console.log(`❌ ${nbEchecs} VÉRIFICATION(S) EN ÉCHEC :\n`);
+    resultats
+      .filter((r) => !r.succes)
+      .forEach((r, i) => {
+        console.log(`   ${i + 1}. ${r.script.name}`);
+      });
+    console.log("");
+  }
+
+  if (nbReussies === VERIFICATIONS.length) {
     console.log("✅ TOUTES LES VÉRIFICATIONS ONT RÉUSSI\n");
     process.exit(0);
   } else {
-    console.log("❌ AU MOINS UNE VÉRIFICATION A ÉCHOUÉ\n");
     process.exit(1);
   }
 }

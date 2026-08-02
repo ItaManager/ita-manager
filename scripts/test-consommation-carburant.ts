@@ -25,16 +25,20 @@ async function main() {
 
   try {
     // 1. Créer un matériel de test (véhicule)
+    const famille = await prisma.familleMateriel.findFirst({
+      where: { code: "VL" },
+    });
+
+    if (!famille) {
+      throw new Error("Famille VL introuvable");
+    }
+
     const materiel = await prisma.materiel.create({
       data: {
         codeIta: "VL-TEST-001",
         designation: "Véhicule test consommation",
         type: "VEHICULE_LEGER",
-        familleMaterielId: (
-          await prisma.familleMateriel.findFirst({
-            where: { code: "VL" },
-          })
-        )!.id,
+        familleId: famille.id,
       },
     });
 
@@ -42,7 +46,7 @@ async function main() {
 
     // 2. Créer les 3 distributions selon l'exemple exact
     const demandeur = await prisma.employe.findFirst({
-      where: { typeEmploye: "PERMANENT" },
+      where: { typeMainOeuvre: "PERMANENT" },
     });
 
     if (!demandeur) {
@@ -130,9 +134,9 @@ async function main() {
     console.log(`   Type: ${resultat.type}`);
 
     if (resultat.type === "CALCULE") {
-      console.log(`   Dernier calcul: ${resultat.dernierCalcul.toFixed(1)} ${resultat.unite}`);
-      console.log(`   Moyenne: ${resultat.moyenneConsommation.toFixed(1)} ${resultat.unite}`);
-      console.log(`   Écart: ${resultat.ecartPourcent.toFixed(1)}%`);
+      console.log(`   Dernier calcul: ${resultat.dernierCalcul!.toFixed(1)} ${resultat.unite}`);
+      console.log(`   Moyenne: ${resultat.moyenneConsommation!.toFixed(1)} ${resultat.unite}`);
+      console.log(`   Écart: ${resultat.ecartPourcent!.toFixed(1)}%`);
       console.log(`   Nb intervalles: ${resultat.nbIntervalles}`);
 
       // Vérification attendue

@@ -33,19 +33,19 @@ export function LigneEmploye({ employe }: LigneEmployeProps) {
   const getStatutBadge = (completude: number) => {
     if (completude === 100) {
       return (
-        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+        <Badge className="bg-success-soft text-success hover:bg-success-soft">
           Profil complet
         </Badge>
       );
     } else if (completude >= 50) {
       return (
-        <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">
+        <Badge className="bg-warning-soft text-warning hover:bg-warning-soft">
           En attente
         </Badge>
       );
     } else {
       return (
-        <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
+        <Badge className="bg-destructive-soft text-destructive hover:bg-destructive-soft">
           Profil incomplet
         </Badge>
       );
@@ -57,10 +57,10 @@ export function LigneEmploye({ employe }: LigneEmployeProps) {
     if (!type) return <Badge variant="outline">—</Badge>;
 
     const colors: Record<string, string> = {
-      CDI: "bg-blue-100 text-blue-800",
-      CDD: "bg-purple-100 text-purple-800",
+      CDI: "bg-primary-soft text-primary",
+      CDD: "bg-accent-soft text-accent",
       INTERIM: "bg-gray-100 text-gray-800",
-      STAGE: "bg-yellow-100 text-yellow-800",
+      STAGE: "bg-warning-soft text-warning",
     };
 
     return (
@@ -92,7 +92,7 @@ export function LigneEmploye({ employe }: LigneEmployeProps) {
         {employe.reference ? (
           <Link
             href={`/employes/${employe.id}`}
-            className="text-blue-600 hover:text-blue-800 font-medium text-xs"
+            className="text-primary hover:text-primary font-medium text-xs"
           >
             {employe.reference}
           </Link>

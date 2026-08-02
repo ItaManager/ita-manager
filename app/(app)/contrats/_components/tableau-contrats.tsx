@@ -112,7 +112,7 @@ export function TableauContrats({
   const getBadgeEcheance = (joursRestants: number | null) => {
     if (joursRestants === null) {
       return (
-        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+        <Badge variant="outline" className="bg-primary-soft text-primary border-primary/20">
           CDI
         </Badge>
       );
@@ -128,14 +128,14 @@ export function TableauContrats({
 
     if (joursRestants < 60) {
       return (
-        <Badge className="gap-1.5 bg-orange-100 text-orange-700 border-orange-200">
+        <Badge className="gap-1.5 bg-warning-soft text-warning border-warning/20">
           ALERTE - {joursRestants}j
         </Badge>
       );
     }
 
     return (
-      <Badge className="gap-1.5 bg-green-100 text-green-700 border-green-200">
+      <Badge className="gap-1.5 bg-success-soft text-success border-success/20">
         OK - {joursRestants}j
       </Badge>
     );
@@ -233,11 +233,11 @@ export function TableauContrats({
                     </TableCell>
                     <TableCell>
                       {contrat.typeContrat === "CDD" ? (
-                        <Badge variant="secondary" className="bg-orange-100 text-orange-700 border-orange-200">
+                        <Badge variant="secondary" className="bg-warning-soft text-warning border-warning/20">
                           CDD
                         </Badge>
                       ) : contrat.typeContrat === "CDI" ? (
-                        <Badge className="bg-blue-100 text-blue-700 border-blue-200">
+                        <Badge className="bg-primary-soft text-primary border-primary/20">
                           CDI
                         </Badge>
                       ) : (
@@ -261,11 +261,11 @@ export function TableauContrats({
                     <TableCell>{getBadgeEcheance(joursRestants)}</TableCell>
                     <TableCell>
                       {contrat.signe ? (
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        <Badge variant="outline" className="bg-success-soft text-success border-success/20">
                           Signé
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                        <Badge variant="outline" className="bg-warning-soft text-warning border-warning/20">
                           Non signé
                         </Badge>
                       )}

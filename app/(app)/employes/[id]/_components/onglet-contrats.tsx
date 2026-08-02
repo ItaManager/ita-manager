@@ -36,10 +36,10 @@ interface OngletContratsProps {
 // Badge type de contrat (cohérent avec ligne-employe.tsx)
 function BadgeTypeContrat({ type }: { type: TypeContrat }) {
   const colors: Record<TypeContrat, string> = {
-    CDI: "bg-blue-100 text-blue-800",
-    CDD: "bg-purple-100 text-purple-800",
+    CDI: "bg-primary-soft text-primary",
+    CDD: "bg-accent-soft text-accent",
     INTERIM: "bg-gray-100 text-gray-800",
-    STAGE: "bg-yellow-100 text-yellow-800",
+    STAGE: "bg-warning-soft text-warning",
   };
 
   return (
@@ -116,12 +116,12 @@ export function OngletContrats({
                 <div className="flex items-center gap-3">
                   <BadgeTypeContrat type={contrat.typeContrat} />
                   {contrat.actif && (
-                    <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                    <Badge className="bg-success-soft text-success hover:bg-success-soft">
                       Contrat actif
                     </Badge>
                   )}
                   {!contrat.signe && (
-                    <Badge variant="outline" className="text-orange-600 border-orange-600">
+                    <Badge variant="outline" className="text-warning border-warning">
                       Non signé
                     </Badge>
                   )}

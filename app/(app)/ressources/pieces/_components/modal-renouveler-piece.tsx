@@ -195,11 +195,11 @@ export function ModalRenouvelerPiece({ piece, open, onClose }: ModalRenouvelerPi
           </div>
 
           {/* Bannière après renouvellement */}
-          <div className="bg-green-50 border border-green-200 rounded-lg px-6 py-4 text-center">
-            <p className="text-xs font-semibold uppercase tracking-wide text-green-900/60 mb-1">
+          <div className="bg-success-soft border border-success/20 rounded-lg px-6 py-4 text-center">
+            <p className="text-xs font-semibold uppercase tracking-wide text-success/60 mb-1">
               Après renouvellement
             </p>
-            <p className="text-lg font-semibold text-green-900">
+            <p className="text-lg font-semibold text-success">
               valide encore {joursValiditeApres} j
             </p>
           </div>
@@ -212,7 +212,7 @@ export function ModalRenouvelerPiece({ piece, open, onClose }: ModalRenouvelerPi
             <div className="text-xs text-muted-foreground mr-auto ml-4">
               Champs obligatoires à renseigner
             </div>
-            <Button type="submit" disabled={isPending} className="bg-green-600 hover:bg-green-700">
+            <Button type="submit" disabled={isPending} className="bg-success hover:bg-success">
               {isPending ? "Enregistrement..." : "Renouveler"}
             </Button>
           </div>

@@ -55,12 +55,12 @@ export default async function PagePortefeuille() {
         </p>
       </div>
 
-      <div className="bg-amber-50 border border-amber-200 rounded p-4 mb-6">
+      <div className="bg-warning-soft border border-warning/20 rounded p-4 mb-6">
         <div className="flex items-start gap-3">
-          <Wallet className="h-5 w-5 text-amber-600 mt-0.5" />
+          <Wallet className="h-5 w-5 text-warning mt-0.5" />
           <div>
-            <h3 className="font-semibold text-amber-900">Consultation du solde</h3>
-            <p className="text-sm text-amber-800 mt-1">
+            <h3 className="font-semibold text-warning">Consultation du solde</h3>
+            <p className="text-sm text-warning mt-1">
               L'API Wave Payout ne permet pas de consulter le solde du portefeuille.
               Consultez le portail Wave pour voir votre solde actuel.
             </p>
@@ -79,7 +79,7 @@ export default async function PagePortefeuille() {
 
       <div className="grid grid-cols-3 gap-4 mb-6">
         <Card className="p-4">
-          <div className="flex items-center gap-2 text-green-600 mb-2">
+          <div className="flex items-center gap-2 text-success mb-2">
             <TrendingUp className="h-4 w-4" />
             <span className="text-sm font-medium">Paiements réussis</span>
           </div>
@@ -90,7 +90,7 @@ export default async function PagePortefeuille() {
         </Card>
 
         <Card className="p-4">
-          <div className="flex items-center gap-2 text-amber-600 mb-2">
+          <div className="flex items-center gap-2 text-warning mb-2">
             <TrendingDown className="h-4 w-4" />
             <span className="text-sm font-medium">En attente</span>
           </div>
