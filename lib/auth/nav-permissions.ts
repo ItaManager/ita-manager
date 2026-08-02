@@ -23,6 +23,9 @@ export const NAV_PERMISSIONS: Record<string, string[]> = {
   "/planning": ["planning:modifier", "projet:creer"],
   "/releves": ["releve:saisir", "releve:viser"],
   "/presences": ["employe:lire"],
+  "/presences/temps-reel": ["employe:lire"],
+  "/presences/codes": ["presence:gererCodes"],
+  "/presences/bornes": ["presence:gererBornes"],
 
   // TECHNIQUE
   "/projets": ["projet:creer", "planning:modifier", "jalon:valider"],

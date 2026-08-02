@@ -385,3 +385,82 @@ export const listerCodesPointage = actionProtegee(
     }));
   }
 );
+
+/**
+ * Lister les pointages d'une journée spécifique.
+ * Vue temps réel : dernier pointage par employé.
+ */
+export const listerPointagesJour = actionProtegee(
+  "employe:lire",
+  async (session, date: Date) => {
+    const debut = startOfDay(date);
+    const fin = endOfDay(date);
+
+    // Tous les pointages du jour
+    const pointages = await prisma.pointageBureau.findMany({
+      where: {
+        horodatage: { gte: debut, lte: fin },
+      },
+      include: {
+        employe: {
+          select: {
+            id: true,
+            matricule: true,
+            nom: true,
+            prenom: true,
+          },
+        },
+      },
+      orderBy: { horodatage: "desc" },
+    });
+
+    // Grouper par employé (dernier pointage = statut actuel)
+    const parEmploye = new Map();
+    for (const p of pointages) {
+      if (!parEmploye.has(p.employeId)) {
+        parEmploye.set(p.employeId, {
+          employe: p.employe,
+          dernierPointage: p,
+          pointagesDuJour: [p],
+          estPresent: p.type === "ARRIVEE",
+        });
+      } else {
+        parEmploye.get(p.employeId).pointagesDuJour.push(p);
+      }
+    }
+
+    // Employés actifs sans pointage
+    const employesAvecPointage = Array.from(parEmploye.keys());
+    const employesSansPointage = await prisma.employe.findMany({
+      where: {
+        archiveLe: null,
+        id: { notIn: employesAvecPointage },
+      },
+      select: {
+        id: true,
+        matricule: true,
+        nom: true,
+        prenom: true,
+      },
+      orderBy: [{ nom: "asc" }, { prenom: "asc" }],
+    });
+
+    return {
+      presents: Array.from(parEmploye.values())
+        .filter((e) => e.estPresent)
+        .sort((a, b) =>
+          `${a.employe.nom} ${a.employe.prenom}`.localeCompare(
+            `${b.employe.nom} ${b.employe.prenom}`
+          )
+        ),
+      partis: Array.from(parEmploye.values())
+        .filter((e) => !e.estPresent)
+        .sort((a, b) =>
+          `${a.employe.nom} ${a.employe.prenom}`.localeCompare(
+            `${b.employe.nom} ${b.employe.prenom}`
+          )
+        ),
+      absents: employesSansPointage,
+    };
+  }
+);
