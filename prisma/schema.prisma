@@ -16,7 +16,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
   // Connexion mutualisée (pgBouncer, port 6543) — utilisée par l'application
   url       = env("DATABASE_URL")
   // Connexion directe (port 5432) — requise par les migrations et introspect
@@ -35,7 +35,6 @@ datasource db {
 // par un trigger Postgres (migration écrite à la main) à la création
 // du compte Supabase.
 // =====================================================================
-
 
 /// Rôle applicatif. Distinct du poste : un Chef Chantier peut porter
 /// le rôle de saisie des relevés sans que le poste ne l'implique.
@@ -112,7 +111,7 @@ model Brouillon {
   profilId String @db.Uuid
 
   /// Type d'entité concernée : Employe, ReleveActivite, AppelOffres…
-  entite String
+  entite   String
   /// Identifiant de l'entité en cours de modification. `null` en création.
   entiteId String?
 
@@ -128,8 +127,8 @@ model Brouillon {
 
 /// Paramètres applicatifs typés par clé. Évite une table par famille.
 model Parametre {
-  id      String @id @default(cuid())
-  cle     String @unique
+  id      String  @id @default(cuid())
+  cle     String  @unique
   valeur  String // sérialisé, typé côté applicatif via zod
   type    String // NUMBER, STRING, BOOLEAN, JSON
   groupe  String // AO, PROJET, RELEVE, RH, PAIE
@@ -309,6 +308,9 @@ model Direction {
   services Service[]
   postes   Poste[]
 
+  /// M16 — Assistanat
+  courriers Courrier[]
+
   creeLe    DateTime  @default(now())
   modifieLe DateTime  @updatedAt
   archiveLe DateTime?
@@ -326,6 +328,9 @@ model Service {
   direction   Direction @relation(fields: [directionId], references: [id])
 
   postes Poste[]
+
+  /// M16 — Assistanat
+  courriers Courrier[]
 
   creeLe    DateTime  @default(now())
   modifieLe DateTime  @updatedAt
@@ -405,22 +410,22 @@ model Employe {
   sexe   Sexe?
 
   // --- Identité (PERMANENT uniquement) ---
-  dateNaissance    DateTime?            @db.Date
-  lieuNaissance    String?
-  nationaliteId    String?
-  nationalite      Nationalite?         @relation(fields: [nationaliteId], references: [id])
+  dateNaissance         DateTime?              @db.Date
+  lieuNaissance         String?
+  nationaliteId         String?
+  nationalite           Nationalite?           @relation(fields: [nationaliteId], references: [id])
   situationMatrimoniale SituationMatrimoniale?
-  nombreEnfants    Int?                 @default(0)
+  nombreEnfants         Int?                   @default(0)
 
   /// Donnée SENSIBLE. Unique parmi les permanents actifs (non archivés).
   numeroCnps String? @unique
 
   // --- Contact ---
-  telephone          String // Obligatoire pour tous
+  telephone           String // Obligatoire pour tous
   telephoneSecondaire String?
-  email              String?
+  email               String?
   /// Donnée SENSIBLE
-  adresse            String?
+  adresse             String?
 
   // --- Contact d'urgence (PERMANENT) ---
   urgenceNom String?
@@ -429,7 +434,7 @@ model Employe {
   // --- Paiement ---
   /// Donnée SENSIBLE. Pour JOURNALIER, obligatoire si modePaiement = WAVE.
   /// Double confirmation obligatoire. Toute modification journalisée.
-  numeroWave  String?
+  numeroWave   String?
   modePaiement ModePaiement?
 
   /// RIB pour permanents. Donnée SENSIBLE.
@@ -440,9 +445,9 @@ model Employe {
   referenceInterne String?
 
   // --- Relations ---
-  affectations         Affectation[]
-  contrats             Contrat[]
-  documents            DocumentEmploye[]
+  affectations          Affectation[]
+  contrats              Contrat[]
+  documents             DocumentEmploye[]
   derogationsSalariales DerogationSalariale[]
 
   /// Hiérarchie employé : subordonnes directs
@@ -453,7 +458,7 @@ model Employe {
 
   /// M3 — Congés et permissions
   absences           Absence[]
-  soldeCongés        SoldeConge[]
+  soldeCongés       SoldeConge[]
   delegationsMandant Delegation[] @relation("Mandant")
   delegationsDeleg   Delegation[] @relation("Delegataire")
 
@@ -478,6 +483,9 @@ model Employe {
   /// M13 L3 — Transport
   demandesTransportChauffeur DemandeTransport[] @relation("chauffeur")
 
+  /// M16 — Assistanat
+  visitesRecues Visite[] @relation("VisitesRecues")
+
   creeLe    DateTime  @default(now())
   modifieLe DateTime  @updatedAt
   /// Archivage, jamais suppression. Motif stocké dans JournalEvenement.
@@ -500,7 +508,7 @@ model Profil {
 
   /// Rattachement à un employé. `null` pour les comptes techniques
   /// (ex. Super Admin, hors organigramme).
-  employeId String? @unique
+  employeId String?  @unique
   employe   Employe? @relation(fields: [employeId], references: [id])
 
   /// Délégation de pouvoir (décision B-03)
@@ -508,17 +516,22 @@ model Profil {
   delegationDebut DateTime? @db.Date
   delegationFin   DateTime? @db.Date
 
-  roles          ProfilRole[]
-  evenements     JournalEvenement[]
+  roles           ProfilRole[]
+  evenements      JournalEvenement[]
   codesSecoursMfa CodeSecoursMfa[]
 
   /// M15 — Relations paiements
-  demandesPaiement        DemandePaiement[]       @relation("PreparateurPaiement")
-  autorisationsDemandees  AutorisationPaiement[]  @relation("DemandeurAutorisation")
-  autorisationsAccordees  AutorisationPaiement[]  @relation("AutorisateurPaiement")
+  demandesPaiement       DemandePaiement[]      @relation("PreparateurPaiement")
+  autorisationsDemandees AutorisationPaiement[] @relation("DemandeurAutorisation")
+  autorisationsAccordees AutorisationPaiement[] @relation("AutorisateurPaiement")
 
   /// M13 L3 — Relations transport
-  demandesTransport       DemandeTransport[]      @relation("demandesTransport")
+  demandesTransport DemandeTransport[] @relation("demandesTransport")
+
+  /// M16 — Assistanat
+  visitesSaisies   Visite[]
+  courriersSaisis  Courrier[] @relation("CourriersSaisis")
+  courriersTraites Courrier[] @relation("CourriersTraites")
 
   creeLe    DateTime  @default(now())
   modifieLe DateTime  @updatedAt
@@ -542,9 +555,9 @@ model Affectation {
   /// Proposé depuis Poste.superieurPosteId, mais modifiable.
   /// Obligatoire sauf pour le Directeur Général (décision B-09).
   superieurId String?
-  superieur   Employe?  @relation("HierarchieEmploye", fields: [superieurId], references: [id])
+  superieur   Employe? @relation("HierarchieEmploye", fields: [superieurId], references: [id])
 
-  dateDebut DateTime @db.Date
+  dateDebut DateTime  @db.Date
   dateFin   DateTime? @db.Date
 
   creeLe    DateTime @default(now())
@@ -595,9 +608,9 @@ model Avenant {
   contratId String
   contrat   Contrat @relation(fields: [contratId], references: [id])
 
-  motif         String // "Changement de poste", "Augmentation salariale"
-  dateEffet     DateTime @db.Date
-  nouveauSalaire Decimal? @db.Decimal(10, 2)
+  motif           String // "Changement de poste", "Augmentation salariale"
+  dateEffet       DateTime  @db.Date
+  nouveauSalaire  Decimal?  @db.Decimal(10, 2)
   nouvelleDateFin DateTime? @db.Date
 
   creeLe DateTime @default(now())
@@ -619,7 +632,7 @@ model DocumentEmploye {
   typeDocument String
 
   /// Nom original du fichier
-  nomFichier String
+  nomFichier    String
   /// Chemin dans le bucket Supabase Storage
   cheminStorage String
 
@@ -630,7 +643,7 @@ model DocumentEmploye {
   /// Accès restreint à la DRH, consultation journalisée.
   estMedical Boolean @default(false)
 
-  deposeParId String @db.Uuid
+  deposeParId String   @db.Uuid
   deposeLe    DateTime @default(now())
 
   @@index([employeId])
@@ -647,7 +660,7 @@ model DerogationSalariale {
   employeId String
   employe   Employe @relation(fields: [employeId], references: [id])
 
-  montant Decimal @db.Decimal(10, 2)
+  montant   Decimal @db.Decimal(10, 2)
   /// Fourchette du niveau au moment de la demande
   niveauMin Decimal @db.Decimal(10, 2)
   niveauMax Decimal @db.Decimal(10, 2)
@@ -662,9 +675,9 @@ model DerogationSalariale {
   demandeLe    DateTime @default(now())
 
   /// Décision de la Direction Financière
-  decideParId    String?   @db.Uuid
-  decideLe       DateTime?
-  commentaire    String?   @db.Text
+  decideParId String?   @db.Uuid
+  decideLe    DateTime?
+  commentaire String?   @db.Text
 
   @@index([employeId])
   @@index([statut])
@@ -676,19 +689,19 @@ model DerogationSalariale {
 // =====================================================================
 
 enum StatutAbsence {
-  BROUILLON    // Demande en cours de rédaction
-  ATTENTE_N1   // Soumise, en attente de décision du supérieur
-  ATTENTE_RH   // Validée par N+1, en attente de décision RH
-  VALIDEE      // Validée par RH, absence accordée
-  REFUSEE      // Refusée (soit par N+1, soit par RH)
-  ANNULEE      // Annulée par le demandeur ou RH
+  BROUILLON // Demande en cours de rédaction
+  ATTENTE_N1 // Soumise, en attente de décision du supérieur
+  ATTENTE_RH // Validée par N+1, en attente de décision RH
+  VALIDEE // Validée par RH, absence accordée
+  REFUSEE // Refusée (soit par N+1, soit par RH)
+  ANNULEE // Annulée par le demandeur ou RH
 }
 
 enum TypeMouvementSolde {
-  DOTATION      // Dotation annuelle ou mensuelle acquise
-  MAJORATION    // Majoration d'ancienneté
-  REPORT        // Report du solde de l'exercice précédent
-  CONSOMMATION  // Jours pris pour une absence validée
+  DOTATION // Dotation annuelle ou mensuelle acquise
+  MAJORATION // Majoration d'ancienneté
+  REPORT // Report du solde de l'exercice précédent
+  CONSOMMATION // Jours pris pour une absence validée
 }
 
 /// Types d'absence référentiels. 4 types de base créés au seed.
@@ -744,20 +757,20 @@ model Absence {
   /// Décision du supérieur (N+1)
   decisionN1      String? // "VALIDE" | "REFUSE"
   decisionN1Le    DateTime?
-  decisionN1ParId String? @db.Uuid
-  motifRefusN1    String? @db.Text
+  decisionN1ParId String?   @db.Uuid
+  motifRefusN1    String?   @db.Text
 
   /// Décision de la Direction RH
   decisionRH      String? // "VALIDE" | "REFUSE"
   decisionRHLe    DateTime?
-  decisionRHParId String? @db.Uuid
-  motifRefusRH    String? @db.Text
+  decisionRHParId String?   @db.Uuid
+  motifRefusRH    String?   @db.Text
 
   /// Pièce justificative (certificat médical, convocation, etc.)
   /// Référence vers DocumentEmploye.
   pieceId String?
 
-  creeLe    DateTime @default(now())
+  creeLe    DateTime  @default(now())
   soumieLe  DateTime?
   annuleeLe DateTime?
 
@@ -789,8 +802,8 @@ model SoldeConge {
   /// Commentaire libre (ex: "Dotation 2026", "Majoration 10 ans ancienneté")
   commentaire String?
 
-  enregistreLe  DateTime @default(now())
-  enregistreParId String @db.Uuid
+  enregistreLe    DateTime @default(now())
+  enregistreParId String   @db.Uuid
 
   @@index([employeId])
   @@index([exercice])
@@ -838,8 +851,8 @@ model RegleConge {
   /// Description affichée dans l'interface d'administration
   description String? @db.Text
 
-  modifieLe  DateTime @default(now())
-  modifieParId String @db.Uuid
+  modifieLe    DateTime @default(now())
+  modifieParId String   @db.Uuid
 
   @@map("regles_conges")
 }
@@ -868,13 +881,13 @@ model JourFerie {
 // =====================================================================
 
 enum StatutAppelOffres {
-  VEILLE       // Repéré, pas encore arbitré
-  GO           // DG a validé la participation
-  ABANDONNE    // No-go ou dépassé sans soumission
+  VEILLE // Repéré, pas encore arbitré
+  GO // DG a validé la participation
+  ABANDONNE // No-go ou dépassé sans soumission
   CONSTITUTION // Dossier en cours de constitution
-  SOUMIS       // Déposé
-  GAGNE        // Attributaire
-  PERDU        // Concurrent attributaire
+  SOUMIS // Déposé
+  GAGNE // Attributaire
+  PERDU // Concurrent attributaire
 }
 
 enum TypeMarche {
@@ -886,10 +899,10 @@ enum TypeMarche {
 model AppelOffres {
   id String @id @default(cuid())
 
-  reference       String  // Référence de l'AO
-  maitreOuvrage   String  // Nom du maître d'ouvrage
-  objet           String  @db.Text
-  montantEstime   Decimal? @db.Decimal(15, 2)
+  reference       String // Référence de l'AO
+  maitreOuvrage   String // Nom du maître d'ouvrage
+  objet           String     @db.Text
+  montantEstime   Decimal?   @db.Decimal(15, 2)
   dateLimiteDepot DateTime
   lieu            String?
   typeMarche      TypeMarche @default(PUBLIC)
@@ -897,13 +910,13 @@ model AppelOffres {
   statut StatutAppelOffres @default(VEILLE)
 
   /// Go/No-go du Directeur Général
-  goNoGoDecidePar   String?   @db.Uuid
-  goNoGoDecideLe    DateTime?
-  goNoGoMotif       String?   @db.Text
+  goNoGoDecidePar String?   @db.Uuid
+  goNoGoDecideLe  DateTime?
+  goNoGoMotif     String?   @db.Text
 
   /// Résultat
-  montantAttribution Decimal? @db.Decimal(15, 2)
-  attributaire       String?  // Nom du concurrent si perdu
+  montantAttribution Decimal?  @db.Decimal(15, 2)
+  attributaire       String? // Nom du concurrent si perdu
   dateNotification   DateTime?
 
   /// Relations
@@ -920,21 +933,21 @@ model AppelOffres {
 }
 
 model PieceAO {
-  id            String @id @default(cuid())
+  id            String      @id @default(cuid())
   appelOffresId String
   appelOffres   AppelOffres @relation(fields: [appelOffresId], references: [id], onDelete: Cascade)
 
-  libelle       String
-  obligatoire   Boolean @default(false)
-  fichierUrl    String?
-  deposeLe      DateTime?
+  libelle     String
+  obligatoire Boolean   @default(false)
+  fichierUrl  String?
+  deposeLe    DateTime?
 
   @@index([appelOffresId])
   @@map("pieces_ao")
 }
 
 model ConcurrentAO {
-  id            String @id @default(cuid())
+  id            String      @id @default(cuid())
   appelOffresId String
   appelOffres   AppelOffres @relation(fields: [appelOffresId], references: [id], onDelete: Cascade)
 
@@ -959,16 +972,16 @@ model AppareilBorne {
   /// Présenté par l'appareil à chaque requête à /borne.
   jetonHash String @unique
 
-  libelle       String // Ex: "Tablette accueil - Rez-de-chaussée"
-  emplacement   String? // Ex: "Accueil principal"
+  libelle     String // Ex: "Tablette accueil - Rez-de-chaussée"
+  emplacement String? // Ex: "Accueil principal"
 
-  actif         Boolean  @default(true)
-  dernierAcces  DateTime?
+  actif        Boolean   @default(true)
+  dernierAcces DateTime?
 
-  creePar   String   @db.Uuid
-  creeLe    DateTime @default(now())
-  revoqueLe DateTime?
-  revoquePar String? @db.Uuid
+  creePar    String    @db.Uuid
+  creeLe     DateTime  @default(now())
+  revoqueLe  DateTime?
+  revoquePar String?   @db.Uuid
 
   @@map("appareils_borne")
 }
@@ -1010,9 +1023,9 @@ model PointageBureau {
   horodatage DateTime     @default(now())
 
   /// Si correction manuelle par DRH
-  estCorrection Boolean  @default(false)
-  corrigePar    String?  @db.Uuid
-  motif         String?  @db.Text
+  estCorrection Boolean @default(false)
+  corrigePar    String? @db.Uuid
+  motif         String? @db.Text
 
   /// Anomalie : 3e pointage le même jour
   estAnomalie Boolean @default(false)
@@ -1041,13 +1054,13 @@ model GrilleSalariale {
   dateEffet DateTime?
 
   /// Date de vote DFC — obligatoire pour publier
-  valideLe DateTime?
-  validePar String? @db.Uuid
+  valideLe  DateTime?
+  validePar String?   @db.Uuid
 
   echelons EchelonGrille[]
 
-  creeLe DateTime @default(now())
-  creePar String @db.Uuid
+  creeLe  DateTime @default(now())
+  creePar String   @db.Uuid
 
   @@unique([version])
   @@map("grilles_salariales")
@@ -1081,8 +1094,8 @@ model Projet {
   id String @id @default(cuid())
 
   /// Code unique: CH-AAAA-NNN (ex: CH-2026-001)
-  code String @unique
-  nom  String
+  code        String  @unique
+  nom         String
   description String?
 
   /// BROUILLON, OUVERT, EN_COURS, SUSPENDU, CLOTURE
@@ -1104,12 +1117,12 @@ model Projet {
   cyclePaie CyclePaie?
 
   /// Relations
-  taches        Tache[]
-  jalons        Jalon[]
-  affectations  AffectationChantier[]
-  lieuLivraison LieuLivraison?
-  releves       ReleveActivite[]
-  periodesPaie  PeriodePaie[]
+  taches               Tache[]
+  jalons               Jalon[]
+  affectations         AffectationChantier[]
+  lieuLivraison        LieuLivraison?
+  releves              ReleveActivite[]
+  periodesPaie         PeriodePaie[]
   affectationsMateriel AffectationMateriel[]
   demandesRessource    DemandeRessource[]
 
@@ -1177,9 +1190,9 @@ model Jalon {
   /// Pièce justificative obligatoire pour validation externe
   pieceId String? @db.Uuid
 
-  valideLe DateTime?
+  valideLe  DateTime?
   /// Auteur de la saisie (distinct du validateur externe)
-  validePar String? @db.Uuid
+  validePar String?   @db.Uuid
 
   creeLe DateTime @default(now())
 
@@ -1288,7 +1301,7 @@ model ReleveActivite {
   /// M6 §3.3 : brouillon local d'abord, synchronisation différée
   derniereSyncLocale DateTime?
   derniereSync       DateTime?
-  syncEnAttente      Boolean  @default(false)
+  syncEnAttente      Boolean   @default(false)
 
   creeLe    DateTime @default(now())
   modifieLe DateTime @updatedAt
@@ -1440,7 +1453,6 @@ enum MoyenPaiement {
 
 /**
  * Période de paie pour un chantier
- *
  * M7 §3 : Circuit de validation à 3 niveaux (RH → DT → DFC)
  * M7 §8.4 : Clôturée = immuable
  * M7 §8.5 : Pas de chevauchement sur même chantier
@@ -1484,7 +1496,6 @@ model PeriodePaie {
 
 /**
  * Ligne de paie individuelle
- *
  * M7 §5.2 : Toutes les données figées au calcul
  */
 model LignePaie {
@@ -1528,7 +1539,6 @@ model LignePaie {
 
 /**
  * Événement du circuit de validation
- *
  * M7 §5.1 : Le statut courant se déduit du dernier événement
  */
 model EvenementPeriodePaie {
@@ -1556,7 +1566,6 @@ model EvenementPeriodePaie {
 
 /**
  * Trace d'export de paie
- *
  * M7 §8.7 : Chaque génération tracée avec condensat
  */
 model ExportPaie {
@@ -1601,22 +1610,22 @@ enum TypeMateriel {
 
 /// M13 L1 — Statut opérationnel du matériel
 enum StatutMateriel {
-  DISPONIBLE       // Au garage, libre
-  EN_MISSION       // Affecté à un chantier
-  DEMOBILISE       // Revenu de chantier, attend réaffectation
-  EN_MAINTENANCE   // En réparation
-  EN_PANNE         // Cassé
-  HORS_SERVICE     // Inutilisable définitivement
-  REFORME          // Hors circuit
+  DISPONIBLE // Au garage, libre
+  EN_MISSION // Affecté à un chantier
+  DEMOBILISE // Revenu de chantier, attend réaffectation
+  EN_MAINTENANCE // En réparation
+  EN_PANNE // Cassé
+  HORS_SERVICE // Inutilisable définitivement
+  REFORME // Hors circuit
 }
 
 /// M13 L1 — Nature de lieu de stockage
 enum NatureLieu {
-  SITE       // Siège social
-  CHANTIER   // Projet actif (pointe vers Projet)
-  GARAGE     // Garage central
-  MAGASIN    // Magasin de stockage
-  BUREAU     // Bureau régional
+  SITE // Siège social
+  CHANTIER // Projet actif (pointe vers Projet)
+  GARAGE // Garage central
+  MAGASIN // Magasin de stockage
+  BUREAU // Bureau régional
 }
 
 enum NatureDemandeRessource {
@@ -1636,21 +1645,20 @@ enum StatutDemandeRessource {
 
 /**
  * M13 L1 — Famille de matériel (remplace CategorieMateriel M8)
- *
  * Référentiel créable inline (R-04). 21 familles au seed initial.
  */
 model FamilleMateriel {
-  id               String        @id @default(cuid())
-  code             String        @unique  // AK-PICK, AK-VL, AK-BUL
-  libelle          String        @unique
-  libelleNormalise String        @unique  // Création inline sans doublon
+  id               String       @id @default(cuid())
+  code             String       @unique // AK-PICK, AK-VL, AK-BUL
+  libelle          String       @unique
+  libelleNormalise String       @unique // Création inline sans doublon
   type             TypeMateriel
-  actif            Boolean       @default(true)
+  actif            Boolean      @default(true)
 
   // Format de code (décision 1.1 — format flexible)
   // Jetons : {FAMILLE} {SEQ:n} {ANNEE}
-  formatCode       String        @default("{FAMILLE}{SEQ:3}")
-  prochainNumero   Int           @default(1)
+  formatCode     String @default("{FAMILLE}{SEQ:3}")
+  prochainNumero Int    @default(1)
 
   materiel Materiel[]
 
@@ -1662,13 +1670,12 @@ model FamilleMateriel {
 
 /**
  * M13 L1 — Lieu de stockage (garage, chantier, magasin)
- *
  * DISTINCT de LieuLivraison (M5) — cycles de vie différents
  */
 model LieuStockage {
-  id       String     @id @default(cuid())
-  libelle  String     @unique
-  nature   NatureLieu
+  id      String     @id @default(cuid())
+  libelle String     @unique
+  nature  NatureLieu
 
   /// Si nature=CHANTIER, pointe vers le projet
   projetId String?
@@ -1680,11 +1687,11 @@ model LieuStockage {
   materiel Materiel[]
 
   /// Relations M13 L2
-  mouvementsStock   MouvementStock[]
-  bonsOrigine       BonMouvement[]  @relation("BonOrigine")
-  bonsDestination   BonMouvement[]  @relation("BonDestination")
-  inventaires       Inventaire[]
-  inspections       Inspection[]
+  mouvementsStock MouvementStock[]
+  bonsOrigine     BonMouvement[]   @relation("BonOrigine")
+  bonsDestination BonMouvement[]   @relation("BonDestination")
+  inventaires     Inventaire[]
+  inspections     Inspection[]
 
   /// Relations M13 L3
   transportsDépart  DemandeTransport[] @relation("transportDepart")
@@ -1699,29 +1706,28 @@ model LieuStockage {
 
 /**
  * M13 L1 — Type de pièce administrative (référentiel, pas enum)
- *
  * 14 types au seed : assurance, visite technique, VGP, etc.
  * Créable inline par Chef Logistique (permission typePiece:gerer)
  */
 model TypePieceAdministrative {
-  id               String         @id @default(cuid())
-  libelle          String         @unique
-  libelleNormalise String         @unique
+  id               String @id @default(cuid())
+  libelle          String @unique
+  libelleNormalise String @unique
 
   /// Périodicité en mois (propose expiration, ne l'impose pas)
-  periodiciteMois  Int?
+  periodiciteMois Int?
 
   /// Délai d'alerte en jours (ex: 60j pour assurance)
-  delaiAlerteJours Int            @default(30)
+  delaiAlerteJours Int @default(30)
 
   /// Types de matériel concernés (JSON array de TypeMateriel)
-  typesMateriel    String         @default("[]") // ["VEHICULE_LEGER", "VEHICULE_LOURD"]
+  typesMateriel String @default("[]") // ["VEHICULE_LEGER", "VEHICULE_LOURD"]
 
   /// Pièce bloquante (empêche sortie si périmée)
-  bloquante        Boolean        @default(false)
+  bloquante Boolean @default(false)
 
-  actif            Boolean        @default(true)
-  ordreAffichage   Int            @default(0)
+  actif          Boolean @default(true)
+  ordreAffichage Int     @default(0)
 
   pieces PieceAdministrative[]
 
@@ -1733,7 +1739,6 @@ model TypePieceAdministrative {
 
 /**
  * M13 L1 — Matériel du parc (individuel, code unique)
- *
  * Nature INDIVIDUEL : chaque objet porte son code (AK-PICK001)
  * M8 §1.2 : partageable = affectation simultanée à plusieurs chantiers
  * M13 §3 : 3 codes recherchables (codeIta, numeroParcAncien, codeLong)
@@ -1742,9 +1747,9 @@ model Materiel {
   id String @id @default(cuid())
 
   /// M13 §3 — Trois codes recherchables (tous uniques)
-  codeIta          String  @unique  // Code ITA (ex: AK-PICK001)
-  numeroParcAncien String? @unique  // Ancien N° Parc (ex: A11157)
-  codeLong         String? @unique  // Format long optionnel
+  codeIta          String  @unique // Code ITA (ex: AK-PICK001)
+  numeroParcAncien String? @unique // Ancien N° Parc (ex: A11157)
+  codeLong         String? @unique // Format long optionnel
 
   /// Type et famille
   type      TypeMateriel
@@ -1752,11 +1757,11 @@ model Materiel {
   famille   FamilleMateriel @relation(fields: [familleId], references: [id])
 
   /// Identification
-  designation String
-  marque      String?
-  modele      String?
-  numeroSerie String? @unique
-  immatriculation String? @unique  // Si véhicule
+  designation      String
+  marque           String?
+  modele           String?
+  numeroSerie      String? @unique
+  immatriculation  String? @unique // Si véhicule
   anneeFabrication Int?
 
   /// Acquisition (SENSIBLE)
@@ -1805,14 +1810,12 @@ model Materiel {
 
 /**
  * M13 L1 — Pièce administrative (assurance, visite technique, etc.)
- *
  * CRITIQUE : L'état (VALIDE/ALERTE/PERIME) se CALCULE dynamiquement,
  * jamais stocké. Seule dateExpiration est persistée.
- *
  * Chaîne de renouvellement via remplaceId (historique complet).
  */
 model PieceAdministrative {
-  id         String @id @default(cuid())
+  id         String   @id @default(cuid())
   materielId String
   materiel   Materiel @relation(fields: [materielId], references: [id], onDelete: Cascade)
 
@@ -1820,8 +1823,8 @@ model PieceAdministrative {
   type   TypePieceAdministrative @relation(fields: [typeId], references: [id])
 
   /// Identifiants de la pièce
-  numero   String?  // N° de police, PV, patente
-  emetteur String?  // Compagnie, centre de contrôle
+  numero   String? // N° de police, PV, patente
+  emetteur String? // Compagnie, centre de contrôle
 
   /// Dates (LE champ qui pilote tout)
   dateEdition    DateTime @db.Date
@@ -1834,9 +1837,9 @@ model PieceAdministrative {
   fichierId String?
 
   /// Renouvellement — chaîne historique (1:1 avec ancienne pièce)
-  remplaceId String?                 @unique
-  remplace   PieceAdministrative?    @relation("Renouvellement", fields: [remplaceId], references: [id])
-  renouvele  PieceAdministrative?    @relation("Renouvellement")
+  remplaceId String?              @unique
+  remplace   PieceAdministrative? @relation("Renouvellement", fields: [remplaceId], references: [id])
+  renouvele  PieceAdministrative? @relation("Renouvellement")
 
   creeLe    DateTime @default(now())
   modifieLe DateTime @updatedAt
@@ -1852,38 +1855,36 @@ model PieceAdministrative {
 
 /// M13 L2 — Sens de mouvement stock
 enum SensMouvement {
-  ENTREE      // Achat, production, retour
-  SORTIE      // Consommation, sortie chantier
-  AJUSTEMENT  // Correction inventaire
+  ENTREE // Achat, production, retour
+  SORTIE // Consommation, sortie chantier
+  AJUSTEMENT // Correction inventaire
 }
 
 /// M13 L2 — Statut d'un inventaire
 enum StatutInventaire {
-  OUVERT  // En cours de comptage
-  CLOS    // Finalisé, écart ajusté
+  OUVERT // En cours de comptage
+  CLOS // Finalisé, écart ajusté
 }
 
 /**
  * M13 L2 — Article de stock (consommable)
- *
  * Nature CONSOMMABLE : quantité qui monte/descend (ciment, filtres, etc.)
  * DISTINCT de Materiel (individuel avec code unique)
- *
  * Le solde se CALCULE depuis les mouvements (jamais stocké)
  */
 model ArticleStock {
-  id             String  @id @default(cuid())
-  reference      String  @unique  // Ex: CIM-50KG, FLT-OIL-5W30
-  designation    String
-  unite          String           // L, kg, sac, pièce
+  id          String @id @default(cuid())
+  reference   String @unique // Ex: CIM-50KG, FLT-OIL-5W30
+  designation String
+  unite       String // L, kg, sac, pièce
 
   /// Alerte si solde < seuil (notification + tableau de bord)
-  seuilAlerte    Decimal? @db.Decimal(10, 2)
+  seuilAlerte Decimal? @db.Decimal(10, 2)
 
   /// Famille article (optionnel, pour regroupement)
-  famille        String?
+  famille String?
 
-  actif          Boolean  @default(true)
+  actif Boolean @default(true)
 
   mouvements       MouvementStock[]
   lignesInventaire LigneInventaire[]
@@ -1898,34 +1899,33 @@ model ArticleStock {
 
 /**
  * M13 L2 — Bon de mouvement (entrée, sortie, transfert)
- *
  * Regroupe plusieurs lignes de mouvement
  */
 model BonMouvement {
-  id             String   @id @default(cuid())
-  reference      String   @unique  // BM-2026-001
-  sens           SensMouvement
+  id        String        @id @default(cuid())
+  reference String        @unique // BM-2026-001
+  sens      SensMouvement
 
   /// Lieux concernés
-  lieuOrigineId  String?
-  lieuOrigine    LieuStockage? @relation("BonOrigine", fields: [lieuOrigineId], references: [id])
+  lieuOrigineId String?
+  lieuOrigine   LieuStockage? @relation("BonOrigine", fields: [lieuOrigineId], references: [id])
 
   lieuDestinationId String?
   lieuDestination   LieuStockage? @relation("BonDestination", fields: [lieuDestinationId], references: [id])
 
   /// Motif (ex: "Livraison fournisseur", "Consommation chantier Assinie")
-  motif          String
+  motif String
 
   /// Émetteur et date
-  emetteurId     String   @db.Uuid
-  emetteurNom    String
-  dateMouvement  DateTime @db.Date
+  emetteurId    String   @db.Uuid
+  emetteurNom   String
+  dateMouvement DateTime @db.Date
 
   /// Validation (Chef de Service Logistique ou Gestionnaire stocks)
-  valideParId    String?  @db.Uuid
-  valideLe       DateTime?
+  valideParId String?   @db.Uuid
+  valideLe    DateTime?
 
-  mouvements     MouvementStock[]
+  mouvements MouvementStock[]
 
   creeLe    DateTime @default(now())
   modifieLe DateTime @updatedAt
@@ -1937,17 +1937,16 @@ model BonMouvement {
 
 /**
  * M13 L2 — Mouvement de stock (ligne de bon)
- *
  * Le solde se CALCULE depuis ces mouvements (§7.2)
  */
 model MouvementStock {
-  id             String   @id @default(cuid())
+  id String @id @default(cuid())
 
   articleStockId String
   articleStock   ArticleStock @relation(fields: [articleStockId], references: [id])
 
-  sens           SensMouvement
-  quantite       Decimal  @db.Decimal(10, 2)
+  sens     SensMouvement
+  quantite Decimal       @db.Decimal(10, 2)
 
   /// Lieu concerné (origine pour SORTIE, destination pour ENTREE)
   lieuStockageId String
@@ -1958,14 +1957,14 @@ model MouvementStock {
   bonMouvement   BonMouvement? @relation(fields: [bonMouvementId], references: [id])
 
   /// Motif (obligatoire si ajustement sans bon)
-  motif          String
+  motif String
 
   /// Prix unitaire (optionnel, pour valorisation stock)
-  prixUnitaire   Decimal? @db.Decimal(10, 2)
+  prixUnitaire Decimal? @db.Decimal(10, 2)
 
-  dateMouvement  DateTime @db.Date
+  dateMouvement DateTime @db.Date
 
-  creeLe    DateTime @default(now())
+  creeLe DateTime @default(now())
 
   @@index([articleStockId, dateMouvement])
   @@index([lieuStockageId])
@@ -1975,27 +1974,26 @@ model MouvementStock {
 
 /**
  * M13 L2 — Inventaire physique
- *
  * Opération ponctuelle de comptage
  */
 model Inventaire {
-  id             String   @id @default(cuid())
-  reference      String   @unique  // INV-2026-01
+  id        String @id @default(cuid())
+  reference String @unique // INV-2026-01
 
   /// Lieu inventorié
   lieuStockageId String
   lieuStockage   LieuStockage @relation(fields: [lieuStockageId], references: [id])
 
-  dateOuverture  DateTime @db.Date
-  dateClôture    DateTime? @db.Date
+  dateOuverture DateTime  @db.Date
+  dateClôture  DateTime? @db.Date
 
-  statut         StatutInventaire @default(OUVERT)
+  statut StatutInventaire @default(OUVERT)
 
   /// Responsable inventaire
-  responsableId  String   @db.Uuid
+  responsableId  String @db.Uuid
   responsableNom String
 
-  lignes         LigneInventaire[]
+  lignes LigneInventaire[]
 
   creeLe    DateTime @default(now())
   modifieLe DateTime @updatedAt
@@ -2007,34 +2005,33 @@ model Inventaire {
 
 /**
  * M13 L2 — Ligne d'inventaire
- *
  * Comparaison comptage physique vs solde théorique (§8.8)
  */
 model LigneInventaire {
-  id             String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  inventaireId   String
-  inventaire     Inventaire @relation(fields: [inventaireId], references: [id], onDelete: Cascade)
+  inventaireId String
+  inventaire   Inventaire @relation(fields: [inventaireId], references: [id], onDelete: Cascade)
 
   articleStockId String
   articleStock   ArticleStock @relation(fields: [articleStockId], references: [id])
 
   /// Solde théorique (calculé depuis mouvements au moment de l'inventaire)
-  soldeTheorique Decimal  @db.Decimal(10, 2)
+  soldeTheorique Decimal @db.Decimal(10, 2)
 
   /// Quantité comptée physiquement
   quantiteComptee Decimal @db.Decimal(10, 2)
 
   /// Écart = quantiteComptee - soldeTheorique
-  ecart          Decimal  @db.Decimal(10, 2)
+  ecart Decimal @db.Decimal(10, 2)
 
   /// Justification de l'écart (obligatoire si écart ≠ 0)
-  justification  String?
+  justification String?
 
   /// L'écart a-t-il donné lieu à un AJUSTEMENT ?
-  ajuste         Boolean  @default(false)
+  ajuste Boolean @default(false)
 
-  creeLe    DateTime @default(now())
+  creeLe DateTime @default(now())
 
   @@index([inventaireId])
   @@index([articleStockId])
@@ -2047,35 +2044,35 @@ model LigneInventaire {
 
 /// M13 L2 — Unité de compteur
 enum UniteCompteur {
-  KILOMETRE  // Véhicules
-  HEURE      // Engins
+  KILOMETRE // Véhicules
+  HEURE // Engins
 }
 
 /// M13 L2 — Source d'un relevé compteur (§1.3)
 enum SourceReleve {
-  INSPECTION        // Inspection entrée/sortie (source principale)
-  SAISIE_GARAGE     // Saisie manuelle au garage
-  RELEVE_ACTIVITE   // M6 UtilisationMateriel (quand M6 existera)
+  INSPECTION // Inspection entrée/sortie (source principale)
+  SAISIE_GARAGE // Saisie manuelle au garage
+  RELEVE_ACTIVITE // M6 UtilisationMateriel (quand M6 existera)
 }
 
 /// M13 L2 — État d'un point d'inspection (§7.4)
 enum EtatPoint {
-  BON      // Conforme
-  MAUVAIS  // Défectueux (pare-brise fêlé)
-  ABSENT   // Manquant (rétroviseur disparu) — DISTINCT de MAUVAIS
+  BON // Conforme
+  MAUVAIS // Défectueux (pare-brise fêlé)
+  ABSENT // Manquant (rétroviseur disparu) — DISTINCT de MAUVAIS
 }
 
 /// M13 L2 — Type de grille d'inspection
 enum GrilleInspection {
-  PHYSIQUE    // Points physiques (30 pour VL, 27 pour engin)
-  DOCUMENT    // Documents à bord (10 pour VL, 4 pour engin) — présence physique
-  EQUIPEMENT  // Inventaire de bord (9 points : cric, extincteur, etc.)
+  PHYSIQUE // Points physiques (30 pour VL, 27 pour engin)
+  DOCUMENT // Documents à bord (10 pour VL, 4 pour engin) — présence physique
+  EQUIPEMENT // Inventaire de bord (9 points : cric, extincteur, etc.)
 }
 
 /// M13 L2 — Moment de l'inspection
 enum MomentInspection {
-  ENTREE  // Inspection à l'arrivée (réception)
-  SORTIE  // Inspection au départ (remise)
+  ENTREE // Inspection à l'arrivée (réception)
+  SORTIE // Inspection au départ (remise)
 }
 
 /// M13 L2 — Niveau de carburant en huitièmes (§7.4)
@@ -2093,33 +2090,32 @@ enum NiveauCarburant {
 
 /**
  * M13 L2 — Relevé de compteur (historique)
- *
  * La valeur courante = dernier relevé (§7.3)
  * L'historique permet de détecter un compteur qui recule (§1.3)
  */
 model ReleveCompteur {
-  id          String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  materielId  String
-  materiel    Materiel @relation(fields: [materielId], references: [id])
+  materielId String
+  materiel   Materiel @relation(fields: [materielId], references: [id])
 
-  valeur      Decimal  @db.Decimal(10, 2)
-  unite       UniteCompteur
+  valeur Decimal       @db.Decimal(10, 2)
+  unite  UniteCompteur
 
-  releveLe    DateTime @db.Date
-  source      SourceReleve
+  releveLe DateTime     @db.Date
+  source   SourceReleve
 
   /// Si source=INSPECTION, référence l'inspection
   inspectionId String?
   inspection   Inspection? @relation(fields: [inspectionId], references: [id])
 
   /// Compteur en recul par rapport au dernier relevé (signalé, non refusé)
-  anomalie    Boolean  @default(false)
+  anomalie Boolean @default(false)
 
-  releveParId String   @db.Uuid
+  releveParId  String @db.Uuid
   releveParNom String
 
-  creeLe    DateTime @default(now())
+  creeLe DateTime @default(now())
 
   @@index([materielId, releveLe])
   @@index([inspectionId])
@@ -2128,22 +2124,21 @@ model ReleveCompteur {
 
 /**
  * M13 L2 — Point d'inspection (référentiel)
- *
  * Ex: "Pare-brise avant", "Rétroviseurs", "Carte grise", "Cric", etc.
  * Référentiel modifiable sans migration (§7.4)
  */
 model PointInspection {
-  id           String   @id @default(cuid())
-  libelle      String   @unique
-  grille       GrilleInspection
+  id      String           @id @default(cuid())
+  libelle String           @unique
+  grille  GrilleInspection
 
   /// Types de matériel concernés (JSON array) — "Chenilles" ne vaut pas pour VL
-  typesMateriel String  @default("[]")
+  typesMateriel String @default("[]")
 
-  ordre        Int      @default(0)  // Ordre d'affichage dans la grille
-  actif        Boolean  @default(true)
+  ordre Int     @default(0) // Ordre d'affichage dans la grille
+  actif Boolean @default(true)
 
-  lignes       LigneInspection[]
+  lignes LigneInspection[]
 
   creeLe    DateTime @default(now())
   modifieLe DateTime @updatedAt
@@ -2154,56 +2149,55 @@ model PointInspection {
 
 /**
  * M13 L2 — Inspection d'entrée ou de sortie
- *
  * Même grille à l'entrée et à la sortie (§7.4)
  * Obligatoire pour véhicules, engins, conteneurs (§8.5)
  */
 model Inspection {
-  id             String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  materielId     String
-  materiel       Materiel @relation(fields: [materielId], references: [id])
+  materielId String
+  materiel   Materiel @relation(fields: [materielId], references: [id])
 
-  moment         MomentInspection  // ENTREE ou SORTIE
+  moment MomentInspection // ENTREE ou SORTIE
 
   /// Optionnel : référence au mouvement ou demande transport
-  mouvementId    String?
+  mouvementId        String?
   demandeTransportId String?
 
-  dateHeure      DateTime
+  dateHeure DateTime
 
-  lieuId         String
-  lieu           LieuStockage @relation(fields: [lieuId], references: [id])
+  lieuId String
+  lieu   LieuStockage @relation(fields: [lieuId], references: [id])
 
   /// Provenance (ENTREE) ou Destination (SORTIE)
-  provenance     String?
-  destination    String?
+  provenance  String?
+  destination String?
 
   /// Compteur (km ou heures) — alimente ReleveCompteur
-  compteur       Decimal? @db.Decimal(10, 2)
+  compteur Decimal? @db.Decimal(10, 2)
 
   /// Niveau carburant (huitièmes) — comparaison sortie/retour
   niveauCarburant NiveauCarburant?
 
   /// Conducteur (→ Employe)
-  conducteurId   String?  @db.Uuid
-  conducteurNom  String?
+  conducteurId  String? @db.Uuid
+  conducteurNom String?
 
   /// Transporteur (remorqueur externe possible)
-  transporteur   String?
+  transporteur String?
 
   /// Vérificateur (Réceptionnaire à l'ENTREE, Remettant à la SORTIE)
-  verificateurId String   @db.Uuid
+  verificateurId  String @db.Uuid
   verificateurNom String
 
   /// État général
-  etatGeneral    EtatPoint
-  observations   String?
+  etatGeneral  EtatPoint
+  observations String?
 
-  lignes         LigneInspection[]
+  lignes          LigneInspection[]
   relevesCompteur ReleveCompteur[]
 
-  creeLe    DateTime @default(now())
+  creeLe DateTime @default(now())
 
   @@index([materielId, dateHeure])
   @@index([moment])
@@ -2213,25 +2207,24 @@ model Inspection {
 
 /**
  * M13 L2 — Ligne d'inspection (point contrôlé)
- *
  * Une ligne MAUVAIS ou ABSENT crée une intervention à programmer (§8.6)
  */
 model LigneInspection {
-  id           String   @id @default(cuid())
+  id String @id @default(cuid())
 
   inspectionId String
   inspection   Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
 
-  pointId      String
-  point        PointInspection @relation(fields: [pointId], references: [id])
+  pointId String
+  point   PointInspection @relation(fields: [pointId], references: [id])
 
-  etat         EtatPoint
-  observation  String?
+  etat        EtatPoint
+  observation String?
 
   /// Photo jointe (localise le dommage - §7.5)
-  photoId      String?
+  photoId String?
 
-  creeLe    DateTime @default(now())
+  creeLe DateTime @default(now())
 
   @@index([inspectionId])
   @@index([pointId])
@@ -2244,47 +2237,46 @@ model LigneInspection {
 
 /// M13 L2 — Issue d'une réception
 enum IssueReception {
-  CONFORME      // Validation ouvre droit à facturation (§1.7)
-  AVEC_RESERVE  // Accepté avec réserves
-  NON_CONFORME  // Refusé
+  CONFORME // Validation ouvre droit à facturation (§1.7)
+  AVEC_RESERVE // Accepté avec réserves
+  NON_CONFORME // Refusé
 }
 
 /**
  * M13 L2 — Réception de commande (contrôle conformité)
- *
  * Ferme le circuit M14 (§1.7 et §6.1)
  * Gestionnaire de stocks constate la conformité → ouvre droit à facturation
  */
 model Reception {
-  id             String   @id @default(cuid())
-  reference      String   @unique  // REC-2026-001
+  id        String @id @default(cuid())
+  reference String @unique // REC-2026-001
 
   /// Commande concernée (M14) — optionnel si réception sans BC
-  commandeId     String?
+  commandeId String?
 
   /// Fournisseur
   fournisseurId  String?
   fournisseurNom String
 
-  dateReception  DateTime @db.Date
+  dateReception DateTime @db.Date
 
   /// Réceptionnaire (Gestionnaire de stocks)
-  receptionneParId  String   @db.Uuid
+  receptionneParId  String @db.Uuid
   receptionneParNom String
 
   /// Validation (Chef de Service Logistique)
-  valideParId    String?  @db.Uuid
-  valideLe       DateTime?
+  valideParId String?   @db.Uuid
+  valideLe    DateTime?
 
-  issue          IssueReception?
+  issue IssueReception?
 
   /// Motif obligatoire si NON_CONFORME
-  motifRefus     String?
+  motifRefus String?
 
   /// Photo du défaut si NON_CONFORME
-  photoId        String?
+  photoId String?
 
-  lignes         LigneReception[]
+  lignes LigneReception[]
 
   creeLe    DateTime @default(now())
   modifieLe DateTime @updatedAt
@@ -2296,28 +2288,27 @@ model Reception {
 
 /**
  * M13 L2 — Ligne de réception
- *
  * Comparaison quantité commandée vs livrée
  */
 model LigneReception {
-  id             String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  receptionId    String
-  reception      Reception @relation(fields: [receptionId], references: [id], onDelete: Cascade)
+  receptionId String
+  reception   Reception @relation(fields: [receptionId], references: [id], onDelete: Cascade)
 
   articleStockId String
   articleStock   ArticleStock @relation(fields: [articleStockId], references: [id])
 
-  quantiteCommandee Decimal  @db.Decimal(10, 2)
-  quantiteLivree    Decimal  @db.Decimal(10, 2)
+  quantiteCommandee Decimal @db.Decimal(10, 2)
+  quantiteLivree    Decimal @db.Decimal(10, 2)
 
   /// Écart = quantiteLivree - quantiteCommandee
-  ecart          Decimal  @db.Decimal(10, 2)
+  ecart Decimal @db.Decimal(10, 2)
 
-  conforme       Boolean  @default(true)
-  observation    String?
+  conforme    Boolean @default(true)
+  observation String?
 
-  creeLe    DateTime @default(now())
+  creeLe DateTime @default(now())
 
   @@index([receptionId])
   @@index([articleStockId])
@@ -2326,7 +2317,6 @@ model LigneReception {
 
 /**
  * Affectation d'un matériel à un projet
- *
  * M8 §5 : Les dates sont obligatoires
  */
 model AffectationMateriel {
@@ -2358,7 +2348,6 @@ model AffectationMateriel {
 
 /**
  * Demande de ressource (humaine ou matérielle)
- *
  * M8 §4 : Deux natures avec circuits différents
  * M8 §5 : Circuit B-01 (N+1 puis service compétent)
  */
@@ -2373,7 +2362,7 @@ model DemandeRessource {
   projet   Projet @relation(fields: [projetId], references: [id])
 
   /// Demandeur
-  demandeurId String @db.Uuid
+  demandeurId  String @db.Uuid
   demandeurNom String
 
   /// Période demandée
@@ -2410,7 +2399,6 @@ model DemandeRessource {
 
 /**
  * Ligne de demande (individuelle)
- *
  * Soit une compétence (maçon, électricien) avec quantité,
  * soit un matériel spécifique
  */
@@ -2455,13 +2443,13 @@ model Unite {
 
 /// Article du bordereau de prix
 model Article {
-  id                    String             @id @default(cuid())
-  designation           String             // "Ciment CPA 45 — sac 50 kg"
-  designationNormalisee String             @unique // Normalisation sans accent ni casse
+  id                    String            @id @default(cuid())
+  designation           String // "Ciment CPA 45 — sac 50 kg"
+  designationNormalisee String            @unique // Normalisation sans accent ni casse
   uniteId               String
-  unite                 Unite              @relation(fields: [uniteId], references: [id])
-  actif                 Boolean            @default(true)
-  creeLe                DateTime           @default(now())
+  unite                 Unite             @relation(fields: [uniteId], references: [id])
+  actif                 Boolean           @default(true)
+  creeLe                DateTime          @default(now())
   creePar               String
   prix                  PrixFournisseur[]
   lignes                LigneAchat[]
@@ -2472,15 +2460,15 @@ model Article {
 
 /// Fournisseur
 model Fournisseur {
-  id            String             @id @default(cuid())
-  nom           String
-  nomNormalise  String             @unique // Normalisation sans accent ni casse
-  numeroWave    String?            // Identifiant Wave Money pour paiement mobile (donnée sensible)
-  actif         Boolean            @default(true)
-  creeLe        DateTime           @default(now())
-  creePar       String
-  prix          PrixFournisseur[]
-  lignes        LigneAchat[]
+  id           String            @id @default(cuid())
+  nom          String
+  nomNormalise String            @unique // Normalisation sans accent ni casse
+  numeroWave   String? // Identifiant Wave Money pour paiement mobile (donnée sensible)
+  actif        Boolean           @default(true)
+  creeLe       DateTime          @default(now())
+  creePar      String
+  prix         PrixFournisseur[]
+  lignes       LigneAchat[]
 
   @@index([nom])
   @@map("fournisseurs")
@@ -2549,26 +2537,26 @@ enum EtatAvis {
 
 /// Demande d'achat
 model DemandeAchat {
-  id             String              @id @default(cuid())
-  ref            String              @unique // DA-2026-047
+  id             String      @id @default(cuid())
+  ref            String      @unique // DA-2026-047
   type           TypeDemande
   demandeurId    String
-  demandeur      Employe             @relation("DemandesDemandeur", fields: [demandeurId], references: [id])
+  demandeur      Employe     @relation("DemandesDemandeur", fields: [demandeurId], references: [id])
   beneficiaireId String
-  beneficiaire   Employe             @relation("DemandesBeneficiaire", fields: [beneficiaireId], references: [id])
-  destinationId  String              // Projet ou Service
+  beneficiaire   Employe     @relation("DemandesBeneficiaire", fields: [beneficiaireId], references: [id])
+  destinationId  String // Projet ou Service
   description    String
-  dateBesoin     DateTime            @db.Date
-  urgent         Boolean             @default(false)
-  creeLe         DateTime            @default(now())
+  dateBesoin     DateTime    @db.Date
+  urgent         Boolean     @default(false)
+  creeLe         DateTime    @default(now())
 
   /// Références renseignées lors du circuit
-  refBC          String?             /// Renseigné à l'émission du bon de commande
-  refFacture     String?             /// Renseigné par la DFC à la facturation
+  refBC      String? /// Renseigné à l'émission du bon de commande
+  refFacture String? /// Renseigné par la DFC à la facturation
 
-  lignes         LigneAchat[]
-  evenements     EvenementAchat[]
-  avisComite     AvisComite[]
+  lignes     LigneAchat[]
+  evenements EvenementAchat[]
+  avisComite AvisComite[]
 
   @@index([ref])
   @@index([demandeurId])
@@ -2583,18 +2571,18 @@ model LigneAchat {
   demande         DemandeAchat     @relation(fields: [demandeId], references: [id], onDelete: Cascade)
   articleId       String?
   article         Article?         @relation(fields: [articleId], references: [id])
-  designation     String           // Figé à la commande
+  designation     String // Figé à la commande
   quantite        Decimal          @db.Decimal(10, 3)
-  unite           String           // Figé
+  unite           String // Figé
   fournisseurId   String?
   fournisseur     Fournisseur?     @relation(fields: [fournisseurId], references: [id])
   prixUnitaire    Decimal?         @db.Decimal(12, 2) // Figé à l'instruction
-  tauxTva         Decimal?         @db.Decimal(5, 2)  // Figé à l'instruction (ex: 18.00)
+  tauxTva         Decimal?         @db.Decimal(5, 2) // Figé à l'instruction (ex: 18.00)
   quantiteRecue   Decimal?         @db.Decimal(10, 3)
   statutReception StatutReception?
   numBC           String?
   facture         String?
-  criteres        String?          // Motif de sélection du fournisseur
+  criteres        String? // Motif de sélection du fournisseur
 
   @@index([demandeId])
   @@map("lignes_achat")
@@ -2602,14 +2590,14 @@ model LigneAchat {
 
 /// Événement dans le circuit de validation
 model EvenementAchat {
-  id         String              @id @default(cuid())
-  demandeId  String
-  demande    DemandeAchat        @relation(fields: [demandeId], references: [id], onDelete: Cascade)
-  type       TypeEvenementAchat
-  auteurId   String
-  auteurNom  String
-  timestamp  DateTime            @default(now())
-  details    Json?
+  id        String             @id @default(cuid())
+  demandeId String
+  demande   DemandeAchat       @relation(fields: [demandeId], references: [id], onDelete: Cascade)
+  type      TypeEvenementAchat
+  auteurId  String
+  auteurNom String
+  timestamp DateTime           @default(now())
+  details   Json?
 
   @@index([demandeId, timestamp])
   @@map("evenements_achat")
@@ -2620,8 +2608,8 @@ model AvisComite {
   id         String       @id @default(cuid())
   demandeId  String
   demande    DemandeAchat @relation(fields: [demandeId], references: [id], onDelete: Cascade)
-  role       String       // DG, DRH, DFC, DT
-  validateur String       // Nom complet
+  role       String // DG, DRH, DFC, DT
+  validateur String // Nom complet
   etat       EtatAvis     @default(ATTENTE)
   timestamp  DateTime?
   motif      String?
@@ -2637,25 +2625,25 @@ model AvisComite {
 
 /// Demande de paiement - peut provenir de la paie, d'achats, etc.
 model DemandePaiement {
-  id               String              @id @default(cuid())
-  referenceIta     String              @unique /// Format: PAI-2026-001
-  categorie        CategoriePaiement
+  id           String            @id @default(cuid())
+  referenceIta String            @unique /// Format: PAI-2026-001
+  categorie    CategoriePaiement
 
   /// Source de la demande (ex: période de paie, bon de commande)
-  sourceId         String
-  sourceType       String              /// PAIE, ACHAT, FOURNISSEUR, DIVERS
+  sourceId   String
+  sourceType String /// PAIE, ACHAT, FOURNISSEUR, DIVERS
 
   /// Préparation
-  prepareeParId    String              @db.Uuid
-  preparateur      Profil              @relation("PreparateurPaiement", fields: [prepareeParId], references: [id])
-  prepareeLe       DateTime            @default(now())
+  prepareeParId String   @db.Uuid
+  preparateur   Profil   @relation("PreparateurPaiement", fields: [prepareeParId], references: [id])
+  prepareeLe    DateTime @default(now())
 
-  montantTotal     Decimal             @db.Decimal(12, 2)
+  montantTotal Decimal @db.Decimal(12, 2)
 
   /// Relations
-  lignes           LignePaiement[]
-  autorisation     AutorisationPaiement?
-  releve           RelevePaiement?
+  lignes       LignePaiement[]
+  autorisation AutorisationPaiement?
+  releve       RelevePaiement?
 
   @@index([prepareeParId])
   @@index([categorie])
@@ -2664,34 +2652,34 @@ model DemandePaiement {
 
 /// Ligne de paiement individuelle - un bénéficiaire, un montant
 model LignePaiement {
-  id                  String              @id @default(uuid())
-  demandePaiementId   String
-  demandePaiement     DemandePaiement     @relation(fields: [demandePaiementId], references: [id], onDelete: Cascade)
+  id                String          @id @default(uuid())
+  demandePaiementId String
+  demandePaiement   DemandePaiement @relation(fields: [demandePaiementId], references: [id], onDelete: Cascade)
 
   /// Clé d'idempotence — générée À LA CRÉATION, jamais à l'appel
-  cleIdempotence      String              @unique @default(uuid())
+  cleIdempotence String @unique @default(uuid())
 
   /// Copies figées — le bénéficiaire peut changer de numéro ensuite
-  beneficiaireNom     String
-  beneficiaireMobile  String              /// E.164 format: +2250701234567
-  montant             Decimal             @db.Decimal(12, 2)
-  motifPaiement       String              /// 40 caractères max, visible du destinataire
-  referenceIta        String              /// → client_reference Wave
+  beneficiaireNom    String
+  beneficiaireMobile String /// E.164 format: +2250701234567
+  montant            Decimal @db.Decimal(12, 2)
+  motifPaiement      String /// 40 caractères max, visible du destinataire
+  referenceIta       String /// → client_reference Wave
 
   /// Vérification préalable (verify_recipient)
-  verifieLe           DateTime?
-  nameMatch           NameMatch?
-  withinLimits        Boolean?
+  verifieLe    DateTime?
+  nameMatch    NameMatch?
+  withinLimits Boolean?
 
   /// Résultat
-  statut              StatutPaiement      @default(PREPARE)
-  wavePayoutId        String?
-  waveErrorCode       String?
-  fraisWave           Decimal?            @db.Decimal(12, 2)
-  executeLe           DateTime?
+  statut        StatutPaiement @default(PREPARE)
+  wavePayoutId  String?
+  waveErrorCode String?
+  fraisWave     Decimal?       @db.Decimal(12, 2)
+  executeLe     DateTime?
 
   /// Relations
-  tentatives          TentativePaiement[]
+  tentatives TentativePaiement[]
 
   @@index([demandePaiementId])
   @@index([statut])
@@ -2704,23 +2692,23 @@ model AutorisationPaiement {
   demandePaiement   DemandePaiement @relation(fields: [demandePaiementId], references: [id], onDelete: Cascade)
 
   /// Demande
-  demandeeParId     String          @db.Uuid
-  demandeur         Profil          @relation("DemandeurAutorisation", fields: [demandeeParId], references: [id])
-  demandeeLe        DateTime        @default(now())
+  demandeeParId String   @db.Uuid
+  demandeur     Profil   @relation("DemandeurAutorisation", fields: [demandeeParId], references: [id])
+  demandeeLe    DateTime @default(now())
 
   /// Autorisation
-  autoriseeParId    String?         @db.Uuid
-  autorisateur      Profil?         @relation("AutorisateurPaiement", fields: [autoriseeParId], references: [id])
-  autoriseeLe       DateTime?
-  expireLe          DateTime?       /// = autoriseeLe + durée, plafonné à 14 h
+  autoriseeParId String?   @db.Uuid
+  autorisateur   Profil?   @relation("AutorisateurPaiement", fields: [autoriseeParId], references: [id])
+  autoriseeLe    DateTime?
+  expireLe       DateTime? /// = autoriseeLe + durée, plafonné à 14 h
 
   /// Montant figé — si le montant change, l'autorisation tombe
-  montantFige       Decimal         @db.Decimal(12, 2)
-  nombreEchecs      Int             @default(0)
+  montantFige  Decimal @db.Decimal(12, 2)
+  nombreEchecs Int     @default(0)
 
   /// Refus
-  refuseeLe         DateTime?
-  motifRefus        String?         @db.Text
+  refuseeLe  DateTime?
+  motifRefus String?   @db.Text
 
   @@index([demandeeParId])
   @@index([autoriseeParId])
@@ -2733,11 +2721,11 @@ model TentativePaiement {
   lignePaiementId String
   lignePaiement   LignePaiement @relation(fields: [lignePaiementId], references: [id], onDelete: Cascade)
 
-  numero          Int           /// 1, 2, 3...
-  envoyeeLe       DateTime      @default(now())
-  httpStatus      Int?
-  reponseBrute    Json          /// Réponse Wave complète, telle que reçue
-  erreurCode      String?
+  numero       Int /// 1, 2, 3...
+  envoyeeLe    DateTime @default(now())
+  httpStatus   Int?
+  reponseBrute Json /// Réponse Wave complète, telle que reçue
+  erreurCode   String?
 
   @@unique([lignePaiementId, numero])
   @@index([lignePaiementId])
@@ -2746,18 +2734,18 @@ model TentativePaiement {
 
 /// Relevé de paiement - pièce comptable
 model RelevePaiement {
-  id                  String           @id @default(cuid())
-  demandePaiementId   String           @unique
-  demandePaiement     DemandePaiement  @relation(fields: [demandePaiementId], references: [id], onDelete: Cascade)
+  id                String          @id @default(cuid())
+  demandePaiementId String          @unique
+  demandePaiement   DemandePaiement @relation(fields: [demandePaiementId], references: [id], onDelete: Cascade)
 
-  numeroReleve        String           @unique /// REL-2026-001
-  genereeLe           DateTime         @default(now())
-  montantTotal        Decimal          @db.Decimal(12, 2)
-  fraisTotaux         Decimal          @db.Decimal(12, 2)
-  nombreLignes        Int
+  numeroReleve String   @unique /// REL-2026-001
+  genereeLe    DateTime @default(now())
+  montantTotal Decimal  @db.Decimal(12, 2)
+  fraisTotaux  Decimal  @db.Decimal(12, 2)
+  nombreLignes Int
 
   /// Pièce comptable
-  pdfUrl              String?
+  pdfUrl String?
 
   @@index([numeroReleve])
   @@map("releves_paiement")
@@ -2781,28 +2769,28 @@ model SoldeWave {
 // ═══════════════════════════════════════════════════════════════════════
 
 enum StatutPaiement {
-  PREPARE       /// Ligne créée, pas encore vérifiée
-  VERIFIE       /// verify_recipient appelé
-  AUTORISE      /// Autorisation accordée
-  EN_COURS      /// Paiement en cours chez Wave (processing)
-  EN_ATTENTE    /// État inconnu — NE JAMAIS rejouer sans la même clé
-  REUSSI        /// Paiement réussi (succeeded)
-  ECHOUE        /// Échec définitif
-  ANNULE        /// Annulé (reversed)
+  PREPARE /// Ligne créée, pas encore vérifiée
+  VERIFIE /// verify_recipient appelé
+  AUTORISE /// Autorisation accordée
+  EN_COURS /// Paiement en cours chez Wave (processing)
+  EN_ATTENTE /// État inconnu — NE JAMAIS rejouer sans la même clé
+  REUSSI /// Paiement réussi (succeeded)
+  ECHOUE /// Échec définitif
+  ANNULE /// Annulé (reversed)
 }
 
 enum CategoriePaiement {
-  SALAIRES      /// Paie mensuelle
-  PRIMES        /// Primes et avantages
-  FOURNISSEURS  /// Paiement fournisseur
-  PRESTATAIRES  /// Prestataires externes
-  DIVERS        /// Autres paiements
+  SALAIRES /// Paie mensuelle
+  PRIMES /// Primes et avantages
+  FOURNISSEURS /// Paiement fournisseur
+  PRESTATAIRES /// Prestataires externes
+  DIVERS /// Autres paiements
 }
 
 enum NameMatch {
-  MATCH             /// Le nom correspond
-  NO_MATCH          /// Le nom ne correspond pas — BLOQUE la ligne
-  NAME_NOT_KNOWN    /// Wave ne connaît pas le nom
+  MATCH /// Le nom correspond
+  NO_MATCH /// Le nom ne correspond pas — BLOQUE la ligne
+  NAME_NOT_KNOWN /// Wave ne connaît pas le nom
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -2835,43 +2823,42 @@ enum TypeEntretien {
 
 /**
  * M13 L3 — Demande de transport
- *
  * Gestion des demandes de transport de matériel et/ou personnel
  */
 model DemandeTransport {
-  id             String                  @id @default(cuid())
-  reference      String                  @unique /// Format: DTR-xxxxx
-  type           TypeDemandeTransport
-  statut         StatutDemandeTransport  @default(EN_ATTENTE)
+  id        String                 @id @default(cuid())
+  reference String                 @unique /// Format: DTR-xxxxx
+  type      TypeDemandeTransport
+  statut    StatutDemandeTransport @default(EN_ATTENTE)
 
   /// Demandeur
-  demandeurId    String                  @db.Uuid
-  demandeur      Profil                  @relation("demandesTransport", fields: [demandeurId], references: [id])
+  demandeurId String @db.Uuid
+  demandeur   Profil @relation("demandesTransport", fields: [demandeurId], references: [id])
 
   /// Matériel à transporter (optionnel)
-  materielId     String?
-  materiel       Materiel?               @relation("demandesTransportMateriel", fields: [materielId], references: [id])
+  materielId String?
+  materiel   Materiel? @relation("demandesTransportMateriel", fields: [materielId], references: [id])
 
   /// Lieux de départ et d'arrivée
-  lieuDepartId   String
-  lieuDepart     LieuStockage            @relation("transportDepart", fields: [lieuDepartId], references: [id])
+  lieuDepartId String
+  lieuDepart   LieuStockage @relation("transportDepart", fields: [lieuDepartId], references: [id])
 
-  lieuArriveeId  String
-  lieuArrivee    LieuStockage            @relation("transportArrivee", fields: [lieuArriveeId], references: [id])
+  lieuArriveeId String
+  lieuArrivee   LieuStockage @relation("transportArrivee", fields: [lieuArriveeId], references: [id])
 
   /// Dates
-  dateDebut      DateTime                @db.Date
-  dateFin        DateTime?               @db.Date
+  dateDebut DateTime  @db.Date
+  dateFin   DateTime? @db.Date
 
   /// Chauffeur affecté (optionnel)
-  chauffeurId    String?
-  chauffeur      Employe?                @relation("chauffeur", fields: [chauffeurId], references: [id])
+  chauffeurId String?
+  chauffeur   Employe? @relation("chauffeur", fields: [chauffeurId], references: [id])
 
   /// Description
-  description    String?                 @db.Text
+  description String? @db.Text
 
-  creeLe         DateTime                @default(now())
-  modifieLe      DateTime                @updatedAt
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
 
   @@index([demandeurId])
   @@index([materielId])
@@ -2882,26 +2869,25 @@ model DemandeTransport {
 
 /**
  * M13 L3 — Plan d'entretien
- *
  * Planification préventive des entretiens par matériel
  */
 model PlanEntretien {
-  id                String          @id @default(cuid())
-  materielId        String
-  materiel          Materiel        @relation("plansEntretien", fields: [materielId], references: [id])
+  id         String   @id @default(cuid())
+  materielId String
+  materiel   Materiel @relation("plansEntretien", fields: [materielId], references: [id])
 
-  type              TypeEntretien
-  description       String
-  periodiciteJours  Int?            /// Périodicité en jours
-  seuilCompteur     Int?            /// Seuil en km/heures
+  type             TypeEntretien
+  description      String
+  periodiciteJours Int? /// Périodicité en jours
+  seuilCompteur    Int? /// Seuil en km/heures
 
-  actif             Boolean         @default(true)
+  actif Boolean @default(true)
 
   /// Relations
-  entretiens        Entretien[]
+  entretiens Entretien[]
 
-  creeLe            DateTime        @default(now())
-  modifieLe         DateTime        @updatedAt
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
 
   @@index([materielId])
   @@map("plans_entretien")
@@ -2909,36 +2895,35 @@ model PlanEntretien {
 
 /**
  * M13 L3 — Entretien (réalisé)
- *
  * Historique des entretiens effectués sur le matériel
  */
 model Entretien {
-  id            String          @id @default(cuid())
+  id String @id @default(cuid())
 
   /// Plan d'entretien (null si entretien non planifié)
-  planId        String?
-  plan          PlanEntretien?  @relation(fields: [planId], references: [id])
+  planId String?
+  plan   PlanEntretien? @relation(fields: [planId], references: [id])
 
   /// Matériel concerné
-  materielId    String
-  materiel      Materiel        @relation("entretiens", fields: [materielId], references: [id])
+  materielId String
+  materiel   Materiel @relation("entretiens", fields: [materielId], references: [id])
 
-  type          TypeEntretien
-  dateDebut     DateTime        @db.Date
-  dateFin       DateTime?       @db.Date
+  type      TypeEntretien
+  dateDebut DateTime      @db.Date
+  dateFin   DateTime?     @db.Date
 
   /// Compteur au moment de l'entretien
-  compteur      Int?
+  compteur Int?
 
   /// Coût de l'entretien (SENSIBLE)
-  cout          Decimal?        @db.Decimal(15, 2)
+  cout Decimal? @db.Decimal(15, 2)
 
-  technicien    String?
-  description   String          @db.Text
-  observations  String?         @db.Text
+  technicien   String?
+  description  String  @db.Text
+  observations String? @db.Text
 
-  creeLe        DateTime        @default(now())
-  modifieLe     DateTime        @updatedAt
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
 
   @@index([materielId])
   @@index([planId])
@@ -2947,3 +2932,123 @@ model Entretien {
   @@map("entretiens")
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// M16 — ASSISTANAT DE DIRECTION
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * M16 — Registre des visiteurs
+ * Conservation : 3 mois maximum (purge automatique)
+ * Données personnelles de TIERS (ni employés ni clients)
+ * Aucune image de pièce d'identité stockée
+ */
+model Visite {
+  id String @id @default(cuid())
+
+  /// Identité du visiteur (texte libre)
+  nomVisiteur String
+  societe     String?
+  telephone   String?
+
+  /// Personne visitée — lien vers M2
+  visiteId String
+  visite   Employe @relation("VisitesRecues", fields: [visiteId], references: [id])
+
+  motif        MotifVisite
+  pieceDeposee Boolean     @default(false)
+
+  /// Horodatage automatique à l'arrivée
+  arriveeLe DateTime  @default(now())
+  /// null tant que la personne est présente
+  sortieLe  DateTime?
+
+  /// Qui a saisi cette visite
+  saisieParId String @db.Uuid
+  saisiePar   Profil @relation(fields: [saisieParId], references: [id])
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([arriveeLe])
+  @@index([sortieLe])
+  @@index([visiteId])
+  @@map("visites")
+}
+
+/**
+ * M16 — Registre du courrier (arrivée et départ)
+ * Un seul modèle, deux vues filtrées par `sens`
+ * Numéro généré : ITA-{ANNEE}-{SEQ:4}, séquence commune aux deux sens
+ */
+model Courrier {
+  id String @id @default(cuid())
+
+  /// Généré au format ITA-2026-0142, séquence annuelle commune
+  numero String @unique
+
+  sens SensCourrier
+
+  /// Date portée sur le courrier
+  dateCorrespondance DateTime @db.Date
+  /// Date de passage par l'Assistanat
+  datePassage        DateTime @db.Date
+
+  /// Expéditeur à l'arrivée, destinataire au départ
+  tiers          String
+  /// Référence portée par le tiers sur son courrier
+  referenceTiers String?
+
+  objet String @db.Text
+
+  /// Destinataire à l'arrivée, expéditeur au départ — lien vers M1
+  serviceId   String?
+  service     Service?   @relation(fields: [serviceId], references: [id])
+  directionId String?
+  direction   Direction? @relation(fields: [directionId], references: [id])
+
+  /// Scan du courrier (Supabase Storage, URL signée)
+  fichierId String?
+
+  /// Suivi de traitement — ARRIVEE seulement
+  statutTraitement      StatutTraitement @default(A_TRAITER)
+  traiteLe              DateTime?
+  traiteParId           String?          @db.Uuid
+  traitePar             Profil?          @relation("CourriersTraites", fields: [traiteParId], references: [id])
+  commentaireTraitement String?          @db.Text
+
+  /// Qui a saisi ce courrier
+  saisieParId String @db.Uuid
+  saisiePar   Profil @relation("CourriersSaisis", fields: [saisieParId], references: [id])
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([sens, datePassage])
+  @@index([referenceTiers])
+  @@index([statutTraitement])
+  @@index([serviceId])
+  @@index([directionId])
+  @@map("courriers")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ENUMS M16
+// ═══════════════════════════════════════════════════════════════════════
+
+enum MotifVisite {
+  RENDEZ_VOUS
+  LIVRAISON
+  ENTRETIEN
+  AUTRE
+}
+
+enum SensCourrier {
+  ARRIVEE
+  DEPART
+}
+
+enum StatutTraitement {
+  A_TRAITER
+  TRAITE
+  SANS_SUITE
+}
