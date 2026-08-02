@@ -13,6 +13,7 @@
 
 import { prisma } from "@/lib/db/prisma";
 import { revalidatePath } from "next/cache";
+import { formaterDateCivile } from "@/lib/dates";
 
 // ====================================================================
 // M9 — APPELS D'OFFRES
@@ -52,7 +53,7 @@ export async function abandonnerDossiersDepassesSysteme() {
         action: "ABANDON_AUTO",
         auteurId: null, // Action système
         auteurNom: "Système (abandon automatique)",
-        commentaire: `Dossier abandonné automatiquement : ${ao.reference} — date limite dépassée (${ao.dateLimiteDepot.toLocaleDateString()})`,
+        commentaire: `Dossier abandonné automatiquement : ${ao.reference} — date limite dépassée (${formaterDateCivile(ao.dateLimiteDepot)})`,
       },
     });
 
@@ -180,4 +181,43 @@ export async function verifierRelancesAbsencesSysteme() {
 export async function rappelsSoldeCongesSysteme() {
   // TODO M3
   return { rappels: [] };
+}
+
+// ====================================================================
+// M13 — LOGISTIQUE
+// ====================================================================
+
+/**
+ * [SYSTÈME] Vérifier les échéances de pièces administratives
+ *
+ * RÈGLE MÉTIER (M13 §7.1, DECISIONS-M13.md §B-06) :
+ * - Alerte CRITIQUE : pièce périmée (relance 24h)
+ * - Alerte HAUTE : expire dans 60 jours ou moins (relance 3 jours)
+ *
+ * Destinataires : Chef de Service Logistique + Chef du Garage
+ *
+ * Exécution : quotidienne via cron (6h UTC)
+ */
+export async function verifierEcheancesPiecesSysteme() {
+  const { detecterAlertesPieces, grouperAlertesParUrgence } = await import(
+    "@/lib/logistique/alertes"
+  );
+
+  // Détecter toutes les alertes
+  const toutesLesAlertes = await detecterAlertesPieces();
+
+  // Grouper par urgence
+  const { critiques, hautes } = grouperAlertesParUrgence(toutesLesAlertes);
+
+  // TODO M13 : Envoyer les emails aux destinataires
+  // Pour l'instant, on retourne juste les alertes détectées
+  // L'envoi d'email sera implémenté une fois qu'on aura :
+  // - Le template email (emails/logistique-echeances.tsx)
+  // - L'accès aux profils des postes (M2 - Chef Service Logistique, Chef Garage)
+
+  return {
+    critiques,
+    hautes,
+    total: toutesLesAlertes.length,
+  };
 }

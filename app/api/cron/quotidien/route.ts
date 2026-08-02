@@ -11,6 +11,7 @@
  * 3. M2 — Alertes contrats J−60 et J−30
  * 4. M3 — Relances absences validateur (24h, 3j, 5j selon urgence)
  * 5. M3 — Rappels solde congés en fin d'année
+ * 6. M13 — Alertes pièces administratives (périmées + échéance proche)
  *
  * USAGE :
  * - Production : Vercel Cron appelle automatiquement
@@ -25,6 +26,7 @@ import {
   verifierEcheancesContratsSysteme,
   verifierRelancesAbsencesSysteme,
   rappelsSoldeCongesSysteme,
+  verifierEcheancesPiecesSysteme,
 } from "@/lib/systeme/taches";
 
 export async function GET(request: NextRequest) {
@@ -213,6 +215,60 @@ export async function GET(request: NextRequest) {
       tache: "M3 — Rappels solde congés fin d'année",
       statut: "error",
       erreur: error instanceof Error ? error.message : "Erreur inconnue",
+    });
+  }
+
+  // ====================================================================
+  // 6. M13 — Alertes pièces administratives
+  // ====================================================================
+  try {
+    const echeances = await verifierEcheancesPiecesSysteme();
+    resultats.push({
+      tache: "M13 — Alertes pièces administratives",
+      statut: "success",
+      details: {
+        critiques: echeances.critiques.length,
+        hautes: echeances.hautes.length,
+        total: echeances.total,
+      },
+    });
+
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "Systeme",
+        entiteId: "cron-quotidien",
+        action: "TACHE_PLANIFIEE",
+        auteurId: null,
+        auteurNom: "Système (Cron)",
+        details: {
+          tache: "verifierEcheancesPieces",
+          alertesCritiques: echeances.critiques.length,
+          alertesHautes: echeances.hautes.length,
+          total: echeances.total,
+        },
+        commentaire: `Alertes pièces : ${echeances.critiques.length} périmées, ${echeances.hautes.length} à renouveler`,
+      },
+    });
+  } catch (error) {
+    resultats.push({
+      tache: "M13 — Alertes pièces administratives",
+      statut: "error",
+      erreur: error instanceof Error ? error.message : "Erreur inconnue",
+    });
+
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "Systeme",
+        entiteId: "cron-quotidien",
+        action: "ERREUR_TACHE_PLANIFIEE",
+        auteurId: null,
+        auteurNom: "Système (Cron)",
+        details: {
+          tache: "verifierEcheancesPieces",
+          erreur: error instanceof Error ? error.message : "Erreur inconnue",
+        },
+        commentaire: "Échec de la vérification des échéances de pièces",
+      },
     });
   }
 

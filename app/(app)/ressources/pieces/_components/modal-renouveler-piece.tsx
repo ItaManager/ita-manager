@@ -40,6 +40,7 @@ export function ModalRenouvelerPiece({ piece, open, onClose }: ModalRenouvelerPi
 
   // Proposer un nouveau numéro (incrémenter le numéro si possible)
   function proposerNouveauNumero(): string {
+    if (!piece.numero) return "";
     const match = piece.numero.match(/^(.+?)(\d+)$/);
     if (match) {
       const prefix = match[1];
@@ -51,7 +52,7 @@ export function ModalRenouvelerPiece({ piece, open, onClose }: ModalRenouvelerPi
 
   const [formData, setFormData] = useState({
     numero: proposerNouveauNumero(),
-    emetteur: piece.emetteur,
+    emetteur: piece.emetteur || "",
     dateEdition: dateEditionProposee.toISOString().split("T")[0],
     dateExpiration: dateExpirationProposee.toISOString().split("T")[0],
     montant: piece.montant?.toString() || "",

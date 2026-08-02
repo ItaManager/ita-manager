@@ -672,8 +672,8 @@ export const listerTableauPieces = actionProtegee(
  */
 export type PieceDetaillee = {
   id: string;
-  numero: string;
-  emetteur: string;
+  numero: string | null;
+  emetteur: string | null;
   dateEdition: Date;
   dateExpiration: Date;
   montant: number | null;
@@ -696,7 +696,7 @@ export type PieceDetaillee = {
   };
   remplace: {
     id: string;
-    numero: string;
+    numero: string | null;
     dateExpiration: Date;
   } | null;
 };
