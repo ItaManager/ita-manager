@@ -36,7 +36,7 @@ const menuItems: MenuItem[] = [
     icon: LayoutDashboard,
     permission: "materiel:lire",
     livraison: "L1",
-    disponible: false,
+    disponible: true,
   },
   {
     label: "Échéances",
@@ -140,7 +140,7 @@ const menuItems: MenuItem[] = [
     icon: ShoppingBag,
     permission: "referentiel:creer",
     livraison: "L2",
-    disponible: false,
+    disponible: true,
   },
 ];
 
@@ -182,7 +182,7 @@ export function NavigationLogistique() {
           disabled
           title="Fonctionnalités L2/L3 à venir"
         >
-          <span className="text-xs">+ 3 autres</span>
+          <span className="text-xs">+ 2 autres</span>
           <Badge variant="outline" className="text-xs">
             L2/L3
           </Badge>

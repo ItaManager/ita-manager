@@ -1,9 +1,9 @@
 import { Suspense } from "react";
 import { exigerPermission, PERMISSIONS } from "@/lib/auth/guard";
-import { listerBonsMouvement } from "@/lib/actions/stock";
+import { listerBonsMouvement, listerArticlesStock } from "@/lib/actions/stock";
+import { listerLieuxActifs } from "@/lib/actions/lieu";
 import { TableauBonsMouvement } from "../_components/tableau-bons-mouvement";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { BoutonNouveauBon } from "./_components/bouton-nouveau-bon";
 
 type SearchParams = Promise<{
   page?: string;
@@ -19,8 +19,14 @@ export default async function PageMouvements({
   const params = await searchParams;
   const page = parseInt(params.page || "1", 10);
 
-  const result = await listerBonsMouvement(page);
+  const [result, lieuxResult, articlesResult] = await Promise.all([
+    listerBonsMouvement(page),
+    listerLieuxActifs(),
+    listerArticlesStock(1, ""),
+  ]);
   const { bons, total, pages } = result;
+  const lieux = lieuxResult.lieux;
+  const articles = articlesResult.articles;
 
   return (
     <div className="space-y-6">
@@ -31,10 +37,7 @@ export default async function PageMouvements({
             {total} bon{total > 1 ? "s" : ""} de mouvement
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Nouveau bon
-        </Button>
+        <BoutonNouveauBon lieux={lieux} articles={articles} />
       </div>
 
       <Suspense fallback={<div>Chargement...</div>}>

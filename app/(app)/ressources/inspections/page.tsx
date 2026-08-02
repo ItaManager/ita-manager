@@ -1,9 +1,10 @@
 import { Suspense } from "react";
 import { exigerPermission, PERMISSIONS } from "@/lib/auth/guard";
-import { listerInspections } from "@/lib/actions/inspection";
+import { listerInspections, listerPointsInspection } from "@/lib/actions/inspection";
+import { listerMaterielsActifs } from "@/lib/actions/logistique";
+import { listerLieuxActifs } from "@/lib/actions/lieu";
 import { TableauInspections } from "../_components/tableau-inspections";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { BoutonNouvelleInspection } from "./_components/bouton-nouvelle-inspection";
 
 type SearchParams = Promise<{
   page?: string;
@@ -19,8 +20,18 @@ export default async function PageInspections({
   const params = await searchParams;
   const page = parseInt(params.page || "1", 10);
 
-  const result = await listerInspections(page);
-  const { inspections, total, pages } = result;
+  // Charger les données en parallèle
+  const [
+    { inspections, total, pages },
+    { materiels },
+    { lieux },
+    { points },
+  ] = await Promise.all([
+    listerInspections(page),
+    listerMaterielsActifs(),
+    listerLieuxActifs(),
+    listerPointsInspection(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -31,10 +42,11 @@ export default async function PageInspections({
             {total} inspection{total > 1 ? "s" : ""} enregistrée{total > 1 ? "s" : ""}
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Nouvelle inspection
-        </Button>
+        <BoutonNouvelleInspection
+          materiels={materiels}
+          lieux={lieux}
+          pointsInspection={points}
+        />
       </div>
 
       <Suspense fallback={<div>Chargement...</div>}>

@@ -1,9 +1,9 @@
 import { Suspense } from "react";
 import { exigerPermission, PERMISSIONS } from "@/lib/auth/guard";
 import { listerReceptions } from "@/lib/actions/reception";
+import { listerArticlesStock } from "@/lib/actions/stock";
 import { TableauReceptions } from "../_components/tableau-receptions";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { BoutonNouvelleReception } from "./_components/bouton-nouvelle-reception";
 
 type SearchParams = Promise<{
   page?: string;
@@ -19,8 +19,13 @@ export default async function PageReceptions({
   const params = await searchParams;
   const page = parseInt(params.page || "1", 10);
 
-  const result = await listerReceptions(page);
-  const { receptions, total, pages } = result;
+  const [receptionsResult, articlesResult] = await Promise.all([
+    listerReceptions(page),
+    listerArticlesStock(1),
+  ]);
+
+  const { receptions, total, pages } = receptionsResult;
+  const { articles } = articlesResult;
 
   return (
     <div className="space-y-6">
@@ -31,10 +36,7 @@ export default async function PageReceptions({
             {total} réception{total > 1 ? "s" : ""} enregistrée{total > 1 ? "s" : ""}
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Nouvelle réception
-        </Button>
+        <BoutonNouvelleReception articles={articles} />
       </div>
 
       <Suspense fallback={<div>Chargement...</div>}>
