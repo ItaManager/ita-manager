@@ -55,11 +55,13 @@ const ROLES = [
 
 // Matrice rôle × permission (M0-SOCLE.md §5), transcrite verbatim.
 const MATRICE: Record<PermissionCode, readonly string[]> = {
+  // M2 — Employés
   "employe:lire": ["ADMIN", "DG", "DRH", "RH", "DFC", "DT", "CT", "CC", "CE"],
   "employe:creer": ["ADMIN", "DRH", "RH"],
   "employe:modifier": ["ADMIN", "DRH", "RH"],
   "employe:archiver": ["ADMIN", "DRH"],
   "employe:donneesSensibles": ["ADMIN", "DG", "DRH", "DFC"],
+  // M1 — Organisation
   "referentiel:creer": ["ADMIN", "DRH", "DT"], // M1: créer services et postes
   "direction:creer": ["ADMIN"], // M1: Super Admin seul
   "posteDirection:affecter": ["ADMIN"], // M1: Super Admin seul
