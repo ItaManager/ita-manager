@@ -484,7 +484,8 @@ model Employe {
   demandesTransportChauffeur DemandeTransport[] @relation("chauffeur")
 
   /// M16 — Assistanat
-  visitesRecues Visite[] @relation("VisitesRecues")
+  visitesRecues              Visite[]                @relation("VisitesRecues")
+  distributionsCarburant DistributionCarburant[] @relation("DistributionsCarburantDemandees")
 
   creeLe    DateTime  @default(now())
   modifieLe DateTime  @updatedAt
@@ -1697,6 +1698,9 @@ model LieuStockage {
   transportsDépart  DemandeTransport[] @relation("transportDepart")
   transportsArrivée DemandeTransport[] @relation("transportArrivee")
 
+  /// Relations M16 L2
+  distributionsCarburant DistributionCarburant[]
+
   creeLe    DateTime @default(now())
   modifieLe DateTime @updatedAt
 
@@ -1797,6 +1801,9 @@ model Materiel {
   demandesTransport DemandeTransport[] @relation("demandesTransportMateriel")
   plansEntretien    PlanEntretien[]    @relation("plansEntretien")
   entretiens        Entretien[]        @relation("entretiens")
+
+  /// Relations M16 L2
+  distributionsCarburant DistributionCarburant[]
 
   creeLe    DateTime @default(now())
   modifieLe DateTime @updatedAt
@@ -1964,6 +1971,9 @@ model MouvementStock {
 
   dateMouvement DateTime @db.Date
 
+  /// M16 L2 — Relation avec distribution de carburant (si mouvement lié)
+  distributionCarburant DistributionCarburant?
+
   creeLe DateTime @default(now())
 
   @@index([articleStockId, dateMouvement])
@@ -2053,6 +2063,7 @@ enum SourceReleve {
   INSPECTION // Inspection entrée/sortie (source principale)
   SAISIE_GARAGE // Saisie manuelle au garage
   RELEVE_ACTIVITE // M6 UtilisationMateriel (quand M6 existera)
+  CARBURANT // M16 L2 — Relevé lors d'une distribution de carburant
 }
 
 /// M13 L2 — État d'un point d'inspection (§7.4)
@@ -2114,6 +2125,9 @@ model ReleveCompteur {
 
   releveParId  String @db.Uuid
   releveParNom String
+
+  /// M16 L2 — Relation avec distribution de carburant (si source=CARBURANT)
+  distributionCarburant DistributionCarburant?
 
   creeLe DateTime @default(now())
 
@@ -3031,6 +3045,83 @@ model Courrier {
   @@map("courriers")
 }
 
+/**
+ * M16 L2 — Distribution de carburant
+ * Deux natures: STATION (dépense) ou CUVE (mouvement de stock)
+ * Crée automatiquement un ReleveCompteur
+ */
+model DistributionCarburant {
+  id        String @id @default(cuid())
+  reference String @unique /// DC-2026-0001
+
+  /// Qui demande — lien vers M2
+  demandeurId String
+  demandeur   Employe @relation("DistributionsCarburantDemandees", fields: [demandeurId], references: [id])
+
+  /// Pour quel matériel — lien vers M13
+  materielId String
+  materiel   Materiel @relation(fields: [materielId], references: [id])
+
+  typeCarburant TypeCarburant
+  quantite      Decimal       @db.Decimal(10, 2) /// Litres
+  montant       Decimal?      @db.Decimal(12, 0) /// FCFA — optionnel en cuve, requis en station
+
+  /// Compteur au moment de la demande
+  compteur         Decimal       @db.Decimal(10, 2)
+  uniteCompteur    UniteCompteur
+  pleinComplet     Boolean       @default(true) /// Borne l'intervalle de calcul
+  compteurAnomalie Boolean       @default(false) /// Recul détecté
+  motifAnomalie    String?
+
+  /// Nature — deux circuits distincts
+  nature NatureDistribution
+
+  /// Si STATION
+  stationId String?
+  station   StationService? @relation(fields: [stationId], references: [id])
+
+  /// Si CUVE
+  lieuStockageId String?
+  lieuStockage   LieuStockage? @relation(fields: [lieuStockageId], references: [id])
+
+  /// Le mouvement de stock créé (si CUVE)
+  mouvementStockId String?          @unique
+  mouvementStock   MouvementStock? @relation(fields: [mouvementStockId], references: [id])
+
+  /// Qui a servi
+  serviParId       String   @db.Uuid
+  dateDistribution DateTime @db.Date
+
+  /// Le relevé de compteur créé dans M13
+  releveCompteurId String?          @unique
+  releveCompteur   ReleveCompteur? @relation(fields: [releveCompteurId], references: [id])
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([materielId, dateDistribution])
+  @@index([demandeurId])
+  @@index([stationId])
+  @@index([lieuStockageId])
+  @@map("distributions_carburant")
+}
+
+/**
+ * M16 L2 — Station-service (référentiel)
+ * Création inline avec R-04
+ */
+model StationService {
+  id                   String @id @default(cuid())
+  libelle              String @unique
+  libelleNormalise     String @unique /// Pour détecter les doublons à la création inline
+  localisation         String?
+  actif                Boolean                   @default(true)
+  distributions        DistributionCarburant[]
+  creeLe               DateTime                  @default(now())
+  modifieLe            DateTime                  @updatedAt
+  @@map("stations_service")
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // ENUMS M16
 // ═══════════════════════════════════════════════════════════════════════
@@ -3051,4 +3142,17 @@ enum StatutTraitement {
   A_TRAITER
   TRAITE
   SANS_SUITE
+}
+
+/// M16 L2 — Type de carburant
+enum TypeCarburant {
+  GASOIL
+  SUPER
+  MELANGE
+}
+
+/// M16 L2 — Nature de la distribution
+enum NatureDistribution {
+  STATION /// Dépense — aucun stock ITA touché
+  CUVE /// Mouvement de stock — le solde baisse
 }
