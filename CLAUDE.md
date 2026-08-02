@@ -21,6 +21,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Combobox with inline creation (R-04 compliance)
 - Permissions: `organisation:consulter`, `organisation:modifier`
 
+**M2 features (Employés - August 2026)** ✅ Complete:
+- Employee records management (permanent + daily workers)
+- Automatic matricule generation (ITA-YYYY-NNNN)
+- Contracts (CDD/CDI/INTERIM/STAGE) with avenants
+- Document management with Supabase Storage + GDPR logging
+- Salary derogations with DFC validation circuit
+- Assignments with N+1 hierarchy
+- Global contract view with CDD expiration alerts
+- Nationalities reference (15 countries)
+- Permissions: `employe:lire`, `employe:creer`, `employe:modifier`, `employe:archiver`, `employe:donneesSensibles`, `derogation:valider`
+
+**M3 features (Congés - August 2026)** ✅ Complete:
+- Leave requests with 2-step validation (N+1 then RH)
+- 6 leave types: CP, MALADIE, SANS_SOLDE, EVENEMENTIEL, MATERNITE, PATERNITE
+- Automatic business days calculation (excludes weekends)
+- Leave balance tracking with movement history
+- Delegation system (temporary approval authority)
+- Calendar view of team absences
+- Draft/submit/approve workflow
+- Individual and team balance views
+- Permissions: `absence:demander`, `absence:valider`
+
 **M15 features (ItaPay - August 2026)** ✅ Complete:
 - Payment execution via Wave API (Côte d'Ivoire mobile money)
 - 8 hard-coded security interdits (SECURITE-M15.md)
@@ -318,18 +340,18 @@ Application built module by module:
 
 - **M0** (✅ Complete v0.1.1) — Foundation: auth, 2FA, permissions, layout
 - **M1** (✅ Complete v0.2.0) — Organization: departments, services, positions
-- **M2** (Planned) — Employees: profiles, contracts, documents
-- **M3** (Planned) — Leave management
-- **M4** (Planned) — Compensation
-- **M5** (Planned) — Projects
-- **M6** (Planned) — Activity reports (site work)
-- **M7** (Planned) — Payroll
-- **M8** (Planned) — Resources
-- **M9** (Planned) — Tenders
-- **M10** (Planned) — Dashboards
-- **M11** (Planned) — Administration
-- **M12** (Planned) — Office attendance
-- **M13 L1** (✅ Complete v0.3.0) — Logistics: material registry, admin documents, alerts, data migration
+- **M2** (✅ Complete v0.5.0) — Employees: profiles, contracts, documents, derogations
+- **M3** (✅ Complete) — Leave management: requests, 2-step validation (N+1 + RH), balances, delegations
+- **M4** (⚠️ Partial) — Compensation: salary grids, bonuses, allowances
+- **M5** (⚠️ Partial) — Projects: sites, budgets, milestones
+- **M6** (Planned) — Activity reports (site work, offline capable)
+- **M7** (Planned) — Payroll: pay slips, CNPS declarations
+- **M8** (Merged → M13) — Resources merged into M13 Logistics
+- **M9** (⚠️ Partial) — Tenders: submissions, tracking
+- **M10** (⚠️ Partial) — Dashboards: KPIs (M13 only for now)
+- **M11** (⚠️ Partial) — Administration: system settings, audit log
+- **M12** (⚠️ Partial) — Office attendance: time tracking, presence
+- **M13** (✅ Complete v0.3.0) — Logistics L1+L2+L3: material registry, stocks, inspections, transport, maintenance
 - **M15** (✅ Complete v0.4.0) — ItaPay: payment execution via Wave API
 
 ## Schema Modifications
