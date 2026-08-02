@@ -1253,6 +1253,9 @@ enum EtatPointage {
 model ReleveActivite {
   id String @id @default(cuid())
 
+  /// UUID client pour déduplication sync offline (M6 §3.3)
+  clientIdOffline String? @unique
+
   /// Date du relevé (YYYY-MM-DD)
   date DateTime @db.Date
 
