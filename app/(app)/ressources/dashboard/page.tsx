@@ -1,4 +1,5 @@
 import { verifierAccesPage } from "@/lib/auth/page-access";
+import { obtenirStatistiquesLogistique } from "@/lib/actions/logistique";
 import {
   Package,
   AlertTriangle,
@@ -16,41 +17,46 @@ export const metadata = {
 export default async function DashboardLogistiquePage() {
   await verifierAccesPage("/ressources/dashboard");
 
+  // Récupérer les statistiques réelles
+  const statistiques = await obtenirStatistiquesLogistique();
+
   const stats = [
     {
       title: "Matériel actif",
-      value: "—",
+      value: statistiques.totalMaterielActif.toString(),
       description: "Véhicules et engins opérationnels",
       icon: Package,
     },
     {
       title: "Alertes pièces",
-      value: "—",
-      description: "Critiques et hautes urgences",
+      value: statistiques.alertesPieces.critiques > 0 || statistiques.alertesPieces.hautes > 0
+        ? `${statistiques.alertesPieces.critiques} critiques, ${statistiques.alertesPieces.hautes} hautes`
+        : "0",
+      description: "Pièces administratives périmées ou à renouveler",
       icon: AlertTriangle,
     },
     {
       title: "Mouvements du mois",
-      value: "—",
+      value: statistiques.mouvementsMois.toString(),
       description: "Entrées et sorties de stock",
       icon: FileSpreadsheet,
     },
     {
       title: "Inspections en retard",
-      value: "—",
-      description: "Contrôles techniques à effectuer",
+      value: statistiques.inspectionsEnRetard.toString(),
+      description: "Contrôles avec réserves ou non conformes",
       icon: Search,
     },
     {
       title: "Stock total",
-      value: "—",
+      value: statistiques.stockTotal.toString(),
       description: "Articles en inventaire",
       icon: BarChart3,
     },
     {
       title: "Bons en attente",
-      value: "—",
-      description: "Demandes à traiter",
+      value: statistiques.bonsEnAttente.toString(),
+      description: "Créés dans les 7 derniers jours, non validés",
       icon: FileText,
     },
   ];
@@ -88,13 +94,6 @@ export default async function DashboardLogistiquePage() {
             </Card>
           );
         })}
-      </div>
-
-      <div className="rounded-md border border-blue-200 bg-blue-50 p-4 text-center">
-        <p className="text-sm text-blue-900">
-          Statistiques temps réel à venir — Dashboard sera alimenté
-          progressivement au fil des livraisons M13 L2 et L3
-        </p>
       </div>
     </div>
   );

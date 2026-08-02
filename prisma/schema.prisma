@@ -475,6 +475,9 @@ model Employe {
   demandesAchatDemandeur    DemandeAchat[] @relation("DemandesDemandeur")
   demandesAchatBeneficiaire DemandeAchat[] @relation("DemandesBeneficiaire")
 
+  /// M13 L3 — Transport
+  demandesTransportChauffeur DemandeTransport[] @relation("chauffeur")
+
   creeLe    DateTime  @default(now())
   modifieLe DateTime  @updatedAt
   /// Archivage, jamais suppression. Motif stocké dans JournalEvenement.
@@ -513,6 +516,9 @@ model Profil {
   demandesPaiement        DemandePaiement[]       @relation("PreparateurPaiement")
   autorisationsDemandees  AutorisationPaiement[]  @relation("DemandeurAutorisation")
   autorisationsAccordees  AutorisationPaiement[]  @relation("AutorisateurPaiement")
+
+  /// M13 L3 — Relations transport
+  demandesTransport       DemandeTransport[]      @relation("demandesTransport")
 
   creeLe    DateTime  @default(now())
   modifieLe DateTime  @updatedAt
@@ -1677,6 +1683,10 @@ model LieuStockage {
   inventaires       Inventaire[]
   inspections       Inspection[]
 
+  /// Relations M13 L3
+  transportsDépart  DemandeTransport[] @relation("transportDepart")
+  transportsArrivée DemandeTransport[] @relation("transportArrivee")
+
   creeLe    DateTime @default(now())
   modifieLe DateTime @updatedAt
 
@@ -1774,6 +1784,11 @@ model Materiel {
   /// Relations M13 L2
   relevesCompteur ReleveCompteur[]
   inspections     Inspection[]
+
+  /// Relations M13 L3
+  demandesTransport DemandeTransport[] @relation("demandesTransportMateriel")
+  plansEntretien    PlanEntretien[]    @relation("plansEntretien")
+  entretiens        Entretien[]        @relation("entretiens")
 
   creeLe    DateTime @default(now())
   modifieLe DateTime @updatedAt
@@ -2785,5 +2800,147 @@ enum NameMatch {
   MATCH             /// Le nom correspond
   NO_MATCH          /// Le nom ne correspond pas — BLOQUE la ligne
   NAME_NOT_KNOWN    /// Wave ne connaît pas le nom
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// M13 L3 — TRANSPORT ET ENTRETIEN
+// ═══════════════════════════════════════════════════════════════════════
+
+/// Type de demande de transport
+enum TypeDemandeTransport {
+  MATERIEL
+  PERSONNEL
+  MIXTE
+}
+
+/// Statut de demande de transport
+enum StatutDemandeTransport {
+  EN_ATTENTE
+  APPROUVEE
+  AFFECTEE
+  EN_COURS
+  TERMINEE
+  ANNULEE
+}
+
+/// Type d'entretien
+enum TypeEntretien {
+  PREVENTIF
+  CURATIF
+  REVISION
+}
+
+/**
+ * M13 L3 — Demande de transport
+ *
+ * Gestion des demandes de transport de matériel et/ou personnel
+ */
+model DemandeTransport {
+  id             String                  @id @default(cuid())
+  reference      String                  @unique /// Format: DTR-xxxxx
+  type           TypeDemandeTransport
+  statut         StatutDemandeTransport  @default(EN_ATTENTE)
+
+  /// Demandeur
+  demandeurId    String                  @db.Uuid
+  demandeur      Profil                  @relation("demandesTransport", fields: [demandeurId], references: [id])
+
+  /// Matériel à transporter (optionnel)
+  materielId     String?
+  materiel       Materiel?               @relation("demandesTransportMateriel", fields: [materielId], references: [id])
+
+  /// Lieux de départ et d'arrivée
+  lieuDepartId   String
+  lieuDepart     LieuStockage            @relation("transportDepart", fields: [lieuDepartId], references: [id])
+
+  lieuArriveeId  String
+  lieuArrivee    LieuStockage            @relation("transportArrivee", fields: [lieuArriveeId], references: [id])
+
+  /// Dates
+  dateDebut      DateTime                @db.Date
+  dateFin        DateTime?               @db.Date
+
+  /// Chauffeur affecté (optionnel)
+  chauffeurId    String?
+  chauffeur      Employe?                @relation("chauffeur", fields: [chauffeurId], references: [id])
+
+  /// Description
+  description    String?                 @db.Text
+
+  creeLe         DateTime                @default(now())
+  modifieLe      DateTime                @updatedAt
+
+  @@index([demandeurId])
+  @@index([materielId])
+  @@index([statut])
+  @@index([dateDebut])
+  @@map("demandes_transport")
+}
+
+/**
+ * M13 L3 — Plan d'entretien
+ *
+ * Planification préventive des entretiens par matériel
+ */
+model PlanEntretien {
+  id                String          @id @default(cuid())
+  materielId        String
+  materiel          Materiel        @relation("plansEntretien", fields: [materielId], references: [id])
+
+  type              TypeEntretien
+  description       String
+  periodiciteJours  Int?            /// Périodicité en jours
+  seuilCompteur     Int?            /// Seuil en km/heures
+
+  actif             Boolean         @default(true)
+
+  /// Relations
+  entretiens        Entretien[]
+
+  creeLe            DateTime        @default(now())
+  modifieLe         DateTime        @updatedAt
+
+  @@index([materielId])
+  @@map("plans_entretien")
+}
+
+/**
+ * M13 L3 — Entretien (réalisé)
+ *
+ * Historique des entretiens effectués sur le matériel
+ */
+model Entretien {
+  id            String          @id @default(cuid())
+
+  /// Plan d'entretien (null si entretien non planifié)
+  planId        String?
+  plan          PlanEntretien?  @relation(fields: [planId], references: [id])
+
+  /// Matériel concerné
+  materielId    String
+  materiel      Materiel        @relation("entretiens", fields: [materielId], references: [id])
+
+  type          TypeEntretien
+  dateDebut     DateTime        @db.Date
+  dateFin       DateTime?       @db.Date
+
+  /// Compteur au moment de l'entretien
+  compteur      Int?
+
+  /// Coût de l'entretien (SENSIBLE)
+  cout          Decimal?        @db.Decimal(15, 2)
+
+  technicien    String?
+  description   String          @db.Text
+  observations  String?         @db.Text
+
+  creeLe        DateTime        @default(now())
+  modifieLe     DateTime        @updatedAt
+
+  @@index([materielId])
+  @@index([planId])
+  @@index([type])
+  @@index([dateDebut])
+  @@map("entretiens")
 }
 

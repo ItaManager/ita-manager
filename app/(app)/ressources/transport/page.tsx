@@ -1,10 +1,24 @@
 import { Suspense } from "react";
 import { exigerPermission, PERMISSIONS } from "@/lib/auth/guard";
-import { Button } from "@/components/ui/button";
-import { Truck, Plus } from "lucide-react";
+import { listerDemandesTransport } from "@/lib/actions/transport";
+import { TableauDemandesTransport } from "./_components/tableau-demandes-transport";
+import { BoutonNouvelleDemande } from "./_components/bouton-nouvelle-demande";
 
-export default async function PageTransport() {
+type SearchParams = Promise<{
+  page?: string;
+}>;
+
+export default async function PageTransport({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   await exigerPermission(PERMISSIONS["transport:demander"].code);
+
+  const params = await searchParams;
+  const page = parseInt(params.page || "1", 10);
+
+  const { items, hasNextPage } = await listerDemandesTransport();
 
   return (
     <div className="space-y-6">
@@ -12,37 +26,18 @@ export default async function PageTransport() {
         <div>
           <h1 className="text-3xl font-bold">Demandes de transport</h1>
           <p className="text-muted-foreground mt-2">
-            Gestion des demandes de transport de matériel et de personnel
+            {items.length} demande{items.length > 1 ? "s" : ""} de transport
           </p>
         </div>
-        <Button disabled>
-          <Plus className="h-4 w-4 mr-2" />
-          Nouvelle demande
-        </Button>
+        <BoutonNouvelleDemande />
       </div>
 
       <Suspense fallback={<div>Chargement...</div>}>
-        <div className="rounded-md border border-border p-12 text-center">
-          <Truck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">
-            Fonctionnalité à venir
-          </h3>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            Le module de gestion des demandes de transport sera disponible
-            prochainement. Il permettra de planifier et suivre les déplacements
-            de matériel et de personnel entre les différents sites.
-          </p>
-          <div className="mt-6 space-y-2 text-sm text-muted-foreground">
-            <p>Fonctionnalités prévues :</p>
-            <ul className="list-disc list-inside space-y-1">
-              <li>Création de demandes de transport (matériel/personnel)</li>
-              <li>Affectation automatique de véhicules et chauffeurs</li>
-              <li>Suivi en temps réel des déplacements</li>
-              <li>Historique des trajets et consommation carburant</li>
-              <li>Validation hiérarchique des demandes</li>
-            </ul>
-          </div>
-        </div>
+        <TableauDemandesTransport
+          demandes={items}
+          hasNextPage={hasNextPage}
+          pageActuelle={page}
+        />
       </Suspense>
     </div>
   );

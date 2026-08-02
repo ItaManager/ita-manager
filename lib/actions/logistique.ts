@@ -144,6 +144,26 @@ export const listerMaterielM13 = actionProtegee(
 );
 
 /**
+ * Lister tous les matériels actifs (pour sélecteurs)
+ */
+export const listerMaterielsActifs = actionProtegee(
+  "materiel:lire",
+  async (_session) => {
+    const materiels = await prisma.materiel.findMany({
+      where: { statut: { not: "REFORME" } },
+      select: {
+        id: true,
+        codeIta: true,
+        designation: true,
+      },
+      orderBy: { codeIta: "asc" },
+    });
+
+    return { materiels };
+  }
+);
+
+/**
  * Vérifier si un code matériel existe déjà
  *
  * M13 L1 — Contrôle 1 décision 1.1
@@ -855,5 +875,101 @@ export const renouvelerPieceAdministrative = actionProtegee(
     revalidatePath("/ressources/pieces");
 
     return { id: nouvellePiece.id };
+  }
+);
+
+// =====================================================================
+// M13 L2 — STATISTIQUES DASHBOARD
+// =====================================================================
+
+export type StatistiquesLogistique = {
+  totalMaterielActif: number;
+  alertesPieces: {
+    critiques: number;
+    hautes: number;
+  };
+  mouvementsMois: number;
+  inspectionsEnRetard: number;
+  stockTotal: number;
+  bonsEnAttente: number;
+};
+
+/**
+ * Obtenir les statistiques du dashboard logistique
+ *
+ * M13 L2 — Dashboard temps réel
+ * - Total matériel actif (actif = true)
+ * - Alertes pièces (via detecterAlertesPieces)
+ * - Mouvements du mois en cours
+ * - Inspections en retard (avec réserves/non conformes)
+ * - Stock total d'articles
+ * - Bons en attente (<7j sans validation)
+ */
+export const obtenirStatistiquesLogistique = actionProtegee(
+  "materiel:lire",
+  async (session): Promise<StatistiquesLogistique> => {
+    const aujourdhui = new Date();
+    const debutMois = new Date(aujourdhui.getFullYear(), aujourdhui.getMonth(), 1);
+    const ilYa7Jours = new Date(aujourdhui);
+    ilYa7Jours.setDate(ilYa7Jours.getDate() - 7);
+
+    // 1. Total matériel actif (tous sauf REFORME)
+    const totalMaterielActif = await prisma.materiel.count({
+      where: {
+        statut: {
+          not: 'REFORME',
+        },
+      },
+    });
+
+    // 2. Alertes pièces (utiliser la fonction existante)
+    const { detecterAlertesPieces } = await import('@/lib/logistique/alertes');
+    const alertes = await detecterAlertesPieces();
+    const alertesPieces = {
+      critiques: alertes.filter((a) => a.urgence === 'CRITIQUE').length,
+      hautes: alertes.filter((a) => a.urgence === 'HAUTE').length,
+    };
+
+    // 3. Mouvements du mois
+    const mouvementsMois = await prisma.mouvementStock.count({
+      where: {
+        dateMouvement: {
+          gte: debutMois,
+        },
+      },
+    });
+
+    // 4. Inspections avec problèmes (état général MAUVAIS ou ABSENT)
+    const inspectionsEnRetard = await prisma.inspection.count({
+      where: {
+        etatGeneral: {
+          in: ['MAUVAIS', 'ABSENT'],
+        },
+      },
+    });
+
+    // 5. Stock total (articles actifs)
+    const stockTotal = await prisma.articleStock.count({
+      where: { actif: true },
+    });
+
+    // 6. Bons en attente (<7j sans validation)
+    const bonsEnAttente = await prisma.bonMouvement.count({
+      where: {
+        creeLe: {
+          gte: ilYa7Jours,
+        },
+        valideParId: null,
+      },
+    });
+
+    return {
+      totalMaterielActif,
+      alertesPieces,
+      mouvementsMois,
+      inspectionsEnRetard,
+      stockTotal,
+      bonsEnAttente,
+    };
   }
 );
