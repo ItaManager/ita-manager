@@ -109,6 +109,11 @@ const MATRICE: Record<PermissionCode, readonly string[]> = {
   "typePiece:gerer": ["ADMIN", "DT"],
   "materiel:coutsAdministratifs": ["ADMIN", "DG", "DFC", "DT"],
   "logistique:parametres": ["ADMIN"],
+  // M13 — Logistique L2
+  "stock:lire": ["ADMIN", "DG", "DFC", "DT"],
+  "stock:mouvementer": ["ADMIN", "DT"],
+  "materiel:inspecter": ["ADMIN", "DT"],
+  "reception:controler": ["ADMIN", "DT"],
 };
 
 // Compte Super Admin — accès technique de maintenance, sans Employe

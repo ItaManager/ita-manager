@@ -1667,7 +1667,15 @@ model LieuStockage {
 
   actif Boolean @default(true)
 
+  /// Relations M13 L1
   materiel Materiel[]
+
+  /// Relations M13 L2
+  mouvementsStock   MouvementStock[]
+  bonsOrigine       BonMouvement[]  @relation("BonOrigine")
+  bonsDestination   BonMouvement[]  @relation("BonDestination")
+  inventaires       Inventaire[]
+  inspections       Inspection[]
 
   creeLe    DateTime @default(now())
   modifieLe DateTime @updatedAt
@@ -1763,6 +1771,10 @@ model Materiel {
   /// Relations M13 L1
   piecesAdministratives PieceAdministrative[]
 
+  /// Relations M13 L2
+  relevesCompteur ReleveCompteur[]
+  inspections     Inspection[]
+
   creeLe    DateTime @default(now())
   modifieLe DateTime @updatedAt
 
@@ -1814,6 +1826,484 @@ model PieceAdministrative {
   @@index([materielId, dateExpiration])
   @@index([typeId])
   @@map("pieces_administratives")
+}
+
+// =====================================================================
+// M13 L2 — STOCKS ET INVENTAIRES
+// =====================================================================
+
+/// M13 L2 — Sens de mouvement stock
+enum SensMouvement {
+  ENTREE      // Achat, production, retour
+  SORTIE      // Consommation, sortie chantier
+  AJUSTEMENT  // Correction inventaire
+}
+
+/// M13 L2 — Statut d'un inventaire
+enum StatutInventaire {
+  OUVERT  // En cours de comptage
+  CLOS    // Finalisé, écart ajusté
+}
+
+/**
+ * M13 L2 — Article de stock (consommable)
+ *
+ * Nature CONSOMMABLE : quantité qui monte/descend (ciment, filtres, etc.)
+ * DISTINCT de Materiel (individuel avec code unique)
+ *
+ * Le solde se CALCULE depuis les mouvements (jamais stocké)
+ */
+model ArticleStock {
+  id             String  @id @default(cuid())
+  reference      String  @unique  // Ex: CIM-50KG, FLT-OIL-5W30
+  designation    String
+  unite          String           // L, kg, sac, pièce
+
+  /// Alerte si solde < seuil (notification + tableau de bord)
+  seuilAlerte    Decimal? @db.Decimal(10, 2)
+
+  /// Famille article (optionnel, pour regroupement)
+  famille        String?
+
+  actif          Boolean  @default(true)
+
+  mouvements       MouvementStock[]
+  lignesInventaire LigneInventaire[]
+  lignesReception  LigneReception[]
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([famille])
+  @@map("articles_stock")
+}
+
+/**
+ * M13 L2 — Bon de mouvement (entrée, sortie, transfert)
+ *
+ * Regroupe plusieurs lignes de mouvement
+ */
+model BonMouvement {
+  id             String   @id @default(cuid())
+  reference      String   @unique  // BM-2026-001
+  sens           SensMouvement
+
+  /// Lieux concernés
+  lieuOrigineId  String?
+  lieuOrigine    LieuStockage? @relation("BonOrigine", fields: [lieuOrigineId], references: [id])
+
+  lieuDestinationId String?
+  lieuDestination   LieuStockage? @relation("BonDestination", fields: [lieuDestinationId], references: [id])
+
+  /// Motif (ex: "Livraison fournisseur", "Consommation chantier Assinie")
+  motif          String
+
+  /// Émetteur et date
+  emetteurId     String   @db.Uuid
+  emetteurNom    String
+  dateMouvement  DateTime @db.Date
+
+  /// Validation (Chef de Service Logistique ou Gestionnaire stocks)
+  valideParId    String?  @db.Uuid
+  valideLe       DateTime?
+
+  mouvements     MouvementStock[]
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([sens])
+  @@index([dateMouvement])
+  @@map("bons_mouvement")
+}
+
+/**
+ * M13 L2 — Mouvement de stock (ligne de bon)
+ *
+ * Le solde se CALCULE depuis ces mouvements (§7.2)
+ */
+model MouvementStock {
+  id             String   @id @default(cuid())
+
+  articleStockId String
+  articleStock   ArticleStock @relation(fields: [articleStockId], references: [id])
+
+  sens           SensMouvement
+  quantite       Decimal  @db.Decimal(10, 2)
+
+  /// Lieu concerné (origine pour SORTIE, destination pour ENTREE)
+  lieuStockageId String
+  lieuStockage   LieuStockage @relation(fields: [lieuStockageId], references: [id])
+
+  /// Bon de mouvement (null si ajustement direct)
+  bonMouvementId String?
+  bonMouvement   BonMouvement? @relation(fields: [bonMouvementId], references: [id])
+
+  /// Motif (obligatoire si ajustement sans bon)
+  motif          String
+
+  /// Prix unitaire (optionnel, pour valorisation stock)
+  prixUnitaire   Decimal? @db.Decimal(10, 2)
+
+  dateMouvement  DateTime @db.Date
+
+  creeLe    DateTime @default(now())
+
+  @@index([articleStockId, dateMouvement])
+  @@index([lieuStockageId])
+  @@index([bonMouvementId])
+  @@map("mouvements_stock")
+}
+
+/**
+ * M13 L2 — Inventaire physique
+ *
+ * Opération ponctuelle de comptage
+ */
+model Inventaire {
+  id             String   @id @default(cuid())
+  reference      String   @unique  // INV-2026-01
+
+  /// Lieu inventorié
+  lieuStockageId String
+  lieuStockage   LieuStockage @relation(fields: [lieuStockageId], references: [id])
+
+  dateOuverture  DateTime @db.Date
+  dateClôture    DateTime? @db.Date
+
+  statut         StatutInventaire @default(OUVERT)
+
+  /// Responsable inventaire
+  responsableId  String   @db.Uuid
+  responsableNom String
+
+  lignes         LigneInventaire[]
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([lieuStockageId])
+  @@index([statut])
+  @@map("inventaires")
+}
+
+/**
+ * M13 L2 — Ligne d'inventaire
+ *
+ * Comparaison comptage physique vs solde théorique (§8.8)
+ */
+model LigneInventaire {
+  id             String   @id @default(cuid())
+
+  inventaireId   String
+  inventaire     Inventaire @relation(fields: [inventaireId], references: [id], onDelete: Cascade)
+
+  articleStockId String
+  articleStock   ArticleStock @relation(fields: [articleStockId], references: [id])
+
+  /// Solde théorique (calculé depuis mouvements au moment de l'inventaire)
+  soldeTheorique Decimal  @db.Decimal(10, 2)
+
+  /// Quantité comptée physiquement
+  quantiteComptee Decimal @db.Decimal(10, 2)
+
+  /// Écart = quantiteComptee - soldeTheorique
+  ecart          Decimal  @db.Decimal(10, 2)
+
+  /// Justification de l'écart (obligatoire si écart ≠ 0)
+  justification  String?
+
+  /// L'écart a-t-il donné lieu à un AJUSTEMENT ?
+  ajuste         Boolean  @default(false)
+
+  creeLe    DateTime @default(now())
+
+  @@index([inventaireId])
+  @@index([articleStockId])
+  @@map("lignes_inventaire")
+}
+
+// =====================================================================
+// M13 L2 — COMPTEURS ET INSPECTIONS
+// =====================================================================
+
+/// M13 L2 — Unité de compteur
+enum UniteCompteur {
+  KILOMETRE  // Véhicules
+  HEURE      // Engins
+}
+
+/// M13 L2 — Source d'un relevé compteur (§1.3)
+enum SourceReleve {
+  INSPECTION        // Inspection entrée/sortie (source principale)
+  SAISIE_GARAGE     // Saisie manuelle au garage
+  RELEVE_ACTIVITE   // M6 UtilisationMateriel (quand M6 existera)
+}
+
+/// M13 L2 — État d'un point d'inspection (§7.4)
+enum EtatPoint {
+  BON      // Conforme
+  MAUVAIS  // Défectueux (pare-brise fêlé)
+  ABSENT   // Manquant (rétroviseur disparu) — DISTINCT de MAUVAIS
+}
+
+/// M13 L2 — Type de grille d'inspection
+enum GrilleInspection {
+  PHYSIQUE    // Points physiques (30 pour VL, 27 pour engin)
+  DOCUMENT    // Documents à bord (10 pour VL, 4 pour engin) — présence physique
+  EQUIPEMENT  // Inventaire de bord (9 points : cric, extincteur, etc.)
+}
+
+/// M13 L2 — Moment de l'inspection
+enum MomentInspection {
+  ENTREE  // Inspection à l'arrivée (réception)
+  SORTIE  // Inspection au départ (remise)
+}
+
+/// M13 L2 — Niveau de carburant en huitièmes (§7.4)
+enum NiveauCarburant {
+  VIDE
+  UN_HUITIEME
+  UN_QUART
+  TROIS_HUITIEMES
+  MOITIE
+  CINQ_HUITIEMES
+  TROIS_QUARTS
+  SEPT_HUITIEMES
+  PLEIN
+}
+
+/**
+ * M13 L2 — Relevé de compteur (historique)
+ *
+ * La valeur courante = dernier relevé (§7.3)
+ * L'historique permet de détecter un compteur qui recule (§1.3)
+ */
+model ReleveCompteur {
+  id          String   @id @default(cuid())
+
+  materielId  String
+  materiel    Materiel @relation(fields: [materielId], references: [id])
+
+  valeur      Decimal  @db.Decimal(10, 2)
+  unite       UniteCompteur
+
+  releveLe    DateTime @db.Date
+  source      SourceReleve
+
+  /// Si source=INSPECTION, référence l'inspection
+  inspectionId String?
+  inspection   Inspection? @relation(fields: [inspectionId], references: [id])
+
+  /// Compteur en recul par rapport au dernier relevé (signalé, non refusé)
+  anomalie    Boolean  @default(false)
+
+  releveParId String   @db.Uuid
+  releveParNom String
+
+  creeLe    DateTime @default(now())
+
+  @@index([materielId, releveLe])
+  @@index([inspectionId])
+  @@map("releves_compteur")
+}
+
+/**
+ * M13 L2 — Point d'inspection (référentiel)
+ *
+ * Ex: "Pare-brise avant", "Rétroviseurs", "Carte grise", "Cric", etc.
+ * Référentiel modifiable sans migration (§7.4)
+ */
+model PointInspection {
+  id           String   @id @default(cuid())
+  libelle      String   @unique
+  grille       GrilleInspection
+
+  /// Types de matériel concernés (JSON array) — "Chenilles" ne vaut pas pour VL
+  typesMateriel String  @default("[]")
+
+  ordre        Int      @default(0)  // Ordre d'affichage dans la grille
+  actif        Boolean  @default(true)
+
+  lignes       LigneInspection[]
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([grille, actif])
+  @@map("points_inspection")
+}
+
+/**
+ * M13 L2 — Inspection d'entrée ou de sortie
+ *
+ * Même grille à l'entrée et à la sortie (§7.4)
+ * Obligatoire pour véhicules, engins, conteneurs (§8.5)
+ */
+model Inspection {
+  id             String   @id @default(cuid())
+
+  materielId     String
+  materiel       Materiel @relation(fields: [materielId], references: [id])
+
+  moment         MomentInspection  // ENTREE ou SORTIE
+
+  /// Optionnel : référence au mouvement ou demande transport
+  mouvementId    String?
+  demandeTransportId String?
+
+  dateHeure      DateTime
+
+  lieuId         String
+  lieu           LieuStockage @relation(fields: [lieuId], references: [id])
+
+  /// Provenance (ENTREE) ou Destination (SORTIE)
+  provenance     String?
+  destination    String?
+
+  /// Compteur (km ou heures) — alimente ReleveCompteur
+  compteur       Decimal? @db.Decimal(10, 2)
+
+  /// Niveau carburant (huitièmes) — comparaison sortie/retour
+  niveauCarburant NiveauCarburant?
+
+  /// Conducteur (→ Employe)
+  conducteurId   String?  @db.Uuid
+  conducteurNom  String?
+
+  /// Transporteur (remorqueur externe possible)
+  transporteur   String?
+
+  /// Vérificateur (Réceptionnaire à l'ENTREE, Remettant à la SORTIE)
+  verificateurId String   @db.Uuid
+  verificateurNom String
+
+  /// État général
+  etatGeneral    EtatPoint
+  observations   String?
+
+  lignes         LigneInspection[]
+  relevesCompteur ReleveCompteur[]
+
+  creeLe    DateTime @default(now())
+
+  @@index([materielId, dateHeure])
+  @@index([moment])
+  @@index([lieuId])
+  @@map("inspections")
+}
+
+/**
+ * M13 L2 — Ligne d'inspection (point contrôlé)
+ *
+ * Une ligne MAUVAIS ou ABSENT crée une intervention à programmer (§8.6)
+ */
+model LigneInspection {
+  id           String   @id @default(cuid())
+
+  inspectionId String
+  inspection   Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+
+  pointId      String
+  point        PointInspection @relation(fields: [pointId], references: [id])
+
+  etat         EtatPoint
+  observation  String?
+
+  /// Photo jointe (localise le dommage - §7.5)
+  photoId      String?
+
+  creeLe    DateTime @default(now())
+
+  @@index([inspectionId])
+  @@index([pointId])
+  @@map("lignes_inspection")
+}
+
+// =====================================================================
+// M13 L2 — RÉCEPTIONS (ferme le circuit M14)
+// =====================================================================
+
+/// M13 L2 — Issue d'une réception
+enum IssueReception {
+  CONFORME      // Validation ouvre droit à facturation (§1.7)
+  AVEC_RESERVE  // Accepté avec réserves
+  NON_CONFORME  // Refusé
+}
+
+/**
+ * M13 L2 — Réception de commande (contrôle conformité)
+ *
+ * Ferme le circuit M14 (§1.7 et §6.1)
+ * Gestionnaire de stocks constate la conformité → ouvre droit à facturation
+ */
+model Reception {
+  id             String   @id @default(cuid())
+  reference      String   @unique  // REC-2026-001
+
+  /// Commande concernée (M14) — optionnel si réception sans BC
+  commandeId     String?
+
+  /// Fournisseur
+  fournisseurId  String?
+  fournisseurNom String
+
+  dateReception  DateTime @db.Date
+
+  /// Réceptionnaire (Gestionnaire de stocks)
+  receptionneParId  String   @db.Uuid
+  receptionneParNom String
+
+  /// Validation (Chef de Service Logistique)
+  valideParId    String?  @db.Uuid
+  valideLe       DateTime?
+
+  issue          IssueReception?
+
+  /// Motif obligatoire si NON_CONFORME
+  motifRefus     String?
+
+  /// Photo du défaut si NON_CONFORME
+  photoId        String?
+
+  lignes         LigneReception[]
+
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
+
+  @@index([commandeId])
+  @@index([dateReception])
+  @@map("receptions")
+}
+
+/**
+ * M13 L2 — Ligne de réception
+ *
+ * Comparaison quantité commandée vs livrée
+ */
+model LigneReception {
+  id             String   @id @default(cuid())
+
+  receptionId    String
+  reception      Reception @relation(fields: [receptionId], references: [id], onDelete: Cascade)
+
+  articleStockId String
+  articleStock   ArticleStock @relation(fields: [articleStockId], references: [id])
+
+  quantiteCommandee Decimal  @db.Decimal(10, 2)
+  quantiteLivree    Decimal  @db.Decimal(10, 2)
+
+  /// Écart = quantiteLivree - quantiteCommandee
+  ecart          Decimal  @db.Decimal(10, 2)
+
+  conforme       Boolean  @default(true)
+  observation    String?
+
+  creeLe    DateTime @default(now())
+
+  @@index([receptionId])
+  @@index([articleStockId])
+  @@map("lignes_reception")
 }
 
 /**

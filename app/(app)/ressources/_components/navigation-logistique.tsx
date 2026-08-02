@@ -76,7 +76,7 @@ const menuItems: MenuItem[] = [
     icon: BarChart3,
     permission: "stock:lire",
     livraison: "L2",
-    disponible: false,
+    disponible: true,
   },
   {
     label: "Bons de mouvement",
@@ -147,13 +147,13 @@ const menuItems: MenuItem[] = [
 export function NavigationLogistique() {
   const pathname = usePathname();
 
-  // Filtrer pour afficher seulement L1 disponibles dans les onglets principaux
-  const ongletsL1 = menuItems.filter((item) => item.livraison === "L1" && item.disponible);
+  // Filtrer pour afficher L1 et L2 disponibles dans les onglets principaux
+  const ongletsDisponibles = menuItems.filter((item) => item.disponible);
 
   return (
     <div className="border-b border-gray-200 mb-6">
       <nav className="flex gap-8" aria-label="Navigation Logistique">
-        {ongletsL1.map((onglet) => {
+        {ongletsDisponibles.map((onglet) => {
           const Icon = onglet.icon;
           const isActive = pathname === onglet.href;
 
@@ -175,14 +175,14 @@ export function NavigationLogistique() {
           );
         })}
 
-        {/* Lien "Toutes les fonctionnalités" pour voir L2 et L3 */}
+        {/* Lien "Toutes les fonctionnalités" pour voir L2 et L3 à venir */}
         <button
           type="button"
           className="ml-auto flex items-center gap-2 border-b-2 border-transparent pb-3 pt-1 text-sm font-medium text-gray-400 cursor-not-allowed"
           disabled
-          title="Livraisons L2 et L3 à venir"
+          title="Fonctionnalités L2/L3 en cours de développement"
         >
-          <span className="text-xs">+ 11 autres</span>
+          <span className="text-xs">+ 10 autres</span>
           <Badge variant="outline" className="text-xs">
             L2/L3
           </Badge>

@@ -226,6 +226,27 @@ export const PERMISSIONS = {
     libelle: "Configurer les paramètres logistiques (seuils, délais)",
     domaine: "ADMIN",
   },
+  // M13 L2 — Stocks, Inspections, Réceptions
+  "stock:lire": {
+    code: "stock:lire",
+    libelle: "Consulter les stocks et mouvements",
+    domaine: "TECHNIQUE",
+  },
+  "stock:mouvementer": {
+    code: "stock:mouvementer",
+    libelle: "Créer un bon de mouvement de stock",
+    domaine: "TECHNIQUE",
+  },
+  "materiel:inspecter": {
+    code: "materiel:inspecter",
+    libelle: "Créer et consulter des inspections matériel",
+    domaine: "TECHNIQUE",
+  },
+  "reception:controler": {
+    code: "reception:controler",
+    libelle: "Réceptionner et contrôler une livraison",
+    domaine: "TECHNIQUE",
+  },
 } as const;
 
 export type PermissionCode = keyof typeof PERMISSIONS;
