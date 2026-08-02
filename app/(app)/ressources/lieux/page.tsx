@@ -1,9 +1,9 @@
 import { Suspense } from "react";
 import { exigerPermission, PERMISSIONS } from "@/lib/auth/guard";
 import { listerLieux } from "@/lib/actions/lieu";
+import { listerProjets } from "@/lib/actions/projets";
 import { TableauLieux } from "../_components/tableau-lieux";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { BoutonNouveauLieu } from "../_components/bouton-nouveau-lieu";
 
 type SearchParams = Promise<{
   page?: string;
@@ -19,7 +19,11 @@ export default async function PageLieux({
   const params = await searchParams;
   const page = parseInt(params.page || "1", 10);
 
-  const result = await listerLieux(page);
+  const [result, projets] = await Promise.all([
+    listerLieux(page),
+    listerProjets(),
+  ]);
+
   const { lieux, total, pages } = result;
 
   return (
@@ -31,10 +35,7 @@ export default async function PageLieux({
             {total} lieu{total > 1 ? "x" : ""} de stockage
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Nouveau lieu
-        </Button>
+        <BoutonNouveauLieu projets={projets} />
       </div>
 
       <Suspense fallback={<div>Chargement...</div>}>
