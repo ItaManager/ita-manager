@@ -1,11 +1,13 @@
 import { notFound } from "next/navigation";
 import { exigerPermission, PERMISSIONS } from "@/lib/auth/guard";
 import { prisma } from "@/lib/db/prisma";
+import { listerProjets } from "@/lib/actions/projets";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { ActionsLieu } from "./_components/actions-lieu";
 
 const NATURE_LABELS: Record<string, string> = {
   SITE: "Site",
@@ -28,14 +30,17 @@ export default async function PageDetailLieu({
 
   const { id } = await params;
 
-  const lieu = await prisma.lieuStockage.findUnique({
-    where: { id },
-    include: {
-      projet: {
-        select: { code: true, nom: true },
+  const [lieu, projets] = await Promise.all([
+    prisma.lieuStockage.findUnique({
+      where: { id },
+      include: {
+        projet: {
+          select: { id: true, code: true, nom: true },
+        },
       },
-    },
-  });
+    }),
+    listerProjets(),
+  ]);
 
   if (!lieu) {
     notFound();
@@ -59,18 +64,7 @@ export default async function PageDetailLieu({
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <Button variant="outline" disabled>
-            <Edit className="h-4 w-4 mr-2" />
-            Modifier
-          </Button>
-          {lieu.actif && (
-            <Button variant="destructive" disabled>
-              <Trash2 className="h-4 w-4 mr-2" />
-              Désactiver
-            </Button>
-          )}
-        </div>
+        <ActionsLieu lieu={lieu} projets={projets} />
       </div>
 
       {/* Informations principales */}
