@@ -37,7 +37,7 @@ interface OngletContratsProps {
 function BadgeTypeContrat({ type }: { type: TypeContrat }) {
   const colors: Record<TypeContrat, string> = {
     CDI: "bg-primary-soft text-primary",
-    CDD: "bg-accent-soft text-accent",
+    CDD: "bg-review-soft text-review",
     INTERIM: "bg-gray-100 text-gray-800",
     STAGE: "bg-warning-soft text-warning",
   };

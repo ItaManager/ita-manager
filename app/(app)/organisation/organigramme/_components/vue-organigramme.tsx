@@ -13,7 +13,7 @@ const LIBELLES_NIVEAU: Record<NiveauHierarchique, string> = {
 };
 
 const COULEURS_NIVEAU: Record<NiveauHierarchique, string> = {
-  DIRECTION: "bg-accent-soft text-accent dark:bg-accent dark:text-accent",
+  DIRECTION: "bg-review-soft text-review dark:bg-review dark:text-review",
   CADRE: "bg-primary-soft text-primary dark:bg-primary dark:text-primary",
   SUPPORT: "bg-success-soft text-success dark:bg-success dark:text-success",
   OPERATIONNEL: "bg-warning-soft text-warning dark:bg-warning dark:text-warning",

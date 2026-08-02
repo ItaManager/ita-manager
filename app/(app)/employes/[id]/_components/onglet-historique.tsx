@@ -47,7 +47,7 @@ function BadgeAction({ action }: { action: EvenementJournal["action"] }) {
     VALIDATION: {
       label: "Validation",
       icon: CheckCircle,
-      className: "bg-accent-soft text-accent hover:bg-accent-soft",
+      className: "bg-review-soft text-review hover:bg-accent-soft",
     },
   };
 

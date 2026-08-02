@@ -20,7 +20,7 @@ const COULEURS_ACTION: Record<string, string> = {
   MODIFICATION: "bg-primary-soft text-primary dark:bg-primary dark:text-primary",
   ARCHIVAGE: "bg-warning-soft text-warning dark:bg-warning dark:text-warning",
   REFUS: "bg-destructive-soft text-destructive dark:bg-destructive dark:text-destructive",
-  VALIDATION: "bg-accent-soft text-accent dark:bg-accent dark:text-accent",
+  VALIDATION: "bg-review-soft text-review dark:bg-review dark:text-review",
 };
 
 export async function ListeEvenements({
