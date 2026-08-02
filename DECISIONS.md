@@ -563,6 +563,7 @@ rôles.
 | `CT` | Conducteur de Travaux | *à désigner* | Planning, visa des relevés |
 | `CC` | Chef de Chantier | *à désigner* | Saisie des relevés, demandes de ressources |
 | `CE` | Chargé d'études | *à désigner* | Appels d'offres |
+| `AD` | Assistante de Direction | *à désigner* | Carburant, visiteurs, courrier (décision C-05) |
 
 > Le rôle `ADMIN` ne doit jamais être porté par un compte partagé. Chaque
 > administrateur dispose d'un compte nominatif distinct — voir C-03.
@@ -640,6 +641,25 @@ RH — celle-ci crée les profils employés et doit pouvoir leur ouvrir un accè
 > Ce garde-fou rend la décision C-03 plus pressante : tant qu'il n'existe
 > qu'un administrateur, il ne peut pas se retirer lui-même. Protecteur,
 > mais rigide.
+
+### C-05 · Rôle AD — Assistante de Direction — **Arrêtée**
+
+Le poste ASST_DG existe depuis M1. Le rôle applicatif est créé avec M16.
+
+Il porte les trois activités de l'Assistanat : carburant, visiteurs,
+courrier. Aucun rôle existant ne les recouvrait — DRH gère le personnel,
+RH l'assiste.
+
+Dixième rôle du catalogue.
+
+| Permission | Périmètre |
+| --- | --- |
+| `visiteur:enregistrer` | Registre des visiteurs |
+| `courrier:enregistrer` | Saisie du courrier arrivée et départ |
+| `courrier:traiter` | Marquer un courrier traité (partagé avec chefs de service) |
+| `carburant:distribuer` | Saisir une distribution de carburant |
+| `carburant:consulter` | Tableau de consommation (partagé avec DG, DT, Logistique) |
+| `carburant:reapprovisionner` | Créer une demande de réapprovisionnement |
 
 ---
 

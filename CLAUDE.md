@@ -426,8 +426,8 @@ From DECISIONS.md:
 - **4 Departments** (Directions): DG, DFC, DT, DAR
 - **8 Services**: Achats, Comptabilité, Études et AO, AEP, Assainissement, Routes, Logistique, QHSE
 - **30 Positions** (Postes)
-- **9 Application Roles**: ADMIN, DG, DRH, RH, DFC, DT, CT, CC, CE
-- **31 Permissions** across 5 domains: RH, PAIE, TECHNIQUE, REFERENTIEL, ADMIN
+- **10 Application Roles**: ADMIN, DG, DRH, RH, DFC, DT, CT, CC, CE, AD
+- **37 Permissions** across 6 domains: RH, PAIE, TECHNIQUE, REFERENTIEL, ADMIN, PAIEMENT
 
 **Hierarchical chain ≠ Functional chain**: A site supervisor approves leave requests (hierarchical) but a Works Supervisor validates activity reports (functional).
 

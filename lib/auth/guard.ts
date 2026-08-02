@@ -302,6 +302,21 @@ export const PERMISSIONS = {
     libelle: "Marquer un courrier traité",
     domaine: "ADMIN",
   },
+  "carburant:distribuer": {
+    code: "carburant:distribuer",
+    libelle: "Saisir une distribution de carburant",
+    domaine: "ADMIN",
+  },
+  "carburant:consulter": {
+    code: "carburant:consulter",
+    libelle: "Consulter le tableau de consommation",
+    domaine: "ADMIN",
+  },
+  "carburant:reapprovisionner": {
+    code: "carburant:reapprovisionner",
+    libelle: "Créer une demande de réapprovisionnement",
+    domaine: "ADMIN",
+  },
 } as const;
 
 export type PermissionCode = keyof typeof PERMISSIONS;

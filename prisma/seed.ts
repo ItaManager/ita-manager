@@ -51,6 +51,11 @@ const ROLES = [
     description: "Saisie des relevés, demandes de ressources",
   },
   { code: "CE", libelle: "Chargé d'études", description: "Appels d'offres" },
+  {
+    code: "AD",
+    libelle: "Assistante de Direction",
+    description: "Carburant, visiteurs, courrier",
+  },
 ] as const;
 
 // Matrice rôle × permission (M0-SOCLE.md §5), transcrite verbatim.
@@ -127,11 +132,14 @@ const MATRICE: Record<PermissionCode, readonly string[]> = {
   "pilotage:drh": ["ADMIN", "DRH"],
   "pilotage:dfc": ["ADMIN", "DFC"],
   "pilotage:dt": ["ADMIN", "DT"],
-  // M16 — Assistanat de Direction
-  // TODO: Créer rôle "AD" (Assistante de Direction) et lui attribuer ces permissions
-  "visiteur:enregistrer": ["ADMIN"],
-  "courrier:enregistrer": ["ADMIN"],
-  "courrier:traiter": ["ADMIN", "DG", "DRH", "DFC", "DT"], // Tous les directeurs (chefs de service)
+  // M16 — Assistanat de Direction (décision C-05)
+  "visiteur:enregistrer": ["ADMIN", "AD"],
+  "courrier:enregistrer": ["ADMIN", "AD"],
+  "courrier:traiter": ["ADMIN", "AD", "DG", "DRH", "DFC", "DT"], // AD + chefs de service
+  // M16 L2 — Carburant (livraison 2)
+  "carburant:distribuer": ["ADMIN", "AD"],
+  "carburant:consulter": ["ADMIN", "AD", "DG", "DT"], // + Chef Service Logistique, Chef Garage (à créer)
+  "carburant:reapprovisionner": ["ADMIN", "AD"],
 };
 
 // Compte Super Admin — accès technique de maintenance, sans Employe
