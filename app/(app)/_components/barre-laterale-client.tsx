@@ -82,7 +82,7 @@ const buildNavigation = (compteursAchats: CompteursBadges): NavSection[] => [
     items: [
       { label: "Projets", href: "/projets", icon: FolderKanban, moduleNumber: "M5", moduleName: "Projets" },
       { label: "Appels d'offres", href: "/appels-offres", icon: Lightbulb, moduleNumber: "M9", moduleName: "Appels d'offres" },
-      { label: "Ressources", href: "/ressources", icon: PackageSearch, moduleNumber: "M8", moduleName: "Ressources" },
+      { label: "Logistique", href: "/ressources", icon: PackageSearch, moduleNumber: "M13", moduleName: "Logistique" },
     ],
   },
   {
