@@ -44,7 +44,7 @@ const schema = z.object({
   telephone: z.string().optional(),
   visiteId: z.string().min(1, "Personne visitée requise"),
   motif: z.nativeEnum(MotifVisite),
-  pieceDeposee: z.boolean().default(false),
+  pieceDeposee: z.boolean(),
 });
 
 type FormData = z.infer<typeof schema>;

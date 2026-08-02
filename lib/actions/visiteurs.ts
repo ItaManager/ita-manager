@@ -290,3 +290,45 @@ export const detecterVisitesNonCloses = actionProtegee(
     return { visitesNonCloses };
   }
 );
+
+/**
+ * M16 L1.7 — Purger les visites de plus de 3 mois
+ *
+ * Utilisé par:
+ * - Cron quotidien (route API)
+ * - Bouton manuel (historique des visites)
+ */
+export const purgerVisitesAnciennes = actionProtegee(
+  PERMISSIONS["visiteur:enregistrer"].code,
+  async (session) => {
+    const il3Mois = new Date();
+    il3Mois.setMonth(il3Mois.getMonth() - 3);
+
+    const result = await prisma.visite.deleteMany({
+      where: {
+        arriveeLe: {
+          lt: il3Mois,
+        },
+      },
+    });
+
+    // Audit
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "Visite",
+        entiteId: "PURGE",
+        action: "SUPPRESSION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        details: {
+          nombreSuppressions: result.count,
+          dateMaximale: il3Mois.toISOString(),
+        },
+        commentaire: `Purge automatique: ${result.count} visites supprimées`,
+      },
+    });
+
+    revalidatePath("/assistanat/visiteurs/historique");
+    return { success: true, count: result.count };
+  }
+);
