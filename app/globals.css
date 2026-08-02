@@ -96,6 +96,11 @@
   --chart-3: #b45309;
   --chart-4: #7c3aed;
   --chart-5: #0e7490;
+
+  /* Design alt — Vert menthe/teal (test) */
+  --teal: #00d9a3;
+  --teal-hover: #00c292;
+  --teal-soft: #e6faf5;
 }
 
 @theme inline {
@@ -166,6 +171,10 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
+  --color-teal: var(--teal);
+  --color-teal-hover: var(--teal-hover);
+  --color-teal-soft: var(--teal-soft);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

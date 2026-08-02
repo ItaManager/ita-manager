@@ -303,6 +303,28 @@ async function main() {
   }
 
   // ===========================================================================
+  // 8. AUCUNE COLONNE ETAT SUR pieces_administratives
+  // ===========================================================================
+
+  console.log('\n📋 Contrôle piège 2 : aucune colonne etat');
+
+  const colonnesEtat = await prisma.$queryRaw<Array<{ column_name: string }>>`
+    SELECT column_name
+    FROM information_schema.columns
+    WHERE table_name = 'pieces_administratives'
+      AND column_name ILIKE '%etat%'
+  `;
+
+  if (colonnesEtat.length > 0) {
+    console.log(`   ❌ Colonne(s) interdite(s) détectée(s) : ${colonnesEtat.map((c) => c.column_name).join(', ')}`);
+    console.log('   ⚠️  L\'état se CALCULE depuis dateExpiration et delaiAlerteJours du type.');
+    console.log('   ⚠️  Aucun champ etat ne doit exister en base.');
+    erreurs++;
+  } else {
+    console.log('   ✅ Aucune colonne etat (état calculé dynamiquement)');
+  }
+
+  // ===========================================================================
   // RÉSULTAT FINAL
   // ===========================================================================
 
