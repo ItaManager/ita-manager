@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { verifierAccesPage } from "@/lib/auth/page-access";
 import { prisma } from "@/lib/db/prisma";
-import { Wrench } from "lucide-react";
 import { RegistreMateriel } from "./_components/registre-materiel";
 import { FormNouveauMateriel } from "./_components/form-nouveau-materiel";
 
@@ -42,13 +41,12 @@ export default async function RessourcesPage(props: {
   });
 
   return (
-    <div className="container mx-auto py-8 max-w-7xl">
+    <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">
-            <Wrench className="size-6" />
+          <h2 className="text-xl font-semibold text-foreground">
             Registre Matériel
-          </h1>
+          </h2>
           <p className="text-sm text-muted-foreground mt-1">
             Parc matériel · Échéances · Affectations
           </p>

@@ -3,7 +3,7 @@ import { listerEcheances, type PieceEcheance } from "@/lib/actions/logistique";
 import { calculerEtatPiece, comparerUrgence, type EtatPiece } from "@/lib/logistique/echeances";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { AlertTriangle, Calendar, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 
 export const metadata = {
   title: "Échéances Pièces Administratives — ITA Manager",
@@ -46,12 +46,11 @@ export default async function EcheancesPage(props: {
   );
 
   return (
-    <div className="container mx-auto py-8 max-w-7xl">
+    <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">
-          <Calendar className="size-6" />
+        <h2 className="text-xl font-semibold text-foreground">
           Échéances Pièces Administratives
-        </h1>
+        </h2>
         <p className="text-sm text-muted-foreground mt-1">
           Suivi des assurances, visites techniques et autres pièces
         </p>

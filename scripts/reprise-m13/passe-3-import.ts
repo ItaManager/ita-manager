@@ -402,7 +402,6 @@ async function importerFeuille(
           dateAcquisition,
           marque,
           numeroSerie,
-          actif: true,
         },
       });
 
@@ -441,7 +440,7 @@ async function executerImport() {
 
   const familles = await prisma.familleMateriel.findMany({
     where: { actif: true },
-    select: { id: true, code: true, libelle: true, typeMateriel: true },
+    select: { id: true, code: true, libelle: true, type: true },
   });
 
   const lieux = await prisma.lieuStockage.findMany({
@@ -452,10 +451,10 @@ async function executerImport() {
   // Grouper familles par type
   const famillesParType = new Map<TypeMateriel, any[]>();
   for (const famille of familles) {
-    if (!famillesParType.has(famille.typeMateriel)) {
-      famillesParType.set(famille.typeMateriel, []);
+    if (!famillesParType.has(famille.type)) {
+      famillesParType.set(famille.type, []);
     }
-    famillesParType.get(famille.typeMateriel)!.push(famille);
+    famillesParType.get(famille.type)!.push(famille);
   }
 
   // Créer un map des lieux

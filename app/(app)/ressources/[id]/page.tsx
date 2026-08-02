@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formaterDateLongue } from "@/lib/dates";
 
 export const metadata = {
   title: "Fiche Matériel — ITA Manager",
@@ -137,11 +138,7 @@ export default async function FicheMaterielPage(props: {
               <div>
                 <p className="text-xs text-muted-foreground">Date d'acquisition</p>
                 <p className="text-sm">
-                  {new Date(materiel.dateAcquisition).toLocaleDateString("fr-FR", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
+                  {formaterDateLongue(materiel.dateAcquisition)}
                 </p>
               </div>
             )}

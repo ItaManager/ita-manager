@@ -1,6 +1,6 @@
 import { verifierAccesPage } from "@/lib/auth/page-access";
 import { listerTableauPieces } from "@/lib/actions/logistique";
-import { FileSpreadsheet, AlertTriangle, Clock, FileX, Package } from "lucide-react";
+import { AlertTriangle, Clock, FileX, Package } from "lucide-react";
 import { TableauPieces } from "./_components/tableau-pieces";
 import { FiltresTableauPieces } from "./_components/filtres-tableau-pieces";
 import { Card, CardContent } from "@/components/ui/card";
@@ -53,12 +53,11 @@ export default async function TableauPiecesPage({
   const masquerCouts = params.masquerCouts === "true";
 
   return (
-    <div className="container mx-auto py-8 max-w-[1400px]">
+    <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">
-          <FileSpreadsheet className="size-6" />
+        <h2 className="text-xl font-semibold text-foreground">
           Tableau Pièces Administratives
-        </h1>
+        </h2>
         <p className="text-sm text-muted-foreground mt-1">
           Suivi par matériel de toutes les pièces obligatoires
         </p>
