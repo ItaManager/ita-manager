@@ -247,6 +247,22 @@ export const PERMISSIONS = {
     libelle: "Réceptionner et contrôler une livraison",
     domaine: "TECHNIQUE",
   },
+  // M13 L3 — Transport, Entretien, Demandes
+  "transport:demander": {
+    code: "transport:demander",
+    libelle: "Créer une demande de transport",
+    domaine: "TECHNIQUE",
+  },
+  "entretien:planifier": {
+    code: "entretien:planifier",
+    libelle: "Planifier et gérer l'entretien du matériel",
+    domaine: "TECHNIQUE",
+  },
+  "ressource:arbitrer": {
+    code: "ressource:arbitrer",
+    libelle: "Arbitrer les demandes de ressources",
+    domaine: "TECHNIQUE",
+  },
 } as const;
 
 export type PermissionCode = keyof typeof PERMISSIONS;

@@ -114,6 +114,10 @@ const MATRICE: Record<PermissionCode, readonly string[]> = {
   "stock:mouvementer": ["ADMIN", "DT"],
   "materiel:inspecter": ["ADMIN", "DT"],
   "reception:controler": ["ADMIN", "DT"],
+  // M13 — Logistique L3
+  "transport:demander": ["ADMIN", "DG", "DT", "CT", "CC"],
+  "entretien:planifier": ["ADMIN", "DT"],
+  "ressource:arbitrer": ["ADMIN", "DG", "DT"],
 };
 
 // Compte Super Admin — accès technique de maintenance, sans Employe

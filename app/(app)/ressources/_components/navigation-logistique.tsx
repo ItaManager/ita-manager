@@ -108,7 +108,7 @@ const menuItems: MenuItem[] = [
     icon: WrenchIcon,
     permission: "entretien:planifier",
     livraison: "L3",
-    disponible: false,
+    disponible: true,
   },
   {
     label: "Demandes de transport",
@@ -116,7 +116,7 @@ const menuItems: MenuItem[] = [
     icon: Truck,
     permission: "transport:demander",
     livraison: "L3",
-    disponible: false,
+    disponible: true,
   },
   {
     label: "Chauffeurs",
@@ -124,7 +124,7 @@ const menuItems: MenuItem[] = [
     icon: Users,
     permission: "materiel:lire",
     livraison: "L3",
-    disponible: false,
+    disponible: true,
   },
   {
     label: "Lieux de stockage",
@@ -132,7 +132,7 @@ const menuItems: MenuItem[] = [
     icon: MapPin,
     permission: "referentiel:creer",
     livraison: "L2",
-    disponible: false,
+    disponible: true,
   },
   {
     label: "Articles de stock",
@@ -182,7 +182,7 @@ export function NavigationLogistique() {
           disabled
           title="Fonctionnalités L2/L3 à venir"
         >
-          <span className="text-xs">+ 7 autres</span>
+          <span className="text-xs">+ 3 autres</span>
           <Badge variant="outline" className="text-xs">
             L2/L3
           </Badge>
