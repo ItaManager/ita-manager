@@ -510,8 +510,10 @@ export type MaterielListItem = {
 /**
  * Lister le parc matériel
  */
-export async function listerMateriel(): Promise<MaterielListItem[]> {
-  const materiel = await prisma.materiel.findMany({
+export const listerMateriel = actionProtegee(
+  "materiel:lire",
+  async (): Promise<MaterielListItem[]> => {
+    const materiel = await prisma.materiel.findMany({
     select: {
       id: true,
       codeIta: true,
@@ -536,13 +538,14 @@ export async function listerMateriel(): Promise<MaterielListItem[]> {
     ],
   });
 
-  return materiel.map((m) => ({
-    id: m.id,
-    codeIta: m.codeIta,
-    designation: m.designation,
-    famille: m.famille,
-    statut: m.statut,
-    partageable: m.partageable,
-    affectations: m._count.affectations,
-  }));
-}
+    return materiel.map((m) => ({
+      id: m.id,
+      codeIta: m.codeIta,
+      designation: m.designation,
+      famille: m.famille,
+      statut: m.statut,
+      partageable: m.partageable,
+      affectations: m._count.affectations,
+    }));
+  }
+);

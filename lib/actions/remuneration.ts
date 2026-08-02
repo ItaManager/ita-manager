@@ -491,15 +491,14 @@ export const statuerDerogation = actionProtegee(
  *
  * @param employeId ID de l'employé qui change de poste
  * @param nouveauNiveau Nouveau niveau hiérarchique du poste
- * @param auteurId ID de l'auteur du changement de poste
- * @param auteurNom Nom de l'auteur (pour journalisation)
  */
-export async function reevaluerDerogationChangementPoste(
-  employeId: string,
-  nouveauNiveau: "DIRECTION" | "CADRE" | "SUPPORT" | "OPERATIONNEL",
-  auteurId: string,
-  auteurNom: string
-): Promise<void> {
+export const reevaluerDerogationChangementPoste = actionProtegee(
+  "derogation:valider",
+  async (
+    session,
+    employeId: string,
+    nouveauNiveau: "DIRECTION" | "CADRE" | "SUPPORT" | "OPERATIONNEL"
+  ): Promise<void> => {
   // Trouver la dérogation active (EN_ATTENTE ou VALIDEE)
   const derogationActive = await prisma.derogationSalariale.findFirst({
     where: {
@@ -574,8 +573,8 @@ export async function reevaluerDerogationChangementPoste(
         entite: "DerogationSalariale",
         entiteId: derogationActive.id,
         action: "CLOTURE_AUTO",
-        auteurId,
-        auteurNom,
+        auteurId: session.userId,
+        auteurNom: session.email,
         details: {
           ancienneDerogationId: derogationActive.id,
           nouveauNiveau,
@@ -596,7 +595,7 @@ export async function reevaluerDerogationChangementPoste(
         motif: `Réévaluation automatique suite au changement de poste vers niveau ${nouveauNiveau}. Salaire hors fourchette (${min} - ${max} FCFA).`,
         statut: "EN_ATTENTE",
         demandeLe: new Date(),
-        demandeParId: auteurId,
+        demandeParId: session.userId,
       },
     });
 
@@ -614,8 +613,8 @@ export async function reevaluerDerogationChangementPoste(
         entite: "DerogationSalariale",
         entiteId: nouvelleDerogation.id,
         action: "REEVALUATION_AUTO",
-        auteurId,
-        auteurNom,
+        auteurId: session.userId,
+        auteurNom: session.email,
         details: {
           ancienneDerogationId: derogationActive.id,
           nouveauNiveau,
@@ -627,7 +626,7 @@ export async function reevaluerDerogationChangementPoste(
       },
     });
   }
-}
+});
 
 /**
  * Archiver une grille publiée

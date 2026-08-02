@@ -14,6 +14,7 @@
 
 import { prisma } from '@/lib/db/prisma';
 import { Decimal } from '@prisma/client/runtime/library';
+import { actionProtegee, PERMISSIONS } from '@/lib/auth/guard';
 
 /**
  * Reprend une ligne EN_ATTENTE
@@ -204,13 +205,15 @@ async function reprendreLigneEnAttente(ligneId: string): Promise<{
  *
  * @returns Statistiques de reprise
  */
-export async function reprendreEnAttente(): Promise<{
-  total: number;
-  trouves: number;
-  reussis: number;
-  echecs: number;
-  enAttente: number;
-}> {
+export const reprendreEnAttente = actionProtegee(
+  "paiement:executer",
+  async (): Promise<{
+    total: number;
+    trouves: number;
+    reussis: number;
+    echecs: number;
+    enAttente: number;
+  }> => {
   // Récupérer toutes les lignes EN_ATTENTE
   const lignes = await prisma.lignePaiement.findMany({
     where: { statut: 'EN_ATTENTE' },
@@ -248,7 +251,7 @@ export async function reprendreEnAttente(): Promise<{
   }
 
   return stats;
-}
+});
 
 /**
  * Vérifie si une ligne EN_ATTENTE doit être reprise
@@ -259,7 +262,9 @@ export async function reprendreEnAttente(): Promise<{
  *
  * @returns true si la ligne doit être reprise
  */
-export async function doitReprendreLigne(ligneId: string): Promise<boolean> {
+export const doitReprendreLigne = actionProtegee(
+  "paiement:consulter",
+  async (session, ligneId: string): Promise<boolean> => {
   const ligne = await prisma.lignePaiement.findUnique({
     where: { id: ligneId },
     include: { tentatives: { orderBy: { envoyeeLe: 'desc' } } },
@@ -297,4 +302,4 @@ export async function doitReprendreLigne(ligneId: string): Promise<boolean> {
 
   const delaiRequis = delais[numeroTentative - 1];
   return ecouleSec >= delaiRequis;
-}
+});

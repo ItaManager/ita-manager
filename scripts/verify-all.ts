@@ -89,6 +89,10 @@ const VERIFICATIONS: VerificationScript[] = [
     name: "M12 — Présences bureau",
     path: join(__dirname, "verify-m12.ts"),
   },
+  {
+    name: "SECURITE — Server Actions protégées",
+    path: join(__dirname, "verify-actions-protegees.ts"),
+  },
 ];
 
 async function runScript(script: VerificationScript): Promise<boolean> {

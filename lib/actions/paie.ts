@@ -476,7 +476,9 @@ export type PeriodePaieListItem = {
  *
  * M7 §5.1 : Le statut est déduit du dernier événement
  */
-export async function listerPeriodesPaie(): Promise<PeriodePaieListItem[]> {
+export const listerPeriodesPaie = actionProtegee(
+  "paie:ouvrirPeriode",
+  async (): Promise<PeriodePaieListItem[]> => {
   const periodes = await prisma.periodePaie.findMany({
     select: {
       id: true,
@@ -553,4 +555,4 @@ export async function listerPeriodesPaie(): Promise<PeriodePaieListItem[]> {
       nbLignes: p._count.lignes,
     };
   });
-}
+});

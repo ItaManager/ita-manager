@@ -35,7 +35,7 @@ export async function BarreLaterale() {
     profil?.roles.flatMap((pr) => pr.role.permissions.map((rp) => rp.permission.code)) || [];
 
   // Charger les compteurs de badges pour les achats
-  const compteursAchats = await chargerCompteursAchats(user.id);
+  const compteursAchats = await chargerCompteursAchats();
 
   return <BarreLateraleClient userPermissions={userPermissions} compteursAchats={compteursAchats} />;
 }

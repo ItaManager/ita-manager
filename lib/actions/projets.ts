@@ -686,8 +686,10 @@ export type ProjetListItem = {
 /**
  * Lister les projets
  */
-export async function listerProjets(): Promise<ProjetListItem[]> {
-  const projets = await prisma.projet.findMany({
+export const listerProjets = actionProtegee(
+  "projet:modifier",
+  async (): Promise<ProjetListItem[]> => {
+    const projets = await prisma.projet.findMany({
     select: {
       id: true,
       code: true,
@@ -705,17 +707,20 @@ export async function listerProjets(): Promise<ProjetListItem[]> {
     ],
   });
 
-  return projets.map((p) => ({
-    ...p,
-    montantMarche: p.montantMarche ? Number(p.montantMarche) : null,
-  }));
-}
+    return projets.map((p) => ({
+      ...p,
+      montantMarche: p.montantMarche ? Number(p.montantMarche) : null,
+    }));
+  }
+);
 
 /**
  * Obtenir un projet avec ses relations
  */
-export async function obtenirProjet(projetId: string) {
-  const projet = await prisma.projet.findUnique({
+export const obtenirProjet = actionProtegee(
+  "projet:modifier",
+  async (session, projetId: string) => {
+    const projet = await prisma.projet.findUnique({
     where: { id: projetId },
     include: {
       lieuLivraison: true,
@@ -746,8 +751,9 @@ export async function obtenirProjet(projetId: string) {
     return null;
   }
 
-  return {
-    ...projet,
-    montantMarche: projet.montantMarche ? Number(projet.montantMarche) : null,
-  };
-}
+    return {
+      ...projet,
+      montantMarche: projet.montantMarche ? Number(projet.montantMarche) : null,
+    };
+  }
+);

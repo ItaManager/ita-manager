@@ -158,12 +158,12 @@ export const compterFactures = actionProtegee(
 
 /**
  * Charge tous les compteurs pour le menu
- * Cette fonction n'utilise PAS actionProtegee car elle est appelée depuis un composant serveur
  */
-export async function chargerCompteursAchats(userId: string) {
-  try {
+export const chargerCompteursAchats = actionProtegee(
+  "achat:demander",
+  async (session) => {
     const profil = await prisma.profil.findUnique({
-      where: { id: userId },
+      where: { id: session.userId },
       include: {
         roles: {
           include: {
@@ -293,14 +293,5 @@ export async function chargerCompteursAchats(userId: string) {
     }
 
     return compteurs;
-  } catch (error) {
-    console.error("Erreur chargement compteurs achats:", error);
-    return {
-      aValider: 0,
-      aInstruire: 0,
-      commandes: 0,
-      receptions: 0,
-      factures: 0,
-    };
   }
-}
+);

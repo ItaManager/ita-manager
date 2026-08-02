@@ -97,11 +97,13 @@ async function estDansCreneauExecution(date: Date): Promise<boolean> {
  * @param options.verifierTotp - Si false, skip vérification TOTP (tests uniquement)
  * @param options.totpActifMock - Résultat mocké pour TOTP (tests uniquement)
  */
-export async function autoriserPaiementLogique(
-  session: Session,
-  demandePaiementId: string,
-  options: { verifierTotp?: boolean; totpActifMock?: boolean } = {}
-): Promise<{ success: boolean; expireLe: Date }> {
+export const autoriserPaiementLogique = actionProtegee(
+  "paiement:autoriser",
+  async (
+    session,
+    demandePaiementId: string,
+    options: { verifierTotp?: boolean; totpActifMock?: boolean } = {}
+  ): Promise<{ success: boolean; expireLe: Date }> => {
   const { verifierTotp = true, totpActifMock } = options;
 
   // ───────────────────────────────────────────────────────────────────
@@ -190,15 +192,7 @@ export async function autoriserPaiementLogique(
   });
 
   return { success: true, expireLe };
-}
-
-/**
- * Server Action - Autorise une demande de paiement
- */
-export const autoriserPaiement = actionProtegee(
-  'paiement:autoriser',
-  autoriserPaiementLogique
-);
+});
 
 /**
  * Server Action - Refuse une demande de paiement
@@ -281,18 +275,20 @@ export const refuserPaiement = actionProtegee(
  * @param options.ignoreCreneaustring - Si true, skip vérification créneau (tests uniquement)
  * @param options.ignoreVerification - Si true, skip vérification lignes (tests uniquement)
  */
-export async function executerPaiementLogique(
-  session: Session,
-  demandePaiementId: string,
-  options: {
-    ignoreEchecs?: boolean;
-    ignoreAutorisateur?: boolean;
-    ignoreExpiration?: boolean;
-    ignoreMontant?: boolean;
-    ignoreCreneau?: boolean;
-    ignoreVerification?: boolean;
-  } = {}
-): Promise<{ success: boolean; nombreReussis: number; nombreEchecs: number }> {
+export const executerPaiementLogique = actionProtegee(
+  "paiement:executer",
+  async (
+    session,
+    demandePaiementId: string,
+    options: {
+      ignoreEchecs?: boolean;
+      ignoreAutorisateur?: boolean;
+      ignoreExpiration?: boolean;
+      ignoreMontant?: boolean;
+      ignoreCreneau?: boolean;
+      ignoreVerification?: boolean;
+    } = {}
+  ): Promise<{ success: boolean; nombreReussis: number; nombreEchecs: number }> => {
   const {
     ignoreEchecs = false,
     ignoreAutorisateur = false,
@@ -550,15 +546,7 @@ export async function executerPaiementLogique(
   });
 
   return { success: true, nombreReussis, nombreEchecs };
-}
-
-/**
- * Server Action - Exécute une demande de paiement autorisée
- */
-export const executerPaiement = actionProtegee(
-  'paiement:executer',
-  executerPaiementLogique
-);
+});
 
 // ═══════════════════════════════════════════════════════════════════════
 // ÉCRAN DE PRÉPARATION
