@@ -57,22 +57,27 @@ export async function verifierAccesPage(pathname: string): Promise<string> {
   const hasPermission = requiredPermissions.some((perm) => userPermissions.includes(perm));
 
   if (!hasPermission) {
-    // Logger le refus d'accès
-    await prisma.journalEvenement.create({
-      data: {
-        entite: "Page",
-        entiteId: pathname,
-        action: "ACCES_REFUSE",
-        auteurId: user.id,
-        auteurNom: user.email || "Inconnu",
-        details: {
-          route: pathname,
-          permissionsRequises: requiredPermissions,
-          permissionsUtilisateur: userPermissions,
+    // Logger le refus d'accès (non-bloquant)
+    try {
+      await prisma.journalEvenement.create({
+        data: {
+          entite: "Page",
+          entiteId: pathname,
+          action: "ACCES_REFUSE",
+          auteurId: user.id,
+          auteurNom: user.email || "Inconnu",
+          details: {
+            route: pathname,
+            permissionsRequises: requiredPermissions,
+            permissionsUtilisateur: userPermissions,
+          },
+          commentaire: `Accès refusé à ${pathname} - permissions insuffisantes`,
         },
-        commentaire: `Accès refusé à ${pathname} - permissions insuffisantes`,
-      },
-    });
+      });
+    } catch (error) {
+      // Ignorer les erreurs de journalisation (ne pas bloquer l'accès)
+      console.warn("Erreur lors de la journalisation du refus d'accès:", error);
+    }
 
     redirect("/403");
   }
