@@ -1,6 +1,6 @@
 import { verifierAccesPage } from "@/lib/auth/page-access";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, FileText, Users } from "lucide-react";
+import { Shield, FileText, Users, Settings } from "lucide-react";
 import Link from "next/link";
 
 export const metadata = {
@@ -22,7 +22,7 @@ export default async function AdminPage() {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Link href="/admin/journal">
           <Card className="cursor-pointer hover:border-primary transition-colors h-full">
             <CardHeader>
@@ -62,6 +62,28 @@ export default async function AdminPage() {
                 <li>Attribution des rôles</li>
                 <li>Désactivation de comptes</li>
                 <li>Réinitialisation MFA</li>
+              </ul>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/admin/parametres">
+          <Card className="cursor-pointer hover:border-primary transition-colors h-full">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Settings className="size-5" />
+                Paramètres système
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Configuration globale de l'application
+              </p>
+              <ul className="mt-3 text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                <li>Paramètres par domaine</li>
+                <li>Modification avec journalisation</li>
+                <li>Paramètres verrouillés</li>
+                <li>Types typés (NUMBER, STRING, JSON)</li>
               </ul>
             </CardContent>
           </Card>
