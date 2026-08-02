@@ -194,7 +194,7 @@ export async function rappelsSoldeCongesSysteme() {
  * - Alerte CRITIQUE : pièce périmée (relance 24h)
  * - Alerte HAUTE : expire dans 60 jours ou moins (relance 3 jours)
  *
- * Destinataires : Chef de Service Logistique + Chef du Garage
+ * Destinataires : Chef de Service Logistique + Chef du Garage + Responsable RH
  *
  * Exécution : quotidienne via cron (6h UTC)
  */
@@ -212,8 +212,8 @@ export async function verifierEcheancesPiecesSysteme() {
   // TODO M13 : Envoyer les emails aux destinataires
   // Pour l'instant, on retourne juste les alertes détectées
   // L'envoi d'email sera implémenté une fois qu'on aura :
-  // - Le template email (emails/logistique-echeances.tsx)
-  // - L'accès aux profils des postes (M2 - Chef Service Logistique, Chef Garage)
+  // - Le template email (emails/logistique-echeances.tsx) ✅
+  // - L'accès aux profils des postes (M2 - Chef Service Logistique, Chef Garage, Responsable RH)
 
   return {
     critiques,
