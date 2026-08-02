@@ -43,6 +43,13 @@ export const NAV_PERMISSIONS: Record<string, string[]> = {
   "/achats/articles": ["referentiel:creer"],
   "/achats/fournisseurs": ["referentiel:creer"],
 
+  // ASSISTANAT
+  "/assistanat/visiteurs": ["visiteur:enregistrer"],
+  "/assistanat/visiteurs/historique": ["visiteur:enregistrer"],
+  "/assistanat/courrier/arrivee": ["courrier:enregistrer"],
+  "/assistanat/courrier/depart": ["courrier:enregistrer"],
+  "/assistanat/courrier/a-traiter": ["courrier:traiter"],
+
   // ADMINISTRATION
   "/documents": ["employe:lire"],
   "/paie": [

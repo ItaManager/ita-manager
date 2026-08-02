@@ -286,6 +286,22 @@ export const PERMISSIONS = {
     libelle: "Accéder au tableau de bord Technique",
     domaine: "PILOTAGE",
   },
+  // M16 — Assistanat de Direction
+  "visiteur:enregistrer": {
+    code: "visiteur:enregistrer",
+    libelle: "Enregistrer les visites (arrivée et sortie)",
+    domaine: "ADMIN",
+  },
+  "courrier:enregistrer": {
+    code: "courrier:enregistrer",
+    libelle: "Enregistrer le courrier (arrivée et départ)",
+    domaine: "ADMIN",
+  },
+  "courrier:traiter": {
+    code: "courrier:traiter",
+    libelle: "Marquer un courrier traité",
+    domaine: "ADMIN",
+  },
 } as const;
 
 export type PermissionCode = keyof typeof PERMISSIONS;

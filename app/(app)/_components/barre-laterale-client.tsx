@@ -27,6 +27,11 @@ import {
   Settings,
   HelpCircle,
   ShoppingCart,
+  UserCheck,
+  History,
+  Inbox,
+  Send,
+  FileCheck,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -97,6 +102,16 @@ const buildNavigation = (compteursAchats: CompteursBadges): NavSection[] => [
       { label: "Suivi commandes", href: "/achats/suivi", icon: BarChart3, moduleNumber: "M14", moduleName: "Achats" },
       { label: "Bordereau de prix", href: "/achats/articles", icon: Briefcase, moduleNumber: "M14", moduleName: "Achats" },
       { label: "Fournisseurs", href: "/achats/fournisseurs", icon: Building2, moduleNumber: "M14", moduleName: "Achats" },
+    ],
+  },
+  {
+    title: "ASSISTANAT",
+    items: [
+      { label: "Visiteurs", href: "/assistanat/visiteurs", icon: UserCheck, badge: 0, moduleNumber: "M16", moduleName: "Assistanat" },
+      { label: "Historique des visites", href: "/assistanat/visiteurs/historique", icon: History, moduleNumber: "M16", moduleName: "Assistanat" },
+      { label: "Courrier arrivée", href: "/assistanat/courrier/arrivee", icon: Inbox, moduleNumber: "M16", moduleName: "Assistanat" },
+      { label: "Courrier départ", href: "/assistanat/courrier/depart", icon: Send, moduleNumber: "M16", moduleName: "Assistanat" },
+      { label: "Courrier à traiter", href: "/assistanat/courrier/a-traiter", icon: FileCheck, badge: 0, moduleNumber: "M16", moduleName: "Assistanat" },
     ],
   },
   {
