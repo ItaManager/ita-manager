@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db/prisma";
 import { actionProtegee } from "@/lib/auth/guard";
 import { revalidatePath } from "next/cache";
 import { StatutAppelOffres, TypeMarche } from "@prisma/client";
+import { formaterDateCivile } from "@/lib/dates";
 
 // =====================================================================
 // M9 — Appels d'offres
@@ -733,7 +734,7 @@ export const abandonnerDossiersDepasses = actionProtegee(
           action: "ABANDON_AUTO",
           auteurId: null, // Action système
           auteurNom: "Système (abandon automatique)",
-          commentaire: `Dossier abandonné automatiquement : ${ao.reference} — date limite dépassée (${ao.dateLimiteDepot.toLocaleDateString()})`,
+          commentaire: `Dossier abandonné automatiquement : ${ao.reference} — date limite dépassée (${formaterDateCivile(ao.dateLimiteDepot)})`,
         },
       });
 

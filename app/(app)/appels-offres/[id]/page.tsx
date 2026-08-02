@@ -8,6 +8,9 @@ import { FileText, ArrowLeft, Calendar, MapPin, DollarSign } from "lucide-react"
 import Link from "next/link";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { BoutonsActionsAO } from "./_components/boutons-actions-ao";
+import { SectionPieces } from "./_components/section-pieces";
+import { SectionConcurrents } from "./_components/section-concurrents";
 
 type Params = Promise<{
   id: string;
@@ -50,6 +53,8 @@ export default async function DossierAOPage({
             <p className="text-base text-foreground font-medium">{ao.maitreOuvrage}</p>
             <p className="text-sm text-muted-foreground mt-1">{ao.objet}</p>
           </div>
+
+          <BoutonsActionsAO appelOffresId={ao.id} statut={ao.statut} />
         </div>
       </div>
 
@@ -132,70 +137,19 @@ export default async function DossierAOPage({
       )}
 
       {/* Pièces du dossier */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-base">Pièces du dossier ({ao.pieces.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {ao.pieces.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aucune pièce enregistrée</p>
-          ) : (
-            <div className="space-y-2">
-              {ao.pieces.map((piece) => (
-                <div
-                  key={piece.id}
-                  className="flex items-center justify-between py-2 border-b last:border-0"
-                >
-                  <div className="flex items-center gap-2">
-                    <FileText className="size-4 text-muted-foreground" />
-                    <span className="text-sm">{piece.libelle}</span>
-                    {piece.obligatoire && (
-                      <Badge variant="outline" className="text-xs">
-                        Obligatoire
-                      </Badge>
-                    )}
-                  </div>
-                  {piece.deposeLe ? (
-                    <Badge variant="default" className="bg-success text-success-foreground">
-                      Déposée
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary">À déposer</Badge>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <SectionPieces
+        appelOffresId={ao.id}
+        pieces={ao.pieces}
+        statut={ao.statut}
+      />
 
       {/* Concurrents */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Concurrents ({ao.concurrents.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {ao.concurrents.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aucun concurrent enregistré</p>
-          ) : (
-            <div className="space-y-2">
-              {ao.concurrents.map((concurrent) => (
-                <div
-                  key={concurrent.id}
-                  className="flex items-center justify-between py-2 border-b last:border-0"
-                >
-                  <span className="text-sm font-medium">{concurrent.nom}</span>
-                  {concurrent.montantSoumis && (
-                    <span className="text-sm text-muted-foreground">
-                      {Number(concurrent.montantSoumis).toLocaleString("fr-FR")} FCFA
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <div className="mt-6">
+        <SectionConcurrents
+          appelOffresId={ao.id}
+          concurrents={ao.concurrents}
+        />
+      </div>
 
       {/* Résultat */}
       {["GAGNE", "PERDU"].includes(ao.statut) && (
