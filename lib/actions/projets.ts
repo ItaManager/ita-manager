@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/db/prisma";
 import { actionProtegee } from "@/lib/auth/guard";
 import { revalidatePath } from "next/cache";
-import { StatutProjet, CyclePaie, Projet } from "@prisma/client";
+import { StatutProjet, CyclePaie, Projet, TypeValidateur, RoleFonctionnel } from "@prisma/client";
 
 // =====================================================================
 // M5 — PROJETS ET PLANNING
@@ -279,7 +279,7 @@ export const reprendreProjet = actionProtegee(
  * - Tous les jalons sont soldés ou explicitement abandonnés
  */
 export const cloturerProjet = actionProtegee(
-  "projet:creer",
+  "projet:modifier",
   async (session, projetId: string) => {
     const projet = await prisma.projet.findUnique({
       where: { id: projetId },
@@ -479,6 +479,191 @@ export const creerTache = actionProtegee(
 
     revalidatePath(`/projets/${donnees.projetId}/planning`);
     return tache;
+  }
+);
+
+// =====================================================================
+// JALONS
+// =====================================================================
+
+/**
+ * Créer un jalon
+ *
+ * RÈGLE MÉTIER (M5) : Les jalons permettent de suivre les événements clés du projet
+ */
+export const creerJalon = actionProtegee(
+  "projet:modifier",
+  async (
+    session,
+    donnees: {
+      projetId: string;
+      libelle: string;
+      description?: string;
+      datePrevisionnelle: Date;
+      typeValidateur: TypeValidateur;
+      validateurExterne?: string;
+    }
+  ) => {
+    const jalon = await prisma.jalon.create({
+      data: {
+        ...donnees,
+        statut: "ATTENTE",
+      },
+    });
+
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "Jalon",
+        entiteId: jalon.id,
+        action: "CREATION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        commentaire: `Jalon créé : ${jalon.libelle}`,
+      },
+    });
+
+    revalidatePath(`/projets/${donnees.projetId}`);
+    return jalon;
+  }
+);
+
+/**
+ * Marquer un jalon comme atteint (valider)
+ *
+ * RÈGLE MÉTIER (M5) : Un jalon validé passe au statut VALIDE
+ */
+export const marquerJalonAtteint = actionProtegee(
+  "projet:modifier",
+  async (session, jalonId: string) => {
+    const jalon = await prisma.jalon.findUnique({
+      where: { id: jalonId },
+      include: { projet: true },
+    });
+
+    if (!jalon) {
+      throw new Error("Jalon introuvable");
+    }
+
+    if (jalon.statut !== "ATTENTE") {
+      throw new Error(
+        `Impossible de valider un jalon au statut ${jalon.statut}`
+      );
+    }
+
+    const jalonMisAJour = await prisma.jalon.update({
+      where: { id: jalonId },
+      data: {
+        statut: "VALIDE",
+        valideLe: new Date(),
+        validePar: session.userId,
+      },
+    });
+
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "Jalon",
+        entiteId: jalonId,
+        action: "JALON_ATTEINT",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        commentaire: `Jalon validé : ${jalon.libelle}`,
+      },
+    });
+
+    revalidatePath(`/projets/${jalon.projetId}`);
+    return jalonMisAJour;
+  }
+);
+
+// =====================================================================
+// AFFECTATIONS CHANTIER
+// =====================================================================
+
+/**
+ * Affecter un employé à un chantier
+ *
+ * RÈGLE MÉTIER (M5) : Vérifier qu'il n'y a pas de chevauchement de dates
+ */
+export const affecterEmployeChantier = actionProtegee(
+  "chantier:affecter",
+  async (
+    session,
+    donnees: {
+      projetId: string;
+      employeId: string;
+      roleFonctionnel: RoleFonctionnel;
+      dateDebut: Date;
+      dateFin?: Date;
+    }
+  ) => {
+    // Vérifier les chevauchements de dates pour cet employé
+    const affectationsExistantes = await prisma.affectationChantier.findMany({
+      where: {
+        employeId: donnees.employeId,
+        OR: [
+          {
+            // Affectations en cours (sans date de fin)
+            dateFin: null,
+          },
+          {
+            // Affectations avec chevauchement de dates
+            AND: [
+              { dateDebut: { lte: donnees.dateFin || new Date("2099-12-31") } },
+              { dateFin: { gte: donnees.dateDebut } },
+            ],
+          },
+        ],
+      },
+    });
+
+    if (affectationsExistantes.length > 0) {
+      throw new Error(
+        "Impossible d'affecter : chevauchement avec une affectation existante"
+      );
+    }
+
+    const affectation = await prisma.affectationChantier.create({
+      data: {
+        projetId: donnees.projetId,
+        employeId: donnees.employeId,
+        roleFonctionnel: donnees.roleFonctionnel,
+        dateDebut: donnees.dateDebut,
+        dateFin: donnees.dateFin,
+        creePar: session.userId,
+      },
+      include: {
+        employe: {
+          select: {
+            id: true,
+            matricule: true,
+            nom: true,
+            prenom: true,
+          },
+        },
+        projet: {
+          select: {
+            id: true,
+            code: true,
+            nom: true,
+          },
+        },
+      },
+    });
+
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "AffectationChantier",
+        entiteId: affectation.id,
+        action: "AFFECTATION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        commentaire: `${affectation.employe.prenom} ${affectation.employe.nom} affecté(e) au projet ${affectation.projet.code}`,
+      },
+    });
+
+    revalidatePath(`/projets/${donnees.projetId}`);
+    revalidatePath(`/employes/${donnees.employeId}`);
+    return affectation;
   }
 );
 

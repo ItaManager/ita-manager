@@ -88,11 +88,11 @@ async function DetailProjet({ projetId }: { projetId: string }) {
           </TabsTrigger>
           <TabsTrigger value="equipe">
             <Users className="size-4 mr-2" aria-hidden="true" />
-            Équipe (0)
+            Équipe ({projet.affectations?.length || 0})
           </TabsTrigger>
           <TabsTrigger value="jalons">
             <Flag className="size-4 mr-2" aria-hidden="true" />
-            Jalons (0)
+            Jalons ({projet.jalons?.length || 0})
           </TabsTrigger>
           <TabsTrigger value="taches">
             <ListTodo className="size-4 mr-2" aria-hidden="true" />
@@ -246,10 +246,35 @@ async function DetailProjet({ projetId }: { projetId: string }) {
               <CardTitle>Équipe affectée</CardTitle>
             </CardHeader>
             <CardContent>
-              {/* TODO M5: affectations non incluses dans obtenirProjet() */}
-              <p className="text-sm text-muted-foreground py-8 text-center">
-                Aucune affectation active sur ce projet
-              </p>
+              {projet.affectations && projet.affectations.length > 0 ? (
+                <div className="space-y-3">
+                  {projet.affectations.map((affectation) => (
+                    <div
+                      key={affectation.id}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
+                      <div>
+                        <p className="font-medium">
+                          {affectation.employe.prenom} {affectation.employe.nom}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {affectation.employe.matricule} • {affectation.roleFonctionnel}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Depuis le{" "}
+                          {format(new Date(affectation.dateDebut), "d MMMM yyyy", {
+                            locale: fr,
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground py-8 text-center">
+                  Aucune affectation active sur ce projet
+                </p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -261,10 +286,44 @@ async function DetailProjet({ projetId }: { projetId: string }) {
               <CardTitle>Jalons du projet</CardTitle>
             </CardHeader>
             <CardContent>
-              {/* TODO M5: jalons non inclus dans obtenirProjet() */}
-              <p className="text-sm text-muted-foreground py-8 text-center">
-                Aucun jalon défini pour ce projet
-              </p>
+              {projet.jalons && projet.jalons.length > 0 ? (
+                <div className="space-y-3">
+                  {projet.jalons.map((jalon) => (
+                    <div
+                      key={jalon.id}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
+                      <div>
+                        <p className="font-medium">{jalon.libelle}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {format(new Date(jalon.datePrevisionnelle), "d MMMM yyyy", {
+                            locale: fr,
+                          })}
+                        </p>
+                      </div>
+                      <Badge
+                        variant={
+                          jalon.statut === "VALIDE"
+                            ? "default"
+                            : jalon.statut === "ABANDONNE"
+                            ? "destructive"
+                            : "secondary"
+                        }
+                      >
+                        {jalon.statut === "VALIDE"
+                          ? "Validé"
+                          : jalon.statut === "ABANDONNE"
+                          ? "Abandonné"
+                          : "En attente"}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground py-8 text-center">
+                  Aucun jalon défini pour ce projet
+                </p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

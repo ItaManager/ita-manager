@@ -77,12 +77,14 @@ export const PERMISSIONS = {
     domaine: "TECHNIQUE",
   },
   "projet:creer": { code: "projet:creer", libelle: "Créer un projet", domaine: "TECHNIQUE" },
+  "projet:modifier": { code: "projet:modifier", libelle: "Modifier un projet", domaine: "TECHNIQUE" },
   "planning:modifier": {
     code: "planning:modifier",
     libelle: "Modifier le planning",
     domaine: "TECHNIQUE",
   },
   "jalon:valider": { code: "jalon:valider", libelle: "Valider un jalon", domaine: "TECHNIQUE" },
+  "chantier:affecter": { code: "chantier:affecter", libelle: "Affecter un employé à un chantier", domaine: "TECHNIQUE" },
   "releve:saisir": {
     code: "releve:saisir",
     libelle: "Saisir un relevé d'activité",

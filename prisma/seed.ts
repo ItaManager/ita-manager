@@ -78,6 +78,8 @@ const MATRICE: Record<PermissionCode, readonly string[]> = {
   "ao:soumettre": ["ADMIN", "DG", "DT"],
   "ao:validerDG": ["ADMIN", "DG"],
   "projet:creer": ["ADMIN", "DG", "DT"],
+  "projet:modifier": ["ADMIN", "DG", "DT"],
+  "chantier:affecter": ["ADMIN", "DT", "CT"],
   "planning:modifier": ["ADMIN", "DT", "CT"],
   "jalon:valider": ["ADMIN", "DG", "DT"],
   "releve:saisir": ["ADMIN", "CT", "CC"],
