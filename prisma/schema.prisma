@@ -393,30 +393,104 @@ model Nationalite {
   @@map("nationalites")
 }
 
-/// Compétences des journaliers avec taux journalier associé.
-/// Permet le calcul automatique de la paie et du budget projet.
+// =====================================================================
+// M17 — COMPÉTENCES ET TAUX JOURNALIERS
+// =====================================================================
+
+/// Catégorie de compétence. Détermine la logique de composition.
+enum CategorieCompetence {
+  BASE     /// Manœuvre, aide — sans qualification particulière
+  QUALIFIE /// Un métier — maçon, soudeur, ferrailleur
+  COMPOSEE /// Plusieurs métiers réunis
+}
+
+/// Compétence d'un journalier. Un agent porte UNE compétence.
+/// S'il sait faire deux métiers, on crée une compétence composée.
 model Competence {
-  id String @id @default(cuid())
+  id String @id @default(uuid())
 
-  /// Code court (ex: "MENU", "MACON", "FERRAIL")
-  code String @unique
-
-  /// Libellé (ex: "Menuisier", "Maçon", "Ferailleur")
+  /// Libellé (ex: "Maçon", "Maçon-Coffreur")
   libelle String @unique
 
-  /// Taux journalier en FCFA (ex: 5000 pour 5.000 FCFA)
-  tauxJournalier Decimal @db.Decimal(10, 2)
+  /// Minuscules, sans accent, sans espace superflu — détecte les doublons
+  libelleNormalise String @unique
+
+  /// Catégorie : BASE, QUALIFIE ou COMPOSEE
+  categorie CategorieCompetence
+
+  /// Auto-relation : une composée réunit plusieurs qualifiées
+  composantes  Competence[] @relation("Composition")
+  composeeDans Competence[] @relation("Composition")
 
   /// Description optionnelle
   description String?
 
-  employes Employe[]
+  actif          Boolean  @default(true)
+  motifArchivage String?
 
-  creeLe    DateTime  @default(now())
-  modifieLe DateTime  @updatedAt
-  archiveLe DateTime?
+  creeParId String
+  creeLe    DateTime @default(now())
+  modifieLe DateTime @updatedAt
 
+  taux         TauxJournalier[]
+  affectations AffectationCompetence[]
+
+  @@index([actif, categorie])
   @@map("competences")
+}
+
+/// Taux journalier d'une compétence. Historisé : un taux ne se modifie pas,
+/// il se remplace avec une nouvelle date d'effet.
+model TauxJournalier {
+  id String @id @default(uuid())
+
+  competenceId String
+  competence   Competence @relation(fields: [competenceId], references: [id])
+
+  /// Montant en XOF (Franc CFA). Entier, pas de centimes.
+  montant Decimal @db.Decimal(12, 0)
+
+  /// Date à partir de laquelle ce taux s'applique
+  dateEffet DateTime @db.Date
+
+  /// Motif de la révision. Requis dès qu'un taux précédent existe.
+  motif String?
+
+  /// Direction Financière qui a fixé ce taux
+  definiParId String
+  definiLe    DateTime @default(now())
+
+  @@unique([competenceId, dateEffet])
+  @@index([competenceId, dateEffet])
+  @@map("taux_journaliers")
+}
+
+/// Affectation d'une compétence à un employé. Historisée : permet de
+/// calculer la paie d'un jour passé avec la compétence de ce jour-là.
+model AffectationCompetence {
+  id String @id @default(uuid())
+
+  employeId String
+  employe   Employe @relation(fields: [employeId], references: [id])
+
+  competenceId String
+  competence   Competence @relation(fields: [competenceId], references: [id])
+
+  /// Date à partir de laquelle cette compétence s'applique
+  dateEffet DateTime @db.Date
+
+  /// Date de fin (renseignée quand une nouvelle affectation prend le relais)
+  dateFin DateTime? @db.Date
+
+  /// Motif du changement. Requis si l'agent avait déjà une compétence.
+  motif String?
+
+  /// Direction RH qui a assigné cette compétence
+  assigneeParId String
+  assigneeLe    DateTime @default(now())
+
+  @@index([employeId, dateEffet])
+  @@map("affectations_competence")
 }
 
 /// Employé ITA. Deux dossiers distincts selon typeMainOeuvre :
@@ -442,12 +516,6 @@ model Employe {
   nationalite           Nationalite?           @relation(fields: [nationaliteId], references: [id])
   situationMatrimoniale SituationMatrimoniale?
   nombreEnfants         Int?                   @default(0)
-
-  // --- Compétence (JOURNALIER uniquement) ---
-  /// Compétence du journalier avec taux journalier associé.
-  /// Obligatoire pour les journaliers, null pour les permanents.
-  competenceId String?
-  competence   Competence? @relation(fields: [competenceId], references: [id])
 
   /// Donnée SENSIBLE. Unique parmi les permanents actifs (non archivés).
   numeroCnps String? @unique
@@ -521,6 +589,9 @@ model Employe {
   visitesRecues              Visite[]                @relation("VisitesRecues")
   distributionsCarburant DistributionCarburant[] @relation("DistributionsCarburantDemandees")
 
+  /// M17 — Compétences (JOURNALIER uniquement)
+  competences AffectationCompetence[]
+
   creeLe    DateTime  @default(now())
   modifieLe DateTime  @updatedAt
   /// Archivage, jamais suppression. Motif stocké dans JournalEvenement.
@@ -529,7 +600,6 @@ model Employe {
   @@index([matricule])
   @@index([typeMainOeuvre])
   @@index([nationaliteId])
-  @@index([competenceId])
   @@map("employes")
 }
 
