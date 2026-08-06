@@ -595,8 +595,98 @@ async function seedPostes() {
   console.log(`  ✅ Hiérarchie configurée pour ${Object.keys(hierarchie).length} postes`);
 }
 
+// =====================================================================
+// M17 — COMPÉTENCES ET TAUX JOURNALIERS
+// =====================================================================
+
+/**
+ * Fonction utilitaire de normalisation (même que lib/actions/competences.ts)
+ */
+function normaliserLibelleCompetence(libelle: string): string {
+  return libelle
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Retirer les accents
+    .trim()
+    .replace(/\s+/g, " "); // Réduire espaces multiples à un seul
+}
+
+async function seedCompetencesM17() {
+  console.log("M17 — Compétences et taux journaliers");
+
+  // ID système pour le seed
+  const systemId = "seed-system-m17";
+
+  // Avertissement
+  console.log("  ⚠️  Ces montants sont des HYPOTHÈSES.");
+  console.log("  ⚠️  La Direction Financière doit les confirmer avant toute paie réelle.\n");
+
+  // Les 9 compétences avec leurs taux
+  const competencesData: Array<{
+    libelle: string;
+    categorie: "BASE" | "QUALIFIE" | "COMPOSEE";
+    taux: number;
+    description?: string;
+  }> = [
+    { libelle: "Manœuvre", categorie: "BASE", taux: 5000 },
+    { libelle: "Aide-maçon", categorie: "BASE", taux: 6000 },
+    { libelle: "Maçon", categorie: "QUALIFIE", taux: 7500 },
+    { libelle: "Coffreur", categorie: "QUALIFIE", taux: 8000 },
+    { libelle: "Ferrailleur", categorie: "QUALIFIE", taux: 8500 },
+    { libelle: "Plombier — pose canalisation", categorie: "QUALIFIE", taux: 9000 },
+    { libelle: "Soudeur", categorie: "QUALIFIE", taux: 10000 },
+    { libelle: "Conducteur d'engins", categorie: "QUALIFIE", taux: 12000 },
+    { libelle: "Maçon-Coffreur", categorie: "COMPOSEE", taux: 9500, description: "Maçon + Coffreur" },
+  ];
+
+  const dateEffet = new Date("2026-01-01");
+
+  for (const comp of competencesData) {
+    // Upsert compétence
+    const competence = await prisma.competence.upsert({
+      where: { libelleNormalise: normaliserLibelleCompetence(comp.libelle) },
+      create: {
+        libelle: comp.libelle,
+        libelleNormalise: normaliserLibelleCompetence(comp.libelle),
+        categorie: comp.categorie,
+        description: comp.description || null,
+        creeParId: systemId,
+      },
+      update: {}, // Ne rien modifier si existe déjà
+    });
+
+    // Vérifier si le taux à cette date existe déjà
+    const tauxExistant = await prisma.tauxJournalier.findUnique({
+      where: {
+        competenceId_dateEffet: {
+          competenceId: competence.id,
+          dateEffet,
+        },
+      },
+    });
+
+    // Créer le taux seulement s'il n'existe pas
+    if (!tauxExistant) {
+      await prisma.tauxJournalier.create({
+        data: {
+          competenceId: competence.id,
+          montant: comp.taux,
+          dateEffet,
+          motif: `Taux initial (seed M17 — HYPOTHÈSE à confirmer)`,
+          definiParId: systemId,
+        },
+      });
+      console.log(`  ✅ ${comp.libelle} (${comp.categorie}) → ${comp.taux.toLocaleString("fr-FR")} F`);
+    } else {
+      console.log(`  ⏭️  ${comp.libelle} — taux déjà existant, non écrasé`);
+    }
+  }
+
+  console.log(`  ✅ ${competencesData.length} compétences et taux créés`);
+}
+
 async function main() {
-  console.log("🌱 Seed M0 + M1 — début\n");
+  console.log("🌱 Seed M0 + M1 + M17 — début\n");
 
   // M0
   console.log("=== MODULE M0 ===");
@@ -611,7 +701,11 @@ async function main() {
   await seedServices();
   await seedPostes();
 
-  console.log("\n✅ Seed M0 + M1 — terminé");
+  // M17
+  console.log("\n=== MODULE M17 ===");
+  await seedCompetencesM17();
+
+  console.log("\n✅ Seed M0 + M1 + M17 — terminé");
 }
 
 main()
