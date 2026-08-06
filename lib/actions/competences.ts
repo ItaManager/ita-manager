@@ -876,3 +876,100 @@ export const statistiquesCompetences = actionProtegee(
     };
   }
 );
+
+/**
+ * Liste tous les agents journaliers avec leurs compétences actuelles
+ */
+export const listerAgentsAvecCompetences = actionProtegee(
+  PERMISSIONS["competence:lire"].code,
+  async (session, filtres?: { sansCompetence?: boolean; surChantier?: boolean }) => {
+    const agents = await prisma.employe.findMany({
+      where: {
+        typeMainOeuvre: "JOURNALIER",
+        archiveLe: null,
+      },
+      include: {
+        competences: {
+          where: {
+            dateFin: null,
+          },
+          include: {
+            competence: {
+              include: {
+                taux: {
+                  orderBy: { dateEffet: "desc" },
+                  take: 1,
+                },
+              },
+            },
+          },
+        },
+        affectationsChantier: {
+          where: {
+            dateFin: null,
+          },
+          include: {
+            projet: {
+              select: {
+                code: true,
+                nom: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: [{ nom: "asc" }, { prenom: "asc" }],
+    });
+
+    // Filtrer si nécessaire
+    let resultats = agents;
+
+    if (filtres?.sansCompetence) {
+      resultats = agents.filter((a) => a.competences.length === 0);
+    }
+
+    if (filtres?.surChantier) {
+      resultats = agents.filter((a) => a.affectationsChantier.length > 0);
+    }
+
+    // Mapper pour simplifier
+    const items = resultats.map((agent) => {
+      const competenceActuelle = agent.competences[0];
+      const tauxActuel = competenceActuelle?.competence.taux[0];
+      const projetActuel = agent.affectationsChantier[0];
+
+      return {
+        id: agent.id,
+        matricule: agent.matricule,
+        nom: agent.nom,
+        prenom: agent.prenom,
+        competence: competenceActuelle
+          ? {
+              id: competenceActuelle.competence.id,
+              libelle: competenceActuelle.competence.libelle,
+              categorie: competenceActuelle.competence.categorie,
+              dateEffet: competenceActuelle.dateEffet,
+            }
+          : null,
+        taux: tauxActuel
+          ? {
+              montant: tauxActuel.montant.toString(),
+              dateEffet: tauxActuel.dateEffet,
+            }
+          : null,
+        projet: projetActuel
+          ? {
+              code: projetActuel.projet.code,
+              nom: projetActuel.projet.nom,
+            }
+          : null,
+      };
+    });
+
+    return {
+      success: true,
+      data: items,
+      total: items.length,
+    };
+  }
+);
