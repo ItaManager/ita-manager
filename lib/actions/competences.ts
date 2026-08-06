@@ -582,3 +582,225 @@ export const historiqueTaux = actionProtegee(
     };
   }
 );
+
+// =====================================================================
+// ACTIONS SERVEUR — DIRECTION RH
+// =====================================================================
+
+interface AssignerCompetenceParams {
+  employeId: string;
+  competenceId: string;
+  dateEffet: Date;
+  motif?: string; // Requis si changement
+}
+
+/**
+ * La compétence d'un agent à une date donnée
+ * Code exact de M17-COMPETENCES.md § 3.4
+ */
+export async function competenceALaDate(employeId: string, date: Date) {
+  return await prisma.affectationCompetence.findFirst({
+    where: {
+      employeId,
+      dateEffet: { lte: date },
+      OR: [{ dateFin: null }, { dateFin: { gte: date } }],
+    },
+    include: { competence: true },
+  });
+}
+
+/**
+ * Le montant d'un jour pointé — DEUX lectures historisées
+ * Code exact de M17-COMPETENCES.md § 3.4
+ *
+ * C'EST LE CRITÈRE DE RECETTE LE PLUS IMPORTANT DE M17
+ */
+export async function montantDuJour(employeId: string, jour: Date): Promise<number | null> {
+  const aff = await competenceALaDate(employeId, jour);
+  if (!aff) return null; // pas de compétence ce jour-là
+
+  const taux = await prisma.tauxJournalier.findFirst({
+    where: { competenceId: aff.competenceId, dateEffet: { lte: jour } },
+    orderBy: { dateEffet: "desc" },
+  });
+
+  return taux?.montant ? parseFloat(taux.montant.toString()) : null;
+}
+
+/**
+ * Assigne une compétence à un employé
+ * Clôt l'affectation précédente si elle existe
+ */
+export const assignerCompetence = actionProtegee(
+  PERMISSIONS["competence:assigner"].code,
+  async (session, params: AssignerCompetenceParams) => {
+    // Vérifier l'employé
+    const employe = await prisma.employe.findUnique({
+      where: { id: params.employeId },
+      select: { nom: true, prenom: true, typeMainOeuvre: true },
+    });
+
+    if (!employe) {
+      return { success: false, error: "Employé introuvable" };
+    }
+
+    // Vérifier la compétence
+    const competence = await prisma.competence.findUnique({
+      where: { id: params.competenceId },
+      include: {
+        taux: {
+          where: { dateEffet: { lte: params.dateEffet } },
+          orderBy: { dateEffet: "desc" },
+          take: 1,
+        },
+      },
+    });
+
+    if (!competence) {
+      return { success: false, error: "Compétence introuvable" };
+    }
+
+    if (!competence.actif) {
+      return { success: false, error: "Cette compétence est archivée" };
+    }
+
+    // Contrôle bloquant : une compétence sans taux ne s'assigne pas
+    if (competence.taux.length === 0) {
+      return {
+        success: false,
+        error:
+          "Impossible d'assigner cette compétence : aucun taux journalier n'a été fixé. La Direction Financière doit d'abord fixer un taux.",
+      };
+    }
+
+    // Vérifier affectation actuelle
+    const affectationActuelle = await prisma.affectationCompetence.findFirst({
+      where: {
+        employeId: params.employeId,
+        dateFin: null,
+      },
+      include: {
+        competence: true,
+      },
+    });
+
+    const estChangement = affectationActuelle !== null;
+
+    // Vérifier motif si changement
+    if (estChangement && !params.motif) {
+      return {
+        success: false,
+        error:
+          "Un motif est requis pour changer la compétence d'un agent (minimum 15 caractères)",
+      };
+    }
+
+    if (estChangement && params.motif && params.motif.length < 15) {
+      return {
+        success: false,
+        error: "Le motif doit comporter au moins 15 caractères",
+      };
+    }
+
+    // Transaction : clôturer l'ancienne et créer la nouvelle
+    const result = await prisma.$transaction(async (tx) => {
+      // Clôturer l'affectation précédente
+      if (affectationActuelle) {
+        const veille = new Date(params.dateEffet);
+        veille.setDate(veille.getDate() - 1);
+
+        await tx.affectationCompetence.update({
+          where: { id: affectationActuelle.id },
+          data: { dateFin: veille },
+        });
+      }
+
+      // Créer la nouvelle affectation
+      const nouvelleAffectation = await tx.affectationCompetence.create({
+        data: {
+          employeId: params.employeId,
+          competenceId: params.competenceId,
+          dateEffet: params.dateEffet,
+          motif: params.motif,
+          assigneeParId: session.userId,
+        },
+      });
+
+      return nouvelleAffectation;
+    });
+
+    // Calculer variation de taux si changement
+    let variationTaux: number | null = null;
+    if (estChangement && affectationActuelle) {
+      const ancienTaux = await tauxEnVigueur(
+        affectationActuelle.competenceId,
+        params.dateEffet
+      );
+      const nouveauTaux = competence.taux[0];
+
+      if (ancienTaux && nouveauTaux) {
+        const ancienMontant = parseFloat(ancienTaux.montant.toString());
+        const nouveauMontant = parseFloat(nouveauTaux.montant.toString());
+        variationTaux = ((nouveauMontant - ancienMontant) / ancienMontant) * 100;
+      }
+    }
+
+    // Journaliser
+    const commentaire = estChangement
+      ? `Changement de compétence pour ${employe.prenom} ${employe.nom} : "${affectationActuelle!.competence.libelle}" → "${competence.libelle}"${variationTaux !== null ? ` (${variationTaux > 0 ? "+" : ""}${variationTaux.toFixed(1)} %)` : ""}. Motif : ${params.motif}`
+      : `Assignation de compétence "${competence.libelle}" à ${employe.prenom} ${employe.nom}`;
+
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "AffectationCompetence",
+        entiteId: result.id,
+        action: estChangement ? "MODIFICATION" : "CREATION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        commentaire,
+      },
+    });
+
+    return {
+      success: true,
+      data: result,
+      message: estChangement
+        ? "Compétence modifiée avec succès"
+        : "Compétence assignée avec succès",
+    };
+  }
+);
+
+/**
+ * Liste les agents sans compétence (journaliers uniquement)
+ */
+export const listerAgentsSansCompetence = actionProtegee(
+  PERMISSIONS["competence:lire"].code,
+  async (session) => {
+    const agents = await prisma.employe.findMany({
+      where: {
+        typeMainOeuvre: "JOURNALIER",
+        archiveLe: null,
+        competences: {
+          none: {
+            dateFin: null,
+          },
+        },
+      },
+      select: {
+        id: true,
+        matricule: true,
+        nom: true,
+        prenom: true,
+        creeLe: true,
+      },
+      orderBy: { creeLe: "desc" },
+    });
+
+    return {
+      success: true,
+      data: agents,
+      count: agents.length,
+    };
+  }
+);
