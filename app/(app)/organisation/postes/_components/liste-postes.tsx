@@ -3,14 +3,14 @@ import {
   listerDirections,
   listerServices,
 } from "@/lib/actions/organisation";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Briefcase, Building2, Users, Layers } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Briefcase, ChevronDown, Download } from "lucide-react";
+import Link from "next/link";
+import type { NiveauHierarchique } from "@prisma/client";
 import { FiltresPostes } from "./filtres-postes";
-import { Pagination } from "@/components/pagination";
 import { BoutonNouveauPoste } from "./bouton-nouveau-poste";
 import { BoutonModifierPoste } from "./bouton-modifier-poste";
-import type { NiveauHierarchique } from "@prisma/client";
 
 interface ListePostesProps {
   page: number;
@@ -61,8 +61,23 @@ export async function ListePostes({
   ]);
 
   return (
-    <div className="space-y-4">
-      {/* Filtres */}
+    <>
+      {/* Actions Header */}
+      <div className="flex items-center justify-end gap-4">
+        <Button
+          variant="outline"
+          className="gap-2 h-12 px-6 text-base border-2 hover:bg-muted hover:border-primary transition-all cursor-pointer shadow-sm hover:shadow-md"
+        >
+          <Download className="size-5" />
+          Télécharger
+        </Button>
+        <BoutonNouveauPoste
+          directions={directions}
+          services={servicesData.services}
+        />
+      </div>
+
+      {/* Filters */}
       <FiltresPostes
         directions={directions}
         services={servicesData.services}
@@ -72,122 +87,137 @@ export async function ListePostes({
         rechercheActive={recherche}
       />
 
-      {/* Liste */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between border-b">
-          <div>
-            <p className="text-sm text-muted-foreground">
-              {total} poste{total > 1 ? "s" : ""}
-            </p>
-          </div>
-          <BoutonNouveauPoste
-            directions={directions}
-            services={servicesData.services}
-          />
-        </CardHeader>
-
-        {postes.length === 0 ? (
-          <CardContent className="py-12 text-center">
-            <Briefcase
-              className="mx-auto size-12 text-muted-foreground/40"
-              aria-hidden="true"
-            />
-            <p className="mt-4 text-sm text-muted-foreground">
-              {recherche || directionId || serviceId || niveau
-                ? "Aucun poste ne correspond à vos critères."
-                : "Aucun poste créé pour le moment."}
-            </p>
-            {!recherche && !directionId && !serviceId && !niveau && (
-              <p className="mt-1 text-xs text-muted-foreground">
-                Utilisez le bouton &quot;Nouveau poste&quot; pour commencer.
-              </p>
-            )}
-          </CardContent>
-        ) : (
-          <>
-            <CardContent className="p-0">
-              <div className="divide-y">
-                {postes.map((poste) => (
-                  <div
+      {/* Table */}
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-muted/50">
+              <tr className="border-b border-border">
+                <th className="text-left py-3 px-4">
+                  <input type="checkbox" className="rounded border-border cursor-pointer" />
+                </th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                  Poste
+                </th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                  Code
+                </th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                  Niveau
+                </th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                  Direction
+                </th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                  Service
+                </th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {postes.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-muted-foreground">
+                    {recherche || directionId || serviceId || niveau
+                      ? "Aucun poste ne correspond à vos critères."
+                      : "Aucun poste créé pour le moment."}
+                  </td>
+                </tr>
+              ) : (
+                postes.map((poste) => (
+                  <tr
                     key={poste.id}
-                    className="flex items-center gap-4 p-4 transition-colors hover:bg-muted/50"
+                    className="border-b border-border hover:bg-muted/50 transition-colors"
                   >
-                    {/* Icône */}
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Briefcase className="size-5" aria-hidden="true" />
-                    </div>
-
-                    {/* Informations */}
-                    <div className="flex-1 space-y-1">
+                    <td className="py-3 px-4">
+                      <input type="checkbox" className="rounded border-border cursor-pointer" />
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-white" style={{ backgroundColor: '#13850b' }}>
+                          <Briefcase className="size-5" />
+                        </div>
+                        <div className="font-medium text-sm">{poste.libelle}</div>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-sm font-mono text-muted-foreground">
+                      {poste.code}
+                    </td>
+                    <td className="py-3 px-4">
+                      <Badge variant={NIVEAUX_VARIANTS[poste.niveau]} className="text-xs">
+                        {NIVEAUX_LABELS[poste.niveau]}
+                      </Badge>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-muted-foreground">
+                      {poste.direction.libelle}
+                    </td>
+                    <td className="py-3 px-4 text-sm text-muted-foreground">
+                      {poste.service?.libelle || "—"}
+                    </td>
+                    <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-foreground">
-                          {poste.libelle}
-                        </p>
-                        <Badge variant="outline" className="font-mono text-xs">
-                          {poste.code}
-                        </Badge>
-                        <Badge variant={NIVEAUX_VARIANTS[poste.niveau]}>
-                          {NIVEAUX_LABELS[poste.niveau]}
-                        </Badge>
+                        <BoutonModifierPoste
+                          poste={poste}
+                          directions={directions}
+                          services={servicesData.services}
+                        />
                       </div>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Building2 className="size-3" aria-hidden="true" />
-                          {poste.direction.libelle}
-                        </span>
-                        {poste.service && (
-                          <span className="flex items-center gap-1">
-                            <Users className="size-3" aria-hidden="true" />
-                            {poste.service.libelle}
-                          </span>
-                        )}
-                        {(poste.reserveAdmin ||
-                          poste.titulaireUnique ||
-                          !poste.ouvreDroitConges) && (
-                          <span className="flex items-center gap-1">
-                            <Layers className="size-3" aria-hidden="true" />
-                            {[
-                              poste.reserveAdmin && "Admin",
-                              poste.titulaireUnique && "Unique",
-                              !poste.ouvreDroitConges && "Sans congés",
-                            ]
-                              .filter(Boolean)
-                              .join(" · ")}
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-                    {/* Actions */}
-                    <BoutonModifierPoste
-                      poste={poste}
-                      directions={directions}
-                      services={servicesData.services}
-                    />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
+        {/* Pagination */}
+        <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted/20">
+          <div className="text-sm text-muted-foreground">
+            Affichage de {(page - 1) * 25 + 1} à {Math.min(page * 25, total)} sur {total} poste{total > 1 ? "s" : ""}
+          </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="border-t p-4">
-                <Pagination
-                  page={page}
-                  totalPages={totalPages}
-                  baseUrl="/organisation/postes"
-                  searchParams={{
-                    direction: directionId,
-                    service: serviceId,
-                    niveau,
-                    recherche,
-                  }}
-                />
-              </div>
-            )}
-          </>
-        )}
-      </Card>
-    </div>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/organisation/postes?page=${page - 1}${directionId ? `&direction=${directionId}` : ""}${serviceId ? `&service=${serviceId}` : ""}${niveau ? `&niveau=${niveau}` : ""}${recherche ? `&recherche=${recherche}` : ""}`}
+                className={`p-2 hover:bg-background rounded-lg transition-colors ${
+                  page === 1 ? "pointer-events-none opacity-50" : ""
+                }`}
+              >
+                <ChevronDown className="size-4 rotate-90 text-muted-foreground" />
+              </Link>
+
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                const pageNum = i + 1;
+                return (
+                  <Link
+                    key={pageNum}
+                    href={`/organisation/postes?page=${pageNum}${directionId ? `&direction=${directionId}` : ""}${serviceId ? `&service=${serviceId}` : ""}${niveau ? `&niveau=${niveau}` : ""}${recherche ? `&recherche=${recherche}` : ""}`}
+                    className={`w-10 h-10 rounded-lg font-medium text-sm flex items-center justify-center transition-colors ${
+                      page === pageNum
+                        ? "bg-primary text-white"
+                        : "hover:bg-background"
+                    }`}
+                  >
+                    {pageNum}
+                  </Link>
+                );
+              })}
+
+              <Link
+                href={`/organisation/postes?page=${page + 1}${directionId ? `&direction=${directionId}` : ""}${serviceId ? `&service=${serviceId}` : ""}${niveau ? `&niveau=${niveau}` : ""}${recherche ? `&recherche=${recherche}` : ""}`}
+                className={`p-2 hover:bg-background rounded-lg transition-colors ${
+                  page === totalPages ? "pointer-events-none opacity-50" : ""
+                }`}
+              >
+                <ChevronDown className="size-4 -rotate-90 text-muted-foreground" />
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 }

@@ -98,7 +98,7 @@ export function ModalNouveauJalon({ projetId }: ModalNouveauJalonProps) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-h-[90vh] overflow-y-auto max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Flag className="size-5" aria-hidden="true" />

@@ -14,7 +14,6 @@ export const NAV_PERMISSIONS: Record<string, string[]> = {
   "/organisation/organigramme": ["employe:lire", "referentiel:creer"],
   "/organisation/services": ["employe:lire", "referentiel:creer"],
   "/contrats": ["employe:lire", "employe:creer", "employe:modifier"],
-
   // TEMPS & ABSENCES
   "/conges": ["absence:demander", "absence:valider"],
   "/conges/a-valider": [], // Accessible à tous, contrôle par lien de données dans l'action
@@ -65,6 +64,9 @@ export const NAV_PERMISSIONS: Record<string, string[]> = {
   // BAS DE MENU
   "/admin/utilisateurs": ["admin:utilisateurs"],
   "/admin/journal": ["admin:journal"],
+  "/admin/roles": ["admin:parametres"],
+  "/admin/alertes": ["admin:parametres"],
+  "/admin/parametres": ["admin:parametres"],
   "/parametres": ["admin:parametres"],
   "/aide": [],
 };

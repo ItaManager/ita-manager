@@ -3,18 +3,23 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
-import { ModaleModificationEmploye } from "./modale-modification-employe";
-import type { TypeMainOeuvre } from "@prisma/client";
+import { ModaleCreationEmployeV2 } from "../../_components/modale-creation-employe-v2";
 
 interface BoutonModifierEmployeProps {
   employeId: string;
-  typeMainOeuvre: TypeMainOeuvre;
+  postes: Array<{ id: string; libelle: string; code: string; serviceId?: string | null; directionId: string }>;
+  nationalites: Array<{ id: string; libelle: string }>;
+  directions: Array<{ id: string; libelle: string }>;
+  services: Array<{ id: string; libelle: string; directionId: string }>;
   disabled?: boolean;
 }
 
 export function BoutonModifierEmploye({
   employeId,
-  typeMainOeuvre,
+  postes,
+  nationalites,
+  directions,
+  services,
   disabled,
 }: BoutonModifierEmployeProps) {
   const [ouvert, setOuvert] = useState(false);
@@ -30,11 +35,14 @@ export function BoutonModifierEmploye({
         Modifier
       </Button>
 
-      <ModaleModificationEmploye
-        employeId={employeId}
-        typeMainOeuvre={typeMainOeuvre}
+      <ModaleCreationEmployeV2
         ouvert={ouvert}
-        onOuvertChange={setOuvert}
+        onFermer={() => setOuvert(false)}
+        postes={postes}
+        nationalites={nationalites}
+        directions={directions}
+        services={services}
+        employeId={employeId}
       />
     </>
   );

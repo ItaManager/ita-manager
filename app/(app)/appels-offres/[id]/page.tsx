@@ -50,7 +50,7 @@ export default async function DossierAOPage({
               <Badge variant="outline">{ao.typeMarche}</Badge>
             </div>
 
-            <p className="text-base text-foreground font-medium">{ao.maitreOuvrage}</p>
+            <p className="text-sm text-foreground font-medium">{ao.maitreOuvrage}</p>
             <p className="text-sm text-muted-foreground mt-1">{ao.objet}</p>
           </div>
 
@@ -118,7 +118,7 @@ export default async function DossierAOPage({
       {ao.goNoGoDecideLe && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-base">Décision Go/No-go</CardTitle>
+            <CardTitle className="text-sm">Décision Go/No-go</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-4 text-sm">
@@ -155,7 +155,7 @@ export default async function DossierAOPage({
       {["GAGNE", "PERDU"].includes(ao.statut) && (
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle className="text-base">Résultat</CardTitle>
+            <CardTitle className="text-sm">Résultat</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">

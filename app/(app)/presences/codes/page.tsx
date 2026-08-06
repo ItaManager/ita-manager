@@ -91,7 +91,7 @@ export default function CodesPointagePage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">
+            <CardTitle className="text-sm">
               Codes employés ({employesFiltres.length})
             </CardTitle>
             <Button variant="outline" size="sm" onClick={charger} disabled={loading}>
@@ -173,7 +173,7 @@ export default function CodesPointagePage() {
       </Card>
 
       <Dialog open={!!codeGenere} onOpenChange={fermerModal}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Code de pointage généré</DialogTitle>
             <DialogDescription>
@@ -184,7 +184,7 @@ export default function CodesPointagePage() {
 
           <div className="space-y-4">
             <div className="bg-muted p-6 rounded-lg text-center">
-              <p className="text-4xl font-mono font-bold tracking-wider">
+              <p className="text-4xl font-mono font-semibold tracking-wider">
                 {codeGenere}
               </p>
             </div>

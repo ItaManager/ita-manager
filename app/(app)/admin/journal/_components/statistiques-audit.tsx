@@ -15,7 +15,7 @@ export async function StatistiquesAudit() {
           <FileText className="size-4 text-muted-foreground" aria-hidden="true" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.total.toLocaleString("fr-FR")}</div>
+          <div className="text-2xl font-semibold">{stats.total.toLocaleString("fr-FR")}</div>
           <p className="text-xs text-muted-foreground">
             Depuis la création
           </p>
@@ -30,7 +30,7 @@ export async function StatistiquesAudit() {
           <Activity className="size-4 text-muted-foreground" aria-hidden="true" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.derniers7jours.toLocaleString("fr-FR")}</div>
+          <div className="text-2xl font-semibold">{stats.derniers7jours.toLocaleString("fr-FR")}</div>
           <p className="text-xs text-muted-foreground">
             Activité récente
           </p>
@@ -45,7 +45,7 @@ export async function StatistiquesAudit() {
           <TrendingUp className="size-4 text-muted-foreground" aria-hidden="true" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">
+          <div className="text-2xl font-semibold">
             {stats.parAction[0]?.action || "—"}
           </div>
           <p className="text-xs text-muted-foreground">

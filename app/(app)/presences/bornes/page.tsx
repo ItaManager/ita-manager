@@ -125,7 +125,7 @@ export default function BornesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">
+          <CardTitle className="text-sm">
             Appareils enregistrés ({appareils.length})
           </CardTitle>
         </CardHeader>
@@ -214,7 +214,7 @@ export default function BornesPage() {
       </Card>
 
       <Dialog open={showModal} onOpenChange={fermerModal}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Enregistrer un nouvel appareil</DialogTitle>
             <DialogDescription>
@@ -254,7 +254,7 @@ export default function BornesPage() {
       </Dialog>
 
       <Dialog open={!!jetonGenere} onOpenChange={fermerModalJeton}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Jeton d'appareil généré</DialogTitle>
             <DialogDescription>

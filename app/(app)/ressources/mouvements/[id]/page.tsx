@@ -76,7 +76,7 @@ export default async function PageDetailMouvement({
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold font-mono">{bon.reference}</h1>
+            <h1 className="text-3xl font-semibold font-mono">{bon.reference}</h1>
             <p className="text-muted-foreground mt-1">
               Bon de mouvement · {sensConfig.label}
             </p>
@@ -97,14 +97,14 @@ export default async function PageDetailMouvement({
               <label className="text-sm font-medium text-muted-foreground">
                 Référence
               </label>
-              <p className="text-base mt-1 font-mono">{bon.reference}</p>
+              <p className="text-sm mt-1 font-mono">{bon.reference}</p>
             </div>
 
             <div>
               <label className="text-sm font-medium text-muted-foreground">
                 Date du mouvement
               </label>
-              <p className="text-base mt-1">
+              <p className="text-sm mt-1">
                 {format(new Date(bon.dateMouvement), "PPP", { locale: fr })}
               </p>
             </div>
@@ -122,7 +122,7 @@ export default async function PageDetailMouvement({
               <label className="text-sm font-medium text-muted-foreground">
                 Émetteur
               </label>
-              <p className="text-base mt-1">{bon.emetteurNom}</p>
+              <p className="text-sm mt-1">{bon.emetteurNom}</p>
             </div>
 
             {bon.valideParId && bon.valideLe && (
@@ -130,7 +130,7 @@ export default async function PageDetailMouvement({
                 <label className="text-sm font-medium text-muted-foreground">
                   Validation
                 </label>
-                <p className="text-base mt-1 text-success">
+                <p className="text-sm mt-1 text-success">
                   Validé le {format(new Date(bon.valideLe), "PPP", { locale: fr })}
                 </p>
               </div>
@@ -147,7 +147,7 @@ export default async function PageDetailMouvement({
               <label className="text-sm font-medium text-muted-foreground">
                 Motif
               </label>
-              <p className="text-base mt-1">{bon.motif}</p>
+              <p className="text-sm mt-1">{bon.motif}</p>
             </div>
 
             <div>
@@ -156,13 +156,13 @@ export default async function PageDetailMouvement({
               </label>
               <div className="flex items-center gap-2 mt-1">
                 {bon.lieuOrigine ? (
-                  <span className="text-base">{bon.lieuOrigine.libelle}</span>
+                  <span className="text-sm">{bon.lieuOrigine.libelle}</span>
                 ) : (
                   <span className="text-muted-foreground italic">Externe</span>
                 )}
                 <ArrowRight className="h-4 w-4 text-muted-foreground" aria-label="vers" />
                 {bon.lieuDestination ? (
-                  <span className="text-base">{bon.lieuDestination.libelle}</span>
+                  <span className="text-sm">{bon.lieuDestination.libelle}</span>
                 ) : (
                   <span className="text-muted-foreground italic">Externe</span>
                 )}

@@ -443,6 +443,8 @@ export const creerTache = actionProtegee(
       dateFin: Date;
       avancementPlanifie?: number;
       predecesseurId?: string;
+      responsableId?: string;
+      employeIds?: string[];
     }
   ) => {
     // Si un prédécesseur est spécifié, détecter les cycles
@@ -459,10 +461,22 @@ export const creerTache = actionProtegee(
       }
     }
 
+    const { employeIds, ...tacheDonnees } = donnees;
+
     const tache = await prisma.tache.create({
       data: {
-        ...donnees,
+        ...tacheDonnees,
         avancementPlanifie: donnees.avancementPlanifie || 0,
+        // Créer les affectations en une seule transaction
+        ...(employeIds && employeIds.length > 0
+          ? {
+              affectations: {
+                create: employeIds.map((employeId) => ({
+                  employeId,
+                })),
+              },
+            }
+          : {}),
       },
     });
 
@@ -478,7 +492,134 @@ export const creerTache = actionProtegee(
     });
 
     revalidatePath(`/projets/${donnees.projetId}/planning`);
+    revalidatePath(`/projets/${donnees.projetId}`);
     return tache;
+  }
+);
+
+/**
+ * Modifier une tâche existante
+ */
+export const modifierTache = actionProtegee(
+  "planning:modifier",
+  async (
+    session,
+    tacheId: string,
+    donnees: {
+      libelle?: string;
+      description?: string;
+      dateDebut?: Date;
+      dateFin?: Date;
+      avancementPlanifie?: number;
+      predecesseurId?: string | null;
+      responsableId?: string | null;
+      employeIds?: string[];
+    }
+  ) => {
+    const tacheExistante = await prisma.tache.findUnique({
+      where: { id: tacheId },
+      select: { projetId: true, libelle: true },
+    });
+
+    if (!tacheExistante) {
+      throw new Error("Tâche introuvable");
+    }
+
+    // Si un nouveau prédécesseur est spécifié, détecter les cycles
+    if (donnees.predecesseurId) {
+      const cycleDetecte = await detecterCycleDependances(
+        tacheId,
+        donnees.predecesseurId
+      );
+
+      if (cycleDetecte) {
+        throw new Error(
+          "Dépendance circulaire détectée : cette tâche ne peut pas dépendre de son successeur"
+        );
+      }
+    }
+
+    const { employeIds, ...tacheDonnees } = donnees;
+
+    // Si employeIds est fourni, mettre à jour les affectations
+    if (employeIds !== undefined) {
+      // Supprimer toutes les affectations existantes
+      await prisma.affectationTache.deleteMany({
+        where: { tacheId },
+      });
+
+      // Recréer les affectations
+      if (employeIds.length > 0) {
+        await prisma.affectationTache.createMany({
+          data: employeIds.map((employeId) => ({
+            tacheId,
+            employeId,
+          })),
+        });
+      }
+    }
+
+    const tache = await prisma.tache.update({
+      where: { id: tacheId },
+      data: tacheDonnees,
+    });
+
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "Tache",
+        entiteId: tache.id,
+        action: "MODIFICATION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        commentaire: `Tâche modifiée : ${tache.libelle}`,
+      },
+    });
+
+    revalidatePath(`/projets/${tacheExistante.projetId}/planning`);
+    revalidatePath(`/projets/${tacheExistante.projetId}`);
+    revalidatePath(`/projets`);
+    return tache;
+  }
+);
+
+/**
+ * Supprimer une tâche
+ */
+export const supprimerTache = actionProtegee(
+  "planning:modifier",
+  async (session, tacheId: string) => {
+    const tacheExistante = await prisma.tache.findUnique({
+      where: { id: tacheId },
+      select: { projetId: true, libelle: true },
+    });
+
+    if (!tacheExistante) {
+      throw new Error("Tâche introuvable");
+    }
+
+    // Supprimer les dépendances vers cette tâche
+    await prisma.tache.updateMany({
+      where: { predecesseurId: tacheId },
+      data: { predecesseurId: null },
+    });
+
+    await prisma.tache.delete({
+      where: { id: tacheId },
+    });
+
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "Tache",
+        entiteId: tacheId,
+        action: "SUPPRESSION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        commentaire: `Tâche supprimée : ${tacheExistante.libelle}`,
+      },
+    });
+
+    revalidatePath(`/projets/${tacheExistante.projetId}/planning`);
+    revalidatePath(`/projets`);
   }
 );
 
@@ -575,6 +716,98 @@ export const marquerJalonAtteint = actionProtegee(
   }
 );
 
+/**
+ * Modifier un jalon existant
+ */
+export const modifierJalon = actionProtegee(
+  "projet:modifier",
+  async (
+    session,
+    jalonId: string,
+    donnees: {
+      libelle?: string;
+      description?: string;
+      datePrevisionnelle?: Date;
+      typeValidateur?: TypeValidateur;
+      validateurExterne?: string;
+    }
+  ) => {
+    const jalonExistant = await prisma.jalon.findUnique({
+      where: { id: jalonId },
+      select: { projetId: true, libelle: true, statut: true },
+    });
+
+    if (!jalonExistant) {
+      throw new Error("Jalon introuvable");
+    }
+
+    // Empêcher la modification d'un jalon déjà validé
+    if (jalonExistant.statut === "VALIDE") {
+      throw new Error("Impossible de modifier un jalon déjà validé");
+    }
+
+    const jalon = await prisma.jalon.update({
+      where: { id: jalonId },
+      data: donnees,
+    });
+
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "Jalon",
+        entiteId: jalon.id,
+        action: "MODIFICATION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        commentaire: `Jalon modifié : ${jalon.libelle}`,
+      },
+    });
+
+    revalidatePath(`/projets/${jalonExistant.projetId}`);
+    revalidatePath(`/projets`);
+    return jalon;
+  }
+);
+
+/**
+ * Supprimer un jalon
+ */
+export const supprimerJalon = actionProtegee(
+  "projet:modifier",
+  async (session, jalonId: string) => {
+    const jalonExistant = await prisma.jalon.findUnique({
+      where: { id: jalonId },
+      select: { projetId: true, libelle: true, statut: true },
+    });
+
+    if (!jalonExistant) {
+      throw new Error("Jalon introuvable");
+    }
+
+    // Empêcher la suppression d'un jalon validé
+    if (jalonExistant.statut === "VALIDE") {
+      throw new Error("Impossible de supprimer un jalon déjà validé");
+    }
+
+    await prisma.jalon.delete({
+      where: { id: jalonId },
+    });
+
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "Jalon",
+        entiteId: jalonId,
+        action: "SUPPRESSION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        commentaire: `Jalon supprimé : ${jalonExistant.libelle}`,
+      },
+    });
+
+    revalidatePath(`/projets/${jalonExistant.projetId}`);
+    revalidatePath(`/projets`);
+  }
+);
+
 // =====================================================================
 // AFFECTATIONS CHANTIER
 // =====================================================================
@@ -667,6 +900,128 @@ export const affecterEmployeChantier = actionProtegee(
   }
 );
 
+/**
+ * Modifier une affectation existante sur un chantier
+ */
+export const modifierAffectationChantier = actionProtegee(
+  "chantier:affecter",
+  async (
+    session,
+    donnees: {
+      affectationId: string;
+      employeId?: string; // Optionnel : permet de changer l'employé (cas de force majeure)
+      roleFonctionnel: RoleFonctionnel;
+      dateDebut: Date;
+      dateFin?: Date;
+    }
+  ) => {
+    // Récupérer l'affectation existante
+    const affectationExistante = await prisma.affectationChantier.findUnique({
+      where: { id: donnees.affectationId },
+      include: {
+        employe: {
+          select: {
+            id: true,
+            matricule: true,
+            nom: true,
+            prenom: true,
+          },
+        },
+        projet: {
+          select: {
+            id: true,
+            code: true,
+            nom: true,
+          },
+        },
+      },
+    });
+
+    if (!affectationExistante) {
+      throw new Error("Affectation introuvable");
+    }
+
+    // Déterminer l'employé final (nouveau ou existant)
+    const employeIdFinal = donnees.employeId || affectationExistante.employeId;
+    const changementEmploye = employeIdFinal !== affectationExistante.employeId;
+
+    // Vérifier les chevauchements de dates avec d'autres affectations de l'employé
+    const affectationsAutres = await prisma.affectationChantier.findMany({
+      where: {
+        employeId: employeIdFinal,
+        id: { not: donnees.affectationId }, // Exclure l'affectation en cours de modification
+        OR: [
+          {
+            // Affectations en cours (sans date de fin)
+            dateFin: null,
+          },
+          {
+            // Affectations avec chevauchement de dates
+            AND: [
+              { dateDebut: { lte: donnees.dateFin || new Date("2099-12-31") } },
+              { dateFin: { gte: donnees.dateDebut } },
+            ],
+          },
+        ],
+      },
+    });
+
+    if (affectationsAutres.length > 0) {
+      throw new Error(
+        "Impossible de modifier : chevauchement avec une autre affectation"
+      );
+    }
+
+    const affectation = await prisma.affectationChantier.update({
+      where: { id: donnees.affectationId },
+      data: {
+        employeId: employeIdFinal,
+        roleFonctionnel: donnees.roleFonctionnel,
+        dateDebut: donnees.dateDebut,
+        dateFin: donnees.dateFin,
+      },
+      include: {
+        employe: {
+          select: {
+            id: true,
+            matricule: true,
+            nom: true,
+            prenom: true,
+          },
+        },
+        projet: {
+          select: {
+            id: true,
+            code: true,
+            nom: true,
+          },
+        },
+      },
+    });
+
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "AffectationChantier",
+        entiteId: affectation.id,
+        action: "MODIFICATION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        commentaire: changementEmploye
+          ? `Remplacement employé ${affectationExistante.employe.prenom} ${affectationExistante.employe.nom} → ${affectation.employe.prenom} ${affectation.employe.nom} sur ${affectation.projet.code}`
+          : `Modification affectation ${affectation.employe.prenom} ${affectation.employe.nom} sur ${affectation.projet.code}`,
+      },
+    });
+
+    revalidatePath(`/projets/${affectation.projetId}`);
+    revalidatePath(`/employes/${affectation.employeId}`);
+    // Revalider aussi l'ancien employé si changement
+    if (changementEmploye) {
+      revalidatePath(`/employes/${affectationExistante.employeId}`);
+    }
+    return affectation;
+  }
+);
+
 // =====================================================================
 // CONSULTATION
 // =====================================================================
@@ -677,9 +1032,14 @@ export type ProjetListItem = {
   nom: string;
   statut: StatutProjet;
   maitreOuvrage: string | null;
+  localisation: string | null;
+  conducteur: { nom: string; prenom: string } | null;
   montantMarche: number | null;
+  montantEngage: number | null;
   dateDebut: Date | null;
   dateFin: Date | null;
+  avancementPlanifie: number;
+  avancementConstate: number | null;
   creeLe: Date;
 };
 
@@ -690,27 +1050,96 @@ export const listerProjets = actionProtegee(
   "projet:modifier",
   async (): Promise<ProjetListItem[]> => {
     const projets = await prisma.projet.findMany({
-    select: {
-      id: true,
-      code: true,
-      nom: true,
-      statut: true,
-      maitreOuvrage: true,
-      montantMarche: true,
-      dateDebut: true,
-      dateFin: true,
-      creeLe: true,
-    },
-    orderBy: [
-      { statut: 'asc' }, // BROUILLON, OUVERT, EN_COURS en premier
-      { creeLe: 'desc' },
-    ],
-  });
+      select: {
+        id: true,
+        code: true,
+        nom: true,
+        statut: true,
+        maitreOuvrage: true,
+        montantMarche: true,
+        dateDebut: true,
+        dateFin: true,
+        creeLe: true,
+        lieuLivraison: {
+          select: {
+            libelle: true,
+          },
+        },
+        affectations: {
+          where: {
+            roleFonctionnel: "CONDUCTEUR",
+            dateFin: null,
+          },
+          select: {
+            employe: {
+              select: {
+                nom: true,
+                prenom: true,
+              },
+            },
+          },
+          take: 1,
+        },
+        taches: {
+          select: {
+            avancementPlanifie: true,
+            avancementConstate: true,
+          },
+        },
+      },
+      orderBy: [
+        { statut: "asc" }, // BROUILLON, OUVERT, EN_COURS en premier
+        { creeLe: "desc" },
+      ],
+    });
 
-    return projets.map((p) => ({
-      ...p,
-      montantMarche: p.montantMarche ? Number(p.montantMarche) : null,
-    }));
+    return projets.map((p) => {
+      // Calculer l'avancement moyen planifié
+      const avancementPlanifie =
+        p.taches.length > 0
+          ? Math.round(
+              p.taches.reduce((sum, t) => sum + t.avancementPlanifie, 0) /
+                p.taches.length
+            )
+          : 0;
+
+      // Calculer l'avancement moyen constaté (uniquement sur les tâches avec constaté non null)
+      const tachesAvecConstate = p.taches.filter(
+        (t) => t.avancementConstate !== null
+      );
+      const avancementConstate =
+        tachesAvecConstate.length > 0
+          ? Math.round(
+              tachesAvecConstate.reduce(
+                (sum, t) => sum + (t.avancementConstate || 0),
+                0
+              ) / tachesAvecConstate.length
+            )
+          : null;
+
+      return {
+        id: p.id,
+        code: p.code,
+        nom: p.nom,
+        statut: p.statut,
+        maitreOuvrage: p.maitreOuvrage,
+        localisation: p.lieuLivraison?.libelle || null,
+        conducteur:
+          p.affectations.length > 0
+            ? {
+                nom: p.affectations[0].employe.nom,
+                prenom: p.affectations[0].employe.prenom,
+              }
+            : null,
+        montantMarche: p.montantMarche ? Number(p.montantMarche) : null,
+        montantEngage: null, // À implémenter avec le module achats
+        dateDebut: p.dateDebut,
+        dateFin: p.dateFin,
+        avancementPlanifie,
+        avancementConstate,
+        creeLe: p.creeLe,
+      };
+    });
   }
 );
 
@@ -721,39 +1150,72 @@ export const obtenirProjet = actionProtegee(
   "projet:modifier",
   async (session, projetId: string) => {
     const projet = await prisma.projet.findUnique({
-    where: { id: projetId },
-    include: {
-      lieuLivraison: true,
-      jalons: {
-        orderBy: { datePrevisionnelle: 'asc' },
-      },
-      taches: {
-        orderBy: { dateDebut: 'asc' },
-        take: 10, // Limiter pour la page de détail
-      },
-      affectations: {
-        where: { dateFin: null },
-        include: {
-          employe: {
-            select: {
-              id: true,
-              matricule: true,
-              nom: true,
-              prenom: true,
+      where: { id: projetId },
+      include: {
+        lieuLivraison: true,
+        jalons: {
+          orderBy: { datePrevisionnelle: "asc" },
+        },
+        taches: {
+          orderBy: { dateDebut: "asc" },
+        },
+        affectations: {
+          where: {
+            dateFin: null,
+            roleFonctionnel: "CONDUCTEUR",
+          },
+          include: {
+            employe: {
+              select: {
+                nom: true,
+                prenom: true,
+              },
             },
           },
+          take: 1,
         },
       },
-    },
-  });
+    });
 
-  if (!projet) {
-    return null;
-  }
+    if (!projet) {
+      return null;
+    }
+
+    // Calculer l'avancement moyen des tâches
+    const avancementPlanifie =
+      projet.taches.length > 0
+        ? Math.round(
+            projet.taches.reduce((sum, t) => sum + t.avancementPlanifie, 0) /
+              projet.taches.length
+          )
+        : 0;
+
+    const tachesAvecConstate = projet.taches.filter(
+      (t) => t.avancementConstate !== null
+    );
+    const avancementConstate =
+      tachesAvecConstate.length > 0
+        ? Math.round(
+            tachesAvecConstate.reduce(
+              (sum, t) => sum + (t.avancementConstate || 0),
+              0
+            ) / tachesAvecConstate.length
+          )
+        : null;
 
     return {
       ...projet,
       montantMarche: projet.montantMarche ? Number(projet.montantMarche) : null,
+      localisation: projet.lieuLivraison?.libelle || null,
+      conducteur:
+        projet.affectations.length > 0
+          ? {
+              nom: projet.affectations[0].employe.nom,
+              prenom: projet.affectations[0].employe.prenom,
+            }
+          : null,
+      avancementPlanifie,
+      avancementConstate,
     };
   }
 );

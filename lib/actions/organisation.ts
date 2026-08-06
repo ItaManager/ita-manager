@@ -165,6 +165,17 @@ export const modifierService = actionProtegee(
       throw new Error("Service introuvable");
     }
 
+    // Si le code est modifié, vérifier qu'il n'est pas déjà utilisé par un autre service
+    if (data.code && data.code !== service.code) {
+      const existant = await prisma.service.findUnique({
+        where: { code: data.code },
+      });
+
+      if (existant && existant.id !== id) {
+        throw new Error(`Le code "${data.code}" est déjà utilisé par un autre service`);
+      }
+    }
+
     const avant = { ...service };
     const apres = { ...service, ...data };
 
@@ -381,6 +392,17 @@ export const modifierPoste = actionProtegee(
         throw new Error(
           "Modification réservée aux administrateurs pour ce poste"
         );
+      }
+    }
+
+    // Si le code est modifié, vérifier qu'il n'est pas déjà utilisé par un autre poste
+    if (data.code && data.code !== poste.code) {
+      const existant = await prisma.poste.findUnique({
+        where: { code: data.code },
+      });
+
+      if (existant && existant.id !== id) {
+        throw new Error(`Le code "${data.code}" est déjà utilisé par un autre poste`);
       }
     }
 

@@ -45,7 +45,7 @@ export default async function PageDetailArticle({
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold">{article.designation}</h1>
+            <h1 className="text-3xl font-semibold">{article.designation}</h1>
             <p className="text-muted-foreground mt-1">
               Article de stock · {article.reference}
             </p>
@@ -73,14 +73,14 @@ export default async function PageDetailArticle({
               <label className="text-sm font-medium text-muted-foreground">
                 Référence
               </label>
-              <p className="text-base mt-1 font-mono">{article.reference}</p>
+              <p className="text-sm mt-1 font-mono">{article.reference}</p>
             </div>
 
             <div>
               <label className="text-sm font-medium text-muted-foreground">
                 Désignation
               </label>
-              <p className="text-base mt-1">{article.designation}</p>
+              <p className="text-sm mt-1">{article.designation}</p>
             </div>
 
             <div>
@@ -92,7 +92,7 @@ export default async function PageDetailArticle({
                   <Badge variant="outline">{article.famille}</Badge>
                 </div>
               ) : (
-                <p className="text-base mt-1 text-muted-foreground italic">
+                <p className="text-sm mt-1 text-muted-foreground italic">
                   Aucune famille
                 </p>
               )}
@@ -102,7 +102,7 @@ export default async function PageDetailArticle({
               <label className="text-sm font-medium text-muted-foreground">
                 Unité
               </label>
-              <p className="text-base mt-1">{article.unite}</p>
+              <p className="text-sm mt-1">{article.unite}</p>
             </div>
 
             <div>
@@ -110,11 +110,11 @@ export default async function PageDetailArticle({
                 Seuil d&apos;alerte
               </label>
               {article.seuilAlerte ? (
-                <p className="text-base mt-1">
+                <p className="text-sm mt-1">
                   {article.seuilAlerte.toString()} {article.unite}
                 </p>
               ) : (
-                <p className="text-base mt-1 text-muted-foreground italic">
+                <p className="text-sm mt-1 text-muted-foreground italic">
                   Non défini
                 </p>
               )}

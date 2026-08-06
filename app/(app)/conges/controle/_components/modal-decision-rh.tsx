@@ -87,7 +87,7 @@ export function ModalDecisionRH({
 
   return (
     <Dialog open={ouvert} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Contrôle RH — Décision finale</DialogTitle>
         </DialogHeader>

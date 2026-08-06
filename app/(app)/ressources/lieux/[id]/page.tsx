@@ -57,7 +57,7 @@ export default async function PageDetailLieu({
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold">{lieu.libelle}</h1>
+            <h1 className="text-3xl font-semibold">{lieu.libelle}</h1>
             <p className="text-muted-foreground mt-1">
               Lieu de stockage · {NATURE_LABELS[lieu.nature]}
             </p>
@@ -78,7 +78,7 @@ export default async function PageDetailLieu({
               <label className="text-sm font-medium text-muted-foreground">
                 Libellé
               </label>
-              <p className="text-base mt-1">{lieu.libelle}</p>
+              <p className="text-sm mt-1">{lieu.libelle}</p>
             </div>
 
             <div>
@@ -113,14 +113,14 @@ export default async function PageDetailLieu({
                 Projet associé
               </label>
               {lieu.projet ? (
-                <p className="text-base mt-1">
+                <p className="text-sm mt-1">
                   <span className="font-mono text-sm text-muted-foreground">
                     {lieu.projet.code}
                   </span>{" "}
                   — {lieu.projet.nom}
                 </p>
               ) : (
-                <p className="text-base mt-1 text-muted-foreground italic">
+                <p className="text-sm mt-1 text-muted-foreground italic">
                   Aucun projet associé
                 </p>
               )}

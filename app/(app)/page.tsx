@@ -1,245 +1,251 @@
-import { Suspense } from "react";
-import { verifierAccesPage } from "@/lib/auth/page-access";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+"use client";
+
+import { Users, Briefcase, Clock, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { statistiquesTableauDeBord, alertesTableauDeBord, activiteRecente } from "@/lib/actions/pilotage";
-import { Users, Building2, Briefcase, FileText, AlertCircle, TrendingUp } from "lucide-react";
-import Link from "next/link";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
-export default async function TableauDeBord() {
-  await verifierAccesPage("/");
+export default function TableauDeBord() {
+  // Données pour Total Employés
+  const totalEmployeesData = [
+    { name: "Permanents", value: 42, color: "#1d186c" },
+    { name: "Contractuels", value: 18, color: "#b45309" },
+    { name: "Journaliers", value: 85, color: "#7c3aed" },
+  ];
 
-  const dateOptions: Intl.DateTimeFormatOptions = {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  };
-  const dateFormatee = new Date().toLocaleDateString("fr-FR", dateOptions);
+  // Données Performance Équipe
+  const performanceData = [
+    { mois: "Jan", score: 65 },
+    { mois: "Fév", score: 72 },
+    { mois: "Mar", score: 68 },
+    { mois: "Avr", score: 78 },
+    { mois: "Mai", score: 82 },
+    { mois: "Juin", score: 85 },
+    { mois: "Juil", score: 88 },
+  ];
+
+  const totalEmployees = totalEmployeesData.reduce((sum, item) => sum + item.value, 0);
+
+  // Données démo employés
+  const employees = [
+    { id: 1, nom: "Kouassi Jean", poste: "Ingénieur Civil", service: "Travaux", statut: "Actif", entree: "2023-01-15" },
+    { id: 2, nom: "Diallo Fatou", poste: "Comptable", service: "Finance", statut: "Actif", entree: "2022-06-10" },
+    { id: 3, nom: "Traoré Amadou", poste: "Chef de Chantier", service: "Travaux", statut: "Actif", entree: "2021-03-20" },
+    { id: 4, nom: "N'Guessan Marie", poste: "RH Manager", service: "RH", statut: "Actif", entree: "2020-09-01" },
+    { id: 5, nom: "Koné Ibrahim", poste: "Conducteur", service: "Logistique", statut: "Congé", entree: "2023-07-12" },
+  ];
 
   return (
     <div className="space-y-6">
+      {/* Welcome */}
       <div>
-        <h1 className="text-2xl font-semibold">Tableau de bord</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {dateFormatee.charAt(0).toUpperCase() + dateFormatee.slice(1)} — vue d'ensemble ITA SARL
-        </p>
+        <h2 className="text-2xl font-semibold mb-1">Bonjour, Armel 👋</h2>
+        <p className="text-muted-foreground text-sm">Voici votre tableau de bord RH</p>
       </div>
 
-      <Suspense fallback={<SqueletteStatistiques />}>
-        <Statistiques />
-      </Suspense>
-
-      <Suspense fallback={<SqueletteAlertes />}>
-        <Alertes />
-      </Suspense>
-
-      <Suspense fallback={<SqueletteActivite />}>
-        <ActiviteRecente />
-      </Suspense>
-    </div>
-  );
-}
-
-async function Statistiques() {
-  const stats = await statistiquesTableauDeBord();
-
-  return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <Link href="/organisation/directions">
-        <Card className="hover:border-primary transition-colors cursor-pointer">
-          <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">ORGANISATION</CardTitle>
-            <Building2 className="size-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.organisation.directions}</div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              directions · {stats.organisation.services} services · {stats.organisation.postes} postes
-            </p>
-          </CardContent>
-        </Card>
-      </Link>
-
-      <Link href="/employes">
-        <Card className="hover:border-primary transition-colors cursor-pointer">
-          <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">EMPLOYÉS</CardTitle>
-            <Users className="size-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.employes.actifs}</div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              actifs sur {stats.employes.total} au total
-            </p>
-          </CardContent>
-        </Card>
-      </Link>
-
-      <Link href="/appels-offres">
-        <Card className="hover:border-primary transition-colors cursor-pointer">
-          <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">APPELS D'OFFRES</CardTitle>
-            <Briefcase className="size-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.appelsOffres.gagnes}</div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              gagnés · {stats.appelsOffres.soumis} soumis · taux {stats.appelsOffres.tauxReussite}%
-            </p>
-          </CardContent>
-        </Card>
-      </Link>
-
-      <Card>
-        <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-sm font-medium text-muted-foreground">UTILISATEURS</CardTitle>
-          <FileText className="size-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats.systeme.utilisateursActifs}</div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            comptes actifs sur {stats.systeme.utilisateurs}
-          </p>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-async function Alertes() {
-  const alertes = await alertesTableauDeBord();
-
-  if (alertes.aoEnAttenteDecision === 0 && alertes.aoProchesEcheance === 0) {
-    return null;
-  }
-
-  return (
-    <Card className="border-warning-border bg-warning-soft/30">
-      <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
-          <AlertCircle className="size-5 text-warning" />
-          Éléments nécessitant attention
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {alertes.aoEnAttenteDecision > 0 && (
-          <Link href="/appels-offres?statut=VEILLE" className="block">
-            <div className="flex items-center justify-between py-2 hover:bg-background rounded px-2 -mx-2 transition-colors">
-              <span className="text-sm">Appels d'offres en attente de décision go/no-go</span>
-              <Badge variant="outline" className="border-warning text-warning">
-                {alertes.aoEnAttenteDecision}
-              </Badge>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm text-muted-foreground">Employés Permanents</div>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: '#13850b' }}>
+              <Users className="size-5 text-white" />
             </div>
-          </Link>
-        )}
+          </div>
+          <div className="text-3xl font-bold mb-2">42</div>
+          <div className="flex items-center gap-1 text-xs text-success">
+            <span>↑ 5.14%</span>
+            <span className="text-muted-foreground">vs mois dernier</span>
+          </div>
+        </div>
 
-        {alertes.aoProchesEcheance > 0 && (
-          <Link href="/appels-offres" className="block">
-            <div className="flex items-center justify-between py-2 hover:bg-background rounded px-2 -mx-2 transition-colors">
-              <span className="text-sm">Appels d'offres proches de l'échéance (&lt; 15 jours)</span>
-              <Badge variant="outline" className="border-warning text-warning">
-                {alertes.aoProchesEcheance}
-              </Badge>
+        <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm text-muted-foreground">Contractuels</div>
+            <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+              <Briefcase className="size-5 text-blue-600" />
             </div>
-          </Link>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
+          </div>
+          <div className="text-3xl font-bold mb-2">18</div>
+          <div className="flex items-center gap-1 text-xs text-red-600">
+            <span>↓ 12.2%</span>
+            <span className="text-muted-foreground">vs mois dernier</span>
+          </div>
+        </div>
 
-async function ActiviteRecente() {
-  const evenements = await activiteRecente(5);
+        <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm text-muted-foreground">Journaliers</div>
+            <div className="w-10 h-10 rounded-full bg-warning-soft flex items-center justify-center">
+              <Clock className="size-5 text-warning" />
+            </div>
+          </div>
+          <div className="text-3xl font-bold mb-2">85</div>
+          <div className="flex items-center gap-1 text-xs text-success">
+            <span>↑ 8.3%</span>
+            <span className="text-muted-foreground">vs mois dernier</span>
+          </div>
+        </div>
 
-  if (evenements.length === 0) {
-    return null;
-  }
+        <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm text-muted-foreground">En Congé</div>
+            <div className="w-10 h-10 rounded-full bg-review-soft flex items-center justify-center">
+              <Calendar className="size-5 text-review" />
+            </div>
+          </div>
+          <div className="text-3xl font-bold mb-2">12</div>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <span>8.3% de l'effectif</span>
+          </div>
+        </div>
+      </div>
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
-          <TrendingUp className="size-4" />
-          Activité récente
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {evenements.map((evt) => (
-          <div key={evt.id} className="flex items-start justify-between border-b last:border-0 pb-3 last:pb-0">
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium">{evt.entite}</div>
-              <div className="text-xs text-muted-foreground line-clamp-1">
-                {evt.commentaire || evt.action}
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Total Employés Donut */}
+        <div className="bg-card rounded-xl border border-border p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-semibold text-lg">Répartition Employés</h3>
+            <select className="text-xs border border-border rounded-lg px-3 py-1.5 bg-background cursor-pointer">
+              <option>Cette année</option>
+              <option>Ce mois</option>
+              <option>Tout</option>
+            </select>
+          </div>
+
+          <div className="relative h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={totalEmployeesData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={70}
+                  outerRadius={100}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {totalEmployeesData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <div className="text-4xl font-bold">{totalEmployees}</div>
+              <div className="text-sm text-muted-foreground">Total</div>
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-3 gap-4">
+            {totalEmployeesData.map((item, index) => (
+              <div key={index} className="text-center">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+                  <span className="text-xs text-muted-foreground">{item.name}</span>
+                </div>
+                <div className="text-xl font-bold">{item.value}</div>
               </div>
-            </div>
-            <div className="text-xs text-muted-foreground whitespace-nowrap ml-2">
-              {format(new Date(evt.survenuLe), "d MMM HH:mm", { locale: fr })}
-            </div>
+            ))}
           </div>
-        ))}
+        </div>
 
-        <Link href="/journal" className="block text-center pt-2">
-          <button className="text-sm text-primary hover:underline">
-            Voir tout le journal d'audit
-          </button>
-        </Link>
-      </CardContent>
-    </Card>
-  );
-}
+        {/* Performance Line Chart */}
+        <div className="bg-card rounded-xl border border-border p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-semibold text-lg">Performance Équipe</h3>
+            <select className="text-xs border border-border rounded-lg px-3 py-1.5 bg-background cursor-pointer">
+              <option>7 derniers mois</option>
+              <option>12 derniers mois</option>
+              <option>Cette année</option>
+            </select>
+          </div>
 
-function SqueletteStatistiques() {
-  return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <Card key={i} className="animate-pulse">
-          <CardHeader className="pb-3">
-            <div className="h-4 bg-muted rounded w-24" />
-          </CardHeader>
-          <CardContent>
-            <div className="h-8 bg-muted rounded w-16 mb-2" />
-            <div className="h-3 bg-muted rounded w-32" />
-          </CardContent>
-        </Card>
-      ))}
+          <ResponsiveContainer width="100%" height={240}>
+            <LineChart data={performanceData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="mois" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "hsl(var(--card))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: "8px",
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="score"
+                stroke="#1d186c"
+                strokeWidth={2}
+                dot={{ fill: "#1d186c", r: 4 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Employees Table */}
+      <div className="bg-card rounded-xl border border-border p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="font-semibold text-lg">Employés Récents</h3>
+          <div className="flex items-center gap-3">
+            <select className="text-sm border border-border rounded-lg px-3 py-2 bg-background cursor-pointer">
+              <option>Tous les services</option>
+              <option>Travaux</option>
+              <option>Finance</option>
+              <option>RH</option>
+              <option>Logistique</option>
+            </select>
+            <select className="text-sm border border-border rounded-lg px-3 py-2 bg-background cursor-pointer">
+              <option>Tous les statuts</option>
+              <option>Actif</option>
+              <option>Congé</option>
+              <option>Inactif</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Nom</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Poste</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Service</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Statut</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Date d'entrée</th>
+              </tr>
+            </thead>
+            <tbody>
+              {employees.map((emp) => (
+                <tr key={emp.id} className="border-b border-border hover:bg-muted/50 transition-colors cursor-pointer">
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium text-white" style={{ backgroundColor: '#13850b' }}>
+                        {emp.nom.split(" ").map(n => n[0]).join("")}
+                      </div>
+                      <span className="font-medium">{emp.nom}</span>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-sm text-muted-foreground">{emp.poste}</td>
+                  <td className="py-3 px-4 text-sm text-muted-foreground">{emp.service}</td>
+                  <td className="py-3 px-4">
+                    <Badge
+                      variant={emp.statut === "Actif" ? "default" : "secondary"}
+                      className={emp.statut === "Actif" ? "bg-success-soft text-success" : ""}
+                    >
+                      {emp.statut}
+                    </Badge>
+                  </td>
+                  <td className="py-3 px-4 text-sm text-muted-foreground">{emp.entree}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
-  );
-}
-
-function SqueletteAlertes() {
-  return (
-    <Card className="animate-pulse">
-      <CardHeader>
-        <div className="h-5 bg-muted rounded w-48" />
-      </CardHeader>
-      <CardContent>
-        <div className="h-4 bg-muted rounded w-full mb-2" />
-        <div className="h-4 bg-muted rounded w-3/4" />
-      </CardContent>
-    </Card>
-  );
-}
-
-function SqueletteActivite() {
-  return (
-    <Card className="animate-pulse">
-      <CardHeader>
-        <div className="h-5 bg-muted rounded w-32" />
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="flex items-center justify-between">
-            <div className="flex-1">
-              <div className="h-4 bg-muted rounded w-24 mb-1" />
-              <div className="h-3 bg-muted rounded w-48" />
-            </div>
-            <div className="h-3 bg-muted rounded w-16" />
-          </div>
-        ))}
-      </CardContent>
-    </Card>
   );
 }

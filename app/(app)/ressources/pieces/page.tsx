@@ -55,7 +55,7 @@ export default async function TableauPiecesPage({
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-foreground">
+        <h2 className="text-lg font-semibold text-foreground">
           Tableau Pièces Administratives
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
@@ -72,7 +72,7 @@ export default async function TableauPiecesPage({
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Pièces périmées
                 </p>
-                <p className="text-2xl font-bold text-destructive mt-1 tabular-nums">
+                <p className="text-2xl font-semibold text-destructive mt-1 tabular-nums">
                   {piecesPerimees}
                 </p>
               </div>
@@ -88,7 +88,7 @@ export default async function TableauPiecesPage({
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Échéances proches
                 </p>
-                <p className="text-2xl font-bold text-warning mt-1 tabular-nums">
+                <p className="text-2xl font-semibold text-warning mt-1 tabular-nums">
                   {echeancesProches}
                 </p>
               </div>
@@ -104,7 +104,7 @@ export default async function TableauPiecesPage({
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Pièces manquantes
                 </p>
-                <p className="text-2xl font-bold text-foreground mt-1 tabular-nums">
+                <p className="text-2xl font-semibold text-foreground mt-1 tabular-nums">
                   {piecesManquantes}
                 </p>
               </div>
@@ -120,7 +120,7 @@ export default async function TableauPiecesPage({
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Matériels affichés
                 </p>
-                <p className="text-2xl font-bold text-foreground mt-1 tabular-nums">
+                <p className="text-2xl font-semibold text-foreground mt-1 tabular-nums">
                   {materielsAffiches}
                 </p>
               </div>

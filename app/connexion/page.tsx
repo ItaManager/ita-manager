@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useRef, type FormEvent, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { consommerCodeSecours } from "./actions";
 import { Button } from "@/components/ui/button";
@@ -13,25 +13,19 @@ import { BlocIdentite } from "@/components/bloc-identite";
 
 type Etape = "identifiants" | "defi2fa";
 
-// Connexion via le client Supabase directement, pas une Server Action
-// (M0-SOCLE.md §6). Message d'erreur volontairement générique — ne
-// jamais indiquer si c'est l'e-mail ou le mot de passe qui est erroné.
-//
-// Après un mot de passe valide, la session est à aal1. Si un facteur
-// TOTP est enrôlé, le niveau suivant (nextLevel) est aal2 : un second
-// écran, dans la même page, demande le code — jamais une session aal2
-// fabriquée sans passage réel par Supabase.
 export default function PageConnexion() {
   const router = useRouter();
   const [etape, setEtape] = useState<Etape>("identifiants");
   const [email, setEmail] = useState("");
   const [motDePasse, setMotDePasse] = useState("");
-  const [code, setCode] = useState("");
+  const [afficherMotDePasse, setAfficherMotDePasse] = useState(false);
+  const [code, setCode] = useState(["", "", "", "", "", ""]);
+  const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
   const [factorId, setFactorId] = useState<string | null>(null);
   const [utiliserCodeSecours, setUtiliserCodeSecours] = useState(false);
+  const [codeSecours, setCodeSecours] = useState("");
   const [erreur, setErreur] = useState<string | null>(null);
   const [enCours, setEnCours] = useState(false);
-  const [tentatives, setTentatives] = useState(0);
 
   async function seConnecter(event: FormEvent) {
     event.preventDefault();
@@ -46,8 +40,7 @@ export default function PageConnexion() {
 
     if (error) {
       setEnCours(false);
-      setTentatives((t) => t + 1);
-      setErreur("Identifiants incorrects.");
+      setErreur("E-mail ou mot de passe incorrect.");
       return;
     }
 
@@ -71,14 +64,12 @@ export default function PageConnexion() {
     setEnCours(true);
 
     if (utiliserCodeSecours) {
-      const resultat = await consommerCodeSecours(code);
+      const resultat = await consommerCodeSecours(codeSecours);
       setEnCours(false);
       if (!resultat.ok) {
         setErreur("Code de secours invalide ou déjà utilisé.");
         return;
       }
-      // Le facteur TOTP a été supprimé : la contrainte de rôle privilégié
-      // (app/page.tsx) relance l'inscription complète.
       router.push("/");
       router.refresh();
       return;
@@ -86,11 +77,15 @@ export default function PageConnexion() {
 
     if (!factorId) return;
     const supabase = createClient();
-    const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
+    const codeComplet = code.join("");
+    const { error } = await supabase.auth.mfa.challengeAndVerify({
+      factorId,
+      code: codeComplet,
+    });
     setEnCours(false);
 
     if (error) {
-      setErreur("Code incorrect. Réessayez.");
+      setErreur("Code incorrect. Veuillez réessayer.");
       return;
     }
 
@@ -98,144 +93,254 @@ export default function PageConnexion() {
     router.refresh();
   }
 
+  function handleCodeChange(index: number, value: string) {
+    if (!/^\d*$/.test(value)) return;
+    const newCode = [...code];
+    newCode[index] = value.slice(0, 1);
+    setCode(newCode);
+
+    if (value && index < 5) {
+      inputsRef.current[index + 1]?.focus();
+    }
+  }
+
+  function handleCodeKeyDown(index: number, e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Backspace" && !code[index] && index > 0) {
+      inputsRef.current[index - 1]?.focus();
+    }
+  }
+
   if (etape === "defi2fa") {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background p-8">
-        <BlocIdentite />
-        <form
-          onSubmit={validerDefi}
-          className="flex w-full max-w-sm flex-col gap-4 rounded-xl border border-border bg-card p-8"
-        >
-          <h1 className="text-xl font-semibold text-primary">
-            Double authentification
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Saisissez le code généré par votre application.
-          </p>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="code">
-              {utiliserCodeSecours ? "Code de secours" : "Code à 6 chiffres"}
-            </Label>
-            <Input
-              id="code"
-              inputMode={utiliserCodeSecours ? "text" : "numeric"}
-              autoComplete="one-time-code"
-              maxLength={utiliserCodeSecours ? 8 : 6}
-              required
-              value={code}
-              onChange={(e) =>
-                setCode(
-                  utiliserCodeSecours
-                    ? e.target.value.toUpperCase().slice(0, 8)
-                    : e.target.value.replace(/\D/g, "").slice(0, 6)
-                )
-              }
-              placeholder={utiliserCodeSecours ? "XXXX-XXXX" : "000000"}
-              className={
-                utiliserCodeSecours
-                  ? "font-mono text-sm uppercase"
-                  : "text-center font-mono text-xl tracking-[0.5em]"
-              }
-              aria-label={
-                utiliserCodeSecours ? "Code de secours" : "Code à six chiffres"
-              }
-            />
-          </div>
+    if (utiliserCodeSecours) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-background p-4">
+          <div className="w-full max-w-md space-y-8">
+            <BlocIdentite />
 
-          {erreur && (
-            <p role="alert" className="statut statut-erreur">
-              {erreur}
+            <form
+              onSubmit={validerDefi}
+              className="rounded-2xl bg-card p-8 shadow-sm border border-border space-y-6"
+            >
+              <div className="space-y-2">
+                <h1 className="text-3xl font-semibold text-center">Code de secours</h1>
+                <p className="text-center text-muted-foreground">
+                  Saisissez votre code de secours à 8 caractères
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="backup" className="text-sm font-medium">
+                  Code de secours <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="backup"
+                  type="text"
+                  placeholder="XXXX-XXXX"
+                  maxLength={9}
+                  value={codeSecours}
+                  onChange={(e) =>
+                    setCodeSecours(
+                      e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 9)
+                    )
+                  }
+                  className="h-12 font-mono text-center text-lg tracking-widest"
+                />
+              </div>
+
+              {erreur && (
+                <div className="rounded-lg bg-destructive-soft px-4 py-3 text-sm text-destructive flex items-start gap-2">
+                  <AlertTriangle className="size-4 mt-0.5 shrink-0" />
+                  {erreur}
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full h-12 text-base bg-primary"
+                disabled={enCours || codeSecours.length < 9}
+              >
+                {enCours ? "Vérification..." : "Valider"}
+              </Button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setUtiliserCodeSecours(false);
+                  setCodeSecours("");
+                  setErreur(null);
+                }}
+                className="w-full text-sm text-success hover:underline cursor-pointer"
+              >
+                Utiliser l'application d'authentification
+              </button>
+            </form>
+
+            <p className="text-center text-sm text-muted-foreground">
+              © 2026 ITA Manager par ITA SARL
             </p>
-          )}
+          </div>
+        </div>
+      );
+    }
 
-          <Button type="submit" disabled={enCours}>
-            {enCours ? "Vérification…" : "Valider"}
-          </Button>
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="w-full max-w-md space-y-8">
+          <BlocIdentite />
 
-          <button
-            type="button"
-            onClick={() => {
-              setUtiliserCodeSecours((v) => !v);
-              setCode("");
-              setErreur(null);
-            }}
-            className="text-center text-sm text-muted-foreground hover:text-primary"
+          <form
+            onSubmit={validerDefi}
+            className="rounded-2xl bg-card p-8 shadow-sm border border-border space-y-6"
           >
-            {utiliserCodeSecours
-              ? "Utiliser mon application d'authentification"
-              : "J'ai perdu mon appareil — utiliser un code de secours"}
-          </button>
-        </form>
+            <div className="space-y-2">
+              <h1 className="text-3xl font-semibold text-center">Vérification</h1>
+              <p className="text-center text-muted-foreground">
+                Saisissez le code à 6 chiffres de votre application
+              </p>
+            </div>
+
+            <div className="flex gap-2 justify-center">
+              {code.map((digit, index) => (
+                <Input
+                  key={index}
+                  ref={(el) => {
+                    inputsRef.current[index] = el;
+                  }}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleCodeChange(index, e.target.value)}
+                  onKeyDown={(e) => handleCodeKeyDown(index, e)}
+                  className="h-14 w-14 text-center text-xl font-semibold"
+                  aria-label={`Chiffre ${index + 1}`}
+                />
+              ))}
+            </div>
+
+            {erreur && (
+              <div className="rounded-lg bg-destructive-soft px-4 py-3 text-sm text-destructive flex items-start gap-2">
+                <AlertTriangle className="size-4 mt-0.5 shrink-0" />
+                {erreur}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              className="w-full h-12 text-base bg-primary"
+              disabled={enCours || code.join("").length < 6}
+            >
+              {enCours ? "Vérification..." : "Valider"}
+            </Button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setUtiliserCodeSecours(true);
+                setCode(["", "", "", "", "", ""]);
+                setErreur(null);
+              }}
+              className="w-full text-sm text-success hover:underline cursor-pointer"
+            >
+              Appareil perdu ? Utiliser un code de secours
+            </button>
+          </form>
+
+          <p className="text-center text-sm text-muted-foreground">
+            © 2026 ITA Manager par ITA SARL
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background p-8">
-      <BlocIdentite />
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md space-y-8">
+        <BlocIdentite />
 
-      <form
-        onSubmit={seConnecter}
-        className="flex w-full max-w-sm flex-col gap-4 rounded-xl border border-border bg-card p-8"
-      >
-        <h1 className="text-xl font-semibold text-primary">Connexion</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Accédez à votre espace de travail.
-        </p>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="email">E-mail</Label>
-          <Input
-            id="email"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
+        <form
+          onSubmit={seConnecter}
+          className="rounded-2xl bg-card p-8 shadow-sm border border-border space-y-6"
+        >
+          <div className="space-y-2">
+            <h1 className="text-3xl font-semibold text-center">Bienvenue</h1>
+            <p className="text-center text-muted-foreground">
+              Connectez-vous pour accéder à votre espace de travail
+            </p>
+          </div>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="motDePasse">Mot de passe</Label>
-          <Input
-            id="motDePasse"
-            type="password"
-            autoComplete="current-password"
-            required
-            value={motDePasse}
-            onChange={(e) => setMotDePasse(e.target.value)}
-          />
-        </div>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium">
+                E-mail <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Saisissez votre e-mail"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-12"
+              />
+            </div>
 
-        {erreur && (
-          <div
-            role="alert"
-            className="flex items-start gap-2 rounded-lg bg-destructive-soft px-4 py-3 text-sm text-destructive"
-          >
-            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-            <div>
-              {erreur}
-              {tentatives >= 3 && (
-                <p className="mt-1 text-xs">
-                  Le message reste volontairement générique : il n&apos;indique
-                  pas si c&apos;est l&apos;adresse ou le mot de passe qui est
-                  erroné.
-                </p>
-              )}
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium">
+                Mot de passe <span className="text-destructive">*</span>
+              </Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={afficherMotDePasse ? "text" : "password"}
+                  placeholder="Saisissez votre mot de passe"
+                  autoComplete="current-password"
+                  required
+                  value={motDePasse}
+                  onChange={(e) => setMotDePasse(e.target.value)}
+                  className="h-12 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setAfficherMotDePasse((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  aria-label={afficherMotDePasse ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                >
+                  {afficherMotDePasse ? (
+                    <EyeOff className="size-4" />
+                  ) : (
+                    <Eye className="size-4" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-        )}
 
-        <Button type="submit" disabled={enCours}>
-          {enCours ? "Connexion…" : "Se connecter"}
-        </Button>
+          {erreur && (
+            <div className="rounded-lg bg-destructive-soft px-4 py-3 text-sm text-destructive flex items-start gap-2">
+              <AlertTriangle className="size-4 mt-0.5 shrink-0" />
+              {erreur}
+            </div>
+          )}
 
-        <Link
-          href="/mot-de-passe-oublie"
-          className="text-center text-sm text-muted-foreground hover:text-primary"
-        >
-          Mot de passe oublié ?
-        </Link>
-      </form>
+          <Button type="submit" className="w-full h-12 text-base bg-primary" disabled={enCours}>
+            {enCours ? "Connexion en cours..." : "Se connecter"}
+          </Button>
+
+          <Link
+            href="/mot-de-passe-oublie"
+            className="block text-center text-sm text-success hover:underline cursor-pointer"
+          >
+            Mot de passe oublié ?
+          </Link>
+        </form>
+
+        <p className="text-center text-sm text-muted-foreground">
+          © 2026 ITA Manager par ITA SARL
+        </p>
+      </div>
     </div>
   );
 }

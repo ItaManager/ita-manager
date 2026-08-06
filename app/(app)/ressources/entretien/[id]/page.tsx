@@ -60,7 +60,7 @@ export default async function PageDetailEntretien({
 
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Détail de l'entretien</h1>
+          <h1 className="text-3xl font-semibold">Détail de l'entretien</h1>
           <p className="text-muted-foreground mt-2">
             {entretien.materiel.codeIta} - {entretien.materiel.designation}
           </p>
@@ -202,7 +202,7 @@ export default async function PageDetailEntretien({
                 </div>
                 <div className="border-t pt-2 mt-2 flex items-center justify-between">
                   <span className="text-sm font-semibold">Total</span>
-                  <span className="font-mono text-lg font-bold">
+                  <span className="font-mono text-lg font-semibold">
                     {tco.total.toLocaleString("fr-FR", {
                       minimumFractionDigits: 0,
                       maximumFractionDigits: 0,

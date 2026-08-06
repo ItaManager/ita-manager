@@ -64,7 +64,7 @@ export default async function DashboardLogistiquePage() {
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-foreground">
+        <h2 className="text-lg font-semibold text-foreground">
           Tableau de bord
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
@@ -84,7 +84,7 @@ export default async function DashboardLogistiquePage() {
                 <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-foreground">
+                <div className="text-2xl font-semibold text-foreground">
                   {stat.value}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">

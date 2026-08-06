@@ -93,7 +93,7 @@ async function StatistiquesDFC() {
                 <Icone className="size-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{carte.valeur}</div>
+                <div className="text-2xl font-semibold">{carte.valeur}</div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Disponible avec {carte.moduleManquant}
                 </p>
@@ -107,7 +107,7 @@ async function StatistiquesDFC() {
 
       <Card className="border-info-border bg-info-soft/30">
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-sm flex items-center gap-2">
             <AlertCircle className="size-5 text-info" />
             Statistiques DFC en attente de développement
           </CardTitle>
@@ -144,7 +144,7 @@ async function ActiviteRecente() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-sm flex items-center gap-2">
             <TrendingUp className="size-4" />
             Activité récente
           </CardTitle>
@@ -161,7 +161,7 @@ async function ActiviteRecente() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
+        <CardTitle className="text-sm flex items-center gap-2">
           <TrendingUp className="size-4" />
           Activité récente
         </CardTitle>

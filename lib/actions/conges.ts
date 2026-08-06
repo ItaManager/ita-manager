@@ -1433,3 +1433,85 @@ export const listerAbsencesCalendrier = actionProtegee(
     }));
   }
 );
+
+// =====================================================================
+// COMPTEURS POUR BADGES DE NAVIGATION
+// =====================================================================
+
+/**
+ * Charge les compteurs de badges pour le module Congés
+ * Utilisé par la barre latérale pour afficher les badges de notification
+ *
+ * Note : Cette fonction ne nécessite pas la permission "absence:demander" pour s'exécuter
+ * Elle retourne des compteurs vides si l'utilisateur n'a pas les permissions appropriées
+ */
+export async function chargerCompteursConges() {
+  try {
+    const supabase = await (await import("@/lib/supabase/server")).createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { aValiderN1: 0, controleRH: 0 };
+    }
+
+    const profil = await prisma.profil.findUnique({
+      where: { id: user.id },
+      include: {
+        roles: {
+          include: {
+            role: { include: { permissions: { include: { permission: true } } } },
+          },
+        },
+        employe: true,
+      },
+    });
+
+    const permissions =
+      profil?.roles.flatMap((pr) =>
+        pr.role.permissions.map((rp) => rp.permission.code)
+      ) ?? [];
+
+    const compteurs = {
+      aValiderN1: 0,
+      controleRH: 0,
+    };
+
+    // Pour "À valider (N+1)" : compter les demandes de subordonnés directs avec statut SOUMISE
+    if (permissions.includes("absence:valider") && profil?.employe) {
+      const affectationsSubordonnes = await prisma.affectation.findMany({
+        where: {
+          superieurId: profil.employe.id,
+          dateFin: null,
+        },
+        select: { employeId: true },
+      });
+
+      const subordinesIds = affectationsSubordonnes.map((a) => a.employeId);
+
+      if (subordinesIds.length > 0) {
+        compteurs.aValiderN1 = await prisma.absence.count({
+          where: {
+            employeId: { in: subordinesIds },
+            statut: "ATTENTE_N1",
+          },
+        });
+      }
+    }
+
+    // Pour "Contrôle RH" : compter les demandes validées N+1, en attente d'autorisation RH
+    if (permissions.includes("absence:valider")) {
+      compteurs.controleRH = await prisma.absence.count({
+        where: {
+          statut: "ATTENTE_RH",
+        },
+      });
+    }
+
+    return compteurs;
+  } catch (error) {
+    console.error("Erreur lors du chargement des compteurs congés:", error);
+    return { aValiderN1: 0, controleRH: 0 };
+  }
+}

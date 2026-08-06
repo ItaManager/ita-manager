@@ -393,6 +393,32 @@ model Nationalite {
   @@map("nationalites")
 }
 
+/// Compétences des journaliers avec taux journalier associé.
+/// Permet le calcul automatique de la paie et du budget projet.
+model Competence {
+  id String @id @default(cuid())
+
+  /// Code court (ex: "MENU", "MACON", "FERRAIL")
+  code String @unique
+
+  /// Libellé (ex: "Menuisier", "Maçon", "Ferailleur")
+  libelle String @unique
+
+  /// Taux journalier en FCFA (ex: 5000 pour 5.000 FCFA)
+  tauxJournalier Decimal @db.Decimal(10, 2)
+
+  /// Description optionnelle
+  description String?
+
+  employes Employe[]
+
+  creeLe    DateTime  @default(now())
+  modifieLe DateTime  @updatedAt
+  archiveLe DateTime?
+
+  @@map("competences")
+}
+
 /// Employé ITA. Deux dossiers distincts selon typeMainOeuvre :
 /// - PERMANENT : dossier complet (~40 champs)
 /// - JOURNALIER : 4 champs seulement (décision A-12)
@@ -416,6 +442,12 @@ model Employe {
   nationalite           Nationalite?           @relation(fields: [nationaliteId], references: [id])
   situationMatrimoniale SituationMatrimoniale?
   nombreEnfants         Int?                   @default(0)
+
+  // --- Compétence (JOURNALIER uniquement) ---
+  /// Compétence du journalier avec taux journalier associé.
+  /// Obligatoire pour les journaliers, null pour les permanents.
+  competenceId String?
+  competence   Competence? @relation(fields: [competenceId], references: [id])
 
   /// Donnée SENSIBLE. Unique parmi les permanents actifs (non archivés).
   numeroCnps String? @unique
@@ -468,6 +500,8 @@ model Employe {
 
   /// M5 — Projets (chaîne fonctionnelle)
   affectationsChantier AffectationChantier[]
+  tachesResponsable    Tache[]              @relation("TachesResponsable")
+  affectationsTaches   AffectationTache[]
 
   /// M6 — Relevés d'activité
   relevesChefChantier ReleveActivite[]
@@ -495,6 +529,7 @@ model Employe {
   @@index([matricule])
   @@index([typeMainOeuvre])
   @@index([nationaliteId])
+  @@index([competenceId])
   @@map("employes")
 }
 
@@ -1155,10 +1190,17 @@ model Tache {
   /// Avancement constaté depuis relevés (0-100)
   avancementConstate Int?
 
+  /// Responsable principal de la tâche
+  responsableId String?
+  responsable   Employe? @relation("TachesResponsable", fields: [responsableId], references: [id], onDelete: SetNull)
+
   /// Tâche prédécesseur (dépendance)
   predecesseurId String?
   predecesseur   Tache?  @relation("Dependances", fields: [predecesseurId], references: [id], onDelete: SetNull)
   successeurs    Tache[] @relation("Dependances")
+
+  /// Employés assignés à cette tâche (Many-to-Many)
+  affectations AffectationTache[]
 
   /// M6 — Travaux réalisés
   travauxRealises TravauxRealises[]
@@ -1198,6 +1240,22 @@ model Jalon {
   creeLe DateTime @default(now())
 
   @@map("jalons")
+}
+
+/// Assignation d'un employé à une tâche (Many-to-Many)
+model AffectationTache {
+  id String @id @default(cuid())
+
+  tacheId String
+  tache   Tache @relation(fields: [tacheId], references: [id], onDelete: Cascade)
+
+  employeId String
+  employe   Employe @relation(fields: [employeId], references: [id])
+
+  creeLe DateTime @default(now())
+
+  @@unique([tacheId, employeId])
+  @@map("affectations_taches")
 }
 
 /// Affectation d'employé à un chantier (chaîne fonctionnelle)

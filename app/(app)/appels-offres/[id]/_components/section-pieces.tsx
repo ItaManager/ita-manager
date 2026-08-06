@@ -61,7 +61,7 @@ export function SectionPieces({ appelOffresId, pieces, statut }: Props) {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base">Pièces du dossier ({pieces.length})</CardTitle>
+          <CardTitle className="text-sm">Pièces du dossier ({pieces.length})</CardTitle>
           {!dossierFige && !enAjout && (
             <Button
               variant="outline"

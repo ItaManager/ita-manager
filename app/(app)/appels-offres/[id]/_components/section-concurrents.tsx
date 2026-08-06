@@ -62,7 +62,7 @@ export function SectionConcurrents({ appelOffresId, concurrents }: Props) {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base">Concurrents ({concurrents.length})</CardTitle>
+          <CardTitle className="text-sm">Concurrents ({concurrents.length})</CardTitle>
           {!enAjout && (
             <Button
               variant="outline"

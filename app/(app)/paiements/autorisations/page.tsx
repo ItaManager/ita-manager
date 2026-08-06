@@ -29,7 +29,7 @@ export default async function PageAutorisations() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Demandes d'autorisation</h1>
+        <h1 className="text-2xl font-semibold">Demandes d'autorisation</h1>
         <p className="text-muted-foreground mt-1">
           Demandes de paiement en attente de votre autorisation
         </p>
@@ -49,7 +49,7 @@ export default async function PageAutorisations() {
                   <div className="text-sm text-muted-foreground">
                     {demande.categorie} · {demande.lignes?.length || 0} bénéficiaire(s)
                   </div>
-                  <div className="text-lg font-bold mt-2">
+                  <div className="text-lg font-semibold mt-2">
                     {demande.montantTotal.toString()} XOF
                   </div>
                 </div>

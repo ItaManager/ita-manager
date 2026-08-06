@@ -30,7 +30,7 @@ export default async function PageLieux({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Lieux de stockage</h1>
+          <h1 className="text-3xl font-semibold">Lieux de stockage</h1>
           <p className="text-muted-foreground mt-2">
             {total} lieu{total > 1 ? "x" : ""} de stockage
           </p>

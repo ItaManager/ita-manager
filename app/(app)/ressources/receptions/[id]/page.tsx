@@ -61,7 +61,7 @@ export default async function PageDetailReception({
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold">{reception.reference}</h1>
+            <h1 className="text-3xl font-semibold">{reception.reference}</h1>
             <p className="text-muted-foreground mt-1">
               Réception de marchandise
             </p>
@@ -91,14 +91,14 @@ export default async function PageDetailReception({
               <label className="text-sm font-medium text-muted-foreground">
                 Référence
               </label>
-              <p className="text-base mt-1 font-mono">{reception.reference}</p>
+              <p className="text-sm mt-1 font-mono">{reception.reference}</p>
             </div>
 
             <div>
               <label className="text-sm font-medium text-muted-foreground">
                 Date de réception
               </label>
-              <p className="text-base mt-1">
+              <p className="text-sm mt-1">
                 {new Date(reception.dateReception).toLocaleDateString("fr-FR")}
               </p>
             </div>
@@ -107,7 +107,7 @@ export default async function PageDetailReception({
               <label className="text-sm font-medium text-muted-foreground">
                 Fournisseur
               </label>
-              <p className="text-base mt-1">{reception.fournisseurNom}</p>
+              <p className="text-sm mt-1">{reception.fournisseurNom}</p>
             </div>
 
             <div>
@@ -137,7 +137,7 @@ export default async function PageDetailReception({
               <label className="text-sm font-medium text-muted-foreground">
                 Réceptionné par
               </label>
-              <p className="text-base mt-1">{reception.receptionneParNom}</p>
+              <p className="text-sm mt-1">{reception.receptionneParNom}</p>
             </div>
 
             {reception.valideParId && (
@@ -146,7 +146,7 @@ export default async function PageDetailReception({
                   <label className="text-sm font-medium text-muted-foreground">
                     Validé le
                   </label>
-                  <p className="text-base mt-1">
+                  <p className="text-sm mt-1">
                     {reception.valideLe
                       ? new Date(reception.valideLe).toLocaleDateString("fr-FR")
                       : "—"}
@@ -160,7 +160,7 @@ export default async function PageDetailReception({
                 <label className="text-sm font-medium text-muted-foreground">
                   Motif de refus
                 </label>
-                <p className="text-base mt-1">{reception.motifRefus}</p>
+                <p className="text-sm mt-1">{reception.motifRefus}</p>
               </div>
             )}
           </div>

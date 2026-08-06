@@ -229,7 +229,7 @@ export function ModalPiece({ pieceId, onClose }: ModalPieceProps) {
                       <p className="text-sm text-muted-foreground">
                         Cumul sur {piece.remplace ? 2 : 1} année{piece.remplace ? "s" : ""}
                       </p>
-                      <p className="text-lg font-bold tabular-nums">
+                      <p className="text-lg font-semibold tabular-nums">
                         {piece.montant.toLocaleString("fr-FR")} F
                       </p>
                     </div>

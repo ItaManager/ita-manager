@@ -178,7 +178,7 @@ export default async function DerogationDetailPage({ params }: PageProps) {
       {/* Informations employé */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-sm flex items-center gap-2">
             <User className="size-5" />
             Informations employé
           </CardTitle>
@@ -226,7 +226,7 @@ export default async function DerogationDetailPage({ params }: PageProps) {
       {/* Écart salarial */}
       <Card className="border-warning bg-warning-soft/20">
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-sm flex items-center gap-2">
             <TrendingUp className="size-5 text-warning" />
             Écart par rapport à la grille salariale
           </CardTitle>
@@ -237,7 +237,7 @@ export default async function DerogationDetailPage({ params }: PageProps) {
             <div className="flex items-center justify-between p-4 bg-background rounded-lg border">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Salaire demandé</p>
-                <p className="text-2xl font-bold">
+                <p className="text-2xl font-semibold">
                   {montant.toLocaleString("fr-FR")} FCFA
                 </p>
               </div>
@@ -274,7 +274,7 @@ export default async function DerogationDetailPage({ params }: PageProps) {
       {/* Motif de la demande */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-sm flex items-center gap-2">
             <Briefcase className="size-5" />
             Motif de la demande
           </CardTitle>
@@ -294,7 +294,7 @@ export default async function DerogationDetailPage({ params }: PageProps) {
           }
         >
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
+            <CardTitle className="text-sm flex items-center gap-2">
               {derogation.statut === "VALIDEE" ? (
                 <>
                   <CheckCircle2 className="size-5 text-success" />

@@ -51,7 +51,7 @@ export default async function TempsReelPage() {
                   <p className="text-sm font-medium text-muted-foreground">
                     {stat.label}
                   </p>
-                  <p className="text-3xl font-bold mt-2">{stat.value}</p>
+                  <p className="text-3xl font-semibold mt-2">{stat.value}</p>
                 </div>
                 <stat.icon className={`size-8 ${stat.color}`} />
               </div>
@@ -63,7 +63,7 @@ export default async function TempsReelPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
+            <CardTitle className="text-sm flex items-center gap-2">
               <UserCheck className="size-4 text-success" />
               Présents ({presents.length})
             </CardTitle>
@@ -105,7 +105,7 @@ export default async function TempsReelPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
+            <CardTitle className="text-sm flex items-center gap-2">
               <UserX className="size-4 text-muted-foreground" />
               Partis ({partis.length})
             </CardTitle>
@@ -147,7 +147,7 @@ export default async function TempsReelPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
+            <CardTitle className="text-sm flex items-center gap-2">
               <Users className="size-4 text-warning" />
               Absents ({absents.length})
             </CardTitle>

@@ -36,7 +36,7 @@ export default async function PageEntretien({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Entretien du matériel</h1>
+          <h1 className="text-3xl font-semibold">Entretien du matériel</h1>
           <p className="text-muted-foreground mt-2">
             Planification et suivi de l'entretien préventif et curatif
           </p>

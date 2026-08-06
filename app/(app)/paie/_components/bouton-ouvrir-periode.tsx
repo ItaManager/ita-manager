@@ -83,7 +83,7 @@ export function BoutonOuvrirPeriode() {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Ouvrir une période de paie</DialogTitle>
         </DialogHeader>

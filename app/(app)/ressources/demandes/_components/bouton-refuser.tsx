@@ -95,7 +95,7 @@ export function BoutonRefuser({ demandeId, niveau }: BoutonRefuserProps) {
           Refuser
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Refuser la demande</DialogTitle>
         </DialogHeader>

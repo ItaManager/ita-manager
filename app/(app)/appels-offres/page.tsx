@@ -74,7 +74,7 @@ async function StatistiquesAO() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.enVeille}</div>
+          <div className="text-2xl font-semibold">{stats.enVeille}</div>
         </CardContent>
       </Card>
 
@@ -85,7 +85,7 @@ async function StatistiquesAO() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.enGo}</div>
+          <div className="text-2xl font-semibold">{stats.enGo}</div>
         </CardContent>
       </Card>
 
@@ -96,7 +96,7 @@ async function StatistiquesAO() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.enConstitution}</div>
+          <div className="text-2xl font-semibold">{stats.enConstitution}</div>
         </CardContent>
       </Card>
 
@@ -107,7 +107,7 @@ async function StatistiquesAO() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.soumis}</div>
+          <div className="text-2xl font-semibold">{stats.soumis}</div>
         </CardContent>
       </Card>
 
@@ -118,7 +118,7 @@ async function StatistiquesAO() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-success">{stats.gagnes}</div>
+          <div className="text-2xl font-semibold text-success">{stats.gagnes}</div>
         </CardContent>
       </Card>
 
@@ -129,7 +129,7 @@ async function StatistiquesAO() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-muted-foreground">{stats.perdus}</div>
+          <div className="text-2xl font-semibold text-muted-foreground">{stats.perdus}</div>
         </CardContent>
       </Card>
 
@@ -141,7 +141,7 @@ async function StatistiquesAO() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-success">{stats.tauxReussite}%</div>
+          <div className="text-2xl font-semibold text-success">{stats.tauxReussite}%</div>
         </CardContent>
       </Card>
     </div>

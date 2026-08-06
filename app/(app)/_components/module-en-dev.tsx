@@ -21,7 +21,7 @@ export function ModuleEnDev({ moduleNumero, moduleNom, titre }: ModuleEnDevProps
             <Badge variant="outline" className="mb-3 border-warning text-warning">
               Module {moduleNumero} — {moduleNom}
             </Badge>
-            <h2 className="text-xl font-semibold text-gray-900">Non encore livré</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Non encore livré</h2>
             <p className="mt-2 text-sm text-gray-600">
               L'entrée « {titre} » figure au menu pour que la navigation reste
               stable dès le premier jour.

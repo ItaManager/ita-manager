@@ -5,6 +5,7 @@ import {
   listerDocumentsEmploye,
   listerContratsEmploye,
   listerHistoriqueEmploye,
+  obtenirDonneesReferenceEmploye,
 } from "@/lib/actions/employes";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,11 +39,12 @@ export default async function PageDetailEmploye({ params }: PageDetailEmployePro
 }
 
 async function DetailEmploye({ employeId }: { employeId: string }) {
-  const [employe, documents, contrats, historique] = await Promise.all([
+  const [employe, documents, contrats, historique, donneesReference] = await Promise.all([
     obtenirEmploye(employeId),
     listerDocumentsEmploye(employeId),
     listerContratsEmploye(employeId),
     listerHistoriqueEmploye(employeId),
+    obtenirDonneesReferenceEmploye(),
   ]);
 
   if (!employe) {
@@ -58,7 +60,7 @@ async function DetailEmploye({ employeId }: { employeId: string }) {
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold">
+            <h1 className="text-3xl font-semibold">
               {employe.nom} {employe.prenom}
             </h1>
             {estArchive && (
@@ -81,7 +83,10 @@ async function DetailEmploye({ employeId }: { employeId: string }) {
         <div className="flex items-center gap-3">
           <BoutonModifierEmploye
             employeId={employe.id}
-            typeMainOeuvre={employe.typeMainOeuvre}
+            postes={donneesReference.postes}
+            nationalites={donneesReference.nationalites}
+            directions={donneesReference.directions}
+            services={donneesReference.services}
             disabled={estArchive}
           />
 

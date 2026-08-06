@@ -246,7 +246,7 @@ export default async function GrilleDetailPage({ params }: PageProps) {
       {/* Tableau des échelons */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-sm flex items-center gap-2">
             <FileText className="size-5" />
             Fourchettes par niveau hiérarchique
           </CardTitle>

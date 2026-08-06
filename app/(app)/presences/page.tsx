@@ -22,7 +22,7 @@ export default async function RegistrePresencesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">
+          <CardTitle className="text-sm">
             Pointages récents ({pointages.length})
           </CardTitle>
         </CardHeader>

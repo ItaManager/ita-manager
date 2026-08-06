@@ -32,7 +32,7 @@ export default async function PageMouvements({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Bons de mouvement</h1>
+          <h1 className="text-3xl font-semibold">Bons de mouvement</h1>
           <p className="text-muted-foreground mt-2">
             {total} bon{total > 1 ? "s" : ""} de mouvement
           </p>

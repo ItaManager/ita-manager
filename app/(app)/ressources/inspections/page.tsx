@@ -37,7 +37,7 @@ export default async function PageInspections({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Inspections matériel</h1>
+          <h1 className="text-3xl font-semibold">Inspections matériel</h1>
           <p className="text-muted-foreground mt-2">
             {total} inspection{total > 1 ? "s" : ""} enregistrée{total > 1 ? "s" : ""}
           </p>

@@ -120,7 +120,7 @@ export function FormulaireDemande({
 
       {/* Informations générales */}
       <div className="rounded-lg border bg-card p-6">
-        <h3 className="mb-4 text-base font-semibold">Informations générales</h3>
+        <h3 className="mb-4 text-sm font-semibold">Informations générales</h3>
 
         <div className="grid gap-4 md:grid-cols-2">
           <div>
@@ -200,7 +200,7 @@ export function FormulaireDemande({
       {/* Lignes d'articles */}
       <div className="rounded-lg border bg-card p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-base font-semibold">Articles demandés</h3>
+          <h3 className="text-sm font-semibold">Articles demandés</h3>
           <Button
             type="button"
             variant="outline"

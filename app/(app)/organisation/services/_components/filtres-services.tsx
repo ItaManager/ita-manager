@@ -1,18 +1,9 @@
 "use client";
 
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Card, CardHeader } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Search, X } from "lucide-react";
 import { useState, useTransition } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 import type { Direction } from "@prisma/client";
 
 interface FiltresServicesProps {
@@ -30,99 +21,56 @@ export function FiltresServices({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const [searchValue, setSearchValue] = useState(rechercheActive || "");
 
-  const [recherche, setRecherche] = useState(rechercheActive ?? "");
-  const [direction, setDirection] = useState(directionIdActif ?? "tous");
-
-  const appliquerFiltres = () => {
-    const params = new URLSearchParams();
-
-    if (direction && direction !== "tous") {
-      params.set("direction", direction);
+  const updateFilters = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set(key, value);
+    } else {
+      params.delete(key);
     }
-
-    if (recherche.trim()) {
-      params.set("recherche", recherche.trim());
-    }
-
-    // Retour à la page 1 lors d'un changement de filtre
-    const url = params.toString()
-      ? `${pathname}?${params.toString()}`
-      : pathname;
+    params.set("page", "1");
 
     startTransition(() => {
-      router.push(url);
+      router.push(`${pathname}?${params.toString()}`);
     });
   };
 
-  const reinitialiser = () => {
-    setRecherche("");
-    setDirection("tous");
-    startTransition(() => {
-      router.push(pathname);
-    });
+  const handleSearchChange = (value: string) => {
+    setSearchValue(value);
+    const timeoutId = setTimeout(() => {
+      updateFilters("recherche", value);
+    }, 500);
+    return () => clearTimeout(timeoutId);
   };
-
-  const filtresActifs = directionIdActif || rechercheActive;
 
   return (
-    <Card>
-      <CardHeader className="space-y-4">
-        <div className="flex items-center gap-4">
-          {/* Recherche */}
-          <div className="relative flex-1">
-            <Search
-              className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <Input
-              placeholder="Rechercher un service..."
-              value={recherche}
-              onChange={(e) => setRecherche(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  appliquerFiltres();
-                }
-              }}
-              className="pl-9"
-              aria-label="Rechercher un service"
-            />
-          </div>
+    <div className="flex items-center gap-4">
+      <div className="relative flex-1">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-primary pointer-events-none" />
+        <Input
+          placeholder="Rechercher un service..."
+          value={searchValue}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          className="pl-12 h-12 text-base border-2 border-border focus:border-primary transition-all shadow-sm focus:shadow-md"
+          disabled={isPending}
+        />
+      </div>
 
-          {/* Filtre Direction */}
-          <Select value={direction} onValueChange={setDirection}>
-            <SelectTrigger className="w-[200px]" aria-label="Filtrer par direction">
-              <SelectValue placeholder="Toutes directions" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="tous">Toutes directions</SelectItem>
-              {directions.map((dir) => (
-                <SelectItem key={dir.id} value={dir.id}>
-                  {dir.libelle}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Boutons */}
-          <Button onClick={appliquerFiltres} disabled={isPending}>
-            Filtrer
-          </Button>
-
-          {filtresActifs && (
-            <Button
-              variant="outline"
-              onClick={reinitialiser}
-              disabled={isPending}
-              className="gap-2"
-              aria-label="Réinitialiser les filtres"
-            >
-              <X className="size-4" aria-hidden="true" />
-              Réinitialiser
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-    </Card>
+      <select
+        value={directionIdActif || ""}
+        onChange={(e) => updateFilters("direction", e.target.value)}
+        disabled={isPending}
+        className="h-12 rounded-lg border-2 border-border bg-background px-4 text-base cursor-pointer min-w-[180px] transition-all hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm hover:shadow-md"
+      >
+        <option value="">Toutes les directions</option>
+        {directions.map((dir) => (
+          <option key={dir.id} value={dir.id}>
+            {dir.libelle}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }

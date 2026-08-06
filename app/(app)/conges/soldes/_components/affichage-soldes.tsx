@@ -144,7 +144,7 @@ export function AffichageSoldes() {
       </div>
 
       {/* Cartes de solde */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:md:grid-cols-3">
         {/* Dotation acquise */}
         <Card>
           <CardHeader className="pb-3">
@@ -153,7 +153,7 @@ export function AffichageSoldes() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-foreground">—</div>
+            <div className="text-3xl font-semibold text-foreground">—</div>
             <p className="mt-1 text-xs text-muted-foreground">jours acquis</p>
             <p className="mt-2 text-xs text-warning">
               Calcul en attente (Phase 6)
@@ -169,7 +169,7 @@ export function AffichageSoldes() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-foreground">—</div>
+            <div className="text-3xl font-semibold text-foreground">—</div>
             <p className="mt-1 text-xs text-muted-foreground">
               jours consommés
             </p>
@@ -187,7 +187,7 @@ export function AffichageSoldes() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-foreground">—</div>
+            <div className="text-3xl font-semibold text-foreground">—</div>
             <p className="mt-1 text-xs text-muted-foreground">
               jours reportés
             </p>
@@ -205,7 +205,7 @@ export function AffichageSoldes() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-primary">—</div>
+            <div className="text-3xl font-semibold text-primary">—</div>
             <p className="mt-1 text-xs text-muted-foreground">
               jours disponibles
             </p>
@@ -219,7 +219,7 @@ export function AffichageSoldes() {
       {/* Barre de progression */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Utilisation du solde</CardTitle>
+          <CardTitle className="text-sm">Utilisation du solde</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">

@@ -2,41 +2,23 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  FormDescription,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, X } from "lucide-react";
 import { creerPoste, modifierPoste } from "@/lib/actions/organisation";
-import { ComboboxDirection } from "../../services/_components/combobox-direction";
-import { ComboboxService } from "./combobox-service";
+import { Combobox } from "@/components/ui/combobox";
 import type {
   Direction,
   Service,
@@ -73,6 +55,13 @@ interface ModalPosteProps {
   poste?: Poste & { direction: Direction; service: Service | null };
 }
 
+const NIVEAUX: Array<{ value: NiveauHierarchique; label: string }> = [
+  { value: "DIRECTION", label: "Direction" },
+  { value: "CADRE", label: "Cadre" },
+  { value: "SUPPORT", label: "Support" },
+  { value: "OPERATIONNEL", label: "Opérationnel" },
+];
+
 export function ModalPoste({
   ouvert,
   onFermer,
@@ -83,9 +72,15 @@ export function ModalPoste({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [erreur, setErreur] = useState<string | null>(null);
-  const [services, setServices] = useState(servicesInitiaux);
 
-  const form = useForm<FormData>({
+  const {
+    register,
+    handleSubmit,
+    control,
+    watch,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>({
     resolver: zodResolver(schemaFormulaire),
     defaultValues: poste
       ? {
@@ -110,7 +105,7 @@ export function ModalPoste({
         },
   });
 
-  const directionSelectionnee = form.watch("directionId");
+  const directionId = watch("directionId");
 
   const onSubmit = async (data: FormData) => {
     setErreur(null);
@@ -131,7 +126,7 @@ export function ModalPoste({
           // Attendre 2s avant de fermer pour laisser lire le message
           setTimeout(() => {
             onFermer();
-            form.reset();
+            reset();
             startTransition(() => {
               router.refresh();
             });
@@ -142,7 +137,7 @@ export function ModalPoste({
 
       // Succès
       onFermer();
-      form.reset();
+      reset();
       startTransition(() => {
         router.refresh();
       });
@@ -154,248 +149,294 @@ export function ModalPoste({
   };
 
   const annuler = () => {
-    form.reset();
+    reset();
     setErreur(null);
     onFermer();
   };
 
+  const directionOptions = directions.map((dir) => ({
+    value: dir.id,
+    label: dir.libelle,
+  }));
+
+  const serviceOptions = [
+    { value: "", label: "Aucun service (poste transverse)" },
+    ...servicesInitiaux
+      .filter((s) => !directionId || s.directionId === directionId)
+      .map((s) => ({
+        value: s.id,
+        label: s.libelle,
+      })),
+  ];
+
+  const niveauOptions = NIVEAUX.map((n) => ({
+    value: n.value,
+    label: n.label,
+  }));
+
   return (
     <Dialog open={ouvert} onOpenChange={annuler}>
-      <DialogContent className="sm:!max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="relative -mt-6 -mx-6 px-6 pt-6 pb-4 rounded-t-xl" style={{ backgroundColor: '#ebeaf2' }}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={annuler}
+            className="absolute -right-2 -top-2 h-8 w-8"
+            disabled={isSubmitting}
+          >
+            <X className="size-4" />
+          </Button>
+          <DialogTitle className="text-xl font-semibold" style={{ color: '#1d186c' }}>
             {poste ? "Modifier le poste" : "Nouveau poste"}
           </DialogTitle>
-          <DialogDescription>
-            {poste
-              ? "Modifiez les informations du poste."
-              : "Créez un nouveau poste au sein d'une direction et d'un service."}
-          </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {erreur && (
-              <Alert variant="destructive">
-                <AlertCircle className="size-4" aria-hidden="true" />
-                <AlertDescription>{erreur}</AlertDescription>
-              </Alert>
-            )}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-4">
+          {erreur && (
+            <Alert variant="destructive">
+              <AlertCircle className="size-4" aria-hidden="true" />
+              <AlertDescription>{erreur}</AlertDescription>
+            </Alert>
+          )}
 
-            <div className="grid grid-cols-2 gap-4">
-              {/* Direction */}
-              <FormField
-                control={form.control}
+          {/* Direction & Service */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="directionId" className="text-sm font-medium">
+                Direction <span className="text-destructive">*</span>
+              </Label>
+              <Controller
+                control={control}
                 name="directionId"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Direction</FormLabel>
-                    <FormControl>
-                      <ComboboxDirection
-                        directions={directions}
-                        value={field.value}
-                        onChange={field.onChange}
-                        disabled={!!poste}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <Combobox
+                    options={directionOptions}
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Sélectionner..."
+                    searchPlaceholder="Rechercher..."
+                    emptyText="Aucune direction trouvée"
+                    className="h-12"
+                    disabled={!!poste}
+                  />
                 )}
               />
+              {errors.directionId && (
+                <p className="text-sm text-destructive">{errors.directionId.message}</p>
+              )}
+              {poste && (
+                <p className="text-xs text-muted-foreground">
+                  La direction ne peut pas être modifiée
+                </p>
+              )}
+            </div>
 
-              {/* Service */}
-              <FormField
-                control={form.control}
+            <div className="space-y-2">
+              <Label htmlFor="serviceId" className="text-sm font-medium">
+                Service
+              </Label>
+              <Controller
+                control={control}
                 name="serviceId"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Service</FormLabel>
-                    <FormControl>
-                      <ComboboxService
-                        services={services}
-                        directionId={directionSelectionnee || null}
-                        value={field.value}
-                        onChange={field.onChange}
-                        disabled={!!poste}
-                        onServiceCreated={(nouveauService) => {
-                          setServices([...services, nouveauService]);
-                        }}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Optionnel. Laissez vide pour un poste transverse.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
+                  <Combobox
+                    options={serviceOptions}
+                    value={field.value || ""}
+                    onChange={(value) => field.onChange(value || null)}
+                    placeholder="Sélectionner..."
+                    searchPlaceholder="Rechercher..."
+                    emptyText="Aucun service trouvé"
+                    className="h-12"
+                    disabled={!!poste}
+                  />
                 )}
               />
+              {errors.serviceId && (
+                <p className="text-sm text-destructive">{errors.serviceId.message}</p>
+              )}
+              {!poste && (
+                <p className="text-xs text-muted-foreground">
+                  Optionnel pour un poste transverse
+                </p>
+              )}
+              {poste && (
+                <p className="text-xs text-muted-foreground">
+                  Le service ne peut pas être modifié
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Code & Niveau */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="code" className="text-sm font-medium">
+                Code <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                {...register("code", {
+                  onChange: (e) => {
+                    e.target.value = e.target.value.toUpperCase();
+                  },
+                })}
+                placeholder="Ex: CHEF_CHANTIER"
+                className="h-12 font-mono"
+                maxLength={20}
+              />
+              {errors.code && (
+                <p className="text-sm text-destructive">{errors.code.message}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Identifiant unique en MAJUSCULES
+              </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              {/* Code */}
-              <FormField
-                control={form.control}
-                name="code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Code</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Ex: CHEF_CHANTIER"
-                        className="font-mono"
-                        maxLength={20}
-                        disabled={!!poste}
-                        onChange={(e) => {
-                          field.onChange(e.target.value.toUpperCase());
-                        }}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Identifiant unique en MAJUSCULES
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Niveau */}
-              <FormField
-                control={form.control}
+            <div className="space-y-2">
+              <Label htmlFor="niveau" className="text-sm font-medium">
+                Niveau hiérarchique <span className="text-destructive">*</span>
+              </Label>
+              <Controller
+                control={control}
                 name="niveau"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Niveau hiérarchique</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger aria-label="Sélectionner le niveau">
-                          <SelectValue placeholder="Sélectionner..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="DIRECTION">Direction</SelectItem>
-                        <SelectItem value="CADRE">Cadre</SelectItem>
-                        <SelectItem value="SUPPORT">Support</SelectItem>
-                        <SelectItem value="OPERATIONNEL">
-                          Opérationnel
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
+                  <Combobox
+                    options={niveauOptions}
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Sélectionner..."
+                    searchPlaceholder="Rechercher..."
+                    emptyText="Aucun niveau trouvé"
+                    className="h-12"
+                  />
                 )}
               />
+              {errors.niveau && (
+                <p className="text-sm text-destructive">{errors.niveau.message}</p>
+              )}
             </div>
+          </div>
 
-            {/* Libellé */}
-            <FormField
-              control={form.control}
-              name="libelle"
+          {/* Libellé */}
+          <div className="space-y-2">
+            <Label htmlFor="libelle" className="text-sm font-medium">
+              Libellé <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              {...register("libelle")}
+              placeholder="Ex: Chef de chantier"
+              className="h-12"
+              maxLength={100}
+            />
+            {errors.libelle && (
+              <p className="text-sm text-destructive">{errors.libelle.message}</p>
+            )}
+          </div>
+
+          {/* Checkboxes */}
+          <div className="space-y-4 rounded-lg border p-4 bg-muted/30">
+            <Controller
+              control={control}
+              name="reserveAdmin"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Libellé</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="Ex: Chef de chantier"
-                      maxLength={100}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="reserveAdmin"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    className="mt-0.5"
+                  />
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="reserveAdmin"
+                      className="text-sm font-medium cursor-pointer"
+                    >
+                      Réservé aux administrateurs
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Seuls les administrateurs peuvent modifier ce poste
+                    </p>
+                  </div>
+                </div>
               )}
             />
 
-            {/* Checkboxes */}
-            <div className="space-y-3 rounded-lg border p-4">
-              <FormField
-                control={form.control}
-                name="reserveAdmin"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Réservé aux administrateurs</FormLabel>
-                      <FormDescription>
-                        Seuls les administrateurs peuvent modifier ce poste
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="titulaireUnique"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Titulaire unique</FormLabel>
-                      <FormDescription>
-                        Un seul employé peut occuper ce poste à la fois
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="ouvreDroitConges"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Ouvre droit aux congés</FormLabel>
-                      <FormDescription>
-                        L'employé bénéficie d'un compteur de congés annuels
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={annuler}
-                disabled={form.formState.isSubmitting}
-              >
-                Annuler
-              </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting && (
-                  <Loader2
-                    className="mr-2 size-4 animate-spin"
-                    aria-hidden="true"
+            <Controller
+              control={control}
+              name="titulaireUnique"
+              render={({ field }) => (
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="titulaireUnique"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    className="mt-0.5"
                   />
-                )}
-                {poste ? "Enregistrer" : "Créer"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="titulaireUnique"
+                      className="text-sm font-medium cursor-pointer"
+                    >
+                      Titulaire unique
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Un seul employé peut occuper ce poste à la fois
+                    </p>
+                  </div>
+                </div>
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="ouvreDroitConges"
+              render={({ field }) => (
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="ouvreDroitConges"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    className="mt-0.5"
+                  />
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="ouvreDroitConges"
+                      className="text-sm font-medium cursor-pointer"
+                    >
+                      Ouvre droit à congés
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Les employés peuvent demander des congés payés
+                    </p>
+                  </div>
+                </div>
+              )}
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={annuler}
+              disabled={isSubmitting}
+              className="h-11 px-6"
+            >
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="h-11 px-6 bg-primary hover:bg-primary-hover"
+            >
+              {isSubmitting && (
+                <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+              )}
+              {poste ? "Enregistrer" : "Créer le poste"}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

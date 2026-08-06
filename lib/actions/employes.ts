@@ -11,6 +11,7 @@
 
 import { prisma } from "@/lib/db/prisma";
 import { actionProtegee } from "@/lib/auth/guard";
+import { createClient } from "@/lib/supabase/server";
 import { TypeMainOeuvre } from "@prisma/client";
 
 // ===========================================================================
@@ -39,6 +40,10 @@ interface EmployeListItem {
     service?: { libelle: string };
     direction: { libelle: string };
   };
+  superieur?: {
+    nom: string;
+    prenom: string;
+  } | null;
   typeContrat?: string | null;
   // Donnée SENSIBLE : masquée si pas de permission employe:donneesSensibles
   salaire?: number | null;
@@ -57,7 +62,7 @@ interface EmployeDetail {
   sexe?: string | null;
   dateNaissance?: Date | null;
   lieuNaissance?: string | null;
-  nationalite?: { libelle: string } | null;
+  nationalite?: { id: string; libelle: string } | null;
   situationMatrimoniale?: string | null;
   nombreEnfants?: number | null;
 
@@ -72,6 +77,7 @@ interface EmployeDetail {
   numeroCnps?: string | null;
   adresse?: string | null;
   numeroWave?: string | null;
+  modePaiement?: string | null;
   rib?: string | null;
   salaire?: number | null;
 
@@ -179,6 +185,12 @@ export const listerEmployes = actionProtegee(
                 direction: true,
               },
             },
+            superieur: {
+              select: {
+                nom: true,
+                prenom: true,
+              },
+            },
           },
           take: 1,
         },
@@ -224,6 +236,7 @@ export const listerEmployes = actionProtegee(
               direction: affectationActuelle.poste.direction,
             }
           : undefined,
+        superieur: affectationActuelle?.superieur ?? null,
         typeContrat: contratActuel?.typeContrat ?? null,
         // Donnée SENSIBLE : masquée si permission absente
         salaire: aDonneesSensibles ? contratActuel?.salaire?.toNumber() ?? null : null,
@@ -499,16 +512,16 @@ export const creerEmploye = actionProtegee(
           typeMainOeuvre: input.typeMainOeuvre,
           nom: input.nom.toUpperCase(),
           prenom: input.prenom,
-          sexe: input.sexe,
+          sexe: input.sexe || undefined,
           dateNaissance: input.dateNaissance,
-          lieuNaissance: input.lieuNaissance,
-          nationaliteId: input.nationaliteId,
-          situationMatrimoniale: input.situationMatrimoniale,
+          lieuNaissance: input.lieuNaissance || undefined,
+          nationaliteId: input.nationaliteId || undefined,
+          situationMatrimoniale: input.situationMatrimoniale || undefined,
           nombreEnfants: input.nombreEnfants,
-          numeroCnps: input.numeroCnps,
+          numeroCnps: input.numeroCnps || undefined,
           telephone: input.telephone,
-          telephoneSecondaire: input.telephoneSecondaire,
-          email: input.email,
+          telephoneSecondaire: input.telephoneSecondaire || undefined,
+          email: input.email || undefined,
           adresse: input.adresse,
           urgenceNom: input.urgenceNom,
           urgenceTel: input.urgenceTel,
@@ -1149,6 +1162,103 @@ export const creerAvenant = actionProtegee(
   }
 );
 
+interface RenouvelerContratInput {
+  contratId: string;
+  typeContrat: "CDI" | "CDD" | "INTERIM" | "STAGE";
+  dateDebut: Date;
+  dateFin?: Date;
+  salaire: number;
+  motif?: string;
+}
+
+/**
+ * Renouveler un contrat existant.
+ *
+ * Règles :
+ * - Clôture l'ancien contrat en mettant sa date de fin
+ * - Crée un nouveau contrat avec les nouvelles dates/conditions
+ * - Crée un avenant pour tracer le renouvellement
+ */
+export const renouvelerContrat = actionProtegee(
+  "employe:modifier",
+  async (session, input: RenouvelerContratInput) => {
+    // 1. Validation CDD
+    if ((input.typeContrat === "CDD" || input.typeContrat === "STAGE") && !input.dateFin) {
+      throw new Error("Un CDD ou stage exige une date de fin.");
+    }
+
+    // 2. Récupérer le contrat actuel
+    const contratActuel = await prisma.contrat.findUnique({
+      where: { id: input.contratId },
+      include: { employe: true },
+    });
+
+    if (!contratActuel) {
+      throw new Error("Contrat introuvable.");
+    }
+
+    if (contratActuel.employe.archiveLe) {
+      throw new Error("Impossible de renouveler un contrat pour un employé archivé.");
+    }
+
+    // 3. Valider que la nouvelle date de début est cohérente
+    const ancienneDateFin = contratActuel.dateFin;
+    if (ancienneDateFin && input.dateDebut < ancienneDateFin) {
+      throw new Error("La nouvelle date de début doit être après ou égale à la date de fin actuelle.");
+    }
+
+    // 4. Effectuer le renouvellement en transaction
+    const resultat = await prisma.$transaction(async (tx) => {
+      // Clôturer l'ancien contrat (ajuster sa date de fin si CDI)
+      const dateFinAncienContrat = ancienneDateFin || new Date(input.dateDebut.getTime() - 24 * 60 * 60 * 1000); // Veille du nouveau contrat
+      await tx.contrat.update({
+        where: { id: input.contratId },
+        data: { dateFin: dateFinAncienContrat },
+      });
+
+      // Créer le nouveau contrat
+      const nouveauContrat = await tx.contrat.create({
+        data: {
+          employeId: contratActuel.employeId,
+          typeContrat: input.typeContrat,
+          dateDebut: input.dateDebut,
+          dateFin: input.dateFin,
+          salaire: input.salaire,
+          signe: false, // Nouveau contrat à signer
+        },
+      });
+
+      // Créer un avenant sur l'ancien contrat pour tracer le renouvellement
+      const motifRenouvellement = input.motif || `Renouvellement en ${input.typeContrat}`;
+      await tx.avenant.create({
+        data: {
+          contratId: input.contratId,
+          motif: motifRenouvellement,
+          dateEffet: input.dateDebut,
+          nouveauSalaire: input.salaire !== Number(contratActuel.salaire) ? input.salaire : undefined,
+          nouvelleDateFin: input.dateFin,
+        },
+      });
+
+      // Journaliser le renouvellement
+      await tx.journalEvenement.create({
+        data: {
+          entite: "Contrat",
+          entiteId: nouveauContrat.id,
+          action: "CREATION",
+          auteurId: session.userId,
+          auteurNom: session.email,
+          commentaire: `Renouvellement de contrat pour ${contratActuel.employe.nom} ${contratActuel.employe.prenom} : ${contratActuel.typeContrat} → ${input.typeContrat}`,
+        },
+      });
+
+      return { nouveauContratId: nouveauContrat.id };
+    });
+
+    return { success: true, contratId: resultat.nouveauContratId };
+  }
+);
+
 // ===========================================================================
 // 5. ACTIONS DOCUMENTS
 // ===========================================================================
@@ -1759,5 +1869,321 @@ export const listerHistoriqueEmploye = actionProtegee(
       commentaire: evt.commentaire ?? undefined,
       details: evt.details as Record<string, unknown> | undefined,
     }));
+  }
+);
+
+// ===========================================================================
+// DONNÉES DE RÉFÉRENCE POUR FORMULAIRES
+// ===========================================================================
+
+/**
+ * Récupère toutes les données de référence nécessaires pour le formulaire de création d'employé
+ * Utilisé pour peupler les selects/combobox : nationalités, directions, services, postes
+ */
+export async function obtenirDonneesReferenceEmploye() {
+  const [nationalites, directions, services, postes, employes, projets] = await Promise.all([
+    prisma.nationalite.findMany({
+      orderBy: { libelle: "asc" },
+      select: {
+        id: true,
+        libelle: true,
+      },
+    }),
+
+    prisma.direction.findMany({
+      orderBy: { libelle: "asc" },
+      select: {
+        id: true,
+        libelle: true,
+      },
+    }),
+
+    prisma.service.findMany({
+      orderBy: { libelle: "asc" },
+      select: {
+        id: true,
+        libelle: true,
+        directionId: true,
+      },
+    }),
+
+    prisma.poste.findMany({
+      orderBy: { libelle: "asc" },
+      select: {
+        id: true,
+        libelle: true,
+        code: true,
+        serviceId: true,
+        directionId: true,
+      },
+    }),
+
+    // Liste des employés permanents pour sélection du supérieur hiérarchique
+    prisma.employe.findMany({
+      where: {
+        typeMainOeuvre: "PERMANENT",
+        archiveLe: null,
+      },
+      orderBy: [
+        { nom: "asc" },
+        { prenom: "asc" },
+      ],
+      select: {
+        id: true,
+        matricule: true,
+        nom: true,
+        prenom: true,
+      },
+    }),
+
+    // Liste des projets/chantiers actifs pour affectation
+    prisma.projet.findMany({
+      where: {
+        statut: {
+          in: ["OUVERT", "EN_COURS"],
+        },
+      },
+      orderBy: {
+        code: "desc",
+      },
+      select: {
+        id: true,
+        code: true,
+        nom: true,
+      },
+    }),
+  ]);
+
+  return {
+    nationalites,
+    directions,
+    services,
+    postes,
+    employes,
+    projets,
+  };
+}
+
+/**
+ * Récupère les tâches d'un projet pour le sélecteur cascading
+ */
+export async function obtenirTachesProjet(projetId: string) {
+  const taches = await prisma.tache.findMany({
+    where: { projetId },
+    orderBy: { libelle: "asc" },
+    select: {
+      id: true,
+      libelle: true,
+    },
+  });
+
+  return taches;
+}
+
+/**
+ * Crée une nouvelle tâche dans un projet (création inline depuis le formulaire employé)
+ * Minimal : libelle uniquement, dates par défaut = aujourd'hui + 30 jours
+ */
+export async function creerTacheInline(projetId: string, libelle: string) {
+  const today = new Date();
+  const in30Days = new Date();
+  in30Days.setDate(today.getDate() + 30);
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("Non authentifié");
+  }
+
+  const tache = await prisma.tache.create({
+    data: {
+      projetId,
+      libelle,
+      dateDebut: today,
+      dateFin: in30Days,
+    },
+    select: {
+      id: true,
+      libelle: true,
+    },
+  });
+
+  return tache;
+}
+
+// ===========================================================================
+// BROUILLONS — Auto-save formulaire employé
+// ===========================================================================
+
+/**
+ * Sauvegarde automatique du formulaire employé (toutes les 2s après dernière frappe)
+ * Utilise le modèle Brouillon créé en M0.
+ * Pas de permission requise : lié à la session utilisateur.
+ */
+export async function sauvegarderBrouillonEmploye(donnees: any) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("Non authentifié");
+  }
+
+  // Chercher le brouillon existant
+  const existant = await prisma.brouillon.findFirst({
+    where: {
+      profilId: user.id,
+      entite: "Employe",
+      entiteId: null,
+    },
+  });
+
+  if (existant) {
+    // Mettre à jour
+    await prisma.brouillon.update({
+      where: { id: existant.id },
+      data: { donnees },
+    });
+  } else {
+    // Créer
+    await prisma.brouillon.create({
+      data: {
+        profilId: user.id,
+        entite: "Employe",
+        entiteId: null,
+        donnees,
+      },
+    });
+  }
+}
+
+/**
+ * Récupère le brouillon sauvegardé pour la création d'employé
+ */
+export async function recupererBrouillonEmploye() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return null;
+  }
+
+  const brouillon = await prisma.brouillon.findFirst({
+    where: {
+      profilId: user.id,
+      entite: "Employe",
+      entiteId: null,
+    },
+  });
+
+  return brouillon?.donnees || null;
+}
+
+/**
+ * Supprime le brouillon après création réussie de l'employé
+ */
+export async function supprimerBrouillonEmploye() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return;
+  }
+
+  await prisma.brouillon.deleteMany({
+    where: {
+      profilId: user.id,
+      entite: "Employe",
+      entiteId: null,
+    },
+  });
+}
+
+// =====================================================================
+// CRÉATION JOURNALIER (formulaire simplifié)
+// =====================================================================
+
+interface CreerJournalierInput {
+  nom: string;
+  prenom: string;
+  dateDebut: string;
+  dateFin: string;
+  telephone: string;
+  numeroWave: string;
+  directionId: string;
+  projetId: string;
+}
+
+export const creerJournalier = actionProtegee(
+  "employe:creer",
+  async (session, input: CreerJournalierInput) => {
+    // 1. Génération numéro de référence JRN-AAAA-NNNN
+    const annee = new Date(input.dateDebut).getFullYear();
+    const dernier = await prisma.employe.findFirst({
+      where: {
+        matricule: { startsWith: `JRN-${annee}-` },
+      },
+      orderBy: { matricule: "desc" },
+    });
+
+    let compteur = 1;
+    if (dernier) {
+      const match = dernier.matricule.match(/JRN-\d{4}-(\d{4})/);
+      if (match) {
+        compteur = parseInt(match[1], 10) + 1;
+      }
+    }
+
+    const numeroReference = `JRN-${annee}-${compteur.toString().padStart(4, "0")}`;
+
+    // 2. Création en transaction (employé + contrat INTERIM)
+    const employe = await prisma.$transaction(async (tx) => {
+      // Créer l'employé
+      const emp = await tx.employe.create({
+        data: {
+          matricule: numeroReference,
+          typeMainOeuvre: "JOURNALIER",
+          nom: input.nom.toUpperCase(),
+          prenom: input.prenom,
+          telephone: input.telephone,
+          numeroWave: input.numeroWave,
+          modePaiement: "WAVE",
+          actif: true,
+        },
+      });
+
+      // Créer le contrat INTERIM
+      await tx.contrat.create({
+        data: {
+          employeId: emp.id,
+          typeContrat: "INTERIM",
+          dateDebut: new Date(input.dateDebut),
+          dateFin: new Date(input.dateFin),
+          posteId: null, // Pas de poste pour les journaliers
+          salaireBase: 0, // Salaire journalier à définir au moment du paiement
+        },
+      });
+
+      return emp;
+    });
+
+    // 3. Audit
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "Employe",
+        entiteId: employe.id,
+        action: "CREATION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        details: {
+          type: "JOURNALIER",
+          numeroReference,
+          projet: input.projetId,
+          direction: input.directionId,
+        },
+      },
+    });
+
+    return employe;
   }
 );

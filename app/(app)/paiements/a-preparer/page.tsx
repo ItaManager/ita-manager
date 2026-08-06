@@ -22,7 +22,7 @@ export default async function PagePreparerPaiement() {
   return (
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Préparer une demande de paiement</h1>
+        <h1 className="text-2xl font-semibold">Préparer une demande de paiement</h1>
         <p className="text-muted-foreground mt-1">
           Créez une nouvelle demande de paiement pour un ou plusieurs
           bénéficiaires. La demande nécessitera une autorisation du DG avant

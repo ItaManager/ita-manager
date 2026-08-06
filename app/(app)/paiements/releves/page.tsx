@@ -44,7 +44,7 @@ export default async function PageReleves() {
     <div className="container mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Relevés de paiements</h1>
+          <h1 className="text-2xl font-semibold">Relevés de paiements</h1>
           <p className="text-muted-foreground mt-1">
             Historique des paiements exécutés
           </p>

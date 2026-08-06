@@ -55,7 +55,7 @@ export default async function PageAnomalies() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Anomalies</h1>
+        <h1 className="text-2xl font-semibold">Anomalies</h1>
         <p className="text-muted-foreground mt-1">
           Paiements en erreur ou en attente de reprise
         </p>

@@ -196,8 +196,9 @@ doublons ou des sauts. Traité en M0, où le journal est livré.
 
 ## Règle de saisie · R-04 · Tout sélecteur est un champ à autocomplétation
 
-Aucune liste déroulante fermée sur un référentiel. Le patron 5, simple ou
-multiple, s'emploie partout.
+**RÈGLE ABSOLUE** : Tous les champs de sélection doivent être des champs d'autocomplétation (Combobox).
+Aucune liste déroulante fermée (`<select>`) sur un référentiel. Le patron 5, simple ou
+multiple, s'emploie partout, sans exception.
 
 **Trois raisons.** Un bordereau d'articles compte plusieurs centaines de
 lignes, une liste déroulante y est inutilisable. La recherche doit ignorer

@@ -1,43 +1,31 @@
-import { Suspense } from "react";
 import { ListeServices } from "./_components/liste-services";
-import { SqueletteListeServices } from "./_components/squelette-liste-services";
-import { verifierAccesPage } from "@/lib/auth/page-access";
 
-export const metadata = {
-  title: "Services — ITA Manager",
-};
-
-interface PageProps {
+interface PageServicesProps {
   searchParams: Promise<{
     page?: string;
-    direction?: string;
     recherche?: string;
+    direction?: string;
   }>;
 }
 
-export default async function PageServices({ searchParams }: PageProps) {
-  await verifierAccesPage("/organisation/services");
+export default async function PageServices({ searchParams }: PageServicesProps) {
   const params = await searchParams;
+  const page = Number(params.page) || 1;
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-foreground">Services</h1>
-        <p className="text-sm text-muted-foreground">
-          Gestion des services par direction
-        </p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-semibold mb-1">Services</h1>
+        <p className="text-sm text-muted-foreground">Gérer les services</p>
       </div>
 
-      <Suspense
-        key={JSON.stringify(params)}
-        fallback={<SqueletteListeServices />}
-      >
-        <ListeServices
-          page={params.page ? parseInt(params.page, 10) : 1}
-          directionId={params.direction}
-          recherche={params.recherche}
-        />
-      </Suspense>
+      {/* Liste dynamique */}
+      <ListeServices
+        page={page}
+        recherche={params.recherche}
+        directionId={params.direction}
+      />
     </div>
   );
 }

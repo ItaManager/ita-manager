@@ -185,7 +185,7 @@ export default async function HistoriqueGrillesPage({ searchParams }: PageProps)
                     {grille.statut === "ARCHIVEE" && (
                       <Archive className="size-5 text-muted-foreground" />
                     )}
-                    <CardTitle className="text-base">
+                    <CardTitle className="text-sm">
                       Version {grille.version}
                     </CardTitle>
                   </div>
@@ -259,13 +259,13 @@ export default async function HistoriqueGrillesPage({ searchParams }: PageProps)
         <CardContent className="py-4">
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <p className="text-2xl font-bold">
+              <p className="text-2xl font-semibold">
                 {grilles.filter((g) => g.statut === "PUBLIEE").length}
               </p>
               <p className="text-sm text-muted-foreground">Publiée</p>
             </div>
             <div>
-              <p className="text-2xl font-bold">
+              <p className="text-2xl font-semibold">
                 {grilles.filter((g) => g.statut === "BROUILLON").length}
               </p>
               <p className="text-sm text-muted-foreground">
@@ -273,7 +273,7 @@ export default async function HistoriqueGrillesPage({ searchParams }: PageProps)
               </p>
             </div>
             <div>
-              <p className="text-2xl font-bold">
+              <p className="text-2xl font-semibold">
                 {grilles.filter((g) => g.statut === "ARCHIVEE").length}
               </p>
               <p className="text-sm text-muted-foreground">

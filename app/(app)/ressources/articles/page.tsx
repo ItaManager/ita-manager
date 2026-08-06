@@ -27,7 +27,7 @@ export default async function PageArticles({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Articles de stock</h1>
+          <h1 className="text-3xl font-semibold">Articles de stock</h1>
           <p className="text-muted-foreground mt-2">
             {total} article{total > 1 ? "s" : ""} au référentiel
           </p>

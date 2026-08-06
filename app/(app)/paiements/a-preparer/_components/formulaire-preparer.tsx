@@ -226,7 +226,7 @@ export function FormulairePreparer() {
           </div>
         ))}
 
-        <div className="text-right font-bold">
+        <div className="text-right font-semibold">
           Total : {montantTotal.toLocaleString('fr-FR')} XOF
         </div>
       </div>

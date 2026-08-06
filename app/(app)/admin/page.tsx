@@ -1,7 +1,8 @@
 import { verifierAccesPage } from "@/lib/auth/page-access";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, FileText, Users, Settings } from "lucide-react";
+import { Shield, FileText, Users, Settings, Bell } from "lucide-react";
 import Link from "next/link";
+import { DashboardStats } from "./_components/dashboard-stats";
 
 export const metadata = {
   title: "Administration — ITA Manager",
@@ -11,7 +12,7 @@ export default async function AdminPage() {
   await verifierAccesPage("/admin/journal");
 
   return (
-    <div className="container mx-auto py-8 max-w-5xl">
+    <div className="container mx-auto py-8 max-w-7xl">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">
           <Shield className="size-6" />
@@ -22,11 +23,20 @@ export default async function AdminPage() {
         </p>
       </div>
 
+      {/* Dashboard avec statistiques */}
+      <div className="mb-8">
+        <DashboardStats />
+      </div>
+
+      {/* Navigation rapide */}
+      <div className="mb-4">
+        <h2 className="text-lg font-semibold mb-4">Outils d'administration</h2>
+      </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Link href="/admin/journal">
           <Card className="cursor-pointer hover:border-primary transition-colors h-full">
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
+              <CardTitle className="text-sm flex items-center gap-2">
                 <FileText className="size-5" />
                 Journal d'événements
               </CardTitle>
@@ -48,7 +58,7 @@ export default async function AdminPage() {
         <Link href="/admin/utilisateurs">
           <Card className="cursor-pointer hover:border-primary transition-colors h-full">
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
+              <CardTitle className="text-sm flex items-center gap-2">
                 <Users className="size-5" />
                 Gestion des utilisateurs
               </CardTitle>
@@ -67,10 +77,54 @@ export default async function AdminPage() {
           </Card>
         </Link>
 
+        <Link href="/admin/roles">
+          <Card className="cursor-pointer hover:border-primary transition-colors h-full">
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Shield className="size-5" />
+                Rôles & Permissions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Gestion des rôles et attribution des permissions
+              </p>
+              <ul className="mt-3 text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                <li>Liste des rôles</li>
+                <li>Création de rôles personnalisés</li>
+                <li>Attribution de permissions</li>
+                <li>Protection des rôles système</li>
+              </ul>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/admin/alertes">
+          <Card className="cursor-pointer hover:border-primary transition-colors h-full">
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Bell className="size-5" />
+                Alertes Email
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Configuration des notifications automatiques
+              </p>
+              <ul className="mt-3 text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                <li>Contrats expirant</li>
+                <li>Demandes en attente</li>
+                <li>Erreurs système</li>
+                <li>Documents administratifs</li>
+              </ul>
+            </CardContent>
+          </Card>
+        </Link>
+
         <Link href="/admin/parametres">
           <Card className="cursor-pointer hover:border-primary transition-colors h-full">
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
+              <CardTitle className="text-sm flex items-center gap-2">
                 <Settings className="size-5" />
                 Paramètres système
               </CardTitle>

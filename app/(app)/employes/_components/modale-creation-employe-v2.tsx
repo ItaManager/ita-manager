@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import {
@@ -13,13 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
-import { creerEmploye } from "@/lib/actions/employes";
+import { creerEmploye, obtenirEmploye, modifierEmploye } from "@/lib/actions/employes";
 import {
   toastSucces,
   toastErreur,
   TOAST_MESSAGES,
 } from "@/lib/utils/toast";
-import { Loader2, ChevronLeft, ChevronRight, Save, Plus, Trash2, X } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, Save, Plus, Trash2, X, Eye, EyeOff } from "lucide-react";
 import type { TypeMainOeuvre } from "@prisma/client";
 
 interface ModaleCreationEmployeProps {
@@ -29,6 +29,7 @@ interface ModaleCreationEmployeProps {
   nationalites: Array<{ id: string; libelle: string }>;
   directions: Array<{ id: string; libelle: string }>;
   services: Array<{ id: string; libelle: string; directionId: string }>;
+  employeId?: string; // ID de l'employé à modifier (optionnel)
 }
 
 interface Experience {
@@ -65,6 +66,12 @@ interface FormData {
   nombreEnfants?: number;
   telephone: string;
   telephoneSecondaire?: string;
+  adresse?: string;
+  urgenceNom?: string;
+  urgenceTel?: string;
+  numeroWave?: string;
+  modePaiement?: "WAVE" | "VIREMENT";
+  rib?: string;
   // Étape 2
   experiences: Experience[];
   // Étape 3
@@ -100,10 +107,15 @@ export function ModaleCreationEmployeV2({
   nationalites,
   directions,
   services,
+  employeId,
 }: ModaleCreationEmployeProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [etapeActuelle, setEtapeActuelle] = useState(1);
+  const [salaireVisible, setSalaireVisible] = useState(false);
+  const [chargement, setChargement] = useState(false);
+
+  const modeModification = !!employeId;
 
   const {
     register,
@@ -131,6 +143,47 @@ export function ModaleCreationEmployeV2({
 
   const { fields: formationsFields, append: appendFormation, remove: removeFormation } =
     useFieldArray({ control, name: "formations" });
+
+  // Charger les données de l'employé en mode modification
+  useEffect(() => {
+    if (ouvert && employeId) {
+      setChargement(true);
+      startTransition(async () => {
+        try {
+          const employe = await obtenirEmploye(employeId);
+          if (employe) {
+            reset({
+              typeMainOeuvre: employe.typeMainOeuvre,
+              nom: employe.nom,
+              prenom: employe.prenom,
+              email: employe.email ?? undefined,
+              nationaliteId: employe.nationalite?.id ?? undefined,
+              sexe: employe.sexe as "MASCULIN" | "FEMININ" | undefined,
+              dateNaissance: employe.dateNaissance
+                ? new Date(employe.dateNaissance).toISOString().split("T")[0]
+                : undefined,
+              lieuNaissance: employe.lieuNaissance ?? undefined,
+              numeroCnps: employe.numeroCnps ?? undefined,
+              situationMatrimoniale: employe.situationMatrimoniale as any,
+              nombreEnfants: employe.nombreEnfants ?? undefined,
+              telephone: employe.telephone,
+              telephoneSecondaire: employe.telephoneSecondaire ?? undefined,
+              adresse: employe.adresse ?? undefined,
+              urgenceNom: employe.urgenceNom ?? undefined,
+              urgenceTel: employe.urgenceTel ?? undefined,
+              numeroWave: employe.numeroWave ?? undefined,
+              modePaiement: employe.modePaiement,
+              rib: employe.rib ?? undefined,
+            } as any);
+          }
+        } catch (error: any) {
+          toastErreur("Erreur de chargement", error.message);
+        } finally {
+          setChargement(false);
+        }
+      });
+    }
+  }, [ouvert, employeId, reset]);
 
   // Watch values
   const directionId = watch("directionId");
@@ -182,20 +235,46 @@ export function ModaleCreationEmployeV2({
   const onSubmit = async (data: FormData) => {
     startTransition(async () => {
       try {
-        const result = await creerEmploye({
-          ...data,
-          dateNaissance: data.dateNaissance ? new Date(data.dateNaissance) : undefined,
-          dateEmbauche: new Date(data.dateEmbauche),
-          dateFin: data.dateFin ? new Date(data.dateFin) : undefined,
-          dateDebutAffectation: new Date(data.dateEmbauche),
-        });
+        if (modeModification && employeId) {
+          // Mode modification
+          await modifierEmploye(employeId, {
+            nom: data.nom,
+            prenom: data.prenom,
+            email: data.email,
+            sexe: data.sexe,
+            dateNaissance: data.dateNaissance ? new Date(data.dateNaissance) : undefined,
+            lieuNaissance: data.lieuNaissance,
+            numeroCnps: data.numeroCnps,
+            situationMatrimoniale: data.situationMatrimoniale,
+            nombreEnfants: data.nombreEnfants,
+            telephone: data.telephone,
+            telephoneSecondaire: data.telephoneSecondaire,
+            adresse: data.adresse,
+            urgenceNom: data.urgenceNom,
+            urgenceTel: data.urgenceTel,
+            numeroWave: data.numeroWave,
+            rib: data.rib,
+          });
 
-        toastSucces(TOAST_MESSAGES.CREATION_REUSSIE("Employé"), `Matricule : ${result.matricule}`);
+          toastSucces(TOAST_MESSAGES.MODIFICATION_REUSSIE("employé"));
+        } else {
+          // Mode création
+          const result = await creerEmploye({
+            ...data,
+            dateNaissance: data.dateNaissance ? new Date(data.dateNaissance) : undefined,
+            dateEmbauche: new Date(data.dateEmbauche),
+            dateFin: data.dateFin ? new Date(data.dateFin) : undefined,
+            dateDebutAffectation: new Date(data.dateEmbauche),
+          });
+
+          toastSucces(TOAST_MESSAGES.CREATION_REUSSIE("Employé"), `Matricule : ${result.matricule}`);
+        }
+
         reset();
         onFermer();
         router.refresh();
       } catch (error: any) {
-        toastErreur("Échec de la création", error.message);
+        toastErreur(modeModification ? "Échec de la modification" : "Échec de la création", error.message);
       }
     });
   };
@@ -206,10 +285,12 @@ export function ModaleCreationEmployeV2({
     <Dialog open={ouvert} onOpenChange={onFermer}>
       <DialogContent className="!max-w-6xl max-h-[90vh] overflow-y-auto p-0">
         {/* En-tête avec fond */}
-        <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-xl">
+        <div className="sticky top-0 z-10 bg-primary text-primary-foreground p-6 rounded-t-xl">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <DialogTitle className="text-xl text-white">Création d'un nouveau compte</DialogTitle>
+              <DialogTitle className="text-lg text-white">
+                {modeModification ? "Modification de l'employé" : "Création d'un nouveau compte"}
+              </DialogTitle>
               <p className="text-primary-soft text-sm mt-1">
                 Étape {etapeActuelle} sur {ETAPES.length} — {ETAPES[etapeActuelle - 1].titre}
               </p>
@@ -742,11 +823,27 @@ export function ModaleCreationEmployeV2({
                   <Label>
                     Salaire mensuel brut <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    type="number"
-                    {...register("salaire", { required: true, valueAsNumber: true })}
-                    placeholder="0"
-                  />
+                  <div className="relative">
+                    <Input
+                      type={salaireVisible ? "number" : "password"}
+                      {...register("salaire", { required: true, valueAsNumber: true })}
+                      placeholder={salaireVisible ? "0" : "••••••••"}
+                      className="pr-12"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSalaireVisible(!salaireVisible)}
+                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    >
+                      {salaireVisible ? (
+                        <EyeOff className="size-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="size-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>

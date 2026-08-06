@@ -101,7 +101,7 @@ export default async function PageDetailTransport({
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold font-mono">{demande.reference}</h1>
+            <h1 className="text-3xl font-semibold font-mono">{demande.reference}</h1>
             <p className="text-muted-foreground mt-1">
               Demande de transport · {typeConfig.label}
             </p>
@@ -128,7 +128,7 @@ export default async function PageDetailTransport({
               <label className="text-sm font-medium text-muted-foreground">
                 Référence
               </label>
-              <p className="text-base mt-1 font-mono">{demande.reference}</p>
+              <p className="text-sm mt-1 font-mono">{demande.reference}</p>
             </div>
 
             <div>
@@ -153,14 +153,14 @@ export default async function PageDetailTransport({
               <label className="text-sm font-medium text-muted-foreground">
                 Demandeur
               </label>
-              <p className="text-base mt-1">{demande.demandeur.email}</p>
+              <p className="text-sm mt-1">{demande.demandeur.email}</p>
             </div>
 
             <div>
               <label className="text-sm font-medium text-muted-foreground">
                 Créée le
               </label>
-              <p className="text-base mt-1">
+              <p className="text-sm mt-1">
                 {format(new Date(demande.creeLe), "PPP à HH:mm", { locale: fr })}
               </p>
             </div>
@@ -215,14 +215,14 @@ export default async function PageDetailTransport({
               <div className="mt-1 space-y-2">
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground w-16">Début:</span>
-                  <span className="text-base">
+                  <span className="text-sm">
                     {format(new Date(demande.dateDebut), "PPP", { locale: fr })}
                   </span>
                 </div>
                 {demande.dateFin && (
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground w-16">Fin:</span>
-                    <span className="text-base">
+                    <span className="text-sm">
                       {format(new Date(demande.dateFin), "PPP", { locale: fr })}
                     </span>
                   </div>
@@ -236,7 +236,7 @@ export default async function PageDetailTransport({
                   <User className="h-4 w-4" />
                   Chauffeur affecté
                 </label>
-                <p className="text-base mt-1">
+                <p className="text-sm mt-1">
                   {demande.chauffeur.prenom} {demande.chauffeur.nom}
                 </p>
               </div>
@@ -252,7 +252,7 @@ export default async function PageDetailTransport({
             <CardTitle>Description</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-base whitespace-pre-wrap">{demande.description}</p>
+            <p className="text-sm whitespace-pre-wrap">{demande.description}</p>
           </CardContent>
         </Card>
       )}

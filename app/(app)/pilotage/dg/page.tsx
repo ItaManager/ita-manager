@@ -64,7 +64,7 @@ async function StatistiquesDG() {
             <DollarSign className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatMontant(stats.montantSoumissionne)}</div>
+            <div className="text-2xl font-semibold">{formatMontant(stats.montantSoumissionne)}</div>
             <p className="mt-1 text-xs text-muted-foreground">
               montant total des offres soumises
             </p>
@@ -79,7 +79,7 @@ async function StatistiquesDG() {
             <TrendingUp className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatMontant(stats.montantGagne)}</div>
+            <div className="text-2xl font-semibold">{formatMontant(stats.montantGagne)}</div>
             <p className="mt-1 text-xs text-muted-foreground">
               montant des marchés attribués
             </p>
@@ -94,7 +94,7 @@ async function StatistiquesDG() {
             <Briefcase className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.aoEnAttenteGoNoGo}</div>
+            <div className="text-2xl font-semibold">{stats.aoEnAttenteGoNoGo}</div>
             <p className="mt-1 text-xs text-muted-foreground">
               {stats.aoEnAttenteGoNoGo > 1 ? "appels d'offres nécessitent" : "appel d'offres nécessite"} une décision
             </p>
@@ -123,7 +123,7 @@ async function Alertes() {
   return (
     <Card className="border-warning-border bg-warning-soft/30">
       <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
+        <CardTitle className="text-sm flex items-center gap-2">
           <AlertCircle className="size-5 text-warning" />
           Éléments nécessitant attention
         </CardTitle>
@@ -162,7 +162,7 @@ async function ActiviteRecente() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-sm flex items-center gap-2">
             <TrendingUp className="size-4" />
             Activité récente
           </CardTitle>
@@ -179,7 +179,7 @@ async function ActiviteRecente() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
+        <CardTitle className="text-sm flex items-center gap-2">
           <TrendingUp className="size-4" />
           Activité récente
         </CardTitle>

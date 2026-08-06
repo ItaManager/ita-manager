@@ -67,7 +67,7 @@ async function ContenuEquipe({ projetId }: { projetId: string }) {
             </Link>
             <Users className="size-8 text-muted-foreground" />
             <div>
-              <h1 className="text-3xl font-bold">Équipe du chantier</h1>
+              <h1 className="text-3xl font-semibold">Équipe du chantier</h1>
               <p className="text-sm text-muted-foreground font-mono mt-1">
                 {projet.code} — {projet.nom}
               </p>
@@ -87,7 +87,7 @@ async function ContenuEquipe({ projetId }: { projetId: string }) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{affectationsActives.length}</div>
+            <div className="text-2xl font-semibold">{affectationsActives.length}</div>
           </CardContent>
         </Card>
 
@@ -98,7 +98,7 @@ async function ContenuEquipe({ projetId }: { projetId: string }) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-semibold">
               {
                 affectationsActives.filter(
                   (a) => a.roleFonctionnel === "CONDUCTEUR"
@@ -115,7 +115,7 @@ async function ContenuEquipe({ projetId }: { projetId: string }) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-semibold">
               {
                 affectationsActives.filter(
                   (a) => a.roleFonctionnel === "CHEF_CHANTIER"
@@ -132,7 +132,7 @@ async function ContenuEquipe({ projetId }: { projetId: string }) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-semibold">
               {
                 affectationsActives.filter(
                   (a) => a.roleFonctionnel === "CHEF_EQUIPE"

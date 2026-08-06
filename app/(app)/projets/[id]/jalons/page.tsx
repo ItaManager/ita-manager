@@ -65,7 +65,7 @@ async function ContenuJalons({ projetId }: { projetId: string }) {
             </Link>
             <Flag className="size-8 text-muted-foreground" />
             <div>
-              <h1 className="text-3xl font-bold">Jalons du projet</h1>
+              <h1 className="text-3xl font-semibold">Jalons du projet</h1>
               <p className="text-sm text-muted-foreground font-mono mt-1">
                 {projet.code} — {projet.nom}
               </p>
@@ -85,7 +85,7 @@ async function ContenuJalons({ projetId }: { projetId: string }) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{jalonsEnAttente.length}</div>
+            <div className="text-2xl font-semibold">{jalonsEnAttente.length}</div>
           </CardContent>
         </Card>
 
@@ -96,7 +96,7 @@ async function ContenuJalons({ projetId }: { projetId: string }) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{jalonsValides.length}</div>
+            <div className="text-2xl font-semibold">{jalonsValides.length}</div>
           </CardContent>
         </Card>
 
@@ -107,7 +107,7 @@ async function ContenuJalons({ projetId }: { projetId: string }) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-semibold">
               {projet.jalons && projet.jalons.length > 0
                 ? Math.round(
                     (jalonsValides.length / projet.jalons.length) * 100

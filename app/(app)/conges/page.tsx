@@ -24,8 +24,8 @@ export default async function CongesPage() {
       {/* Solde disponible — placeholder Phase 2, calcul Phase 6 */}
       <Card className="mb-6">
         <CardContent className="flex items-center gap-4 py-6">
-          <div className="flex size-12 items-center justify-center rounded-full bg-primary-soft">
-            <CalendarDays className="size-6 text-primary" />
+          <div className="flex size-12 items-center justify-center rounded-full" style={{ backgroundColor: '#13850b' }}>
+            <CalendarDays className="size-6 text-white" />
           </div>
           <div>
             <p className="text-sm font-medium text-muted-foreground">

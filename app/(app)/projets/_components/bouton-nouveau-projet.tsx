@@ -91,18 +91,18 @@ export function BoutonNouveauProjet() {
   return (
     <Dialog open={ouvert} onOpenChange={setOuvert}>
       <DialogTrigger asChild>
-        <Button className="rounded-full">
-          <Plus className="size-4" />
+        <Button className="gap-2 h-10 px-5 text-base rounded-full bg-primary hover:bg-primary-hover text-primary-foreground transition-all cursor-pointer shadow-sm hover:shadow-md">
+          <Plus className="size-5" />
           Nouveau projet
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Nouveau projet</DialogTitle>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl p-0">
+        <DialogHeader className="bg-primary-soft p-6 rounded-t-lg">
+          <DialogTitle className="text-xl font-semibold text-primary">Nouveau projet</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-6">
           {/* Code et nom */}
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
@@ -211,19 +211,19 @@ export function BoutonNouveauProjet() {
           <div className="flex justify-between border-t pt-4">
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               onClick={() => setOuvert(false)}
               disabled={loading}
-              className="rounded-full"
+              className="gap-2 h-10 px-4 text-base rounded-full border-2 hover:bg-muted hover:border-primary transition-all"
             >
               Annuler
             </Button>
 
-            <Button type="submit" disabled={loading} className="rounded-full">
+            <Button type="submit" disabled={loading} className="gap-2 h-10 px-4 text-base rounded-full bg-primary hover:bg-primary-hover text-primary-foreground transition-all">
               {loading ? (
-                <Loader2 className="size-4 animate-spin" />
+                <Loader2 className="size-5 animate-spin" />
               ) : (
-                <Plus className="size-4" />
+                <Plus className="size-5" />
               )}
               Créer le projet
             </Button>

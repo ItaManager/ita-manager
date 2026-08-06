@@ -123,7 +123,7 @@ export function BoutonAffecterMateriel({
           Affecter matériel
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Affecter du matériel</DialogTitle>
         </DialogHeader>

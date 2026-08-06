@@ -15,8 +15,11 @@ export function BoutonNouveauService({ directions }: BoutonNouveauServiceProps) 
 
   return (
     <>
-      <Button size="sm" className="gap-2" onClick={() => setOuvert(true)}>
-        <Plus className="size-4" aria-hidden="true" />
+      <Button
+        onClick={() => setOuvert(true)}
+        className="gap-2 h-12 px-6 text-base bg-primary hover:bg-primary-hover shadow-md hover:shadow-lg transition-all cursor-pointer"
+      >
+        <Plus className="size-5" />
         Nouveau service
       </Button>
 

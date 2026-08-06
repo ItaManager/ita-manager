@@ -21,39 +21,70 @@ export default function PageMotDePasseOublie() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background p-8">
-      <BlocIdentite />
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md space-y-8">
+        <BlocIdentite />
 
-      <div className="flex w-full max-w-sm flex-col gap-4 rounded-xl border border-border bg-card p-8">
-        <h1 className="text-xl font-semibold text-primary">
-          Mot de passe oublié
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Recevez un lien de réinitialisation par e-mail.
-        </p>
-        {envoye ? (
-          <p className="text-sm text-foreground">
-            Si un compte existe avec cette adresse, un e-mail de
-            réinitialisation vient d&apos;être envoyé.
-          </p>
-        ) : (
-          <form onSubmit={soumettre} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="email">E-mail</Label>
-              <Input id="email" name="email" type="email" required autoComplete="email" />
+        <div className="rounded-2xl bg-card p-8 shadow-sm border border-border space-y-6">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-semibold text-center">Réinitialiser le mot de passe</h1>
+            <p className="text-center text-muted-foreground">
+              Saisissez votre adresse e-mail pour recevoir un lien de réinitialisation.
+            </p>
+          </div>
+
+          {envoye ? (
+            <div className="space-y-4">
+              <p className="text-sm text-center text-foreground">
+                Si un compte existe avec cette adresse, un e-mail de réinitialisation a été envoyé.
+              </p>
+              <Link
+                href="/connexion"
+                className="block w-full h-12 rounded-lg bg-primary text-primary-foreground text-base font-medium flex items-center justify-center hover:bg-primary/90 cursor-pointer"
+              >
+                Retour à la connexion
+              </Link>
             </div>
-            <Button type="submit" disabled={enCours}>
-              {enCours ? "Envoi…" : "Envoyer le lien de réinitialisation"}
-            </Button>
-          </form>
-        )}
+          ) : (
+            <form onSubmit={soumettre} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium">
+                  E-mail enregistré <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="Saisissez votre e-mail"
+                  required
+                  autoComplete="email"
+                  className="h-12"
+                />
+              </div>
 
-        <Link
-          href="/connexion"
-          className="text-center text-sm text-muted-foreground hover:text-primary"
-        >
-          Retour à la connexion
-        </Link>
+              <div className="space-y-3">
+                <Button
+                  type="submit"
+                  className="w-full h-12 text-base bg-primary"
+                  disabled={enCours}
+                >
+                  {enCours ? "Envoi en cours..." : "Envoyer le lien"}
+                </Button>
+
+                <Link
+                  href="/connexion"
+                  className="block w-full h-12 rounded-lg border border-border bg-background text-foreground text-base font-medium flex items-center justify-center hover:bg-muted cursor-pointer"
+                >
+                  Retour à la connexion
+                </Link>
+              </div>
+            </form>
+          )}
+        </div>
+
+        <p className="text-center text-sm text-muted-foreground">
+          © 2026 ITA Manager par ITA SARL
+        </p>
       </div>
     </div>
   );

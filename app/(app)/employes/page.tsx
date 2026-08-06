@@ -1,49 +1,43 @@
-import { Suspense } from "react";
 import { ListeEmployes } from "./_components/liste-employes";
-import { SqueletteListeEmployes } from "./_components/squelette-liste-employes";
-import { verifierAccesPage } from "@/lib/auth/page-access";
+import { obtenirDonneesReferenceEmploye } from "@/lib/actions/employes";
+import type { TypeMainOeuvre } from "@prisma/client";
 
-export const metadata = {
-  title: "Employés — ITA Manager",
-};
-
-interface PageProps {
+interface PageEmployesProps {
   searchParams: Promise<{
     page?: string;
     recherche?: string;
-    direction?: string;
-    service?: string;
-    typeMainOeuvre?: string;
-    statutDossier?: string;
+    directionId?: string;
+    serviceId?: string;
+    typeMainOeuvre?: TypeMainOeuvre;
+    statutDossier?: "COMPLET" | "INCOMPLET";
   }>;
 }
 
-export default async function PageEmployes({ searchParams }: PageProps) {
-  await verifierAccesPage("/employes");
+export default async function PageEmployes({ searchParams }: PageEmployesProps) {
   const params = await searchParams;
+  const page = Number(params.page) || 1;
+
+  // Charger les données de référence pour le formulaire de création
+  const donneesReference = await obtenirDonneesReferenceEmploye();
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-foreground">Employés</h1>
-        <p className="text-sm text-muted-foreground">
-          Gestion des dossiers employés (permanents et journaliers)
-        </p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-semibold mb-1">Employés</h1>
+        <p className="text-sm text-muted-foreground">Gérer vos employés</p>
       </div>
 
-      <Suspense
-        key={JSON.stringify(params)}
-        fallback={<SqueletteListeEmployes />}
-      >
-        <ListeEmployes
-          page={params.page ? parseInt(params.page, 10) : 1}
-          recherche={params.recherche}
-          directionId={params.direction}
-          serviceId={params.service}
-          typeMainOeuvre={params.typeMainOeuvre as any}
-          statutDossier={params.statutDossier as any}
-        />
-      </Suspense>
+      {/* Liste dynamique */}
+      <ListeEmployes
+        page={page}
+        recherche={params.recherche}
+        directionId={params.directionId}
+        serviceId={params.serviceId}
+        typeMainOeuvre={params.typeMainOeuvre}
+        statutDossier={params.statutDossier}
+        donneesReference={donneesReference}
+      />
     </div>
   );
 }

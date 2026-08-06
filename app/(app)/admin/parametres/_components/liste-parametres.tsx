@@ -13,7 +13,7 @@ export async function ListeParametres() {
       {groupesArray.map(([groupe, parametres]) => (
         <Card key={groupe}>
           <CardHeader className="border-b">
-            <CardTitle className="text-base flex items-center gap-2">
+            <CardTitle className="text-sm flex items-center gap-2">
               <Settings className="size-5" aria-hidden="true" />
               {groupe}
             </CardTitle>

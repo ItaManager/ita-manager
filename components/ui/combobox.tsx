@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronsUpDown, Plus } from "lucide-react";
+import { Check, ChevronsUpDown, Plus, Search, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +21,9 @@ import {
 export interface ComboboxOption {
   value: string;
   label: string;
+  disabled?: boolean;
+  icon?: React.ReactNode;
+  description?: string;
 }
 
 interface ComboboxProps {
@@ -36,6 +39,10 @@ interface ComboboxProps {
   allowCreate?: boolean;
   onCreateNew?: (inputValue: string) => void | Promise<void>;
   createLabel?: string;
+  // Nouveau variant pour matcher la maquette
+  variant?: "default" | "search";
+  // Rendu personnalisé d'une option
+  renderOption?: (option: ComboboxOption) => React.ReactNode;
 }
 
 export function Combobox({
@@ -50,6 +57,8 @@ export function Combobox({
   allowCreate = false,
   onCreateNew,
   createLabel = "Créer",
+  variant = "default",
+  renderOption,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState("");
@@ -77,25 +86,53 @@ export function Combobox({
     setOpen(false);
   };
 
+  const handleSelect = (selectedValue: string) => {
+    const option = options.find((opt) => opt.value === selectedValue);
+    if (option && !option.disabled) {
+      onChange(selectedValue === value ? "" : selectedValue);
+      setOpen(false);
+      setSearchValue("");
+    }
+  };
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={cn(
-            "w-full justify-between",
-            !value && "text-muted-foreground",
-            className
-          )}
-          disabled={disabled}
-        >
-          {selectedOption ? selectedOption.label : placeholder}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
+        {variant === "search" ? (
+          <button
+            type="button"
+            disabled={disabled}
+            className={cn(
+              "w-full flex items-center justify-between h-12 px-4 border border-border rounded-lg bg-background hover:border-primary transition-colors text-left",
+              disabled && "opacity-50 cursor-not-allowed hover:border-border",
+              className
+            )}
+          >
+            {selectedOption ? (
+              <span className="text-foreground">{selectedOption.label}</span>
+            ) : (
+              <span className="text-muted-foreground">{placeholder}</span>
+            )}
+            <Search className="size-5 text-muted-foreground" />
+          </button>
+        ) : (
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className={cn(
+              "w-full justify-between",
+              !value && "text-muted-foreground",
+              className
+            )}
+            disabled={disabled}
+          >
+            {selectedOption ? selectedOption.label : placeholder}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        )}
       </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
         <Command shouldFilter={false}>
           <CommandInput
             placeholder={searchPlaceholder}
@@ -127,19 +164,42 @@ export function Combobox({
                 <CommandItem
                   key={option.value}
                   value={option.value}
-                  onSelect={(currentValue) => {
-                    onChange(currentValue === value ? "" : currentValue);
-                    setOpen(false);
-                    setSearchValue("");
-                  }}
+                  disabled={option.disabled}
+                  onSelect={() => handleSelect(option.value)}
+                  className={cn(
+                    option.disabled && "opacity-50 cursor-not-allowed"
+                  )}
                 >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === option.value ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  {option.label}
+                  {renderOption ? (
+                    renderOption(option)
+                  ) : (
+                    <>
+                      {option.icon}
+                      <div className="flex items-center gap-2 flex-1">
+                        {option.disabled && (
+                          <Lock className="size-4 text-muted-foreground" />
+                        )}
+                        <div className="flex-1">
+                          <div className={cn(option.disabled && "text-muted-foreground")}>
+                            {option.label}
+                          </div>
+                          {option.description && (
+                            <div className="text-sm text-muted-foreground ml-auto">
+                              {option.description}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {variant !== "search" && (
+                        <Check
+                          className={cn(
+                            "ml-2 h-4 w-4",
+                            value === option.value ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                      )}
+                    </>
+                  )}
                 </CommandItem>
               ))}
             </CommandGroup>

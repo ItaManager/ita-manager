@@ -19,20 +19,18 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      {/* Barre latérale */}
+    <div className="flex min-h-screen bg-background">
+      {/* Barre latérale fixe */}
       <BarreLaterale />
 
-      {/* Zone principale */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      {/* Zone principale avec marge pour sidebar */}
+      <main className="ml-64 flex-1">
         {/* En-tête */}
         <EnTete />
 
         {/* Contenu avec scroll */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="container mx-auto px-6 py-6">{children}</div>
-        </main>
-      </div>
+        <div className="p-6">{children}</div>
+      </main>
     </div>
   );
 }

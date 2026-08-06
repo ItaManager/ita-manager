@@ -37,7 +37,7 @@ export default async function GrilleSalarialeListPage() {
         <Card className="border-success bg-success-soft/20">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
+              <CardTitle className="text-sm flex items-center gap-2">
                 <CheckCircle2 className="size-5 text-success" />
                 Version {grillePubliee.version} — Grille en vigueur
               </CardTitle>
@@ -92,7 +92,7 @@ export default async function GrilleSalarialeListPage() {
             <Card key={grille.id}>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">
+                  <CardTitle className="text-sm">
                     Version {grille.version}
                   </CardTitle>
                   <div className="flex items-center gap-2">

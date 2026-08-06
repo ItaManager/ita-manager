@@ -25,7 +25,7 @@ export function ModaleFournisseur({
 }: ModaleFournisseurProps) {
   return (
     <Dialog open={ouvert} onOpenChange={onFermer}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {fournisseur ? "Modifier fournisseur" : "Nouveau fournisseur"}

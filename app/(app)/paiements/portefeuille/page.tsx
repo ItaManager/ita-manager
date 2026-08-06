@@ -49,7 +49,7 @@ export default async function PagePortefeuille() {
   return (
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Portefeuille Wave</h1>
+        <h1 className="text-2xl font-semibold">Portefeuille Wave</h1>
         <p className="text-muted-foreground mt-1">
           Informations sur le portefeuille et statistiques de paiement
         </p>
@@ -83,7 +83,7 @@ export default async function PagePortefeuille() {
             <TrendingUp className="h-4 w-4" />
             <span className="text-sm font-medium">Paiements réussis</span>
           </div>
-          <div className="text-2xl font-bold">{countReussi}</div>
+          <div className="text-2xl font-semibold">{countReussi}</div>
           <div className="text-sm text-muted-foreground mt-1">
             {totalReussi.toLocaleString('fr-FR')} XOF
           </div>
@@ -94,7 +94,7 @@ export default async function PagePortefeuille() {
             <TrendingDown className="h-4 w-4" />
             <span className="text-sm font-medium">En attente</span>
           </div>
-          <div className="text-2xl font-bold">{countEnAttente}</div>
+          <div className="text-2xl font-semibold">{countEnAttente}</div>
           <div className="text-sm text-muted-foreground mt-1">
             {totalEnAttente.toLocaleString('fr-FR')} XOF
           </div>
@@ -105,7 +105,7 @@ export default async function PagePortefeuille() {
             <TrendingDown className="h-4 w-4" />
             <span className="text-sm font-medium">Échecs</span>
           </div>
-          <div className="text-2xl font-bold">{countEchoue}</div>
+          <div className="text-2xl font-semibold">{countEchoue}</div>
           <div className="text-sm text-muted-foreground mt-1">
             {totalEchoue.toLocaleString('fr-FR')} XOF
           </div>

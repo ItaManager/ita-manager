@@ -274,7 +274,7 @@ export default function AutorisationClient({ demande, session }: Props) {
             <div className="border-t pt-3">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">Montant exécutable</span>
-                <span className="text-lg font-bold text-success">
+                <span className="text-lg font-semibold text-success">
                   {formatMontant(montantExecutable)}
                 </span>
               </div>

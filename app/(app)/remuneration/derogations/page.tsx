@@ -123,7 +123,7 @@ export default async function DerogationsPage({ searchParams }: PageProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">En attente</p>
-                <p className="text-2xl font-bold">{enAttente.length}</p>
+                <p className="text-2xl font-semibold">{enAttente.length}</p>
               </div>
               <Clock className="size-8 text-warning" />
             </div>
@@ -135,7 +135,7 @@ export default async function DerogationsPage({ searchParams }: PageProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Validées</p>
-                <p className="text-2xl font-bold">{validees.length}</p>
+                <p className="text-2xl font-semibold">{validees.length}</p>
               </div>
               <CheckCircle2 className="size-8 text-success" />
             </div>
@@ -147,7 +147,7 @@ export default async function DerogationsPage({ searchParams }: PageProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Refusées</p>
-                <p className="text-2xl font-bold">{refusees.length}</p>
+                <p className="text-2xl font-semibold">{refusees.length}</p>
               </div>
               <XCircle className="size-8 text-destructive" />
             </div>
@@ -159,7 +159,7 @@ export default async function DerogationsPage({ searchParams }: PageProps) {
       {enAttente.length > 0 && (
         <Card className="border-warning bg-warning-soft/20">
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
+            <CardTitle className="text-sm flex items-center gap-2">
               <AlertCircle className="size-5 text-warning" />
               Demandes en attente de validation ({enAttente.length})
             </CardTitle>
@@ -184,7 +184,7 @@ export default async function DerogationsPage({ searchParams }: PageProps) {
       {validees.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
+            <CardTitle className="text-sm flex items-center gap-2">
               <CheckCircle2 className="size-5 text-success" />
               Dérogations validées ({validees.length})
             </CardTitle>

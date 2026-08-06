@@ -72,7 +72,7 @@ export async function ListeEvenements({
                       COULEURS_ACTION[evt.action] || "bg-muted"
                     }`}
                   >
-                    <span className="text-xs font-bold">
+                    <span className="text-xs font-semibold">
                       {evt.action.slice(0, 2)}
                     </span>
                   </div>

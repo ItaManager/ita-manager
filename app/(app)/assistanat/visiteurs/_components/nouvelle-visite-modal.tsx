@@ -130,7 +130,7 @@ export function NouvelleVisiteModal({ ouvert, onClose, onSuccess }: Props) {
 
   return (
     <Dialog open={ouvert} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-h-[90vh] overflow-y-auto max-w-2xl">
         <DialogHeader>
           <DialogTitle>Nouvelle visite</DialogTitle>
         </DialogHeader>

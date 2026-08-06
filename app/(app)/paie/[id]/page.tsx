@@ -102,7 +102,7 @@ export default async function PeriodePaiePage({ params }: Props) {
               {format(new Date(periode.dateFin), "d MMMM yyyy", { locale: fr })}
             </p>
           </div>
-          <Badge variant={statutInfo.variant} className="text-base px-4 py-2">
+          <Badge variant={statutInfo.variant} className="text-sm px-4 py-2">
             {statutInfo.label}
           </Badge>
         </div>
@@ -111,7 +111,7 @@ export default async function PeriodePaiePage({ params }: Props) {
       {/* Informations générales */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="text-base">Informations</CardTitle>
+          <CardTitle className="text-sm">Informations</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
@@ -157,7 +157,7 @@ export default async function PeriodePaiePage({ params }: Props) {
       {statut !== "CLOTUREE" && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-base">Actions</CardTitle>
+            <CardTitle className="text-sm">Actions</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-3">
@@ -220,7 +220,7 @@ export default async function PeriodePaiePage({ params }: Props) {
       {/* Historique des événements */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Historique</CardTitle>
+          <CardTitle className="text-sm">Historique</CardTitle>
         </CardHeader>
         <CardContent>
           {periode.evenements.length === 0 ? (

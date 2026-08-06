@@ -93,6 +93,10 @@ const VERIFICATIONS: VerificationScript[] = [
     name: "SECURITE — Server Actions protégées",
     path: join(__dirname, "verify-actions-protegees.ts"),
   },
+  {
+    name: "RENDU — Jetons TYPOGRAPHIE.md + CHAMPS.md",
+    path: join(__dirname, "verify-rendu.ts"),
+  },
 ];
 
 async function runScript(script: VerificationScript): Promise<boolean> {

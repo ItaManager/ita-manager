@@ -188,7 +188,7 @@ export default function ExecutionClient({ demande, session }: Props) {
       {/* BANDEAU DANGER PERMANENT */}
       <Alert variant="destructive" className="border-2 border-destructive sticky top-16 z-10 shadow-lg bg-destructive/10 backdrop-blur-sm">
         <AlertTriangle className="h-5 w-5" />
-        <AlertTitle className="text-lg font-bold">ATTENTION : ARGENT RÉEL</AlertTitle>
+        <AlertTitle className="text-lg font-semibold">ATTENTION : ARGENT RÉEL</AlertTitle>
         <AlertDescription className="text-sm">
           Les paiements sont <strong>IRRÉVERSIBLES</strong>. Vérifiez tous les montants
           et numéros avant d'exécuter.
@@ -199,7 +199,7 @@ export default function ExecutionClient({ demande, session }: Props) {
       <Card className="p-6 space-y-4">
         <div className="flex items-center gap-2">
           <Play className="h-5 w-5 text-primary" />
-          <h1 className="text-xl font-semibold">Exécution de paiement</h1>
+          <h1 className="text-lg font-semibold">Exécution de paiement</h1>
         </div>
 
         <div className="grid grid-cols-2 gap-4 text-sm">

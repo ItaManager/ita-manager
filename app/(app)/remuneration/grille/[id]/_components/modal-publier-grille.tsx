@@ -89,7 +89,7 @@ export function ModalPublierGrille({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-h-[90vh] overflow-y-auto max-w-2xl">
         <DialogHeader>
           <DialogTitle>Publier la grille salariale V{version}</DialogTitle>
           <DialogDescription>

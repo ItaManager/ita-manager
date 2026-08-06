@@ -48,7 +48,7 @@ export default async function EcheancesPage(props: {
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-foreground">
+        <h2 className="text-lg font-semibold text-foreground">
           Échéances Pièces Administratives
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
