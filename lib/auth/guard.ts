@@ -47,6 +47,27 @@ export const PERMISSIONS = {
     libelle: "Modifier les règles de congés",
     domaine: "ADMIN",
   },
+  // M17 — Compétences et taux journaliers
+  "competence:lire": {
+    code: "competence:lire",
+    libelle: "Consulter les compétences et taux journaliers",
+    domaine: "RH",
+  },
+  "competence:gerer": {
+    code: "competence:gerer",
+    libelle: "Créer, modifier et archiver les compétences",
+    domaine: "RH",
+  },
+  "taux:definir": {
+    code: "taux:definir",
+    libelle: "Fixer et réviser les taux journaliers",
+    domaine: "PAIE",
+  },
+  "competence:assigner": {
+    code: "competence:assigner",
+    libelle: "Assigner une compétence à un agent",
+    domaine: "RH",
+  },
   "grille:modifier": { code: "grille:modifier", libelle: "Modifier la grille salariale", domaine: "PAIE" },
   "derogation:valider": {
     code: "derogation:valider",

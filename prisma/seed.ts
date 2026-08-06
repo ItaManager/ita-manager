@@ -73,6 +73,11 @@ const MATRICE: Record<PermissionCode, readonly string[]> = {
   "absence:demander": ["ADMIN", "DG", "DRH", "RH", "DFC", "DT", "CT", "CC", "CE"],
   "absence:valider": ["ADMIN", "DRH"],
   "reglesConges:modifier": ["ADMIN"],
+  // M17 — Compétences et taux journaliers
+  "competence:lire": ["ADMIN", "DG", "DT", "DRH", "RH", "DFC", "CT", "CC"],
+  "competence:gerer": ["ADMIN", "DT"],
+  "taux:definir": ["ADMIN", "DFC"],
+  "competence:assigner": ["ADMIN", "DRH", "RH"],
   "grille:modifier": ["ADMIN", "DFC"],
   "derogation:valider": ["ADMIN", "DFC"],
   "paie:ouvrirPeriode": ["ADMIN", "DRH", "RH"],

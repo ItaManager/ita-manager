@@ -14,6 +14,9 @@ export const NAV_PERMISSIONS: Record<string, string[]> = {
   "/organisation/organigramme": ["employe:lire", "referentiel:creer"],
   "/organisation/services": ["employe:lire", "referentiel:creer"],
   "/contrats": ["employe:lire", "employe:creer", "employe:modifier"],
+  // M17 — Compétences et taux journaliers
+  "/personnel/competences": ["competence:lire"],
+  "/personnel/competences/agents": ["competence:lire"],
   // TEMPS & ABSENCES
   "/conges": ["absence:demander", "absence:valider"],
   "/conges/a-valider": [], // Accessible à tous, contrôle par lien de données dans l'action
