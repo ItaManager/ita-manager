@@ -80,6 +80,8 @@ const buildNavigation = (compteursAchats: CompteursBadges, compteursConges: Comp
     items: [
       { label: "Employés", href: "/employes", icon: Users, moduleNumber: "M2", moduleName: "Employés" },
       { label: "Contrats", href: "/contrats", icon: FileText, moduleNumber: "M2", moduleName: "Employés" },
+      { label: "Compétences et taux", href: "/personnel/competences", icon: Briefcase, moduleNumber: "M17", moduleName: "Compétences" },
+      { label: "Agents et compétences", href: "/personnel/competences/agents", icon: Users, moduleNumber: "M17", moduleName: "Compétences" },
     ],
   },
   {
