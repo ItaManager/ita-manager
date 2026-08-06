@@ -804,3 +804,75 @@ export const listerAgentsSansCompetence = actionProtegee(
     };
   }
 );
+
+/**
+ * Calcule les statistiques pour les 4 indicateurs
+ */
+export const statistiquesCompetences = actionProtegee(
+  PERMISSIONS["competence:lire"].code,
+  async (session) => {
+    // 1. Compétences actives
+    const competencesActives = await prisma.competence.count({
+      where: { actif: true },
+    });
+
+    // 2. En attente de taux (actives sans aucun TauxJournalier)
+    const competencesSansTaux = await prisma.competence.findMany({
+      where: {
+        actif: true,
+        taux: {
+          none: {},
+        },
+      },
+    });
+
+    // 3. Sans compétence (agents journaliers sans affectation ouverte)
+    const agentsSansCompetence = await prisma.employe.count({
+      where: {
+        typeMainOeuvre: "JOURNALIER",
+        archiveLe: null,
+        competences: {
+          none: {
+            dateFin: null,
+          },
+        },
+      },
+    });
+
+    // 4. Coût journalier (somme des taux des agents affectés)
+    const affectationsOuvertes = await prisma.affectationCompetence.findMany({
+      where: {
+        dateFin: null,
+        employe: {
+          typeMainOeuvre: "JOURNALIER",
+          archiveLe: null,
+        },
+      },
+      include: {
+        competence: {
+          include: {
+            taux: {
+              orderBy: { dateEffet: "desc" },
+              take: 1,
+            },
+          },
+        },
+      },
+    });
+
+    let coutJournalierTotal = 0;
+    for (const aff of affectationsOuvertes) {
+      const tauxCourant = aff.competence.taux[0];
+      if (tauxCourant) {
+        coutJournalierTotal += parseFloat(tauxCourant.montant.toString());
+      }
+    }
+
+    return {
+      competencesActives,
+      enAttenteDeTaux: competencesSansTaux.length,
+      agentsSansCompetence,
+      coutJournalier: coutJournalierTotal,
+    };
+  }
+);
