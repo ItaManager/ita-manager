@@ -12,11 +12,15 @@ export async function TitreTaches({ count }: TitreTachesProps) {
 
   let prenom = "";
   if (user) {
-    const employe = await prisma.employe.findFirst({
-      where: { profil: { id: user.id } },
-      select: { prenom: true },
+    const profil = await prisma.profil.findUnique({
+      where: { id: user.id },
+      select: {
+        employe: {
+          select: { prenom: true }
+        }
+      },
     });
-    prenom = employe?.prenom || "";
+    prenom = profil?.employe?.prenom || "";
   }
 
   return (
