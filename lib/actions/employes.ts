@@ -9,6 +9,7 @@
  * Source : M2-EMPLOYES.md §6
  */
 
+import { cache } from "react";
 import { prisma } from "@/lib/db/prisma";
 import { actionProtegee } from "@/lib/auth/guard";
 import { createClient } from "@/lib/supabase/server";
@@ -2224,8 +2225,9 @@ export const creerJournalier = actionProtegee(
 
 /**
  * Calcule les statistiques pour les indicateurs de la page Employés
+ * Mise en cache pour éviter les requêtes répétées pendant le rendu
  */
-export const statistiquesEmployes = actionProtegee(
+export const statistiquesEmployes = cache(actionProtegee(
   "employe:lire",
   async (session) => {
     const [totalActifs, permanents, dossiersIncomplets, sansAcces] = await Promise.all([
@@ -2273,12 +2275,13 @@ export const statistiquesEmployes = actionProtegee(
       sansAcces,
     };
   }
-);
+));
 
 /**
  * Récupère les tâches en attente pour l'utilisateur connecté (page Employés)
+ * Mise en cache pour éviter les requêtes répétées pendant le rendu
  */
-export const obtenirTachesEmployes = actionProtegee(
+export const obtenirTachesEmployes = cache(actionProtegee(
   "employe:lire",
   async (session) => {
     const taches: Array<{
@@ -2365,4 +2368,4 @@ export const obtenirTachesEmployes = actionProtegee(
       data: taches,
     };
   }
-);
+));

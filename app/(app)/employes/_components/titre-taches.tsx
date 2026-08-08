@@ -1,44 +1,22 @@
-import { obtenirTachesEmployes } from "@/lib/actions/employes";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db/prisma";
 
-export async function TitreTaches() {
-  const result = await obtenirTachesEmployes();
-  const count = result.success ? result.data.length : 0;
+interface TitreTachesProps {
+  count: number;
+}
 
-  // Get user's name
+export async function TitreTaches({ count }: TitreTachesProps) {
+  // Récupérer le prénom de manière optimisée
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   let prenom = "";
   if (user) {
-    const profil = await prisma.profil.findUnique({
-      where: { id: user.id },
-      include: { employe: true },
+    const employe = await prisma.employe.findFirst({
+      where: { profil: { id: user.id } },
+      select: { prenom: true },
     });
-
-    // Si lié à un employé, utiliser le prénom de l'employé
-    if (profil?.employe?.prenom) {
-      prenom = profil.employe.prenom;
-    } else if (profil?.email) {
-      // Fallback : extraire le prénom de l'email (pour comptes techniques)
-      const emailPrefix = profil.email.split("@")[0];
-      const cleanName = emailPrefix.replace(/\d+/g, ""); // Retirer les chiffres
-
-      // Essayer de détecter prénom/nom (détection basique)
-      if (cleanName.length > 8) {
-        // Chercher une majuscule au milieu qui indiquerait un nom (ex: ArmelGnakpa)
-        const splitAtCaps = cleanName.match(/[A-Z][a-z]+/g);
-        if (splitAtCaps && splitAtCaps.length > 1) {
-          prenom = splitAtCaps.join(" ");
-        } else {
-          // Sinon, prendre les 5 premiers caractères comme prénom
-          prenom = cleanName.charAt(0).toUpperCase() + cleanName.slice(1, 5).toLowerCase();
-        }
-      } else {
-        prenom = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
-      }
-    }
+    prenom = employe?.prenom || "";
   }
 
   return (

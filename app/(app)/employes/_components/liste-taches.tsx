@@ -1,12 +1,19 @@
-import { obtenirTachesEmployes } from "@/lib/actions/employes";
 import { ChevronRight, Info } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 
-export async function ListeTaches() {
-  const result = await obtenirTachesEmployes();
+interface ListeTachesProps {
+  taches: Array<{
+    id: string;
+    titre: string;
+    description: string;
+    count?: number;
+    lien?: string;
+  }>;
+}
 
-  if (!result.success || result.data.length === 0) {
+export function ListeTaches({ taches }: ListeTachesProps) {
+  if (taches.length === 0) {
     return (
       <div className="text-center py-8">
         <Info className="size-12 text-muted-foreground mx-auto mb-3 opacity-50" />
@@ -19,8 +26,6 @@ export async function ListeTaches() {
       </div>
     );
   }
-
-  const taches = result.data;
 
   return (
     <div className="space-y-3">

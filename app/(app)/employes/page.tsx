@@ -1,7 +1,7 @@
 import { verifierAccesPage } from "@/lib/auth/page-access";
 import { Suspense } from "react";
 import { ListeEmployes } from "./_components/liste-employes";
-import { obtenirDonneesReferenceEmploye } from "@/lib/actions/employes";
+import { obtenirDonneesReferenceEmploye, obtenirTachesEmployes } from "@/lib/actions/employes";
 import { ModuleLayout } from "@/components/layouts/module-layout";
 import { IndicateursEmployes } from "./_components/indicateurs-employes";
 import { TitreTaches } from "./_components/titre-taches";
@@ -34,21 +34,21 @@ export default async function PageEmployes({ searchParams }: PageEmployesProps) 
   const limit = Number(params.limit) || 25;
   const tab = params.tab || "permanents"; // Par défaut: permanents
 
-  // Charger les données de référence pour le formulaire de création
-  const donneesReference = await obtenirDonneesReferenceEmploye();
-
-  // Calculer les compteurs pour les tabs de manière plus efficace
+  // Charger toutes les données en parallèle
   const { prisma } = await import("@/lib/db/prisma");
-  const [permanents, journaliers] = await Promise.all([
+  const [donneesReference, permanents, journaliers, resultTaches] = await Promise.all([
+    obtenirDonneesReferenceEmploye(),
     prisma.employe.count({
       where: { archiveLe: null, typeMainOeuvre: "PERMANENT" },
     }),
     prisma.employe.count({
       where: { archiveLe: null, typeMainOeuvre: "JOURNALIER" },
     }),
+    obtenirTachesEmployes(),
   ]);
 
   const tabCounts = { permanents, journaliers };
+  const taches = resultTaches.success ? resultTaches.data : [];
 
   return (
     <ModuleLayout
@@ -70,13 +70,11 @@ export default async function PageEmployes({ searchParams }: PageEmployesProps) 
       <div className="bg-white rounded-xl border border-[#0000001a]">
         <div className="px-6 py-4 border-b border-[#0000001a]">
           <Suspense fallback={<h2 className="text-lg font-semibold text-[#18181a]">Vos tâches</h2>}>
-            <TitreTaches />
+            <TitreTaches count={taches.length} />
           </Suspense>
         </div>
         <div className="px-6 py-4">
-          <Suspense fallback={<div className="text-sm text-muted-foreground">Chargement...</div>}>
-            <ListeTaches />
-          </Suspense>
+          <ListeTaches taches={taches} />
         </div>
       </div>
 
