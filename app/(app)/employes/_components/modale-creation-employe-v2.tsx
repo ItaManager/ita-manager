@@ -269,7 +269,7 @@ export function ModaleCreationEmployeV2({
 
   return (
     <Dialog open={ouvert} onOpenChange={onFermer}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
         {/* En-tête avec fond */}
         <DialogHeader className="sticky top-0 z-10 border-b border-border px-6 py-4" style={{ backgroundColor: 'var(--primary-soft)' }}>
           <DialogTitle className="text-xl font-semibold text-[#1D186C]">
