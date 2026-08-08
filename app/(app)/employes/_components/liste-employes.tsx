@@ -1,13 +1,12 @@
 import { listerEmployes } from "@/lib/actions/employes";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Download, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import type { TypeMainOeuvre } from "@prisma/client";
 import { FiltresEmployesClient } from "./filtres-employes-client";
 import { BoutonAjouterEmploye } from "./bouton-ajouter-employe";
 import { BoutonAjouterJournalier } from "./bouton-ajouter-journalier";
 import { BoutonModifierEmploye } from "./bouton-modifier-employe";
+import { PaginationEmployes } from "./pagination-employes";
 
 interface DonneesReference {
   nationalites: Array<{ id: string; libelle: string }>;
@@ -20,22 +19,26 @@ interface DonneesReference {
 
 interface ListeEmployesProps {
   page: number;
+  limit: number;
   recherche?: string;
   directionId?: string;
   serviceId?: string;
   typeMainOeuvre?: TypeMainOeuvre;
   statutDossier?: "COMPLET" | "INCOMPLET";
   donneesReference: DonneesReference;
+  tab: "permanents" | "journaliers";
 }
 
 export async function ListeEmployes({
   page,
+  limit,
   recherche,
   directionId,
   serviceId,
   typeMainOeuvre,
   statutDossier,
   donneesReference,
+  tab,
 }: ListeEmployesProps) {
   const { items: employes, total, pages } = await listerEmployes({
     page,
@@ -46,91 +49,113 @@ export async function ListeEmployes({
     statutDossier,
   });
 
-  const getStatusBadge = (employe: any) => {
-    if (!employe.actif) {
-      return <Badge className="bg-destructive-soft text-destructive">Archivé</Badge>;
-    }
-    if (employe.typeMainOeuvre === "PERMANENT") {
-      return <Badge className="bg-success-soft text-success">Actif</Badge>;
-    }
-    return <Badge className="bg-warning-soft text-warning">Journalier</Badge>;
-  };
-
-  const getInitials = (nom: string, prenom: string) => {
-    return `${nom[0]}${prenom[0]}`.toUpperCase();
+  // Calculer les compteurs pour les filtres
+  const tousEmployes = await listerEmployes({});
+  const counts = {
+    total: tousEmployes.total,
+    permanents: tousEmployes.items.filter((e) => e.typeMainOeuvre === "PERMANENT").length,
+    journaliers: tousEmployes.items.filter((e) => e.typeMainOeuvre === "JOURNALIER").length,
+    dossiersIncomplets: tousEmployes.items.filter((e) => e.completudeDossier < 100).length,
+    sansAcces: tousEmployes.items.filter((e) => !e.actif).length,
   };
 
   return (
-    <>
-      {/* Actions Header */}
-      <div className="flex items-center justify-end gap-4">
-        <Button
-          variant="outline"
-          className="gap-2 h-12 px-6 text-base border-2 hover:bg-muted hover:border-primary transition-all cursor-pointer shadow-sm hover:shadow-md"
-        >
-          <Download className="size-5" />
-          Télécharger
-        </Button>
-        <BoutonAjouterJournalier
-          directions={donneesReference.directions}
-          services={donneesReference.services}
-          projets={donneesReference.projets}
-        />
-        <BoutonAjouterEmploye
-          postes={donneesReference.postes}
-          nationalites={donneesReference.nationalites}
-          directions={donneesReference.directions}
-          services={donneesReference.services}
-          employes={donneesReference.employes}
-          projets={donneesReference.projets}
-        />
-      </div>
-
+    <div>
       {/* Filters */}
       <FiltresEmployesClient
         recherche={recherche}
         typeMainOeuvre={typeMainOeuvre}
         directionId={directionId}
+        serviceId={serviceId}
         statutDossier={statutDossier}
+        directions={donneesReference.directions}
+        services={donneesReference.services}
+        counts={counts}
+        boutonAjout={
+          tab === "permanents" ? (
+            <BoutonAjouterEmploye
+              postes={donneesReference.postes}
+              nationalites={donneesReference.nationalites}
+              directions={donneesReference.directions}
+              services={donneesReference.services}
+              employes={donneesReference.employes}
+              projets={donneesReference.projets}
+            />
+          ) : (
+            <BoutonAjouterJournalier
+              directions={donneesReference.directions}
+              services={donneesReference.services}
+              projets={donneesReference.projets}
+            />
+          )
+        }
       />
 
       {/* Table */}
-      <div className="bg-card rounded-xl border border-border overflow-hidden">
+      <div className="mt-6 bg-card rounded-xl border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-muted/50">
               <tr className="border-b border-border">
-                <th className="text-left py-3 px-4">
-                  <input type="checkbox" className="rounded border-border cursor-pointer" />
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
-                  Nom Employé
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
-                  Matricule
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
-                  Poste
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
-                  Type de main d'œuvre
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
-                  Direction
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
-                  Statut
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
-                  Actions
-                </th>
+                {tab === "permanents" ? (
+                  <>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                      Nom Employé
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                      Matricule
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                      Poste
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                      Direction
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                      Contrat
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                      État du dossier
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                      Statut
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                      Actions
+                    </th>
+                  </>
+                ) : (
+                  <>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                      Nom
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                      Téléphone
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                      Projet
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                      Taux journalier
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                      Période
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                      Statut
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                      Actions
+                    </th>
+                  </>
+                )}
               </tr>
             </thead>
             <tbody>
               {employes.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-muted-foreground">
-                    Aucun employé trouvé
+                  <td colSpan={tab === "permanents" ? 8 : 7} className="py-12 text-center text-muted-foreground">
+                    Aucun {tab === "permanents" ? "employé permanent" : "journalier"} trouvé
                   </td>
                 </tr>
               ) : (
@@ -139,50 +164,101 @@ export async function ListeEmployes({
                     key={employe.id}
                     className="border-b border-border hover:bg-muted/50 transition-colors"
                   >
-                    <td className="py-3 px-4">
-                      <input type="checkbox" className="rounded border-border cursor-pointer" />
-                    </td>
-                    <td className="py-3 px-4">
-                      <Link href={`/employes/${employe.id}`} className="flex items-center gap-3 hover:opacity-80">
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium text-white" style={{ backgroundColor: '#13850b' }}>
-                          {getInitials(employe.nom, employe.prenom)}
-                        </div>
-                        <div>
-                          <div className="font-medium text-sm">
-                            {employe.nom} {employe.prenom}
+                    {tab === "permanents" ? (
+                      <>
+                        <td className="py-3 px-4">
+                          <Link href={`/employes/${employe.id}`} className="hover:opacity-80">
+                            <div className="font-medium text-sm">
+                              {employe.nom} {employe.prenom}
+                            </div>
+                            <div className="text-xs text-muted-foreground">{employe.email || "—"}</div>
+                          </Link>
+                        </td>
+                        <td className="py-3 px-4 text-sm font-mono text-muted-foreground">
+                          {employe.matricule}
+                        </td>
+                        <td className="py-3 px-4 text-sm text-muted-foreground">
+                          {employe.posteActuel?.libelle || "—"}
+                        </td>
+                        <td className="py-3 px-4 text-sm text-muted-foreground">
+                          {employe.posteActuel?.direction.libelle || "—"}
+                        </td>
+                        <td className="py-3 px-4 text-sm">
+                          <Badge variant="secondary">
+                            {employe.contratActuel?.typeContrat || "—"}
+                          </Badge>
+                        </td>
+                        <td className="py-3 px-4">
+                          {employe.completudeDossier === 100 ? (
+                            <Badge className="bg-green-100 text-green-700 border-green-200">
+                              Complet
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="border-orange-300 bg-orange-50 text-orange-700">
+                              Incomplet ({employe.completudeDossier}%)
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          <Badge variant="secondary">
+                            {employe.actif ? "Actif" : "Archivé"}
+                          </Badge>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <BoutonModifierEmploye
+                              employeId={employe.id}
+                              postes={donneesReference.postes}
+                              nationalites={donneesReference.nationalites}
+                              directions={donneesReference.directions}
+                              services={donneesReference.services}
+                            />
                           </div>
-                          <div className="text-xs text-muted-foreground">{employe.email || "—"}</div>
-                        </div>
-                      </Link>
-                    </td>
-                    <td className="py-3 px-4 text-sm font-mono text-muted-foreground">
-                      {employe.matricule}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-muted-foreground">
-                      {employe.posteActuel?.libelle || "—"}
-                    </td>
-                    <td className="py-3 px-4 text-sm">
-                      {employe.typeMainOeuvre === "PERMANENT" ? (
-                        <Badge className="bg-primary-soft text-primary">Permanent</Badge>
-                      ) : (
-                        <Badge className="bg-warning-soft text-warning">Journalier</Badge>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-muted-foreground">
-                      {employe.posteActuel?.direction.libelle || "—"}
-                    </td>
-                    <td className="py-3 px-4">{getStatusBadge(employe)}</td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <BoutonModifierEmploye
-                          employeId={employe.id}
-                          postes={donneesReference.postes}
-                          nationalites={donneesReference.nationalites}
-                          directions={donneesReference.directions}
-                          services={donneesReference.services}
-                        />
-                      </div>
-                    </td>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="py-3 px-4">
+                          <Link href={`/employes/${employe.id}`} className="hover:opacity-80">
+                            <div className="font-medium text-sm">
+                              {employe.nom} {employe.prenom}
+                            </div>
+                          </Link>
+                        </td>
+                        <td className="py-3 px-4 text-sm text-muted-foreground">
+                          {employe.telephone || "—"}
+                        </td>
+                        <td className="py-3 px-4 text-sm text-muted-foreground">
+                          {employe.affectationActuelle?.projet?.nom || "—"}
+                        </td>
+                        <td className="py-3 px-4 text-sm text-muted-foreground">
+                          {employe.contratActuel?.tauxJournalier
+                            ? `${employe.contratActuel.tauxJournalier.toLocaleString()} FCFA`
+                            : "—"}
+                        </td>
+                        <td className="py-3 px-4 text-sm text-muted-foreground">
+                          {employe.contratActuel?.dateDebut && employe.contratActuel?.dateFin
+                            ? `${new Date(employe.contratActuel.dateDebut).toLocaleDateString()} - ${new Date(employe.contratActuel.dateFin).toLocaleDateString()}`
+                            : "—"}
+                        </td>
+                        <td className="py-3 px-4">
+                          <Badge variant="secondary">
+                            {employe.actif ? "Actif" : "Archivé"}
+                          </Badge>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <BoutonModifierEmploye
+                              employeId={employe.id}
+                              postes={donneesReference.postes}
+                              nationalites={donneesReference.nationalites}
+                              directions={donneesReference.directions}
+                              services={donneesReference.services}
+                            />
+                          </div>
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))
               )}
@@ -191,51 +267,8 @@ export async function ListeEmployes({
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted/20">
-          <div className="text-sm text-muted-foreground">
-            Affichage de {(page - 1) * 25 + 1} à {Math.min(page * 25, total)} sur {total} employé{total > 1 ? "s" : ""}
-          </div>
-
-          {pages > 1 && (
-            <div className="flex items-center gap-2">
-              <Link
-                href={`/employes?page=${page - 1}`}
-                className={`p-2 hover:bg-background rounded-lg transition-colors ${
-                  page === 1 ? "pointer-events-none opacity-50" : ""
-                }`}
-              >
-                <ChevronDown className="size-4 rotate-90 text-muted-foreground" />
-              </Link>
-
-              {Array.from({ length: Math.min(pages, 5) }, (_, i) => {
-                const pageNum = i + 1;
-                return (
-                  <Link
-                    key={pageNum}
-                    href={`/employes?page=${pageNum}`}
-                    className={`w-10 h-10 rounded-lg font-medium text-sm flex items-center justify-center transition-colors ${
-                      page === pageNum
-                        ? "bg-primary text-white"
-                        : "hover:bg-background"
-                    }`}
-                  >
-                    {pageNum}
-                  </Link>
-                );
-              })}
-
-              <Link
-                href={`/employes?page=${page + 1}`}
-                className={`p-2 hover:bg-background rounded-lg transition-colors ${
-                  page === pages ? "pointer-events-none opacity-50" : ""
-                }`}
-              >
-                <ChevronDown className="size-4 -rotate-90 text-muted-foreground" />
-              </Link>
-            </div>
-          )}
-        </div>
+        <PaginationEmployes total={total} page={page} limit={limit} />
       </div>
-    </>
+    </div>
   );
 }

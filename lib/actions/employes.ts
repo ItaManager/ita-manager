@@ -49,6 +49,19 @@ interface EmployeListItem {
   salaire?: number | null;
   completudeDossier: number; // Pourcentage 0-100
   actif: boolean;
+  // Données pour les journaliers
+  telephone?: string | null;
+  contratActuel?: {
+    typeContrat: string;
+    dateDebut: Date;
+    dateFin?: Date | null;
+    tauxJournalier?: number | null;
+  } | null;
+  affectationActuelle?: {
+    projet?: {
+      nom: string;
+    } | null;
+  } | null;
 }
 
 interface EmployeDetail {
@@ -242,6 +255,21 @@ export const listerEmployes = actionProtegee(
         salaire: aDonneesSensibles ? contratActuel?.salaire?.toNumber() ?? null : null,
         completudeDossier: completude,
         actif: !e.archiveLe,
+        // Données pour les journaliers
+        telephone: e.telephone,
+        contratActuel: contratActuel
+          ? {
+              typeContrat: contratActuel.typeContrat,
+              dateDebut: contratActuel.dateDebut,
+              dateFin: contratActuel.dateFin,
+              tauxJournalier: aDonneesSensibles ? contratActuel.tauxJournalier?.toNumber() ?? null : null,
+            }
+          : null,
+        affectationActuelle: affectationActuelle
+          ? {
+              projet: null, // TODO: À implémenter quand la relation employe->projet sera créée
+            }
+          : null,
       };
     });
 
@@ -2185,5 +2213,154 @@ export const creerJournalier = actionProtegee(
     });
 
     return employe;
+  }
+);
+
+// ===========================================================================
+// STATISTIQUES & TÂCHES (pour ModuleLayout)
+// ===========================================================================
+
+/**
+ * Calcule les statistiques pour les indicateurs de la page Employés
+ */
+export const statistiquesEmployes = actionProtegee(
+  "employe:lire",
+  async (session) => {
+    const [totalActifs, permanents, dossiersIncomplets, sansAcces] = await Promise.all([
+      // Total employés actifs
+      prisma.employe.count({
+        where: { archiveLe: null },
+      }),
+
+      // Employés permanents
+      prisma.employe.count({
+        where: {
+          archiveLe: null,
+          typeMainOeuvre: "PERMANENT",
+        },
+      }),
+
+      // Dossiers incomplets (sans email OU sans RIB/CNPS)
+      prisma.employe.count({
+        where: {
+          archiveLe: null,
+          OR: [
+            { email: null },
+            { email: "" },
+            { rib: null },
+            { rib: "" },
+            { numeroCnps: null },
+            { numeroCnps: "" },
+          ],
+        },
+      }),
+
+      // Employés sans compte d'accès
+      prisma.employe.count({
+        where: {
+          archiveLe: null,
+          profil: { is: null }, // Pas de lien avec table Profil
+        },
+      }),
+    ]);
+
+    return {
+      totalActifs,
+      permanents,
+      dossiersIncomplets,
+      sansAcces,
+    };
+  }
+);
+
+/**
+ * Récupère les tâches en attente pour l'utilisateur connecté (page Employés)
+ */
+export const obtenirTachesEmployes = actionProtegee(
+  "employe:lire",
+  async (session) => {
+    const taches: Array<{
+      id: string;
+      titre: string;
+      description: string;
+      count?: number;
+      lien?: string;
+    }> = [];
+
+    // Compter les dossiers incomplets
+    const dossiersIncomplets = await prisma.employe.count({
+      where: {
+        archiveLe: null,
+        OR: [
+          { email: null },
+          { email: "" },
+          { rib: null },
+          { rib: "" },
+          { numeroCnps: null },
+          { numeroCnps: "" },
+        ],
+      },
+    });
+
+    if (dossiersIncomplets > 0) {
+      taches.push({
+        id: "dossiers-incomplets",
+        titre: "Compléter les dossiers employés",
+        description: `${dossiersIncomplets} employé${dossiersIncomplets > 1 ? "s ont" : " a"} des informations manquantes (email, RIB, CNPS).`,
+        count: dossiersIncomplets,
+        lien: "/employes?statutDossier=INCOMPLET",
+      });
+    }
+
+    // Compter les employés sans accès
+    const sansAcces = await prisma.employe.count({
+      where: {
+        archiveLe: null,
+        profil: { is: null },
+        typeMainOeuvre: "PERMANENT", // Seuls les permanents doivent avoir accès
+      },
+    });
+
+    if (sansAcces > 0) {
+      taches.push({
+        id: "sans-acces",
+        titre: "Ouvrir l'accès ITA Manager",
+        description: `${sansAcces} employé${sansAcces > 1 ? "s permanents n'ont" : " permanent n'a"} pas encore de compte d'accès.`,
+        count: sansAcces,
+        lien: "/employes",
+      });
+    }
+
+    // Compter les contrats CDD arrivant à expiration (< 30 jours)
+    const dans30Jours = new Date();
+    dans30Jours.setDate(dans30Jours.getDate() + 30);
+
+    const contratsExpiration = await prisma.contrat.count({
+      where: {
+        typeContrat: "CDD",
+        dateFin: {
+          lte: dans30Jours,
+          gte: new Date(),
+        },
+        employe: {
+          archiveLe: null,
+        },
+      },
+    });
+
+    if (contratsExpiration > 0) {
+      taches.push({
+        id: "contrats-expiration",
+        titre: "Contrats CDD arrivant à expiration",
+        description: `${contratsExpiration} contrat${contratsExpiration > 1 ? "s arrivent" : " arrive"} à expiration dans moins de 30 jours.`,
+        count: contratsExpiration,
+        lien: "/contrats",
+      });
+    }
+
+    return {
+      success: true,
+      data: taches,
+    };
   }
 );
