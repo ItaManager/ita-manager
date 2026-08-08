@@ -6,6 +6,7 @@ import { FiltresEmployesClient } from "./filtres-employes-client";
 import { BoutonAjouterEmploye } from "./bouton-ajouter-employe";
 import { BoutonAjouterJournalier } from "./bouton-ajouter-journalier";
 import { BoutonModifierEmploye } from "./bouton-modifier-employe";
+import { ActionsJournalier } from "./actions-journalier";
 import { PaginationEmployes } from "./pagination-employes";
 
 interface DonneesReference {
@@ -25,6 +26,7 @@ interface ListeEmployesProps {
   serviceId?: string;
   typeMainOeuvre?: TypeMainOeuvre;
   statutDossier?: "COMPLET" | "INCOMPLET";
+  disponibilite?: "EN_MISSION" | "DISPONIBLE";
   donneesReference: DonneesReference;
   tab: "permanents" | "journaliers";
 }
@@ -37,6 +39,7 @@ export async function ListeEmployes({
   serviceId,
   typeMainOeuvre,
   statutDossier,
+  disponibilite,
   donneesReference,
   tab,
 }: ListeEmployesProps) {
@@ -47,6 +50,7 @@ export async function ListeEmployes({
     serviceId,
     typeMainOeuvre,
     statutDossier,
+    disponibilite,
   });
 
   // Calculer les compteurs pour les filtres
@@ -56,7 +60,7 @@ export async function ListeEmployes({
     permanents: tousEmployes.items.filter((e) => e.typeMainOeuvre === "PERMANENT").length,
     journaliers: tousEmployes.items.filter((e) => e.typeMainOeuvre === "JOURNALIER").length,
     dossiersIncomplets: tousEmployes.items.filter((e) => e.completudeDossier < 100).length,
-    sansAcces: tousEmployes.items.filter((e) => !e.actif).length,
+    sansAcces: tousEmployes.items.filter((e) => e.archiveLe !== null).length,
   };
 
   return (
@@ -68,6 +72,7 @@ export async function ListeEmployes({
         directionId={directionId}
         serviceId={serviceId}
         statutDossier={statutDossier}
+        disponibilite={disponibilite}
         directions={donneesReference.directions}
         services={donneesReference.services}
         counts={counts}
@@ -133,18 +138,18 @@ export async function ListeEmployes({
                       Téléphone
                     </th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
-                      Projet
+                      Compétence
                     </th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
-                      Taux journalier
+                      Taux actuel
                     </th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
-                      Période
+                      Dernière mission
                     </th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
                       Statut
                     </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground w-[280px]">
                       Actions
                     </th>
                   </>
@@ -201,7 +206,7 @@ export async function ListeEmployes({
                         </td>
                         <td className="py-3 px-4">
                           <Badge variant="secondary">
-                            {employe.actif ? "Actif" : "Archivé"}
+                            {!employe.archiveLe ? "Actif" : "Archivé"}
                           </Badge>
                         </td>
                         <td className="py-3 px-4">
@@ -223,39 +228,42 @@ export async function ListeEmployes({
                             <div className="font-medium text-sm">
                               {employe.nom} {employe.prenom}
                             </div>
+                            <div className="text-xs text-muted-foreground font-mono">
+                              {employe.matricule}
+                            </div>
                           </Link>
                         </td>
-                        <td className="py-3 px-4 text-sm text-muted-foreground">
+                        <td className="py-3 px-4 text-sm font-mono text-muted-foreground">
                           {employe.telephone || "—"}
                         </td>
-                        <td className="py-3 px-4 text-sm text-muted-foreground">
-                          {employe.affectationActuelle?.projet?.nom || "—"}
+                        <td className="py-3 px-4 text-sm">
+                          {employe.competenceActuelle ? (
+                            <Badge variant="outline" className="font-normal">
+                              {employe.competenceActuelle}
+                            </Badge>
+                          ) : (
+                            <span className="text-orange-600 text-xs">⚠️ Non assignée</span>
+                          )}
                         </td>
-                        <td className="py-3 px-4 text-sm text-muted-foreground">
-                          {employe.contratActuel?.tauxJournalier
-                            ? `${employe.contratActuel.tauxJournalier.toLocaleString()} FCFA`
+                        <td className="py-3 px-4 text-sm font-mono text-muted-foreground">
+                          {employe.tauxActuel
+                            ? `${employe.tauxActuel.toLocaleString()} FCFA/j`
                             : "—"}
                         </td>
                         <td className="py-3 px-4 text-sm text-muted-foreground">
-                          {employe.contratActuel?.dateDebut && employe.contratActuel?.dateFin
-                            ? `${new Date(employe.contratActuel.dateDebut).toLocaleDateString()} - ${new Date(employe.contratActuel.dateFin).toLocaleDateString()}`
-                            : "—"}
+                          {employe.derniereMission || "Aucune"}
                         </td>
                         <td className="py-3 px-4">
-                          <Badge variant="secondary">
-                            {employe.actif ? "Actif" : "Archivé"}
+                          <Badge variant={!employe.archiveLe ? "default" : "secondary"}>
+                            {!employe.archiveLe ? "Actif" : "Archivé"}
                           </Badge>
                         </td>
                         <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <BoutonModifierEmploye
-                              employeId={employe.id}
-                              postes={donneesReference.postes}
-                              nationalites={donneesReference.nationalites}
-                              directions={donneesReference.directions}
-                              services={donneesReference.services}
-                            />
-                          </div>
+                          <ActionsJournalier
+                            employeId={employe.id}
+                            employeNom={employe.nom}
+                            employePrenom={employe.prenom}
+                          />
                         </td>
                       </>
                     )}

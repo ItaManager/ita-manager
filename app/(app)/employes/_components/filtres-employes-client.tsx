@@ -13,6 +13,7 @@ interface FiltresEmployesClientProps {
   directionId?: string;
   serviceId?: string;
   statutDossier?: "COMPLET" | "INCOMPLET";
+  disponibilite?: "EN_MISSION" | "DISPONIBLE";
   directions: Array<{ id: string; libelle: string }>;
   services: Array<{ id: string; libelle: string; directionId: string }>;
   counts: {
@@ -21,6 +22,8 @@ interface FiltresEmployesClientProps {
     journaliers: number;
     dossiersIncomplets: number;
     sansAcces: number;
+    enMission?: number;
+    disponibles?: number;
   };
   boutonAjout: React.ReactNode;
 }
@@ -31,6 +34,7 @@ export function FiltresEmployesClient({
   directionId,
   serviceId,
   statutDossier,
+  disponibilite,
   directions,
   services,
   counts,
@@ -55,9 +59,10 @@ export function FiltresEmployesClient({
         } else {
           params.delete("recherche");
         }
-        params.set("page", "1");
+        params.delete("page"); // Retour page 1 = pas de param
         startTransition(() => {
-          router.push(`${basePath}?${params.toString()}`);
+          const query = params.toString();
+          router.push(query ? `${basePath}?${query}` : basePath);
         });
       }
     }, 300);
@@ -98,9 +103,10 @@ export function FiltresEmployesClient({
       }
     }
 
-    params.set("page", "1");
+    params.delete("page"); // Retour page 1 = pas de param
     startTransition(() => {
-      router.push(`${basePath}?${params.toString()}`);
+      const query = params.toString();
+      router.push(query ? `${basePath}?${query}` : basePath);
     });
   };
 
@@ -112,6 +118,9 @@ export function FiltresEmployesClient({
   const servicesFiltres = services.filter(
     (s) => !directionId || s.directionId === directionId
   );
+
+  // Détecter si on est sur la page journaliers
+  const isPageJournaliers = basePath.includes("/journaliers");
 
   return (
     <div className="space-y-3">
@@ -139,27 +148,59 @@ export function FiltresEmployesClient({
         {boutonAjout}
       </div>
 
-      {/* Filtres - Type de main d'œuvre */}
+      {/* Filtres */}
       <div className="flex items-center gap-2 flex-wrap">
-        <button onClick={() => changerFiltre("typeMainOeuvre", "PERMANENT")}>
-          <Badge
-            variant={typeMainOeuvre === "PERMANENT" ? "default" : "outline"}
-            className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
-          >
-            Permanents{" "}
-            <span className="ml-1 opacity-70">({counts.permanents})</span>
-          </Badge>
-        </button>
-        <button onClick={() => changerFiltre("typeMainOeuvre", "JOURNALIER")}>
-          <Badge
-            variant={typeMainOeuvre === "JOURNALIER" ? "default" : "outline"}
-            className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
-          >
-            Journaliers{" "}
-            <span className="ml-1 opacity-70">({counts.journaliers})</span>
-          </Badge>
-        </button>
-        <div className="w-px h-6 bg-border mx-1" />
+        {/* Type de main d'œuvre - seulement sur page employés */}
+        {!isPageJournaliers && (
+          <>
+            <button onClick={() => changerFiltre("typeMainOeuvre", "PERMANENT")}>
+              <Badge
+                variant={typeMainOeuvre === "PERMANENT" ? "default" : "outline"}
+                className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+              >
+                Permanents{" "}
+                <span className="ml-1 opacity-70">({counts.permanents})</span>
+              </Badge>
+            </button>
+            <button onClick={() => changerFiltre("typeMainOeuvre", "JOURNALIER")}>
+              <Badge
+                variant={typeMainOeuvre === "JOURNALIER" ? "default" : "outline"}
+                className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+              >
+                Journaliers{" "}
+                <span className="ml-1 opacity-70">({counts.journaliers})</span>
+              </Badge>
+            </button>
+            <div className="w-px h-6 bg-border mx-1" />
+          </>
+        )}
+
+        {/* Disponibilité - seulement sur page journaliers */}
+        {isPageJournaliers && (
+          <>
+            <button onClick={() => changerFiltre("disponibilite", "EN_MISSION")}>
+              <Badge
+                variant={disponibilite === "EN_MISSION" ? "default" : "outline"}
+                className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+              >
+                En mission{" "}
+                <span className="ml-1 opacity-70">({counts.enMission || 0})</span>
+              </Badge>
+            </button>
+            <button onClick={() => changerFiltre("disponibilite", "DISPONIBLE")}>
+              <Badge
+                variant={disponibilite === "DISPONIBLE" ? "default" : "outline"}
+                className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+              >
+                Disponibles{" "}
+                <span className="ml-1 opacity-70">({counts.disponibles || 0})</span>
+              </Badge>
+            </button>
+            <div className="w-px h-6 bg-border mx-1" />
+          </>
+        )}
+
+        {/* Directions et services - pour tous */}
         {directions.map((dir) => (
           <button
             key={dir.id}
@@ -191,6 +232,8 @@ export function FiltresEmployesClient({
             ))}
           </>
         )}
+
+        {/* Statut dossier - pour tous */}
         <div className="w-px h-6 bg-border mx-1" />
         <button onClick={() => changerFiltre("statutDossier", "INCOMPLET")}>
           <Badge

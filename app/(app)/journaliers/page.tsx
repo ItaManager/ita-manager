@@ -15,6 +15,7 @@ interface PageJournaliersProps {
     directionId?: string;
     serviceId?: string;
     statutDossier?: "COMPLET" | "INCOMPLET";
+    disponibilite?: "EN_MISSION" | "DISPONIBLE";
   }>;
 }
 
@@ -71,6 +72,7 @@ export default async function PageJournaliers({ searchParams }: PageJournaliersP
             serviceId={params.serviceId}
             typeMainOeuvre="JOURNALIER"
             statutDossier={params.statutDossier}
+            disponibilite={params.disponibilite}
             donneesReference={donneesReference}
             tab="journaliers"
           />

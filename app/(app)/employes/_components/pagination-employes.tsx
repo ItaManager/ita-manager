@@ -28,15 +28,21 @@ export function PaginationEmployes({ total, page, limit }: PaginationEmployesPro
 
   const changerPage = (nouvellePage: number) => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set("page", nouvellePage.toString());
-    router.push(`${basePath}?${params.toString()}`);
+    if (nouvellePage === 1) {
+      params.delete("page");
+    } else {
+      params.set("page", nouvellePage.toString());
+    }
+    const query = params.toString();
+    router.push(query ? `${basePath}?${query}` : basePath);
   };
 
   const changerLimit = (nouvelleLimit: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("limit", nouvelleLimit);
-    params.set("page", "1");
-    router.push(`${basePath}?${params.toString()}`);
+    params.delete("page"); // Retour page 1 = pas de param
+    const query = params.toString();
+    router.push(query ? `${basePath}?${query}` : basePath);
   };
 
   return (

@@ -20,15 +20,21 @@ import { AlertCircle, Loader2, X } from "lucide-react";
 import { creerJournalier } from "@/lib/actions/employes";
 
 const schemaJournalier = z.object({
-  nom: z.string().min(1, "Le nom est requis"),
-  prenom: z.string().min(1, "Le prénom est requis"),
-  dateDebut: z.string().min(1, "La date de début est requise"),
-  dateFin: z.string().min(1, "La date de fin est requise"),
-  telephone: z.string().min(1, "Le téléphone est requis"),
-  numeroWave: z.string().min(1, "Le numéro Wave est requis"),
-  directionId: z.string().min(1, "La direction est requise"),
-  serviceId: z.string().optional(),
-  projetId: z.string().min(1, "Le projet/chantier est requis"),
+  nom: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+  prenom: z.string().min(2, "Le prénom doit contenir au moins 2 caractères"),
+  sexe: z.enum(["MASCULIN", "FEMININ"]).optional(),
+  dateNaissance: z.string().optional(),
+  lieuNaissance: z.string().optional(),
+  typePieceIdentite: z.enum(["CNI", "PASSEPORT", "ATTESTATION"]).optional(),
+  numeroPieceIdentite: z.string().optional(),
+  telephone: z
+    .string()
+    .min(10, "Le numéro doit contenir au moins 10 chiffres")
+    .regex(/^(\+225|0)?[0-9\s]+$/, "Format invalide (ex: +225 07 XX XX XX XX ou 07 XX XX XX XX)"),
+  numeroWave: z
+    .string()
+    .min(10, "Le numéro Wave doit contenir au moins 10 chiffres")
+    .regex(/^(\+225|0)?[0-9\s]+$/, "Format invalide (ex: +225 07 XX XX XX XX)"),
 });
 
 type FormData = z.infer<typeof schemaJournalier>;
@@ -44,9 +50,6 @@ interface ModaleJournalierProps {
 export function ModaleJournalier({
   ouvert,
   onFermer,
-  directions,
-  services,
-  projets,
 }: ModaleJournalierProps) {
   const router = useRouter();
   const [erreur, setErreur] = useState<string | null>(null);
@@ -55,44 +58,38 @@ export function ModaleJournalier({
     register,
     handleSubmit,
     reset,
-    control,
-    watch,
     setValue,
+    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schemaJournalier),
     defaultValues: {
       nom: "",
       prenom: "",
-      dateDebut: "",
-      dateFin: "",
+      sexe: undefined,
+      dateNaissance: "",
+      lieuNaissance: "",
+      typePieceIdentite: undefined,
+      numeroPieceIdentite: "",
       telephone: "",
       numeroWave: "",
-      directionId: "",
-      serviceId: "",
-      projetId: "",
     },
   });
 
-  const directionId = watch("directionId");
+  const typePieceIdentite = watch("typePieceIdentite");
 
   // Options pour les Combobox
-  const directionOptions: ComboboxOption[] = directions.map((dir) => ({
-    value: dir.id,
-    label: dir.libelle,
-  }));
+  const sexeOptions: ComboboxOption[] = [
+    { value: "MASCULIN", label: "Masculin" },
+    { value: "FEMININ", label: "Féminin" },
+  ];
 
-  const serviceOptions: ComboboxOption[] = (services ?? [])
-    .filter((s) => !directionId || s.directionId === directionId)
-    .map((s) => ({
-      value: s.id,
-      label: s.libelle,
-    }));
-
-  const projetOptions: ComboboxOption[] = projets.map((projet) => ({
-    value: projet.id,
-    label: `${projet.code} - ${projet.nom}`,
-  }));
+  const typePieceOptions: ComboboxOption[] = [
+    { value: "CNI", label: "Carte Nationale d'Identité" },
+    { value: "PASSEPORT", label: "Passeport" },
+    { value: "ATTESTATION", label: "Attestation d'identité" },
+  ];
 
   const onSubmit = async (data: FormData) => {
     setErreur(null);
@@ -119,7 +116,7 @@ export function ModaleJournalier({
 
   return (
     <Dialog open={ouvert} onOpenChange={annuler}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader className="relative -mt-6 -mx-6 px-6 pt-6 pb-4 rounded-t-xl" style={{ backgroundColor: '#ebeaf2' }}>
           <Button
             variant="ghost"
@@ -131,8 +128,11 @@ export function ModaleJournalier({
             <X className="size-4" />
           </Button>
           <DialogTitle className="text-xl font-semibold" style={{ color: '#1d186c' }}>
-            Nouveau journalier / Intérimaire
+            Nouveau journalier
           </DialogTitle>
+          <p className="text-sm text-muted-foreground mt-2">
+            Créez le profil du journalier. L'affectation à un chantier se fera par la Direction Technique.
+          </p>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-4">
@@ -144,180 +144,166 @@ export function ModaleJournalier({
           )}
 
           {/* Identité */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="nom" className="text-sm font-medium">
-                Nom <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                {...register("nom")}
-                placeholder="Nom"
-                className="h-12"
-              />
-              {errors.nom && (
-                <p className="text-sm text-destructive">{errors.nom.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="prenom" className="text-sm font-medium">
-                Prénom <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                {...register("prenom")}
-                placeholder="Prénom"
-                className="h-12"
-              />
-              {errors.prenom && (
-                <p className="text-sm text-destructive">{errors.prenom.message}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Période */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="dateDebut" className="text-sm font-medium">
-                Date de début <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                type="date"
-                {...register("dateDebut")}
-                className="h-12"
-              />
-              {errors.dateDebut && (
-                <p className="text-sm text-destructive">{errors.dateDebut.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="dateFin" className="text-sm font-medium">
-                Date de fin <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                type="date"
-                {...register("dateFin")}
-                className="h-12"
-              />
-              {errors.dateFin && (
-                <p className="text-sm text-destructive">{errors.dateFin.message}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Contact */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="telephone" className="text-sm font-medium">
-                Téléphone <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                {...register("telephone")}
-                placeholder="+225 XX XX XX XX XX"
-                className="h-12"
-              />
-              {errors.telephone && (
-                <p className="text-sm text-destructive">{errors.telephone.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="numeroWave" className="text-sm font-medium">
-                Numéro Wave <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                {...register("numeroWave")}
-                placeholder="+225 XX XX XX XX XX"
-                className="h-12"
-              />
-              {errors.numeroWave && (
-                <p className="text-sm text-destructive">{errors.numeroWave.message}</p>
-              )}
-              <div className="mt-2 p-3 rounded-md bg-blue-50">
-                <p className="text-xs text-gray-600">
-                  Ce numéro sert pour les paiements de taux journalier.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Affectation */}
           <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground">Identité</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="directionId" className="text-sm font-medium">
-                  Direction <span className="text-destructive">*</span>
+                <Label htmlFor="nom" className="text-sm font-medium">
+                  Nom <span className="text-destructive">*</span>
                 </Label>
-                <Controller
-                  name="directionId"
-                  control={control}
-                  rules={{ required: true }}
-                  render={({ field }) => (
-                    <Combobox
-                      options={directionOptions}
-                      value={field.value}
-                      onChange={(value) => {
-                        field.onChange(value);
-                        setValue("serviceId", ""); // Reset service when direction changes
-                      }}
-                      placeholder="Sélectionner une direction"
-                      searchPlaceholder="Rechercher..."
-                      className="h-12"
-                    />
-                  )}
+                <Input
+                  {...register("nom")}
+                  placeholder="Nom de famille"
+                  className="h-10 rounded-md"
                 />
-                {errors.directionId && (
-                  <p className="text-sm text-destructive">{errors.directionId.message}</p>
+                {errors.nom && (
+                  <p className="text-sm text-destructive">{errors.nom.message}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="serviceId" className="text-sm font-medium">
-                  Service
+                <Label htmlFor="prenom" className="text-sm font-medium">
+                  Prénom <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  {...register("prenom")}
+                  placeholder="Prénom"
+                  className="h-10 rounded-md"
+                />
+                {errors.prenom && (
+                  <p className="text-sm text-destructive">{errors.prenom.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="sexe" className="text-sm font-medium">
+                  Sexe
                 </Label>
                 <Controller
-                  name="serviceId"
+                  name="sexe"
                   control={control}
                   render={({ field }) => (
                     <Combobox
-                      options={serviceOptions}
-                      value={field.value}
+                      options={sexeOptions}
+                      value={field.value || ""}
                       onChange={field.onChange}
-                      placeholder="Sélectionner un service"
+                      placeholder="Sélectionner le sexe"
                       searchPlaceholder="Rechercher..."
-                      className="h-12"
-                      disabled={!directionId}
+                      className="h-10"
                     />
                   )}
                 />
-                {errors.serviceId && (
-                  <p className="text-sm text-destructive">{errors.serviceId.message}</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dateNaissance" className="text-sm font-medium">
+                  Date de naissance
+                </Label>
+                <Input
+                  type="date"
+                  {...register("dateNaissance")}
+                  className="h-10 rounded-md"
+                />
+                {errors.dateNaissance && (
+                  <p className="text-sm text-destructive">{errors.dateNaissance.message}</p>
                 )}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="projetId" className="text-sm font-medium">
-                Projet / Chantier <span className="text-destructive">*</span>
+              <Label htmlFor="lieuNaissance" className="text-sm font-medium">
+                Lieu de naissance
               </Label>
-              <Controller
-                name="projetId"
-                control={control}
-                rules={{ required: true }}
-                render={({ field }) => (
-                  <Combobox
-                    options={projetOptions}
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder="Sélectionner un projet"
-                    searchPlaceholder="Rechercher un projet..."
-                    className="h-12"
-                  />
-                )}
+              <Input
+                {...register("lieuNaissance")}
+                placeholder="Ex: Abidjan, Côte d'Ivoire"
+                className="h-10 rounded-md"
               />
-              {errors.projetId && (
-                <p className="text-sm text-destructive">{errors.projetId.message}</p>
-              )}
+            </div>
+          </div>
+
+          {/* Pièce d'identité */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground">Pièce d'identité</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="typePieceIdentite" className="text-sm font-medium">
+                  Type de pièce
+                </Label>
+                <Controller
+                  name="typePieceIdentite"
+                  control={control}
+                  render={({ field }) => (
+                    <Combobox
+                      options={typePieceOptions}
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                      placeholder="Sélectionner le type de pièce"
+                      searchPlaceholder="Rechercher..."
+                      className="h-10"
+                    />
+                  )}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="numeroPieceIdentite" className="text-sm font-medium">
+                  Numéro de pièce
+                </Label>
+                <Input
+                  {...register("numeroPieceIdentite")}
+                  placeholder="Ex: CI0123456789"
+                  className="h-10 rounded-md"
+                  disabled={!typePieceIdentite}
+                />
+                {errors.numeroPieceIdentite && (
+                  <p className="text-sm text-destructive">{errors.numeroPieceIdentite.message}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Contact et paiement */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground">Contact et paiement</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="telephone" className="text-sm font-medium">
+                  Téléphone <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  {...register("telephone")}
+                  type="tel"
+                  placeholder="07 XX XX XX XX"
+                  className="h-10 rounded-md font-mono"
+                />
+                {errors.telephone && (
+                  <p className="text-sm text-destructive">{errors.telephone.message}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Numéro pour joindre le journalier
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="numeroWave" className="text-sm font-medium">
+                  Numéro Wave <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  {...register("numeroWave")}
+                  type="tel"
+                  placeholder="07 XX XX XX XX"
+                  className="h-10 rounded-md font-mono"
+                />
+                {errors.numeroWave && (
+                  <p className="text-sm text-destructive">{errors.numeroWave.message}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Pour paiements taux journaliers
+                </p>
+              </div>
             </div>
           </div>
 
@@ -328,19 +314,19 @@ export function ModaleJournalier({
               variant="outline"
               onClick={annuler}
               disabled={isSubmitting}
-              className="h-11 px-6"
+              className="h-10 px-6 rounded-full"
             >
               Annuler
             </Button>
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="h-11 px-6 bg-primary hover:bg-primary-hover"
+              className="h-10 px-6 rounded-full bg-[#13850b] hover:bg-[#0f6909]"
             >
               {isSubmitting && (
                 <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
               )}
-              Créer l'intérimaire
+              Créer le profil
             </Button>
           </div>
         </form>

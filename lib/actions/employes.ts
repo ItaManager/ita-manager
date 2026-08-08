@@ -25,6 +25,7 @@ interface FiltresEmployes {
   serviceId?: string;
   typeMainOeuvre?: TypeMainOeuvre;
   statutDossier?: "COMPLET" | "INCOMPLET";
+  disponibilite?: "EN_MISSION" | "DISPONIBLE";
   page?: number;
 }
 
@@ -50,8 +51,12 @@ interface EmployeListItem {
   salaire?: number | null;
   completudeDossier: number; // Pourcentage 0-100
   actif: boolean;
+  archiveLe: Date | null;
   // Données pour les journaliers
   telephone?: string | null;
+  competenceActuelle?: string | null;
+  tauxActuel?: number | null;
+  derniereMission?: string | null;
   contratActuel?: {
     typeContrat: string;
     dateDebut: Date;
@@ -213,6 +218,23 @@ export const listerEmployes = actionProtegee(
           take: 1,
         },
         documents: true,
+        competences: {
+          where: { dateFin: null },
+          include: {
+            competence: {
+              include: {
+                taux: {
+                  where: {
+                    dateEffet: { lte: new Date() },
+                  },
+                  orderBy: { dateEffet: "desc" },
+                  take: 1,
+                },
+              },
+            },
+          },
+          take: 1,
+        },
       },
       orderBy: { matricule: "desc" },
     });
@@ -221,6 +243,7 @@ export const listerEmployes = actionProtegee(
     let items: EmployeListItem[] = employes.map((e) => {
       const affectationActuelle = e.affectations[0];
       const contratActuel = e.contrats[0];
+      const competenceActuelle = e.competences[0];
 
       // Calcul de la complétude du dossier
       const piecesAttendues = e.typeMainOeuvre === "JOURNALIER" ? 2 : 7;
@@ -256,14 +279,20 @@ export const listerEmployes = actionProtegee(
         salaire: aDonneesSensibles ? contratActuel?.salaire?.toNumber() ?? null : null,
         completudeDossier: completude,
         actif: !e.archiveLe,
+        archiveLe: e.archiveLe,
         // Données pour les journaliers
         telephone: e.telephone,
+        competenceActuelle: competenceActuelle?.competence.libelle ?? null,
+        tauxActuel: aDonneesSensibles
+          ? competenceActuelle?.competence.taux[0]?.montant?.toNumber() ?? null
+          : null,
+        derniereMission: null, // TODO: À implémenter quand la relation employe->projet sera créée
         contratActuel: contratActuel
           ? {
               typeContrat: contratActuel.typeContrat,
               dateDebut: contratActuel.dateDebut,
               dateFin: contratActuel.dateFin,
-              tauxJournalier: aDonneesSensibles ? contratActuel.tauxJournalier?.toNumber() ?? null : null,
+              tauxJournalier: null, // Removed - not in Contrat model
             }
           : null,
         affectationActuelle: affectationActuelle
@@ -2137,19 +2166,20 @@ export async function supprimerBrouillonEmploye() {
 interface CreerJournalierInput {
   nom: string;
   prenom: string;
-  dateDebut: string;
-  dateFin: string;
+  sexe?: "MASCULIN" | "FEMININ";
+  dateNaissance?: string;
+  lieuNaissance?: string;
+  typePieceIdentite?: "CNI" | "PASSEPORT" | "ATTESTATION";
+  numeroPieceIdentite?: string;
   telephone: string;
   numeroWave: string;
-  directionId: string;
-  projetId: string;
 }
 
 export const creerJournalier = actionProtegee(
   "employe:creer",
   async (session, input: CreerJournalierInput) => {
-    // 1. Génération numéro de référence JRN-AAAA-NNNN
-    const annee = new Date(input.dateDebut).getFullYear();
+    // 1. Génération matricule JRN-AAAA-NNNN (année en cours)
+    const annee = new Date().getFullYear();
     const dernier = await prisma.employe.findFirst({
       where: {
         matricule: { startsWith: `JRN-${annee}-` },
@@ -2165,37 +2195,30 @@ export const creerJournalier = actionProtegee(
       }
     }
 
-    const numeroReference = `JRN-${annee}-${compteur.toString().padStart(4, "0")}`;
+    const matricule = `JRN-${annee}-${compteur.toString().padStart(4, "0")}`;
 
-    // 2. Création en transaction (employé + contrat INTERIM)
-    const employe = await prisma.$transaction(async (tx) => {
-      // Créer l'employé
-      const emp = await tx.employe.create({
-        data: {
-          matricule: numeroReference,
-          typeMainOeuvre: "JOURNALIER",
-          nom: input.nom.toUpperCase(),
-          prenom: input.prenom,
-          telephone: input.telephone,
-          numeroWave: input.numeroWave,
-          modePaiement: "WAVE",
-          actif: true,
-        },
-      });
+    // 2. Créer le profil du journalier (sans affectation ni contrat)
+    // Note: typePieceIdentite et numeroPieceIdentite stockés temporairement dans referenceInterne
+    const referenceInterne =
+      input.typePieceIdentite && input.numeroPieceIdentite
+        ? `${input.typePieceIdentite}:${input.numeroPieceIdentite}`
+        : null;
 
-      // Créer le contrat INTERIM
-      await tx.contrat.create({
-        data: {
-          employeId: emp.id,
-          typeContrat: "INTERIM",
-          dateDebut: new Date(input.dateDebut),
-          dateFin: new Date(input.dateFin),
-          posteId: null, // Pas de poste pour les journaliers
-          salaireBase: 0, // Salaire journalier à définir au moment du paiement
-        },
-      });
-
-      return emp;
+    const employe = await prisma.employe.create({
+      data: {
+        matricule,
+        typeMainOeuvre: "JOURNALIER",
+        nom: input.nom.toUpperCase(),
+        prenom: input.prenom,
+        sexe: input.sexe || null,
+        telephone: input.telephone,
+        numeroWave: input.numeroWave,
+        modePaiement: "WAVE",
+        dateNaissance: input.dateNaissance ? new Date(input.dateNaissance) : null,
+        lieuNaissance: input.lieuNaissance || null,
+        referenceInterne,
+        // archiveLe = null par défaut (employé actif)
+      },
     });
 
     // 3. Audit
@@ -2208,14 +2231,13 @@ export const creerJournalier = actionProtegee(
         auteurNom: session.email,
         details: {
           type: "JOURNALIER",
-          numeroReference,
-          projet: input.projetId,
-          direction: input.directionId,
+          matricule,
+          message: "Profil créé. Affectation à faire par la Direction Technique.",
         },
       },
     });
 
-    return employe;
+    return { success: true, employeId: employe.id, matricule };
   }
 );
 
@@ -2271,14 +2293,20 @@ export const statistiquesEmployes = cache(actionProtegee(
 
       // Dossiers incomplets
       isJournaliers
-        ? // Pour JOURNALIER: sans téléphone OU sans documents
+        ? // Pour JOURNALIER: téléphone vide OU numeroWave manquant si mode WAVE
           prisma.employe.count({
             where: {
               ...baseWhere,
               OR: [
-                { telephone1: null },
-                { telephone1: "" },
-                // Autres critères journaliers à ajouter si nécessaire
+                { telephone: "" },
+                {
+                  modePaiement: "WAVE",
+                  numeroWave: null,
+                },
+                {
+                  modePaiement: "WAVE",
+                  numeroWave: "",
+                },
               ],
             },
           })
@@ -2302,7 +2330,7 @@ export const statistiquesEmployes = cache(actionProtegee(
         ? prisma.employe.count({
             where: {
               ...baseWhere,
-              assignationsCompetences: {
+              competences: {
                 none: {
                   dateFin: null, // Aucune compétence active
                 },

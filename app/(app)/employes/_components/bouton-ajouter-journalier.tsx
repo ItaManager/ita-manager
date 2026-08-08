@@ -26,7 +26,7 @@ export function BoutonAjouterJournalier({
         className="gap-2 h-9 px-4 text-sm rounded-full transition-all"
       >
         <UserPlus className="size-4" />
-        Créer un intérimaire
+        Créer un journalier
       </Button>
 
       <ModaleJournalier
