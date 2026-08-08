@@ -147,6 +147,9 @@ export async function ListeEmployes({
                       Dernière mission
                     </th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                      Disponibilité
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
                       Statut
                     </th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground w-[60px]">
@@ -159,7 +162,7 @@ export async function ListeEmployes({
             <tbody>
               {employes.length === 0 ? (
                 <tr>
-                  <td colSpan={tab === "permanents" ? 8 : 7} className="py-12 text-center text-muted-foreground">
+                  <td colSpan={tab === "permanents" ? 8 : 8} className="py-12 text-center text-muted-foreground">
                     Aucun {tab === "permanents" ? "employé permanent" : "journalier"} trouvé
                   </td>
                 </tr>
@@ -252,6 +255,11 @@ export async function ListeEmployes({
                         </td>
                         <td className="py-3 px-4 text-sm text-muted-foreground">
                           {employe.derniereMission || "Aucune"}
+                        </td>
+                        <td className="py-3 px-4">
+                          <Badge variant={employe.disponibilite === "EN_MISSION" ? "secondary" : "default"}>
+                            {employe.disponibilite === "EN_MISSION" ? "En mission" : "Disponible"}
+                          </Badge>
                         </td>
                         <td className="py-3 px-4">
                           <Badge variant={!employe.archiveLe ? "default" : "secondary"}>

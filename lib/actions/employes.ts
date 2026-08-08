@@ -56,6 +56,7 @@ interface EmployeListItem {
   telephone?: string | null;
   competenceActuelle?: string | null;
   tauxActuel?: number | null;
+  disponibilite?: "EN_MISSION" | "DISPONIBLE";
   derniereMission?: string | null;
   contratActuel?: {
     typeContrat: string;
@@ -235,6 +236,25 @@ export const listerEmployes = actionProtegee(
           },
           take: 1,
         },
+        affectationsChantier: {
+          where: {
+            dateDebut: { lte: new Date() },
+            OR: [
+              { dateFin: null },
+              { dateFin: { gte: new Date() } },
+            ],
+          },
+          include: {
+            projet: {
+              select: {
+                nom: true,
+                code: true,
+              },
+            },
+          },
+          orderBy: { dateDebut: "desc" },
+          take: 1,
+        },
       },
       orderBy: { matricule: "desc" },
     });
@@ -244,6 +264,7 @@ export const listerEmployes = actionProtegee(
       const affectationActuelle = e.affectations[0];
       const contratActuel = e.contrats[0];
       const competenceActuelle = e.competences[0];
+      const affectationChantierActuelle = e.affectationsChantier[0];
 
       // Calcul de la complétude du dossier
       const piecesAttendues = e.typeMainOeuvre === "JOURNALIER" ? 2 : 7;
@@ -286,7 +307,8 @@ export const listerEmployes = actionProtegee(
         tauxActuel: aDonneesSensibles
           ? competenceActuelle?.competence.taux[0]?.montant?.toNumber() ?? null
           : null,
-        derniereMission: null, // TODO: À implémenter quand la relation employe->projet sera créée
+        disponibilite: affectationChantierActuelle ? "EN_MISSION" : "DISPONIBLE",
+        derniereMission: affectationChantierActuelle?.projet.nom ?? null,
         contratActuel: contratActuel
           ? {
               typeContrat: contratActuel.typeContrat,
