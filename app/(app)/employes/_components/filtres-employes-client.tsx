@@ -21,7 +21,7 @@ interface FiltresEmployesClientProps {
     permanents: number;
     journaliers: number;
     dossiersIncomplets: number;
-    sansAcces: number;
+    archives: number;
     enMission?: number;
     disponibles?: number;
   };

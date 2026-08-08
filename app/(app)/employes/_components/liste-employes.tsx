@@ -60,7 +60,7 @@ export async function ListeEmployes({
     permanents: tousEmployes.items.filter((e) => e.typeMainOeuvre === "PERMANENT").length,
     journaliers: tousEmployes.items.filter((e) => e.typeMainOeuvre === "JOURNALIER").length,
     dossiersIncomplets: tousEmployes.items.filter((e) => e.completudeDossier < 100).length,
-    sansAcces: tousEmployes.items.filter((e) => e.archiveLe !== null).length,
+    archives: tousEmployes.items.filter((e) => e.archiveLe !== null).length,
   };
 
   return (

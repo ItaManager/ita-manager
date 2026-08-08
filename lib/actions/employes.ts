@@ -159,7 +159,7 @@ export const listerEmployes = actionProtegee(
 
     // Construction de la requête avec filtres
     const where: any = {
-      archiveLe: null, // Exclure les archivés par défaut
+      // Les archivés sont inclus pour permettre leur consultation
     };
 
     if (filtres.recherche) {
