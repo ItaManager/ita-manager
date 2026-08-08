@@ -34,6 +34,9 @@ export default async function PageEmployes({ searchParams }: PageEmployesProps) 
   const limit = Number(params.limit) || 25;
   const tab = params.tab || "permanents"; // Par défaut: permanents
 
+  // Déterminer le type d'employé selon le tab actif
+  const typeMainOeuvreActif = tab === "permanents" ? "PERMANENT" : "JOURNALIER";
+
   // Charger toutes les données en parallèle
   const { prisma } = await import("@/lib/db/prisma");
   const [donneesReference, permanents, journaliers, resultTaches] = await Promise.all([
@@ -44,7 +47,7 @@ export default async function PageEmployes({ searchParams }: PageEmployesProps) 
     prisma.employe.count({
       where: { archiveLe: null, typeMainOeuvre: "JOURNALIER" },
     }),
-    obtenirTachesEmployes(),
+    obtenirTachesEmployes(typeMainOeuvreActif), // Filtré par tab
   ]);
 
   const tabCounts = { permanents, journaliers };
@@ -61,9 +64,9 @@ export default async function PageEmployes({ searchParams }: PageEmployesProps) 
         <TabsEmployes tab={tab} counts={tabCounts} />
       </div>
 
-      {/* Test: Indicateurs */}
+      {/* Indicateurs spécifiques au tab */}
       <Suspense fallback={<div className="text-center py-4">Chargement indicateurs...</div>}>
-        <IndicateursEmployes />
+        <IndicateursEmployes typeMainOeuvre={typeMainOeuvreActif as TypeMainOeuvre} />
       </Suspense>
 
       {/* Tâches spécifiques au tab */}

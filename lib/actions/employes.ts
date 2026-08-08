@@ -2229,17 +2229,22 @@ export const creerJournalier = actionProtegee(
  */
 export const statistiquesEmployes = cache(actionProtegee(
   "employe:lire",
-  async (session) => {
+  async (session, typeMainOeuvre?: TypeMainOeuvre) => {
+    const baseWhere = {
+      archiveLe: null,
+      ...(typeMainOeuvre ? { typeMainOeuvre } : {}),
+    };
+
     const [totalActifs, permanents, dossiersIncomplets, sansAcces] = await Promise.all([
-      // Total employés actifs
+      // Total employés actifs (filtrés par type si spécifié)
       prisma.employe.count({
-        where: { archiveLe: null },
+        where: baseWhere,
       }),
 
-      // Employés permanents
+      // Employés permanents (dans le scope du filtre)
       prisma.employe.count({
         where: {
-          archiveLe: null,
+          ...baseWhere,
           typeMainOeuvre: "PERMANENT",
         },
       }),
@@ -2247,7 +2252,7 @@ export const statistiquesEmployes = cache(actionProtegee(
       // Dossiers incomplets (sans email OU sans RIB/CNPS)
       prisma.employe.count({
         where: {
-          archiveLe: null,
+          ...baseWhere,
           OR: [
             { email: null },
             { email: "" },
@@ -2259,11 +2264,12 @@ export const statistiquesEmployes = cache(actionProtegee(
         },
       }),
 
-      // Employés sans compte d'accès
+      // Employés sans compte d'accès (seuls les permanents doivent avoir un compte)
       prisma.employe.count({
         where: {
           archiveLe: null,
-          profil: { is: null }, // Pas de lien avec table Profil
+          profil: { is: null },
+          typeMainOeuvre: "PERMANENT", // Toujours filtrer sur PERMANENT pour cette stat
         },
       }),
     ]);
@@ -2283,7 +2289,7 @@ export const statistiquesEmployes = cache(actionProtegee(
  */
 export const obtenirTachesEmployes = cache(actionProtegee(
   "employe:lire",
-  async (session) => {
+  async (session, typeMainOeuvre?: TypeMainOeuvre) => {
     const taches: Array<{
       id: string;
       titre: string;
@@ -2292,10 +2298,15 @@ export const obtenirTachesEmployes = cache(actionProtegee(
       lien?: string;
     }> = [];
 
+    const baseWhere = {
+      archiveLe: null,
+      ...(typeMainOeuvre ? { typeMainOeuvre } : {}),
+    };
+
     // Compter les dossiers incomplets
     const dossiersIncomplets = await prisma.employe.count({
       where: {
-        archiveLe: null,
+        ...baseWhere,
         OR: [
           { email: null },
           { email: "" },
@@ -2308,32 +2319,35 @@ export const obtenirTachesEmployes = cache(actionProtegee(
     });
 
     if (dossiersIncomplets > 0) {
+      const lienBase = typeMainOeuvre ? `/employes?tab=${typeMainOeuvre === "PERMANENT" ? "permanents" : "journaliers"}&statutDossier=INCOMPLET` : "/employes?statutDossier=INCOMPLET";
       taches.push({
         id: "dossiers-incomplets",
         titre: "Compléter les dossiers employés",
         description: `${dossiersIncomplets} employé${dossiersIncomplets > 1 ? "s ont" : " a"} des informations manquantes (email, RIB, CNPS).`,
         count: dossiersIncomplets,
-        lien: "/employes?statutDossier=INCOMPLET",
+        lien: lienBase,
       });
     }
 
-    // Compter les employés sans accès
-    const sansAcces = await prisma.employe.count({
-      where: {
-        archiveLe: null,
-        profil: { is: null },
-        typeMainOeuvre: "PERMANENT", // Seuls les permanents doivent avoir accès
-      },
-    });
-
-    if (sansAcces > 0) {
-      taches.push({
-        id: "sans-acces",
-        titre: "Ouvrir l'accès ITA Manager",
-        description: `${sansAcces} employé${sansAcces > 1 ? "s permanents n'ont" : " permanent n'a"} pas encore de compte d'accès.`,
-        count: sansAcces,
-        lien: "/employes",
+    // Compter les employés sans accès (seulement pour permanents)
+    if (!typeMainOeuvre || typeMainOeuvre === "PERMANENT") {
+      const sansAcces = await prisma.employe.count({
+        where: {
+          archiveLe: null,
+          profil: { is: null },
+          typeMainOeuvre: "PERMANENT",
+        },
       });
+
+      if (sansAcces > 0) {
+        taches.push({
+          id: "sans-acces",
+          titre: "Ouvrir l'accès ITA Manager",
+          description: `${sansAcces} employé${sansAcces > 1 ? "s permanents n'ont" : " permanent n'a"} pas encore de compte d'accès.`,
+          count: sansAcces,
+          lien: "/employes?tab=permanents",
+        });
+      }
     }
 
     // Compter les contrats CDD arrivant à expiration (< 30 jours)
@@ -2347,9 +2361,7 @@ export const obtenirTachesEmployes = cache(actionProtegee(
           lte: dans30Jours,
           gte: new Date(),
         },
-        employe: {
-          archiveLe: null,
-        },
+        employe: baseWhere,
       },
     });
 

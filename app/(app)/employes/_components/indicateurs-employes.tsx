@@ -6,9 +6,14 @@ import {
   MiniGraphCirculaire,
   MiniGraphProgression,
 } from "@/components/indicateurs";
+import type { TypeMainOeuvre } from "@prisma/client";
 
-export async function IndicateursEmployes() {
-  const stats = await statistiquesEmployes();
+interface IndicateursEmployesProps {
+  typeMainOeuvre?: TypeMainOeuvre;
+}
+
+export async function IndicateursEmployes({ typeMainOeuvre }: IndicateursEmployesProps = {}) {
+  const stats = await statistiquesEmployes(typeMainOeuvre);
 
   return (
     <TooltipProvider>
