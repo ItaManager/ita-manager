@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 interface TabsEmployesProps {
@@ -8,17 +9,28 @@ interface TabsEmployesProps {
     permanents: number;
     journaliers: number;
   };
+  onTabChange?: (tab: "permanents" | "journaliers") => void;
 }
 
-export function TabsEmployes({ tab, counts }: TabsEmployesProps) {
+export function TabsEmployes({ tab: initialTab, counts, onTabChange }: TabsEmployesProps) {
+  const [tab, setTab] = useState(initialTab);
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Sync with URL changes
+  useEffect(() => {
+    setTab(initialTab);
+  }, [initialTab]);
+
   const changerTab = (nouveauTab: "permanents" | "journaliers") => {
+    setTab(nouveauTab); // Changement immédiat côté client
+    onTabChange?.(nouveauTab); // Notifier le parent si callback fourni
+
+    // Update URL sans recharger la page
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", nouveauTab);
-    params.set("page", "1"); // Reset à la page 1
-    router.push(`/employes?${params.toString()}`);
+    params.set("page", "1");
+    router.push(`/employes?${params.toString()}`, { scroll: false });
   };
 
   return (
