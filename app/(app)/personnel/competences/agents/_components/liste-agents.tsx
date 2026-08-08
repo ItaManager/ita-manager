@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, Info } from "lucide-react";
 import Link from "next/link";
 import { BoutonAssignerCompetence } from "./bouton-assigner-competence";
+import { BarreRechercheAgents } from "./barre-recherche-agents";
+import { PaginationAgents } from "./pagination-agents";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
@@ -15,9 +17,17 @@ import {
 
 interface ListeAgentsProps {
   filtre: "tous" | "sans-competence" | "sur-chantier";
+  recherche?: string;
+  page?: number;
+  limit?: number;
 }
 
-export async function ListeAgents({ filtre }: ListeAgentsProps) {
+export async function ListeAgents({
+  filtre,
+  recherche,
+  page = 1,
+  limit = 20,
+}: ListeAgentsProps) {
   // Récupérer les agents selon le filtre
   const filtres = {
     sansCompetence: filtre === "sans-competence",
@@ -36,7 +46,24 @@ export async function ListeAgents({ filtre }: ListeAgentsProps) {
     );
   }
 
-  const agents = result.data;
+  let agents = result.data;
+
+  // Filtrer par recherche
+  if (recherche) {
+    const termeRecherche = recherche.toLowerCase();
+    agents = agents.filter(
+      (a) =>
+        a.nom.toLowerCase().includes(termeRecherche) ||
+        a.prenom.toLowerCase().includes(termeRecherche) ||
+        a.matricule.toLowerCase().includes(termeRecherche)
+    );
+  }
+
+  // Pagination
+  const total = agents.length;
+  const debut = (page - 1) * limit;
+  const fin = debut + limit;
+  const agentsPagines = agents.slice(debut, fin);
 
   // Compter pour les filtres
   const allAgents = await listerAgentsAvecCompetences({});
@@ -47,37 +74,13 @@ export async function ListeAgents({ filtre }: ListeAgentsProps) {
   };
 
   return (
-    <div className="space-y-4">
-      {/* Filtres */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Link href="/personnel/competences/agents?filtre=tous">
-          <Badge
-            variant={filtre === "tous" ? "default" : "outline"}
-            className="cursor-pointer h-8 px-3"
-          >
-            Tous ({counts.tous})
-          </Badge>
-        </Link>
-        <Link href="/personnel/competences/agents?filtre=sans-competence">
-          <Badge
-            variant={filtre === "sans-competence" ? "default" : "outline"}
-            className="cursor-pointer h-8 px-3"
-          >
-            Sans compétence ({counts.sansCompetence})
-          </Badge>
-        </Link>
-        <Link href="/personnel/competences/agents?filtre=sur-chantier">
-          <Badge
-            variant={filtre === "sur-chantier" ? "default" : "outline"}
-            className="cursor-pointer h-8 px-3"
-          >
-            Sur chantier ({counts.surChantier})
-          </Badge>
-        </Link>
-      </div>
+    <TooltipProvider>
+      <div className="bg-white rounded-xl border border-[#0000001a] p-6">
+        {/* Recherche et filtres */}
+        <BarreRechercheAgents counts={counts} />
 
       {/* Tableau */}
-      <div className="rounded-xl border border-border overflow-hidden bg-card">
+      <div className="mt-6 rounded-xl border border-border overflow-hidden bg-card">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-muted/50">
@@ -103,17 +106,19 @@ export async function ListeAgents({ filtre }: ListeAgentsProps) {
               </tr>
             </thead>
             <tbody>
-              {agents.length === 0 ? (
+              {agentsPagines.length === 0 ? (
                 <tr>
                   <td
                     colSpan={6}
                     className="py-12 text-center text-sm text-muted-foreground"
                   >
-                    Aucun agent trouvé.
+                    {recherche
+                      ? "Aucun agent ne correspond à votre recherche."
+                      : "Aucun agent trouvé."}
                   </td>
                 </tr>
               ) : (
-                agents.map((agent) => {
+                agentsPagines.map((agent) => {
                   const sansCompetence = !agent.competence;
 
                   return (
@@ -164,10 +169,7 @@ export async function ListeAgents({ filtre }: ListeAgentsProps) {
                             <span className="text-sm text-foreground">
                               {agent.competence!.libelle}
                             </span>
-                            <Badge
-                              variant="outline"
-                              className="text-xs h-5 px-1.5"
-                            >
+                            <Badge variant="secondary">
                               {agent.competence!.categorie === "BASE"
                                 ? "Base"
                                 : agent.competence!.categorie === "QUALIFIE"
@@ -198,6 +200,7 @@ export async function ListeAgents({ filtre }: ListeAgentsProps) {
                       <td className="py-3 px-4">
                         {agent.competence ? (
                           <span className="text-sm text-muted-foreground">
+                            créée le{" "}
                             {format(
                               new Date(agent.competence.dateEffet),
                               "dd/MM/yyyy",
@@ -242,7 +245,11 @@ export async function ListeAgents({ filtre }: ListeAgentsProps) {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        <PaginationAgents total={total} page={page} limit={limit} />
       </div>
     </div>
+    </TooltipProvider>
   );
 }

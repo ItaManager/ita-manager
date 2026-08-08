@@ -1,22 +1,29 @@
-import { listerCompetences, statistiquesCompetences } from "@/lib/actions/competences";
+import { listerCompetences } from "@/lib/actions/competences";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, AlertCircle, AlertTriangle, Eye, Pencil } from "lucide-react";
+import { Eye } from "lucide-react";
 import Link from "next/link";
 import { BoutonFixerTaux } from "./bouton-fixer-taux";
+import { BoutonReviserTaux } from "./bouton-reviser-taux";
 import { BoutonModifierCompetence } from "./bouton-modifier-competence";
+import { BoutonHistoriqueTaux } from "./bouton-historique-taux";
+import { BarreRecherche } from "./barre-recherche";
+import { PaginationCompetences } from "./pagination-competences";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
 interface ListeCompetencesProps {
   recherche?: string;
   filtre?: "actives" | "sans-taux" | "composees" | "archivees" | "toutes";
+  page?: number;
+  limit?: number;
 }
 
 export async function ListeCompetences({
   recherche,
   filtre = "actives",
+  page = 1,
+  limit = 20,
 }: ListeCompetencesProps) {
   // Récupérer les compétences selon le filtre
   const filtres = {
@@ -27,7 +34,6 @@ export async function ListeCompetences({
   };
 
   const competences = await listerCompetences(filtres);
-  const stats = await statistiquesCompetences();
 
   // Filtrer par recherche côté serveur (simple)
   let resultats = competences;
@@ -36,6 +42,12 @@ export async function ListeCompetences({
       c.libelle.toLowerCase().includes(recherche.toLowerCase())
     );
   }
+
+  // Pagination
+  const total = resultats.length;
+  const debut = (page - 1) * limit;
+  const fin = debut + limit;
+  const resultatsPagines = resultats.slice(debut, fin);
 
   // Compter pour les filtres
   const toutesCompetences = await listerCompetences({});
@@ -49,93 +61,12 @@ export async function ListeCompetences({
   };
 
   return (
-    <div className="space-y-4">
-      {/* Alertes */}
-      {stats.enAttenteDeTaux > 0 && (
-        <div className="flex items-start gap-3 rounded-lg border border-orange-200 bg-orange-50 px-4 py-3">
-          <AlertCircle className="size-5 text-orange-600 mt-0.5 shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm text-orange-900">
-              <strong>{stats.enAttenteDeTaux} compétences en attente de taux.</strong>{" "}
-              Créées par la Direction Technique, elles attendent la validation
-              de la Direction Financière. Tant qu'aucun taux n'est fixé, elles
-              ne peuvent pas être assignées.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {stats.agentsSansCompetence > 0 && (
-        <div className="flex items-start gap-3 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3">
-          <AlertTriangle className="size-5 text-yellow-600 mt-0.5 shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm text-yellow-900">
-              <strong>{stats.agentsSansCompetence} agents sans compétence.</strong>{" "}
-              Ils ne peuvent pas être pointés au relevé d'activité — sans taux,
-              aucun montant ne se calcule.
-            </p>
-          </div>
-        </div>
-      )}
-
+    <div className="bg-white rounded-xl border border-[#0000001a] p-6">
       {/* Recherche et filtres */}
-      <div className="space-y-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Rechercher une compétence"
-            defaultValue={recherche}
-            className="pl-10"
-          />
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          <Link href="/personnel/competences?filtre=actives">
-            <Badge
-              variant={filtre === "actives" ? "default" : "outline"}
-              className="cursor-pointer h-8 px-3"
-            >
-              Actives ({counts.actives})
-            </Badge>
-          </Link>
-          <Link href="/personnel/competences?filtre=sans-taux">
-            <Badge
-              variant={filtre === "sans-taux" ? "default" : "outline"}
-              className="cursor-pointer h-8 px-3"
-            >
-              Sans taux ({counts.sansTaux})
-            </Badge>
-          </Link>
-          <Link href="/personnel/competences?filtre=composees">
-            <Badge
-              variant={filtre === "composees" ? "default" : "outline"}
-              className="cursor-pointer h-8 px-3"
-            >
-              Composées ({counts.composees})
-            </Badge>
-          </Link>
-          <Link href="/personnel/competences?filtre=archivees">
-            <Badge
-              variant={filtre === "archivees" ? "default" : "outline"}
-              className="cursor-pointer h-8 px-3"
-            >
-              Archivées ({counts.archivees})
-            </Badge>
-          </Link>
-          <Link href="/personnel/competences?filtre=toutes">
-            <Badge
-              variant={filtre === "toutes" ? "default" : "outline"}
-              className="cursor-pointer h-8 px-3"
-            >
-              Toutes ({counts.toutes})
-            </Badge>
-          </Link>
-        </div>
-      </div>
+      <BarreRecherche counts={counts} />
 
       {/* Tableau */}
-      <div className="rounded-xl border border-border overflow-hidden bg-card">
+      <div className="mt-6 rounded-xl border border-border overflow-hidden bg-card">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-muted/50">
@@ -164,7 +95,7 @@ export async function ListeCompetences({
               </tr>
             </thead>
             <tbody>
-              {resultats.length === 0 ? (
+              {resultatsPagines.length === 0 ? (
                 <tr>
                   <td
                     colSpan={7}
@@ -176,7 +107,7 @@ export async function ListeCompetences({
                   </td>
                 </tr>
               ) : (
-                resultats.map((comp) => (
+                resultatsPagines.map((comp) => (
                   <tr
                     key={comp.id}
                     className="border-b border-border hover:bg-muted/30 transition-colors"
@@ -197,15 +128,7 @@ export async function ListeCompetences({
 
                     {/* Catégorie */}
                     <td className="py-3 px-4">
-                      <Badge
-                        variant={
-                          comp.categorie === "COMPOSEE"
-                            ? "default"
-                            : comp.categorie === "QUALIFIE"
-                              ? "secondary"
-                              : "outline"
-                        }
-                      >
+                      <Badge variant="secondary">
                         {comp.categorie === "BASE"
                           ? "Base"
                           : comp.categorie === "QUALIFIE"
@@ -250,18 +173,11 @@ export async function ListeCompetences({
 
                     {/* Versions */}
                     <td className="py-3 px-4">
-                      {comp.nombreVersionsTaux > 1 ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 gap-1 text-xs"
-                        >
-                          <Eye className="size-3" />
-                          {comp.nombreVersionsTaux}
-                        </Button>
+                      {comp.nombreVersionsTaux > 0 ? (
+                        <BoutonHistoriqueTaux competence={comp} />
                       ) : (
                         <span className="text-sm text-muted-foreground">
-                          {comp.nombreVersionsTaux}
+                          aucune
                         </span>
                       )}
                     </td>
@@ -269,8 +185,10 @@ export async function ListeCompetences({
                     {/* Actions */}
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
-                        {!comp.tauxCourant && (
+                        {!comp.tauxCourant ? (
                           <BoutonFixerTaux competence={comp} />
+                        ) : (
+                          <BoutonReviserTaux competence={comp} />
                         )}
                         <BoutonModifierCompetence competence={comp} />
                       </div>
@@ -281,6 +199,9 @@ export async function ListeCompetences({
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        <PaginationCompetences total={total} page={page} limit={limit} />
       </div>
     </div>
   );

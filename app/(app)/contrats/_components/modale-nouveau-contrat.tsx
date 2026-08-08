@@ -162,51 +162,45 @@ export function ModaleNouveauContrat({
 
   return (
     <Dialog open={ouvert} onOpenChange={contratCree ? handleTerminer : annuler}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="relative -mt-6 -mx-6 px-6 pt-6 pb-4 rounded-t-xl" style={{ backgroundColor: '#ebeaf2' }}>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={contratCree ? handleTerminer : annuler}
-            className="absolute -right-2 -top-2 h-8 w-8"
-            disabled={isPending}
-          >
-            <X className="size-4" />
-          </Button>
-          <DialogTitle className="text-xl font-semibold" style={{ color: '#1d186c' }}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+        <DialogHeader className="border-b border-border px-6 py-4" style={{ backgroundColor: 'var(--primary-soft)' }}>
+          <DialogTitle className="text-lg font-semibold text-primary">
             {contratCree ? "Contrat créé avec succès" : "Nouveau contrat"}
           </DialogTitle>
         </DialogHeader>
 
         {contratCree ? (
-          <div className="space-y-6 mt-4">
-            <div className="flex flex-col items-center justify-center py-8">
-              <CheckCircle className="size-16 text-success mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Contrat créé !</h3>
-              <p className="text-muted-foreground text-center">
-                Le contrat pour <span className="font-medium">{contratCree.employeNom}</span> a été créé avec succès.
-              </p>
+          <>
+            <div className="px-6 py-4">
+              <div className="flex flex-col items-center justify-center py-8">
+                <CheckCircle className="size-16 text-success mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Contrat créé !</h3>
+                <p className="text-muted-foreground text-center">
+                  Le contrat pour <span className="font-medium">{contratCree.employeNom}</span> a été créé avec succès.
+                </p>
+              </div>
             </div>
 
-            <div className="flex items-center justify-center gap-3 pt-4 border-t">
+            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border">
               <Button
                 variant="outline"
                 onClick={handleTelechargerPDF}
-                className="gap-2 h-11 px-6"
+                className="gap-2"
               >
                 <Download className="size-4" />
                 Télécharger le PDF
               </Button>
               <Button
                 onClick={handleTerminer}
-                className="h-11 px-6"
+                className="bg-[#13850b] hover:bg-[#0f6909] text-white rounded-full"
               >
                 Terminer
               </Button>
             </div>
-          </div>
+          </>
         ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-4">
+          <>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 px-6 py-4">
           {erreur && (
             <Alert variant="destructive">
               <AlertCircle className="size-4" aria-hidden="true" />
@@ -230,7 +224,7 @@ export function ModaleNouveauContrat({
                   onChange={field.onChange}
                   placeholder="Sélectionner un employé"
                   searchPlaceholder="Rechercher par matricule ou nom..."
-                  className="h-12"
+                  className="h-11"
                 />
               )}
             />
@@ -255,7 +249,7 @@ export function ModaleNouveauContrat({
                   onChange={field.onChange}
                   placeholder="Sélectionner un type"
                   searchPlaceholder="Rechercher..."
-                  className="h-12"
+                  className="h-11"
                 />
               )}
             />
@@ -273,7 +267,7 @@ export function ModaleNouveauContrat({
               <Input
                 type="date"
                 {...register("dateDebut")}
-                className="h-12"
+                className="h-11"
               />
               {errors.dateDebut && (
                 <p className="text-sm text-destructive">{errors.dateDebut.message}</p>
@@ -289,7 +283,7 @@ export function ModaleNouveauContrat({
               <Input
                 type="date"
                 {...register("dateFin")}
-                className="h-12"
+                className="h-11"
                 disabled={typeContrat === "CDI"}
               />
               {errors.dateFin && (
@@ -313,7 +307,7 @@ export function ModaleNouveauContrat({
               step="0.01"
               {...register("salaire")}
               placeholder="0"
-              className="h-12"
+              className="h-11"
             />
             {errors.salaire && (
               <p className="text-sm text-destructive">{errors.salaire.message}</p>
@@ -337,7 +331,7 @@ export function ModaleNouveauContrat({
                 type="button"
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full h-12 border-2 border-dashed hover:border-primary"
+                className="w-full h-11 border-2 border-dashed hover:border-primary"
               >
                 <Upload className="size-4 mr-2" />
                 {fichierSelectionne ? "Changer le fichier" : "Télécharger le contrat signé"}
@@ -365,30 +359,31 @@ export function ModaleNouveauContrat({
               </p>
             </div>
           </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={annuler}
-              disabled={isPending}
-              className="h-11 px-6"
-            >
-              Annuler
-            </Button>
-            <Button
-              type="submit"
-              disabled={isPending}
-              className="h-11 px-6 bg-primary hover:bg-primary-hover"
-            >
-              {isPending && (
-                <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-              )}
-              Créer le contrat
-            </Button>
-          </div>
         </form>
+
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={annuler}
+            disabled={isPending}
+          >
+            Annuler
+          </Button>
+          <Button
+            type="submit"
+            disabled={isPending}
+            onClick={handleSubmit(onSubmit)}
+            className="bg-[#13850b] hover:bg-[#0f6909] text-white rounded-full"
+          >
+            {isPending && (
+              <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+            )}
+            Créer le contrat
+          </Button>
+        </div>
+        </>
         )}
       </DialogContent>
     </Dialog>

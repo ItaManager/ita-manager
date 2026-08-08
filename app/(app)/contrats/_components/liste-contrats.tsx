@@ -1,13 +1,11 @@
 import { listerTousContrats, listerEmployes } from "@/lib/actions/employes";
-import { Button } from "@/components/ui/button";
-import { Download, ChevronDown } from "lucide-react";
-import Link from "next/link";
-import { BoutonNouveauContrat } from "./bouton-nouveau-contrat";
-import { FiltresContratsClient } from "./filtres-contrats-client";
+import { BarreRechercheContrats } from "./barre-recherche-contrats";
 import { ListeContratsClient } from "./liste-contrats-client";
+import { PaginationContrats } from "./pagination-contrats";
 
 interface ListeContratsProps {
   page: number;
+  limit: number;
   recherche?: string;
   typeContrat?: string;
   echeance?: string;
@@ -16,6 +14,7 @@ interface ListeContratsProps {
 
 export async function ListeContrats({
   page,
+  limit,
   recherche,
   typeContrat,
   echeance,
@@ -78,61 +77,28 @@ export async function ListeContrats({
     return 0;
   });
 
+  // Compter pour les filtres
+  const counts = {
+    actifs: contratsActifs.length,
+    cdd: tousLesContrats.filter((c) => c.typeContrat === "CDD" && c.actif).length,
+    cdi: tousLesContrats.filter((c) => c.typeContrat === "CDI" && c.actif).length,
+    expirant: contratsActifs.filter((c) => c.niveauAlerte === "danger").length,
+    tous: tousLesContrats.length,
+  };
+
   // Pagination
-  const parPage = 25;
   const total = contratsFiltrés.length;
-  const pages = Math.ceil(total / parPage);
-  const debut = (page - 1) * parPage;
-  const fin = debut + parPage;
+  const debut = (page - 1) * limit;
+  const fin = debut + limit;
   const contratsPagines = contratsFiltrés.slice(debut, fin);
 
-
   return (
-    <>
-      {/* Actions Header */}
-      <div className="flex items-center justify-end">
-        <div className="flex items-center gap-4">
-          {statut === "actifs" ? (
-            <Button
-              variant="outline"
-              asChild
-              className="gap-2 h-12 px-6 text-base border-2 hover:bg-muted hover:border-primary transition-all cursor-pointer shadow-sm hover:shadow-md"
-            >
-              <Link href="/contrats?statut=tous">
-                Afficher tous les contrats
-              </Link>
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              asChild
-              className="gap-2 h-12 px-6 text-base border-2 hover:bg-muted hover:border-primary transition-all cursor-pointer shadow-sm hover:shadow-md"
-            >
-              <Link href="/contrats?statut=actifs">
-                Afficher uniquement les actifs
-              </Link>
-            </Button>
-          )}
-          <Button
-            variant="outline"
-            className="gap-2 h-12 px-6 text-base border-2 hover:bg-muted hover:border-primary transition-all cursor-pointer shadow-sm hover:shadow-md"
-          >
-            <Download className="size-5" />
-            Télécharger
-          </Button>
-          <BoutonNouveauContrat employes={employes} />
-        </div>
-      </div>
-
-      {/* Filters */}
-      <FiltresContratsClient
-        recherche={recherche}
-        typeContrat={typeContrat}
-        echeance={echeance}
-      />
+    <div className="bg-white rounded-xl border border-[#0000001a] p-6">
+      {/* Barre de recherche et filtres */}
+      <BarreRechercheContrats counts={counts} employes={employes} />
 
       {/* Table */}
-      <div className="bg-card rounded-xl border border-border overflow-hidden">
+      <div className="mt-6 rounded-xl border border-border overflow-hidden bg-card">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-muted/50">
@@ -162,51 +128,8 @@ export async function ListeContrats({
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted/20">
-          <div className="text-sm text-muted-foreground">
-            Affichage de {(page - 1) * parPage + 1} à {Math.min(page * parPage, total)} sur {total} contrat{total > 1 ? "s" : ""}
-          </div>
-
-          {pages > 1 && (
-            <div className="flex items-center gap-2">
-              <Link
-                href={`/contrats?page=${page - 1}${statut === "tous" ? "&statut=tous" : ""}`}
-                className={`p-2 hover:bg-background rounded-lg transition-colors ${
-                  page === 1 ? "pointer-events-none opacity-50" : ""
-                }`}
-              >
-                <ChevronDown className="size-4 rotate-90 text-muted-foreground" />
-              </Link>
-
-              {Array.from({ length: Math.min(pages, 5) }, (_, i) => {
-                const pageNum = i + 1;
-                return (
-                  <Link
-                    key={pageNum}
-                    href={`/contrats?page=${pageNum}${statut === "tous" ? "&statut=tous" : ""}`}
-                    className={`w-10 h-10 rounded-lg font-medium text-sm flex items-center justify-center transition-colors ${
-                      page === pageNum
-                        ? "bg-primary text-white"
-                        : "hover:bg-background"
-                    }`}
-                  >
-                    {pageNum}
-                  </Link>
-                );
-              })}
-
-              <Link
-                href={`/contrats?page=${page + 1}${statut === "tous" ? "&statut=tous" : ""}`}
-                className={`p-2 hover:bg-background rounded-lg transition-colors ${
-                  page === pages ? "pointer-events-none opacity-50" : ""
-                }`}
-              >
-                <ChevronDown className="size-4 -rotate-90 text-muted-foreground" />
-              </Link>
-            </div>
-          )}
-        </div>
+        <PaginationContrats total={total} page={page} limit={limit} />
       </div>
-    </>
+    </div>
   );
 }

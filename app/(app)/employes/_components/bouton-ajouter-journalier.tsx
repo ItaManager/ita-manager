@@ -23,9 +23,9 @@ export function BoutonAjouterJournalier({
       <Button
         onClick={() => setOuvert(true)}
         variant="outline"
-        className="gap-2 h-12 px-6 text-base border-2 hover:bg-muted hover:border-primary transition-all cursor-pointer shadow-sm hover:shadow-md"
+        className="gap-2 h-9 px-4 text-sm rounded-full transition-all"
       >
-        <UserPlus className="size-5" />
+        <UserPlus className="size-4" />
         Créer un intérimaire
       </Button>
 

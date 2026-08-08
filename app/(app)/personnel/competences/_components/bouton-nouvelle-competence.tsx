@@ -10,7 +10,10 @@ export function BoutonNouvelleCompetence() {
 
   return (
     <>
-      <Button onClick={() => setOuvert(true)} className="gap-2">
+      <Button
+        onClick={() => setOuvert(true)}
+        className="gap-2 h-9 px-4 text-sm rounded-full bg-primary hover:bg-primary-hover text-primary-foreground transition-all cursor-pointer shadow-sm hover:shadow-md"
+      >
         <Plus className="size-4" />
         Nouvelle compétence
       </Button>

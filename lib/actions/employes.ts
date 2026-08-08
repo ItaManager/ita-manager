@@ -2235,50 +2235,94 @@ export const statistiquesEmployes = cache(actionProtegee(
       ...(typeMainOeuvre ? { typeMainOeuvre } : {}),
     };
 
-    const [totalActifs, permanents, dossiersIncomplets, sansAcces] = await Promise.all([
+    const isJournaliers = typeMainOeuvre === "JOURNALIER";
+
+    const [totalActifs, avecContratOuMission, dossiersIncomplets, sansAccesOuCompetence] = await Promise.all([
       // Total employés actifs (filtrés par type si spécifié)
       prisma.employe.count({
         where: baseWhere,
       }),
 
-      // Employés permanents (dans le scope du filtre)
-      prisma.employe.count({
-        where: {
-          ...baseWhere,
-          typeMainOeuvre: "PERMANENT",
-        },
-      }),
+      // Pour PERMANENT: avec contrat actif | Pour JOURNALIER: en mission (avec affectation active)
+      isJournaliers
+        ? prisma.employe.count({
+            where: {
+              ...baseWhere,
+              affectations: {
+                some: {
+                  dateFin: null, // Affectation active
+                },
+              },
+            },
+          })
+        : prisma.employe.count({
+            where: {
+              ...baseWhere,
+              contrats: {
+                some: {
+                  OR: [
+                    { dateFin: null }, // CDI
+                    { dateFin: { gte: new Date() } }, // CDD non expiré
+                  ],
+                },
+              },
+            },
+          }),
 
-      // Dossiers incomplets (sans email OU sans RIB/CNPS)
-      prisma.employe.count({
-        where: {
-          ...baseWhere,
-          OR: [
-            { email: null },
-            { email: "" },
-            { rib: null },
-            { rib: "" },
-            { numeroCnps: null },
-            { numeroCnps: "" },
-          ],
-        },
-      }),
+      // Dossiers incomplets
+      isJournaliers
+        ? // Pour JOURNALIER: sans téléphone OU sans documents
+          prisma.employe.count({
+            where: {
+              ...baseWhere,
+              OR: [
+                { telephone1: null },
+                { telephone1: "" },
+                // Autres critères journaliers à ajouter si nécessaire
+              ],
+            },
+          })
+        : // Pour PERMANENT: sans email OU sans RIB/CNPS
+          prisma.employe.count({
+            where: {
+              ...baseWhere,
+              OR: [
+                { email: null },
+                { email: "" },
+                { rib: null },
+                { rib: "" },
+                { numeroCnps: null },
+                { numeroCnps: "" },
+              ],
+            },
+          }),
 
-      // Employés sans compte d'accès (seuls les permanents doivent avoir un compte)
-      prisma.employe.count({
-        where: {
-          archiveLe: null,
-          profil: { is: null },
-          typeMainOeuvre: "PERMANENT", // Toujours filtrer sur PERMANENT pour cette stat
-        },
-      }),
+      // Pour PERMANENT: sans compte d'accès | Pour JOURNALIER: sans compétence
+      isJournaliers
+        ? prisma.employe.count({
+            where: {
+              ...baseWhere,
+              assignationsCompetences: {
+                none: {
+                  dateFin: null, // Aucune compétence active
+                },
+              },
+            },
+          })
+        : prisma.employe.count({
+            where: {
+              archiveLe: null,
+              profil: { is: null },
+              typeMainOeuvre: "PERMANENT",
+            },
+          }),
     ]);
 
     return {
       totalActifs,
-      permanents,
+      permanents: avecContratOuMission, // Réutilise le même champ pour compatibilité
       dossiersIncomplets,
-      sansAcces,
+      sansAcces: sansAccesOuCompetence, // Réutilise le même champ pour compatibilité
     };
   }
 ));

@@ -1,16 +1,16 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { DollarSign } from "lucide-react";
+import { Eye } from "lucide-react";
 import { useState } from "react";
-import { ModaleTaux } from "./modale-taux";
+import { ModalHistoriqueTaux } from "./modal-historique-taux";
 import type { CompetenceListItem } from "@/lib/actions/competences";
 
-interface BoutonFixerTauxProps {
+interface BoutonHistoriqueTauxProps {
   competence: CompetenceListItem;
 }
 
-export function BoutonFixerTaux({ competence }: BoutonFixerTauxProps) {
+export function BoutonHistoriqueTaux({ competence }: BoutonHistoriqueTauxProps) {
   const [ouvert, setOuvert] = useState(false);
 
   return (
@@ -18,16 +18,16 @@ export function BoutonFixerTaux({ competence }: BoutonFixerTauxProps) {
       <Button
         onClick={() => setOuvert(true)}
         size="sm"
-        className="h-7 px-3 text-xs bg-[#13850b] hover:bg-[#0f6909] text-white rounded-full"
+        className="h-7 gap-1 text-xs bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-full px-3"
       >
-        Fixer le taux
+        <Eye className="size-3" />
+        {competence.nombreVersionsTaux}
       </Button>
 
-      <ModaleTaux
+      <ModalHistoriqueTaux
         ouvert={ouvert}
         onClose={() => setOuvert(false)}
         competence={competence}
-        mode="fixer"
       />
     </>
   );

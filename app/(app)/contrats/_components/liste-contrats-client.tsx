@@ -39,10 +39,6 @@ export function ListeContratsClient({ contrats }: ListeContratsClientProps) {
   const [modalRenouvellementOuvert, setModalRenouvellementOuvert] = useState(false);
   const [contratARenouveler, setContratARenouveler] = useState<Contrat | null>(null);
 
-  const getInitials = (nom: string, prenom: string) => {
-    return `${nom[0]}${prenom[0]}`.toUpperCase();
-  };
-
   const calculerJoursRestants = (dateFin?: Date): number | null => {
     if (!dateFin) return null;
     const now = new Date();
@@ -127,33 +123,18 @@ export function ListeContratsClient({ contrats }: ListeContratsClientProps) {
                 <td className="py-3 px-4">
                   <Link
                     href={`/employes/${contrat.employe.id}?onglet=contrats`}
-                    className="flex items-center gap-3 hover:opacity-80"
+                    className="hover:opacity-80"
                   >
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium text-white" style={{ backgroundColor: '#13850b' }}>
-                      {getInitials(contrat.employe.nom, contrat.employe.prenom)}
+                    <div className="font-medium text-sm">
+                      {contrat.employe.nom} {contrat.employe.prenom}
                     </div>
-                    <div>
-                      <div className="font-medium text-sm">
-                        {contrat.employe.nom} {contrat.employe.prenom}
-                      </div>
-                      <div className="text-xs text-muted-foreground font-mono">
-                        {contrat.employe.matricule}
-                      </div>
+                    <div className="text-xs text-muted-foreground font-mono">
+                      {contrat.employe.matricule}
                     </div>
                   </Link>
                 </td>
                 <td className="py-3 px-4 text-sm">
-                  {contrat.typeContrat === "CDD" ? (
-                    <Badge variant="secondary" className="bg-warning-soft text-warning border-warning/20">
-                      CDD
-                    </Badge>
-                  ) : contrat.typeContrat === "CDI" ? (
-                    <Badge className="border-[#13850b]/20" style={{ backgroundColor: '#e8f5e9', color: '#13850b' }}>
-                      CDI
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline">{contrat.typeContrat}</Badge>
-                  )}
+                  <Badge variant="secondary">{contrat.typeContrat}</Badge>
                 </td>
                 <td className="py-3 px-4 text-sm text-muted-foreground">
                   {format(new Date(contrat.dateDebut), "dd/MM/yyyy", { locale: fr })}

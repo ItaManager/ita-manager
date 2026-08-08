@@ -16,9 +16,9 @@ export function BoutonNouveauContrat({ employes }: BoutonNouveauContratProps) {
     <>
       <Button
         onClick={() => setOuvert(true)}
-        className="gap-2 h-12 px-6 text-base shadow-sm hover:shadow-md"
+        className="gap-2 h-9 px-4 text-sm rounded-full bg-primary hover:bg-primary-hover text-primary-foreground transition-all cursor-pointer shadow-sm hover:shadow-md"
       >
-        <Plus className="size-5" />
+        <Plus className="size-4" />
         Nouveau contrat
       </Button>
 

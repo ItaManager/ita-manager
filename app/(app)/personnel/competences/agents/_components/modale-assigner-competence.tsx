@@ -14,14 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { AlertCircle, Lock, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
+import { AlertCircle, Lock, TrendingUp, TrendingDown, Loader2, Check } from "lucide-react";
 import { assignerCompetence, listerCompetences } from "@/lib/actions/competences";
 import type { CompetenceListItem } from "@/lib/actions/competences";
 import { toast } from "sonner";
@@ -87,6 +81,16 @@ export function ModaleAssignerCompetence({
     variation = ((nouveauMontant - ancienMontant) / ancienMontant) * 100;
   }
 
+  // Options pour le Combobox
+  const competenceOptions: ComboboxOption[] = competences.map((comp) => ({
+    value: comp.id,
+    label: comp.libelle,
+    disabled: !comp.tauxCourant,
+    description: comp.tauxCourant
+      ? `${parseFloat(comp.tauxCourant.montant).toLocaleString("fr-FR")} F/jour`
+      : undefined,
+  }));
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -126,17 +130,17 @@ export function ModaleAssignerCompetence({
 
   return (
     <Dialog open={ouvert} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="max-w-lg p-0">
+        <DialogHeader className="border-b border-border px-6 py-4" style={{ backgroundColor: 'var(--primary-soft)' }}>
+          <DialogTitle className="text-xl font-semibold text-[#1D186C]">
             {estChangement ? "Modifier la compétence" : "Assigner une compétence"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm text-muted-foreground mt-1">
             {agent.prenom} {agent.nom} · {agent.matricule}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 px-6 py-4">
           {/* Rappel compétence actuelle */}
           {estChangement && agent.competence && (
             <div className="rounded-lg border border-border bg-muted/30 px-4 py-3">
@@ -155,7 +159,7 @@ export function ModaleAssignerCompetence({
                     </p>
                   )}
                 </div>
-                <Badge variant="outline">
+                <Badge variant="secondary">
                   Depuis{" "}
                   {new Date(agent.competence.dateEffet).toLocaleDateString(
                     "fr-FR"
@@ -201,43 +205,55 @@ export function ModaleAssignerCompetence({
 
           {/* Compétence */}
           <div className="space-y-2">
-            <Label htmlFor="competence">
+            <Label htmlFor="competence" className="text-sm font-medium">
               Compétence <span className="text-destructive">*</span>
             </Label>
-            <Select value={competenceId} onValueChange={setCompetenceId}>
-              <SelectTrigger id="competence">
-                <SelectValue placeholder="Sélectionner une compétence" />
-              </SelectTrigger>
-              <SelectContent>
-                {competences.map((comp) => {
-                  const sansTaux = !comp.tauxCourant;
-                  const estVerrouillee = sansTaux;
+            <Combobox
+              options={competenceOptions}
+              value={competenceId}
+              onChange={setCompetenceId}
+              placeholder="Sélectionner une compétence"
+              searchPlaceholder="Rechercher une compétence..."
+              emptyText="Aucune compétence trouvée"
+              className="h-11"
+              renderOption={(option) => {
+                const comp = competences.find((c) => c.id === option.value);
+                const sansTaux = !comp?.tauxCourant;
 
-                  return (
-                    <SelectItem
-                      key={comp.id}
-                      value={comp.id}
-                      disabled={estVerrouillee}
-                    >
-                      <div className="flex items-center gap-2 w-full">
-                        <span>{comp.libelle}</span>
-                        {estVerrouillee && (
-                          <Lock className="size-3 text-muted-foreground ml-auto" />
-                        )}
-                        {sansTaux && (
-                          <Badge
-                            variant="outline"
-                            className="ml-auto text-xs border-orange-300 bg-orange-50 text-orange-700"
-                          >
-                            sans taux
-                          </Badge>
+                return (
+                  <>
+                    {option.disabled && (
+                      <Lock className="size-4 text-muted-foreground mr-2" />
+                    )}
+                    <div className="flex items-center gap-2 flex-1">
+                      <div className="flex-1">
+                        <div className={option.disabled ? "text-muted-foreground" : ""}>
+                          {option.label}
+                        </div>
+                        {option.description && (
+                          <div className="text-xs text-muted-foreground">
+                            {option.description}
+                          </div>
                         )}
                       </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
+                      {sansTaux && (
+                        <Badge
+                          variant="outline"
+                          className="text-xs border-orange-300 bg-orange-50 text-orange-700"
+                        >
+                          sans taux
+                        </Badge>
+                      )}
+                    </div>
+                    <Check
+                      className={`ml-2 h-4 w-4 ${
+                        competenceId === option.value ? "opacity-100" : "opacity-0"
+                      }`}
+                    />
+                  </>
+                );
+              }}
+            />
             <p className="text-xs text-muted-foreground">
               Les compétences sans taux ne peuvent pas être assignées
             </p>
@@ -245,22 +261,25 @@ export function ModaleAssignerCompetence({
 
           {/* Métiers réunis (si composée) */}
           {competenceSelectionnee?.categorie === "COMPOSEE" && competenceSelectionnee.description && (
-            <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
-              <p className="text-xs font-medium text-blue-900 mb-1">
-                Compétence composée
-              </p>
-              <p className="text-xs text-blue-700">
-                {competenceSelectionnee.description}
-              </p>
-              <p className="text-xs text-blue-600 mt-1">
-                Le taux est le même quel que soit le travail du jour.
-              </p>
+            <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
+              <AlertCircle className="size-4 text-blue-600 mt-0.5 shrink-0" />
+              <div className="text-xs text-blue-900">
+                <p className="font-medium mb-1">
+                  Compétence composée
+                </p>
+                <p className="text-blue-700">
+                  {competenceSelectionnee.description}
+                </p>
+                <p className="text-blue-600 mt-1">
+                  Le taux est le même quel que soit le travail du jour.
+                </p>
+              </div>
             </div>
           )}
 
           {/* Date d'effet */}
           <div className="space-y-2">
-            <Label htmlFor="dateEffet">
+            <Label htmlFor="dateEffet" className="text-sm font-medium">
               À compter du <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -269,6 +288,7 @@ export function ModaleAssignerCompetence({
               value={dateEffet}
               onChange={(e) => setDateEffet(e.target.value)}
               required
+              className="h-11"
             />
             <p className="text-xs text-muted-foreground">
               Les jours pointés avant cette date garderont l'ancienne compétence
@@ -277,7 +297,7 @@ export function ModaleAssignerCompetence({
 
           {/* Motif (requis si changement) */}
           <div className="space-y-2">
-            <Label htmlFor="motif">
+            <Label htmlFor="motif" className="text-sm font-medium">
               Motif {estChangement && <span className="text-destructive">*</span>}
             </Label>
             <Textarea
@@ -299,11 +319,15 @@ export function ModaleAssignerCompetence({
             )}
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={onClose}>
+          <DialogFooter className="gap-2 px-6 py-4 border-t border-border">
+            <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
               Annuler
             </Button>
-            <Button type="submit" disabled={isPending}>
+            <Button
+              type="submit"
+              disabled={isPending}
+              className="bg-[#13850b] hover:bg-[#0f6909] text-white"
+            >
               {isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
               {estChangement ? "Modifier la compétence" : "Assigner"}
             </Button>

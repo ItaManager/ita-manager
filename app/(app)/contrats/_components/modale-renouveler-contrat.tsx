@@ -131,23 +131,14 @@ export function ModaleRenouvelerContrat({
 
   return (
     <Dialog open={ouvert} onOpenChange={annuler}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="relative -mt-6 -mx-6 px-6 pt-6 pb-4 rounded-t-xl" style={{ backgroundColor: '#ebeaf2' }}>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={annuler}
-            className="absolute -right-2 -top-2 h-8 w-8"
-            disabled={isPending}
-          >
-            <X className="size-4" />
-          </Button>
-          <DialogTitle className="text-xl font-semibold" style={{ color: '#1d186c' }}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+        <DialogHeader className="border-b border-border px-6 py-4" style={{ backgroundColor: 'var(--primary-soft)' }}>
+          <DialogTitle className="text-lg font-semibold text-primary">
             Renouveler le contrat
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 px-6 py-4">
           {/* Info employé */}
           <div className="bg-muted/50 rounded-lg p-4">
             <div className="text-sm text-muted-foreground mb-1">Employé concerné</div>
@@ -204,7 +195,7 @@ export function ModaleRenouvelerContrat({
                   onChange={field.onChange}
                   placeholder="Sélectionner un type"
                   searchPlaceholder="Rechercher..."
-                  className="h-12"
+                  className="h-11"
                 />
               )}
             />
@@ -222,7 +213,7 @@ export function ModaleRenouvelerContrat({
               <Input
                 type="date"
                 {...register("dateDebut")}
-                className="h-12"
+                className="h-11"
               />
               {errors.dateDebut && (
                 <p className="text-sm text-destructive">{errors.dateDebut.message}</p>
@@ -241,7 +232,7 @@ export function ModaleRenouvelerContrat({
               <Input
                 type="date"
                 {...register("dateFin")}
-                className="h-12"
+                className="h-11"
                 disabled={typeContrat === "CDI"}
               />
               {errors.dateFin && (
@@ -265,7 +256,7 @@ export function ModaleRenouvelerContrat({
               step="0.01"
               {...register("salaire")}
               placeholder="0"
-              className="h-12"
+              className="h-11"
             />
             {errors.salaire && (
               <p className="text-sm text-destructive">{errors.salaire.message}</p>
@@ -284,37 +275,38 @@ export function ModaleRenouvelerContrat({
               type="text"
               {...register("motif")}
               placeholder="Ex: Fin de période d'essai, renouvellement annuel..."
-              className="h-12"
+              className="h-11"
             />
             <p className="text-xs text-muted-foreground">
               Ce motif sera enregistré dans l'historique des avenants
             </p>
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={annuler}
-              disabled={isPending}
-              className="h-11 px-6"
-            >
-              Annuler
-            </Button>
-            <Button
-              type="submit"
-              disabled={isPending}
-              className="h-11 px-6 bg-primary hover:bg-primary-hover"
-            >
-              {isPending && (
-                <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-              )}
-              <RefreshCw className="mr-2 size-4" />
-              Renouveler le contrat
-            </Button>
-          </div>
         </form>
+
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={annuler}
+            disabled={isPending}
+          >
+            Annuler
+          </Button>
+          <Button
+            type="submit"
+            disabled={isPending}
+            onClick={handleSubmit(onSubmit)}
+            className="bg-[#13850b] hover:bg-[#0f6909] text-white rounded-full"
+          >
+            {isPending && (
+              <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+            )}
+            <RefreshCw className="mr-2 size-4" />
+            Renouveler le contrat
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

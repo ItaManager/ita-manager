@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertCircle, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
+import { AlertCircle, TrendingUp, TrendingDown, Loader2, Check } from "lucide-react";
 import { fixerTaux } from "@/lib/actions/competences";
 import type { CompetenceListItem } from "@/lib/actions/competences";
 import { toast } from "sonner";
@@ -90,31 +90,31 @@ export function ModaleTaux({
 
   return (
     <Dialog open={ouvert} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="max-w-lg p-0">
+        <DialogHeader className="border-b border-border px-6 py-4" style={{ backgroundColor: 'var(--primary-soft)' }}>
+          <DialogTitle className="text-xl font-semibold text-[#1D186C]">
             {estPremiereTaux
               ? "Fixer le taux journalier"
               : "Réviser le taux journalier"}
           </DialogTitle>
-          <DialogDescription>
-            {estPremiereTaux
-              ? `Fixer le premier taux journalier pour "${competence.libelle}"`
-              : `Réviser le taux journalier de "${competence.libelle}"`}
+          <DialogDescription className="text-sm text-muted-foreground mt-1">
+            {competence.libelle} · Direction Financière
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 px-6 py-4">
           {/* Bandeau première fixation */}
           {estPremiereTaux && (
-            <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
-              <AlertCircle className="size-4 text-blue-600 mt-0.5 shrink-0" />
-              <div className="text-xs text-blue-900">
+            <div className="flex items-start gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2">
+              <AlertCircle className="size-4 text-orange-600 mt-0.5 shrink-0" />
+              <div className="text-xs text-orange-900">
                 <p>
-                  <strong>Première fixation.</strong> Cette compétence a été
-                  créée le{" "}
-                  {new Date(competence.creeLe).toLocaleDateString("fr-FR")}.
-                  Elle ne peut pas être assignée tant qu'aucun taux n'est fixé.
+                  Créée par la Direction Technique le{" "}
+                  {new Date(competence.creeLe).toLocaleDateString("fr-FR", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                  })}. <strong className="text-orange-700">En attente de votre validation.</strong> Tant qu'aucun taux n'est fixé, cette compétence ne peut pas être assignée.
                 </p>
               </div>
             </div>
@@ -156,77 +156,91 @@ export function ModaleTaux({
             </div>
           )}
 
-          {/* Montant */}
-          <div className="space-y-2">
-            <Label htmlFor="montant">
-              Montant par jour (FCFA) <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="montant"
-              type="number"
-              min="0"
-              step="1"
-              value={montant}
-              onChange={(e) => setMontant(e.target.value)}
-              placeholder="Ex: 7500"
-              required
-            />
-            <p className="text-xs text-muted-foreground">
-              Montant entier en francs CFA
-            </p>
+          {/* Montant et Date d'effet côte à côte */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Montant */}
+            <div className="space-y-2">
+              <Label htmlFor="montant" className="text-sm font-medium">
+                Montant par jour <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="montant"
+                type="number"
+                min="0"
+                step="1"
+                value={montant}
+                onChange={(e) => setMontant(e.target.value)}
+                placeholder="8000"
+                required
+                className="h-11"
+              />
+              <p className="text-xs text-muted-foreground">
+                En francs CFA
+              </p>
+            </div>
+
+            {/* Date d'effet */}
+            <div className="space-y-2">
+              <Label htmlFor="dateEffet" className="text-sm font-medium">
+                Date d'effet <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="dateEffet"
+                type="date"
+                value={dateEffet}
+                onChange={(e) => setDateEffet(e.target.value)}
+                required
+                className="h-11"
+              />
+              <p className="text-xs text-muted-foreground">
+                Les jours pointés avant gardent l'ancien taux
+              </p>
+            </div>
           </div>
 
-          {/* Date d'effet */}
-          <div className="space-y-2">
-            <Label htmlFor="dateEffet">
-              Date d'effet <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="dateEffet"
-              type="date"
-              value={dateEffet}
-              onChange={(e) => setDateEffet(e.target.value)}
-              required
-            />
+          {/* Info taux non modifiable */}
+          <div className="flex items-start gap-2 rounded-lg bg-muted/50 px-3 py-2">
+            <AlertCircle className="size-4 text-muted-foreground mt-0.5 shrink-0" />
             <p className="text-xs text-muted-foreground">
-              Les jours pointés à partir de cette date utiliseront ce taux
+              <strong>Un taux ne se modifie pas, il se remplace.</strong> Le précédent reste consultable — c'est ce qui rend une paie de mars justifiable en octobre.
             </p>
           </div>
 
           {/* Motif (requis si révision) */}
-          <div className="space-y-2">
-            <Label htmlFor="motif">
-              Motif{" "}
-              {!estPremiereTaux && (
-                <span className="text-destructive">*</span>
-              )}
-            </Label>
-            <Textarea
-              id="motif"
-              value={motif}
-              onChange={(e) => setMotif(e.target.value)}
-              placeholder={
-                estPremiereTaux
-                  ? "Optionnel pour la première fixation"
-                  : "Minimum 20 caractères — Ex: Ajustement inflation 2026"
-              }
-              rows={3}
-              required={!estPremiereTaux}
-            />
-            {!estPremiereTaux && (
+          {!estPremiereTaux && (
+            <div className="space-y-2">
+              <Label htmlFor="motif" className="text-sm font-medium">
+                Motif <span className="text-destructive">*</span>
+              </Label>
+              <Textarea
+                id="motif"
+                value={motif}
+                onChange={(e) => setMotif(e.target.value)}
+                placeholder="Ajustement inflation 2026..."
+                rows={3}
+                required
+              />
               <p className="text-xs text-muted-foreground">
                 {motif.trim().length}/20 caractères minimum
               </p>
-            )}
-          </div>
+            </div>
+          )}
 
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={onClose}>
+          <DialogFooter className="gap-2 px-6 py-4 border-t border-border">
+            <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
               Annuler
             </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
-              {estPremiereTaux ? "Fixer le taux" : "Réviser le taux"}
+            <Button
+              type="submit"
+              disabled={isPending}
+              className="bg-[#13850b] hover:bg-[#0f6909] text-white rounded-full gap-1.5"
+            >
+              {isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Check className="size-4" />
+              )}
+              Valider le taux
             </Button>
           </DialogFooter>
         </form>

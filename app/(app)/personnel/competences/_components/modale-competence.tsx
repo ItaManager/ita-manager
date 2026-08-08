@@ -13,16 +13,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { creerCompetence, modifierCompetence } from "@/lib/actions/competences";
 import type { CompetenceListItem } from "@/lib/actions/competences";
 import { toast } from "sonner";
@@ -48,10 +40,6 @@ export function ModaleCompetence({
     (competence?.categorie as "BASE" | "QUALIFIE" | "COMPOSEE") || "QUALIFIE"
   );
   const [description, setDescription] = useState(competence?.description || "");
-  const [composantesIds, setComposantesIds] = useState<string[]>([]);
-
-  // TODO: Charger les compétences qualifiées pour le sélecteur
-  const competencesQualifiees: Array<{ id: string; libelle: string }> = [];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,27 +50,24 @@ export function ModaleCompetence({
       return;
     }
 
-    if (categorie === "COMPOSEE" && composantesIds.length < 2) {
-      toast.error(
-        "Une compétence composée doit réunir au moins deux compétences qualifiées"
-      );
-      return;
-    }
-
     startTransition(async () => {
       if (mode === "creer") {
         const result = await creerCompetence({
           libelle,
           categorie,
           description: description || undefined,
-          composantesIds:
-            categorie === "COMPOSEE" ? composantesIds : undefined,
         });
 
         if (result.success) {
           toast.success(result.message);
-          router.refresh();
+          // Réinitialiser le formulaire
+          setLibelle("");
+          setCategorie("QUALIFIE");
+          setDescription("");
+          // Fermer le modal
           onClose();
+          // Rafraîchir la page
+          router.refresh();
         } else {
           toast.error(result.error);
         }
@@ -92,14 +77,12 @@ export function ModaleCompetence({
           libelle,
           categorie,
           description: description || undefined,
-          composantesIds:
-            categorie === "COMPOSEE" ? composantesIds : undefined,
         });
 
         if (result.success) {
           toast.success(result.message);
-          router.refresh();
           onClose();
+          router.refresh();
         } else {
           toast.error(result.error);
         }
@@ -109,133 +92,116 @@ export function ModaleCompetence({
 
   return (
     <Dialog open={ouvert} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="max-w-2xl p-0">
+        <DialogHeader className="border-b border-border px-6 py-4" style={{ backgroundColor: 'var(--primary-soft)' }}>
+          <DialogTitle className="text-xl font-semibold text-[#1D186C]">
             {mode === "creer"
               ? "Nouvelle compétence"
               : "Modifier la compétence"}
           </DialogTitle>
-          <DialogDescription>
-            {mode === "creer"
-              ? "Définir une nouvelle compétence. Le taux journalier sera fixé par la Direction Financière."
-              : "Modifier les informations de la compétence."}
+          <DialogDescription className="text-sm text-muted-foreground mt-1">
+            Direction Technique
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Avertissement création */}
-          {mode === "creer" && (
-            <div className="flex items-start gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2">
-              <AlertCircle className="size-4 text-orange-600 mt-0.5 shrink-0" />
-              <p className="text-xs text-orange-900">
-                <strong>La compétence sera créée sans taux.</strong> Elle ne
-                pourra pas être assignée tant que la Direction Financière
-                n'aura pas fixé son taux journalier.
-              </p>
-            </div>
-          )}
-
+        <form onSubmit={handleSubmit} className="space-y-5 px-6 py-4">
           {/* Libellé */}
           <div className="space-y-2">
-            <Label htmlFor="libelle">
+            <Label htmlFor="libelle" className="text-sm font-medium">
               Libellé <span className="text-destructive">*</span>
             </Label>
             <Input
               id="libelle"
               value={libelle}
               onChange={(e) => setLibelle(e.target.value)}
-              placeholder="Ex: Maçon, Coffreur, Soudeur..."
+              placeholder="Maçon-Coffreur"
               required
+              className="h-11"
             />
+            <p className="text-xs text-muted-foreground">
+              Indiquer le nom du métier ou de la compétence
+            </p>
           </div>
 
           {/* Catégorie */}
-          <div className="space-y-2">
-            <Label htmlFor="categorie">
+          <div className="space-y-3">
+            <Label>
               Catégorie <span className="text-destructive">*</span>
             </Label>
-            <Select
-              value={categorie}
-              onValueChange={(v) =>
-                setCategorie(v as "BASE" | "QUALIFIE" | "COMPOSEE")
-              }
-            >
-              <SelectTrigger id="categorie">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="BASE">
-                  <div className="flex flex-col items-start">
-                    <span className="font-medium">Base</span>
-                    <span className="text-xs text-muted-foreground">
-                      Manœuvre, aide — sans qualification particulière
-                    </span>
+            <div className="space-y-3">
+              {/* Base */}
+              <label
+                className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  categorie === "BASE"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50 hover:bg-accent/50"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="categorie"
+                  value="BASE"
+                  checked={categorie === "BASE"}
+                  onChange={(e) => setCategorie("BASE")}
+                  className="mt-1"
+                />
+                <div className="flex-1">
+                  <div className="font-medium text-foreground">Base</div>
+                  <div className="text-sm text-muted-foreground mt-0.5">
+                    Manœuvre, aide — sans qualification particulière.
                   </div>
-                </SelectItem>
-                <SelectItem value="QUALIFIE">
-                  <div className="flex flex-col items-start">
-                    <span className="font-medium">Qualifiée</span>
-                    <span className="text-xs text-muted-foreground">
-                      Un métier — maçon, soudeur, ferrailleur
-                    </span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="COMPOSEE">
-                  <div className="flex flex-col items-start">
-                    <span className="font-medium">Composée</span>
-                    <span className="text-xs text-muted-foreground">
-                      Plusieurs métiers réunis
-                    </span>
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+                </div>
+              </label>
 
-          {/* Métiers réunis (si composée) */}
-          {categorie === "COMPOSEE" && (
-            <div className="space-y-2">
-              <Label>
-                Métiers réunis <span className="text-destructive">*</span>
-              </Label>
-              <p className="text-xs text-muted-foreground mb-2">
-                Sélectionnez au moins deux compétences qualifiées actives
-              </p>
-              <div className="border border-border rounded-lg p-3 space-y-2 max-h-48 overflow-y-auto">
-                {competencesQualifiees.length === 0 ? (
-                  <p className="text-xs text-muted-foreground italic">
-                    Aucune compétence qualifiée disponible. Créez d'abord des
-                    compétences qualifiées.
-                  </p>
-                ) : (
-                  competencesQualifiees.map((comp) => (
-                    <div key={comp.id} className="flex items-center gap-2">
-                      <Checkbox
-                        id={`comp-${comp.id}`}
-                        checked={composantesIds.includes(comp.id)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setComposantesIds([...composantesIds, comp.id]);
-                          } else {
-                            setComposantesIds(
-                              composantesIds.filter((id) => id !== comp.id)
-                            );
-                          }
-                        }}
-                      />
-                      <Label
-                        htmlFor={`comp-${comp.id}`}
-                        className="text-sm font-normal cursor-pointer"
-                      >
-                        {comp.libelle}
-                      </Label>
-                    </div>
-                  ))
-                )}
-              </div>
+              {/* Qualifiée */}
+              <label
+                className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  categorie === "QUALIFIE"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50 hover:bg-accent/50"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="categorie"
+                  value="QUALIFIE"
+                  checked={categorie === "QUALIFIE"}
+                  onChange={(e) => setCategorie("QUALIFIE")}
+                  className="mt-1"
+                />
+                <div className="flex-1">
+                  <div className="font-medium text-foreground">Qualifiée</div>
+                  <div className="text-sm text-muted-foreground mt-0.5">
+                    Un métier — maçon, soudeur, ferrailleur.
+                  </div>
+                </div>
+              </label>
+
+              {/* Composée */}
+              <label
+                className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  categorie === "COMPOSEE"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50 hover:bg-accent/50"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="categorie"
+                  value="COMPOSEE"
+                  checked={categorie === "COMPOSEE"}
+                  onChange={(e) => setCategorie("COMPOSEE")}
+                  className="mt-1"
+                />
+                <div className="flex-1">
+                  <div className="font-medium text-foreground">Composée</div>
+                  <div className="text-sm text-muted-foreground mt-0.5">
+                    Plusieurs métiers réunis. Un agent qui sait faire les deux.
+                  </div>
+                </div>
+              </label>
             </div>
-          )}
+          </div>
 
           {/* Description */}
           <div className="space-y-2">
@@ -249,13 +215,22 @@ export function ModaleCompetence({
             />
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={onClose}>
+          <DialogFooter className="gap-2 px-6 py-4 border-t border-border">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isPending}
+            >
               Annuler
             </Button>
-            <Button type="submit" disabled={isPending}>
+            <Button
+              type="submit"
+              disabled={isPending}
+              className="bg-[#13850b] hover:bg-[#0f6909] text-white"
+            >
               {isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
-              {mode === "creer" ? "Créer la compétence" : "Enregistrer"}
+              {mode === "creer" ? "Créer une compétence" : "Enregistrer"}
             </Button>
           </DialogFooter>
         </form>

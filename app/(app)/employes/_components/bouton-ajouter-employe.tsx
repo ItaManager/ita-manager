@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { ModaleNouvelEmploye } from "./modale-nouvel-employe";
+import { ModaleCreationEmployeV2 } from "./modale-creation-employe-v2";
 
 interface BoutonAjouterEmployeProps {
   postes: Array<{ id: string; libelle: string; code: string; serviceId: string | null; directionId: string }>;
@@ -28,21 +28,19 @@ export function BoutonAjouterEmploye({
     <>
       <Button
         onClick={() => setModalOpen(true)}
-        className="gap-2 h-12 px-6 text-base bg-primary hover:bg-primary-hover shadow-md hover:shadow-lg transition-all cursor-pointer"
+        className="gap-2 h-9 px-4 text-sm rounded-full bg-primary hover:bg-primary-hover text-primary-foreground transition-all cursor-pointer shadow-sm hover:shadow-md"
       >
-        <Plus className="size-5" />
+        <Plus className="size-4" />
         Ajouter un employé
       </Button>
 
-      <ModaleNouvelEmploye
-        open={modalOpen}
-        onOpenChange={setModalOpen}
+      <ModaleCreationEmployeV2
+        ouvert={modalOpen}
+        onFermer={() => setModalOpen(false)}
         postes={postes}
         nationalites={nationalites}
         directions={directions}
         services={services}
-        employes={employes}
-        projets={projets}
       />
     </>
   );

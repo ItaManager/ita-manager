@@ -161,33 +161,6 @@ export const creerCompetence = actionProtegee(
       };
     }
 
-    // Validation : une composée exige >= 2 métiers qualifiés
-    if (params.categorie === CategorieCompetence.COMPOSEE) {
-      if (!params.composantesIds || params.composantesIds.length < 2) {
-        return {
-          success: false,
-          error:
-            "Une compétence composée doit réunir au moins deux compétences qualifiées",
-        };
-      }
-
-      // Vérifier que les composantes sont bien qualifiées et actives
-      const composantes = await prisma.competence.findMany({
-        where: {
-          id: { in: params.composantesIds },
-          categorie: CategorieCompetence.QUALIFIE,
-          actif: true,
-        },
-      });
-
-      if (composantes.length !== params.composantesIds.length) {
-        return {
-          success: false,
-          error:
-            "Toutes les composantes doivent être des compétences qualifiées et actives",
-        };
-      }
-    }
 
     // Créer la compétence
     const competence = await prisma.competence.create({
@@ -258,32 +231,6 @@ export const modifierCompetence = actionProtegee(
       }
     }
 
-    // Validation composée
-    if (params.categorie === CategorieCompetence.COMPOSEE) {
-      if (!params.composantesIds || params.composantesIds.length < 2) {
-        return {
-          success: false,
-          error:
-            "Une compétence composée doit réunir au moins deux compétences qualifiées",
-        };
-      }
-
-      const composantes = await prisma.competence.findMany({
-        where: {
-          id: { in: params.composantesIds },
-          categorie: CategorieCompetence.QUALIFIE,
-          actif: true,
-        },
-      });
-
-      if (composantes.length !== params.composantesIds.length) {
-        return {
-          success: false,
-          error:
-            "Toutes les composantes doivent être des compétences qualifiées et actives",
-        };
-      }
-    }
 
     // Mettre à jour
     const updated = await prisma.competence.update({
@@ -514,7 +461,15 @@ export const fixerTaux = actionProtegee(
     return {
       success: true,
       data: {
-        taux: nouveauTaux,
+        taux: {
+          id: nouveauTaux.id,
+          competenceId: nouveauTaux.competenceId,
+          montant: parseFloat(nouveauTaux.montant.toString()),
+          dateEffet: nouveauTaux.dateEffet,
+          motif: nouveauTaux.motif,
+          definiParId: nouveauTaux.definiParId,
+          definiLe: nouveauTaux.definiLe,
+        },
         estRevision,
         variation,
         agentsConcernes: competence.affectations.length,
@@ -564,7 +519,7 @@ export const historiqueTaux = actionProtegee(
 
       return {
         id: t.id,
-        montant: parseFloat(t.montant.toString()),
+        montant: t.montant.toString(),
         dateEffet: t.dateEffet,
         motif: t.motif,
         definiLe: t.definiLe,
@@ -826,7 +781,15 @@ export const statistiquesCompetences = actionProtegee(
       },
     });
 
-    // 3. Sans compétence (agents journaliers sans affectation ouverte)
+    // 3. Total agents journaliers
+    const totalAgents = await prisma.employe.count({
+      where: {
+        typeMainOeuvre: "JOURNALIER",
+        archiveLe: null,
+      },
+    });
+
+    // 4. Sans compétence (agents journaliers sans affectation ouverte)
     const agentsSansCompetence = await prisma.employe.count({
       where: {
         typeMainOeuvre: "JOURNALIER",
@@ -839,7 +802,7 @@ export const statistiquesCompetences = actionProtegee(
       },
     });
 
-    // 4. Coût journalier (somme des taux des agents affectés)
+    // 5. Coût journalier (somme des taux des agents affectés)
     const affectationsOuvertes = await prisma.affectationCompetence.findMany({
       where: {
         dateFin: null,
@@ -871,6 +834,7 @@ export const statistiquesCompetences = actionProtegee(
     return {
       competencesActives,
       enAttenteDeTaux: competencesSansTaux.length,
+      totalAgents,
       agentsSansCompetence,
       coutJournalier: coutJournalierTotal,
     };
@@ -970,6 +934,192 @@ export const listerAgentsAvecCompetences = actionProtegee(
       success: true,
       data: items,
       total: items.length,
+    };
+  }
+);
+
+// =====================================================================
+// TÂCHES ET NOTIFICATIONS
+// =====================================================================
+
+export interface TacheCompetence {
+  id: string;
+  type: 'taux-a-fixer' | 'taux-a-reviser' | 'agent-sans-competence' | 'competence-a-assigner' | 'competence-obsolete';
+  titre: string;
+  description: string;
+  priorite: 'haute' | 'moyenne' | 'basse';
+  lien?: string;
+  count?: number;
+  date?: Date;
+}
+
+/**
+ * Récupère les tâches en attente selon le rôle de l'utilisateur
+ */
+export const obtenirTachesCompetences = actionProtegee(
+  PERMISSIONS["competence:lire"].code,
+  async (session) => {
+    // Récupérer les rôles de l'utilisateur
+    const profil = await prisma.profil.findUnique({
+      where: { id: session.userId },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    if (!profil) {
+      return { success: true, data: [] };
+    }
+
+    const roles = profil.roles.map((pr) => pr.role.code);
+    const taches: TacheCompetence[] = [];
+
+    // Direction Financière (DFC) - Taux à fixer
+    if (roles.includes("DFC") || roles.includes("ADMIN")) {
+      const competencesSansTaux = await prisma.competence.count({
+        where: {
+          actif: true,
+          taux: {
+            none: {},
+          },
+        },
+      });
+
+      if (competencesSansTaux > 0) {
+        taches.push({
+          id: "taux-a-fixer",
+          type: "taux-a-fixer",
+          titre: `${competencesSansTaux} compétence${competencesSansTaux > 1 ? 's' : ''} en attente de taux`,
+          description: "Créées par la Direction Technique, elles attendent la validation de la Direction Financière.",
+          priorite: "haute",
+          lien: "/personnel/competences?filtre=sans-taux",
+          count: competencesSansTaux,
+        });
+      }
+
+      // Taux à réviser (plus de 12 mois)
+      const dateRevision = new Date();
+      dateRevision.setMonth(dateRevision.getMonth() - 12);
+
+      const competencesAReviser = await prisma.competence.findMany({
+        where: {
+          actif: true,
+          taux: {
+            some: {},
+          },
+        },
+        include: {
+          taux: {
+            orderBy: { dateEffet: "desc" },
+            take: 1,
+          },
+        },
+      });
+
+      const aReviser = competencesAReviser.filter(
+        (c) => c.taux[0] && c.taux[0].dateEffet < dateRevision
+      );
+
+      if (aReviser.length > 0) {
+        taches.push({
+          id: "taux-a-reviser",
+          type: "taux-a-reviser",
+          titre: `${aReviser.length} taux à réviser`,
+          description: "Taux journaliers datant de plus de 12 mois.",
+          priorite: "moyenne",
+          lien: "/personnel/competences",
+          count: aReviser.length,
+        });
+      }
+    }
+
+    // Ressources Humaines (RH) - Agents sans compétence
+    if (roles.includes("RH") || roles.includes("DRH") || roles.includes("ADMIN")) {
+      const agentsSansCompetence = await prisma.employe.count({
+        where: {
+          typeMainOeuvre: "JOURNALIER",
+          competences: {
+            none: {},
+          },
+        },
+      });
+
+      if (agentsSansCompetence > 0) {
+        taches.push({
+          id: "agents-sans-competence",
+          type: "agent-sans-competence",
+          titre: `${agentsSansCompetence} agent${agentsSansCompetence > 1 ? 's' : ''} sans compétence`,
+          description: "Ils ne peuvent pas être pointés au relevé d'activité.",
+          priorite: "haute",
+          lien: "/personnel/competences/agents",
+          count: agentsSansCompetence,
+        });
+      }
+
+      // Agents avec compétences obsolètes
+      const agentsCompetencesObsoletes = await prisma.employe.count({
+        where: {
+          typeMainOeuvre: "JOURNALIER",
+          competences: {
+            some: {
+              competence: {
+                actif: false,
+              },
+            },
+          },
+        },
+      });
+
+      if (agentsCompetencesObsoletes > 0) {
+        taches.push({
+          id: "competences-obsoletes",
+          type: "competence-obsolete",
+          titre: `${agentsCompetencesObsoletes} agent${agentsCompetencesObsoletes > 1 ? 's' : ''} avec compétences obsolètes`,
+          description: "Agents assignés à des compétences archivées.",
+          priorite: "moyenne",
+          lien: "/personnel/competences/agents",
+          count: agentsCompetencesObsoletes,
+        });
+      }
+    }
+
+    // Direction Technique (DT) - Compétences incomplètes
+    if (roles.includes("DT") || roles.includes("CT") || roles.includes("ADMIN")) {
+      const competencesIncompl = await prisma.competence.count({
+        where: {
+          actif: true,
+          OR: [
+            { description: null },
+            { description: "" },
+          ],
+        },
+      });
+
+      if (competencesIncompl > 0) {
+        taches.push({
+          id: "competences-incompletes",
+          type: "competence-a-assigner",
+          titre: `${competencesIncompl} compétence${competencesIncompl > 1 ? 's' : ''} sans description`,
+          description: "Compétences créées sans description détaillée.",
+          priorite: "basse",
+          lien: "/personnel/competences",
+          count: competencesIncompl,
+        });
+      }
+    }
+
+    // Trier par priorité
+    const prioriteOrdre = { haute: 0, moyenne: 1, basse: 2 };
+    taches.sort((a, b) => prioriteOrdre[a.priorite] - prioriteOrdre[b.priorite]);
+
+    return {
+      success: true,
+      data: taches,
+      total: taches.length,
     };
   }
 );

@@ -1,18 +1,22 @@
 import { verifierAccesPage } from "@/lib/auth/page-access";
 import { Suspense } from "react";
+import { ModuleLayout } from "@/components/layouts/module-layout";
 import { IndicateursCompetences } from "./_components/indicateurs-competences";
 import { ListeCompetences } from "./_components/liste-competences";
-import { BoutonNouvelleCompetence } from "./_components/bouton-nouvelle-competence";
+import { ListeTaches } from "./_components/liste-taches";
+import { TitreTaches } from "./_components/titre-taches";
 
 interface PageCompetencesProps {
   searchParams: Promise<{
     recherche?: string;
     filtre?: "actives" | "sans-taux" | "composees" | "archivees" | "toutes";
+    page?: string;
+    limit?: string;
   }>;
 }
 
 export const metadata = {
-  title: "Compétences et taux journaliers — ITA Manager",
+  title: "Compétences — ITA Manager",
 };
 
 export default async function PageCompetences({
@@ -23,43 +27,36 @@ export default async function PageCompetences({
   const params = await searchParams;
 
   return (
-    <div className="space-y-6">
-      {/* En-tête */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">
-            Compétences et taux journaliers
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Un agent porte <strong>une</strong> compétence. S'il sait faire deux
-            métiers, on crée une compétence composée.
-          </p>
-        </div>
-        <BoutonNouvelleCompetence />
-      </div>
-
-      {/* Indicateurs */}
-      <Suspense fallback={<div>Chargement...</div>}>
-        <IndicateursCompetences />
-      </Suspense>
-
-      {/* Alertes et liste */}
+    <ModuleLayout
+      titre="Compétences"
+      description="Gérez les compétences métier et leurs taux journaliers"
+      helpText="Circuit de validation à 3 acteurs : La Direction Technique définit les compétences métier, la Direction Financière fixe les taux journaliers, puis les RH assignent ces compétences aux agents. Le taux journalier alimente ensuite le calcul de paie chantier : le pointage fournit les jours travaillés, la compétence fournit le taux."
+      indicateurs={
+        <Suspense fallback={<div>Chargement...</div>}>
+          <IndicateursCompetences />
+        </Suspense>
+      }
+      taches={{
+        titre: (
+          <Suspense fallback={<h2 className="text-lg font-semibold text-[#18181a]">Vos tâches</h2>}>
+            <TitreTaches />
+          </Suspense>
+        ),
+        contenu: (
+          <Suspense fallback={<div className="text-sm text-muted-foreground">Chargement...</div>}>
+            <ListeTaches />
+          </Suspense>
+        ),
+      }}
+    >
       <Suspense fallback={<div>Chargement...</div>}>
         <ListeCompetences
           recherche={params.recherche}
           filtre={params.filtre}
+          page={params.page ? parseInt(params.page) : 1}
+          limit={params.limit ? parseInt(params.limit) : 20}
         />
       </Suspense>
-
-      {/* Footer explicatif */}
-      <div className="rounded-lg border border-border bg-muted/30 px-4 py-3">
-        <p className="text-xs text-muted-foreground">
-          <strong>Trois directions, trois gestes.</strong> La Technique définit
-          le métier, la Financière fixe le taux, les RH l'assignent. Le taux
-          alimente ensuite la paie chantier — M7 : le pointage donne les jours,
-          la compétence donne le taux.
-        </p>
-      </div>
-    </div>
+    </ModuleLayout>
   );
 }

@@ -1,16 +1,16 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { DollarSign } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { ModaleTaux } from "./modale-taux";
 import type { CompetenceListItem } from "@/lib/actions/competences";
 
-interface BoutonFixerTauxProps {
+interface BoutonReviserTauxProps {
   competence: CompetenceListItem;
 }
 
-export function BoutonFixerTaux({ competence }: BoutonFixerTauxProps) {
+export function BoutonReviserTaux({ competence }: BoutonReviserTauxProps) {
   const [ouvert, setOuvert] = useState(false);
 
   return (
@@ -18,16 +18,16 @@ export function BoutonFixerTaux({ competence }: BoutonFixerTauxProps) {
       <Button
         onClick={() => setOuvert(true)}
         size="sm"
-        className="h-7 px-3 text-xs bg-[#13850b] hover:bg-[#0f6909] text-white rounded-full"
+        className="h-7 px-3 text-xs bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-full"
       >
-        Fixer le taux
+        Réviser
       </Button>
 
       <ModaleTaux
         ouvert={ouvert}
         onClose={() => setOuvert(false)}
         competence={competence}
-        mode="fixer"
+        mode="reviser"
       />
     </>
   );

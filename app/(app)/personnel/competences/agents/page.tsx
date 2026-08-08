@@ -1,10 +1,17 @@
 import { verifierAccesPage } from "@/lib/auth/page-access";
 import { Suspense } from "react";
+import { ModuleLayout } from "@/components/layouts/module-layout";
+import { IndicateursAgents } from "./_components/indicateurs-agents";
 import { ListeAgents } from "./_components/liste-agents";
+import { ListeTaches } from "../_components/liste-taches";
+import { TitreTaches } from "../_components/titre-taches";
 
 interface PageAgentsProps {
   searchParams: Promise<{
     filtre?: "tous" | "sans-competence" | "sur-chantier";
+    recherche?: string;
+    page?: string;
+    limit?: string;
   }>;
 }
 
@@ -18,30 +25,36 @@ export default async function PageAgents({ searchParams }: PageAgentsProps) {
   const params = await searchParams;
 
   return (
-    <div className="space-y-6">
-      {/* En-tête */}
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">
-          Agents et compétences
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Compétences assignées aux agents journaliers
-        </p>
-      </div>
-
-      {/* Liste */}
+    <ModuleLayout
+      titre="Agents et compétences"
+      description="Compétences assignées aux agents journaliers"
+      helpText="Chaque agent journalier doit avoir une compétence assignée pour pouvoir être pointé au relevé d'activité. La compétence détermine le taux journalier appliqué lors du calcul de paie chantier."
+      indicateurs={
+        <Suspense fallback={<div>Chargement...</div>}>
+          <IndicateursAgents />
+        </Suspense>
+      }
+      taches={{
+        titre: (
+          <Suspense fallback={<h2 className="text-lg font-semibold text-[#18181a]">Vos tâches</h2>}>
+            <TitreTaches />
+          </Suspense>
+        ),
+        contenu: (
+          <Suspense fallback={<div className="text-sm text-muted-foreground">Chargement...</div>}>
+            <ListeTaches />
+          </Suspense>
+        ),
+      }}
+    >
       <Suspense fallback={<div>Chargement...</div>}>
-        <ListeAgents filtre={params.filtre || "tous"} />
+        <ListeAgents
+          filtre={params.filtre || "tous"}
+          recherche={params.recherche}
+          page={params.page ? parseInt(params.page) : 1}
+          limit={params.limit ? parseInt(params.limit) : 20}
+        />
       </Suspense>
-
-      {/* Footer explicatif */}
-      <div className="rounded-lg border border-border bg-muted/30 px-4 py-3">
-        <p className="text-xs text-muted-foreground">
-          <strong>Rappel :</strong> Un agent sans compétence ne peut pas être
-          pointé au relevé d'activité. Sans taux, aucun montant ne se calcule à
-          la paie.
-        </p>
-      </div>
-    </div>
+    </ModuleLayout>
   );
 }

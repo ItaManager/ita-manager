@@ -19,7 +19,7 @@ import {
   toastErreur,
   TOAST_MESSAGES,
 } from "@/lib/utils/toast";
-import { Loader2, ChevronLeft, ChevronRight, Save, Plus, Trash2, X, Eye, EyeOff } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, X, Eye, EyeOff } from "lucide-react";
 import type { TypeMainOeuvre } from "@prisma/client";
 
 interface ModaleCreationEmployeProps {
@@ -38,11 +38,6 @@ interface Experience {
   dateDebut: string;
   dateFin?: string;
   description?: string;
-}
-
-interface Competence {
-  libelle: string;
-  niveau?: "DEBUTANT" | "INTERMEDIAIRE" | "AVANCE" | "EXPERT";
 }
 
 interface Formation {
@@ -75,8 +70,6 @@ interface FormData {
   // Étape 2
   experiences: Experience[];
   // Étape 3
-  competences: Competence[];
-  // Étape 4
   referenceInterne?: string;
   directionId: string;
   serviceId?: string;
@@ -86,18 +79,13 @@ interface FormData {
   dateEmbauche: string;
   dateFin?: string;
   salaire: number;
-  // Étape 5
+  // Étape 4
   formations: Formation[];
 }
 
 const ETAPES = [
-  { numero: 1, titre: "Informations personnelles" },
-  { numero: 2, titre: "Expériences" },
-  { numero: 3, titre: "Compétences" },
-  { numero: 4, titre: "Contrat & affectation" },
-  { numero: 5, titre: "Formations" },
-  { numero: 6, titre: "Documents" },
-  { numero: 7, titre: "Révision" },
+  { numero: 1, titre: "Infos personnelles" },
+  { numero: 2, titre: "Affectation" },
 ];
 
 export function ModaleCreationEmployeV2({
@@ -130,16 +118,12 @@ export function ModaleCreationEmployeV2({
       typeMainOeuvre: "PERMANENT",
       typeContrat: "CDI",
       experiences: [],
-      competences: [],
       formations: [],
     },
   });
 
   const { fields: experiencesFields, append: appendExperience, remove: removeExperience } =
     useFieldArray({ control, name: "experiences" });
-
-  const { fields: competencesFields, append: appendCompetence, remove: removeCompetence } =
-    useFieldArray({ control, name: "competences" });
 
   const { fields: formationsFields, append: appendFormation, remove: removeFormation } =
     useFieldArray({ control, name: "formations" });
@@ -285,25 +269,25 @@ export function ModaleCreationEmployeV2({
     <Dialog open={ouvert} onOpenChange={onFermer}>
       <DialogContent className="!max-w-6xl max-h-[90vh] overflow-y-auto p-0">
         {/* En-tête avec fond */}
-        <div className="sticky top-0 z-10 bg-primary text-primary-foreground p-6 rounded-t-xl">
+        <div className="sticky top-0 z-10 border-b border-border px-6 py-4" style={{ backgroundColor: 'var(--primary-soft)' }}>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <DialogTitle className="text-lg text-white">
+              <DialogTitle className="text-lg font-semibold text-primary">
                 {modeModification ? "Modification de l'employé" : "Création d'un nouveau compte"}
               </DialogTitle>
-              <p className="text-primary-soft text-sm mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Étape {etapeActuelle} sur {ETAPES.length} — {ETAPES[etapeActuelle - 1].titre}
               </p>
             </div>
-            <Button variant="ghost" size="icon" onClick={onFermer} className="text-white hover:bg-primary">
+            <Button variant="ghost" size="icon" onClick={onFermer} className="hover:bg-muted">
               <X className="size-5" />
             </Button>
           </div>
 
           {/* Barre de progression */}
-          <div className="w-full bg-primary/30 rounded-full h-2">
+          <div className="w-full bg-muted rounded-full h-2">
             <div
-              className="bg-white h-2 rounded-full transition-all duration-300 shadow-sm"
+              className="bg-primary h-2 rounded-full transition-all duration-300 shadow-sm"
               style={{ width: `${progressPourcentage}%` }}
             />
           </div>
@@ -313,338 +297,278 @@ export function ModaleCreationEmployeV2({
         <div className="p-6">
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* ÉTAPE 1 : Informations personnelles */}
+          {/* ÉTAPE 1 : Infos personnelles */}
           {etapeActuelle === 1 && (
             <div className="space-y-6">
+              {/* Section Identité */}
               <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
-              <h3 className="text-sm font-semibold text-gray-700 mb-4">Identité</h3>
-              <div className="grid grid-cols-2 gap-4">
-                {/* Nom */}
-                <div>
-                  <Label htmlFor="nom">
-                    Nom <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="nom"
-                    {...register("nom", { required: true })}
-                    placeholder="Dosso"
-                  />
-                </div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-4">Identité</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="nom">
+                      Nom <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="nom"
+                      {...register("nom", { required: true })}
+                      placeholder="Kouassi"
+                    />
+                  </div>
 
-                {/* Prénom */}
-                <div>
-                  <Label htmlFor="prenom">
-                    Prénom <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="prenom"
-                    {...register("prenom", { required: true })}
-                    placeholder="Christ"
-                  />
-                </div>
+                  <div>
+                    <Label htmlFor="prenom">
+                      Prénom <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="prenom"
+                      {...register("prenom", { required: true })}
+                      placeholder="Aya"
+                    />
+                  </div>
 
-                {/* Email professionnel */}
-                <div>
-                  <Label htmlFor="email">Email professionnel <span className="text-destructive">*</span></Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    {...register("email")}
-                    placeholder="prenom.nom@ita.ci"
-                  />
-                </div>
+                  <div>
+                    <Label htmlFor="sexe">
+                      Sexe <span className="text-destructive">*</span>
+                    </Label>
+                    <Controller
+                      name="sexe"
+                      control={control}
+                      render={({ field }) => (
+                        <Combobox
+                          options={[
+                            { value: "MASCULIN", label: "Masculin" },
+                            { value: "FEMININ", label: "Féminin" },
+                          ]}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Sélectionner"
+                        />
+                      )}
+                    />
+                  </div>
 
-                {/* Nationalité */}
-                <div>
-                  <Label htmlFor="nationalite">
-                    Nationalité <span className="text-destructive">*</span>
-                  </Label>
-                  <Controller
-                    name="nationaliteId"
-                    control={control}
-                    render={({ field }) => (
-                      <Combobox
-                        options={nationaliteOptions}
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="Sélectionner"
-                        searchPlaceholder="Rechercher une nationalité..."
-                      />
-                    )}
-                  />
-                </div>
+                  <div>
+                    <Label htmlFor="nationalite">
+                      Nationalité <span className="text-destructive">*</span>
+                    </Label>
+                    <Controller
+                      name="nationaliteId"
+                      control={control}
+                      render={({ field }) => (
+                        <Combobox
+                          options={nationaliteOptions}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Sélectionner"
+                          searchPlaceholder="Rechercher..."
+                        />
+                      )}
+                    />
+                  </div>
 
-                {/* Sexe */}
-                <div>
-                  <Label htmlFor="sexe">
-                    Sexe <span className="text-destructive">*</span>
-                  </Label>
-                  <Controller
-                    name="sexe"
-                    control={control}
-                    render={({ field }) => (
-                      <Combobox
-                        options={[
-                          { value: "MASCULIN", label: "Masculin" },
-                          { value: "FEMININ", label: "Féminin" },
-                        ]}
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="Sélectionner"
-                      />
-                    )}
-                  />
-                </div>
+                  <div>
+                    <Label htmlFor="dateNaissance">
+                      Date de naissance <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="dateNaissance"
+                      type="date"
+                      {...register("dateNaissance")}
+                    />
+                  </div>
 
-                {/* Date de naissance */}
-                <div>
-                  <Label htmlFor="dateNaissance">
-                    Date de naissance <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="dateNaissance"
-                    type="date"
-                    {...register("dateNaissance")}
-                  />
-                </div>
-
-                {/* Lieu de naissance */}
-                <div>
-                  <Label htmlFor="lieuNaissance">Lieu de naissance <span className="text-destructive">*</span></Label>
-                  <Input
-                    id="lieuNaissance"
-                    {...register("lieuNaissance")}
-                    placeholder="Abidjan, Côte d'Ivoire"
-                  />
-                </div>
-
-                {/* Numéro CNPS */}
-                <div>
-                  <Label htmlFor="numeroCnps">Numéro CNPS</Label>
-                  <Input
-                    id="numeroCnps"
-                    {...register("numeroCnps")}
-                    placeholder="0000000000"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Si l'employé en possède déjà un</p>
-                </div>
-
-                {/* Situation matrimoniale */}
-                <div>
-                  <Label htmlFor="situationMatrimoniale">
-                    Situation matrimoniale <span className="text-destructive">*</span>
-                  </Label>
-                  <Controller
-                    name="situationMatrimoniale"
-                    control={control}
-                    render={({ field }) => (
-                      <Combobox
-                        options={[
-                          { value: "CELIBATAIRE", label: "Célibataire" },
-                          { value: "MARIE", label: "Marié(e)" },
-                          { value: "DIVORCE", label: "Divorcé(e)" },
-                          { value: "VEUF", label: "Veuf/Veuve" },
-                        ]}
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="Sélectionner"
-                      />
-                    )}
-                  />
-                </div>
-
-                {/* Nombre d'enfants */}
-                <div>
-                  <Label htmlFor="nombreEnfants">Nombre d'enfants</Label>
-                  <Input
-                    id="nombreEnfants"
-                    type="number"
-                    min="0"
-                    {...register("nombreEnfants", { valueAsNumber: true })}
-                    placeholder="0"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Laissé pour le calcul des parts fiscales</p>
-                </div>
-
-                {/* Téléphone principal */}
-                <div>
-                  <Label htmlFor="telephone">
-                    Téléphone principal <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="telephone"
-                    {...register("telephone", { required: true })}
-                    placeholder="+225 07 00 00 00 00"
-                  />
-                </div>
-
-                {/* Téléphone secondaire */}
-                <div>
-                  <Label htmlFor="telephoneSecondaire">Téléphone secondaire</Label>
-                  <Input
-                    id="telephoneSecondaire"
-                    {...register("telephoneSecondaire")}
-                    placeholder="+225 05 00 00 00 00"
-                  />
+                  <div>
+                    <Label htmlFor="lieuNaissance">Lieu de naissance <span className="text-destructive">*</span></Label>
+                    <Input
+                      id="lieuNaissance"
+                      {...register("lieuNaissance")}
+                      placeholder="Abidjan, Côte d'Ivoire"
+                    />
+                  </div>
                 </div>
               </div>
+
+              {/* Section Situation familiale */}
+              <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                <h3 className="text-sm font-semibold text-gray-700 mb-4">Situation familiale</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="situationMatrimoniale">
+                      Situation matrimoniale
+                    </Label>
+                    <Controller
+                      name="situationMatrimoniale"
+                      control={control}
+                      render={({ field }) => (
+                        <Combobox
+                          options={[
+                            { value: "CELIBATAIRE", label: "Célibataire" },
+                            { value: "MARIE", label: "Marié(e)" },
+                            { value: "DIVORCE", label: "Divorcé(e)" },
+                            { value: "VEUF", label: "Veuf/Veuve" },
+                          ]}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Sélectionner"
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="nombreEnfants">Nombre d'enfants à charge</Label>
+                    <Input
+                      id="nombreEnfants"
+                      type="number"
+                      min="0"
+                      {...register("nombreEnfants", { valueAsNumber: true })}
+                      placeholder="0"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Pour le calcul de l'impôt</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section Coordonnées */}
+              <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                <h3 className="text-sm font-semibold text-gray-700 mb-4">Coordonnées</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="telephone">
+                      Téléphone principal <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="telephone"
+                      {...register("telephone", { required: true })}
+                      placeholder="+225 07 00 00 00 00"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="telephoneSecondaire">Téléphone secondaire</Label>
+                    <Input
+                      id="telephoneSecondaire"
+                      {...register("telephoneSecondaire")}
+                      placeholder="+225 05 00 00 00 00"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="email">Email professionnel</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      {...register("email")}
+                      placeholder="prenom.nom@ita.ci"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Sera utilisé pour la création du compte</p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="adresse">Adresse de résidence</Label>
+                    <Input
+                      id="adresse"
+                      {...register("adresse")}
+                      placeholder="Cocody, Angré 7e tranche"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section Contact d'urgence */}
+              <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                <h3 className="text-sm font-semibold text-gray-700 mb-4">Contact d'urgence</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="urgenceNom">Nom du contact</Label>
+                    <Input
+                      id="urgenceNom"
+                      {...register("urgenceNom")}
+                      placeholder="Nom et prénom"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="urgenceTel">Téléphone du contact</Label>
+                    <Input
+                      id="urgenceTel"
+                      {...register("urgenceTel")}
+                      placeholder="+225 07 00 00 00 00"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section Sécurité sociale */}
+              <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                <h3 className="text-sm font-semibold text-gray-700 mb-4">Sécurité sociale</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="numeroCnps">Numéro CNPS</Label>
+                    <Input
+                      id="numeroCnps"
+                      {...register("numeroCnps")}
+                      placeholder="1234567890"
+                      maxLength={10}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Si l'employé en possède déjà un</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section Paiement */}
+              <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+                <h3 className="text-sm font-semibold text-gray-700 mb-4">Modalités de paiement</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <Label htmlFor="modePaiement">Mode de paiement</Label>
+                    <Controller
+                      name="modePaiement"
+                      control={control}
+                      render={({ field }) => (
+                        <Combobox
+                          options={[
+                            { value: "VIREMENT", label: "Virement bancaire" },
+                            { value: "WAVE", label: "Wave" },
+                          ]}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Sélectionner"
+                        />
+                      )}
+                    />
+                  </div>
+
+                  {watch("modePaiement") === "VIREMENT" && (
+                    <div className="col-span-2">
+                      <Label htmlFor="rib">RIB (Relevé d'Identité Bancaire)</Label>
+                      <Input
+                        id="rib"
+                        {...register("rib")}
+                        placeholder="CI00 0000 0000 0000 0000 0000 00"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Format IBAN ivoirien</p>
+                    </div>
+                  )}
+
+                  {watch("modePaiement") === "WAVE" && (
+                    <div className="col-span-2">
+                      <Label htmlFor="numeroWave">Numéro Wave</Label>
+                      <Input
+                        id="numeroWave"
+                        {...register("numeroWave")}
+                        placeholder="+225 07 00 00 00 00"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Numéro de téléphone associé au compte Wave</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
 
-          {/* ÉTAPE 2 : Expériences */}
+          {/* ÉTAPE 2 : Affectation */}
           {etapeActuelle === 2 && (
-            <div className="space-y-4">
-              {experiencesFields.length === 0 ? (
-                <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg text-center py-12">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Aucune expérience enregistrée</p>
-                  <p className="text-xs text-gray-500 mb-6">
-                    Ajoutez les postes occupés avant l'arrivée chez ITA.
-                  </p>
-                  <Button
-                    type="button"
-                    onClick={() =>
-                      appendExperience({
-                        entreprise: "",
-                        poste: "",
-                        dateDebut: "",
-                      })
-                    }
-                  >
-                    <Plus className="size-4 mr-2" />
-                    Ajouter une expérience
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  {experiencesFields.map((field, index) => (
-                    <div key={field.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium">Expérience #{index + 1}</h4>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeExperience(index)}
-                        >
-                          <Trash2 className="size-4 text-destructive" />
-                        </Button>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label>Entreprise</Label>
-                          <Input {...register(`experiences.${index}.entreprise`)} />
-                        </div>
-                        <div>
-                          <Label>Poste occupé</Label>
-                          <Input {...register(`experiences.${index}.poste`)} />
-                        </div>
-                        <div>
-                          <Label>Date de début</Label>
-                          <Input type="date" {...register(`experiences.${index}.dateDebut`)} />
-                        </div>
-                        <div>
-                          <Label>Date de fin</Label>
-                          <Input type="date" {...register(`experiences.${index}.dateFin`)} />
-                        </div>
-                        <div className="col-span-2">
-                          <Label>Description</Label>
-                          <Input {...register(`experiences.${index}.description`)} />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() =>
-                      appendExperience({
-                        entreprise: "",
-                        poste: "",
-                        dateDebut: "",
-                      })
-                    }
-                  >
-                    <Plus className="size-4 mr-2" />
-                    Ajouter une autre expérience
-                  </Button>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* ÉTAPE 3 : Compétences */}
-          {etapeActuelle === 3 && (
-            <div className="space-y-4">
-              {competencesFields.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-sm font-medium mb-2">Aucune compétence enregistrée</p>
-                  <p className="text-xs text-muted-foreground mb-6">
-                    Ajoutez les compétences techniques de l'employé.
-                  </p>
-                  <Button
-                    type="button"
-                    onClick={() => appendCompetence({ libelle: "" })}
-                  >
-                    <Plus className="size-4 mr-2" />
-                    Ajouter une compétence
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  {competencesFields.map((field, index) => (
-                    <div key={field.id} className="flex items-center gap-3">
-                      <div className="flex-1 grid grid-cols-2 gap-3">
-                        <Input
-                          {...register(`competences.${index}.libelle`)}
-                          placeholder="Libellé de la compétence"
-                        />
-                        <Controller
-                          name={`competences.${index}.niveau`}
-                          control={control}
-                          render={({ field }) => (
-                            <Combobox
-                              options={[
-                                { value: "DEBUTANT", label: "Débutant" },
-                                { value: "INTERMEDIAIRE", label: "Intermédiaire" },
-                                { value: "AVANCE", label: "Avancé" },
-                                { value: "EXPERT", label: "Expert" },
-                              ]}
-                              value={field.value}
-                              onChange={field.onChange}
-                              placeholder="Niveau"
-                            />
-                          )}
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeCompetence(index)}
-                      >
-                        <Trash2 className="size-4 text-destructive" />
-                      </Button>
-                    </div>
-                  ))}
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => appendCompetence({ libelle: "" })}
-                  >
-                    <Plus className="size-4 mr-2" />
-                    Ajouter une autre compétence
-                  </Button>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* ÉTAPE 4 : Contrat & Affectation */}
-          {etapeActuelle === 4 && (
             <div className="space-y-6">
               {/* Matricule ITA (auto-généré) */}
               <div className="grid grid-cols-2 gap-4">
@@ -849,120 +773,11 @@ export function ModaleCreationEmployeV2({
             </div>
           )}
 
-          {/* ÉTAPE 5 : Formations */}
-          {etapeActuelle === 5 && (
-            <div className="space-y-4">
-              {formationsFields.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-sm font-medium mb-2">Aucune formation enregistrée</p>
-                  <p className="text-xs text-muted-foreground mb-6">
-                    Ajoutez les diplômes et formations de l'employé.
-                  </p>
-                  <Button
-                    type="button"
-                    onClick={() =>
-                      appendFormation({
-                        etablissement: "",
-                        diplome: "",
-                        annee: "",
-                      })
-                    }
-                  >
-                    <Plus className="size-4 mr-2" />
-                    Ajouter une formation
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  {formationsFields.map((field, index) => (
-                    <div key={field.id} className="border rounded-lg p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium">Formation #{index + 1}</h4>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeFormation(index)}
-                        >
-                          <Trash2 className="size-4 text-destructive" />
-                        </Button>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label>Établissement</Label>
-                          <Input {...register(`formations.${index}.etablissement`)} />
-                        </div>
-                        <div>
-                          <Label>Diplôme obtenu</Label>
-                          <Input {...register(`formations.${index}.diplome`)} />
-                        </div>
-                        <div>
-                          <Label>Année</Label>
-                          <Input {...register(`formations.${index}.annee`)} placeholder="2020" />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() =>
-                      appendFormation({
-                        etablissement: "",
-                        diplome: "",
-                        annee: "",
-                      })
-                    }
-                  >
-                    <Plus className="size-4 mr-2" />
-                    Ajouter une autre formation
-                  </Button>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* ÉTAPE 6 : Documents */}
-          {etapeActuelle === 6 && (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Les documents seront uploadés après la création du profil dans l'onglet "Documents".
-              </p>
-            </div>
-          )}
-
-          {/* ÉTAPE 7 : Révision */}
-          {etapeActuelle === 7 && (
-            <div className="space-y-6">
-              <h3 className="font-semibold text-lg">Révision des informations</h3>
-              <div className="space-y-4 text-sm">
-                <div className="border-b pb-2">
-                  <p className="font-medium">Informations personnelles</p>
-                  <p className="text-muted-foreground">
-                    {watch("nom")} {watch("prenom")} • {watch("email")}
-                  </p>
-                </div>
-                <div className="border-b pb-2">
-                  <p className="font-medium">Expériences</p>
-                  <p className="text-muted-foreground">{experiencesFields.length} enregistrée(s)</p>
-                </div>
-                <div className="border-b pb-2">
-                  <p className="font-medium">Affectation</p>
-                  <p className="text-muted-foreground">
-                    {directions.find((d) => d.id === directionId)?.libelle}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Navigation */}
           <div className="flex items-center justify-between pt-6 border-t">
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               onClick={etapePrecedente}
               disabled={etapeActuelle === 1}
             >
@@ -970,24 +785,17 @@ export function ModaleCreationEmployeV2({
               Précédent
             </Button>
 
-            <div className="flex gap-2">
-              <Button type="button" variant="ghost">
-                <Save className="size-4 mr-2" />
-                Enregistrer le brouillon
+            {etapeActuelle < ETAPES.length ? (
+              <Button type="button" onClick={etapeSuivante} className="bg-[#13850b] hover:bg-[#0f6909] text-white">
+                Suivant
+                <ChevronRight className="size-4 ml-2" />
               </Button>
-
-              {etapeActuelle < ETAPES.length ? (
-                <Button type="button" onClick={etapeSuivante}>
-                  Suivant
-                  <ChevronRight className="size-4 ml-2" />
-                </Button>
-              ) : (
-                <Button type="submit" disabled={isPending}>
-                  {isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
-                  Créer le profil
-                </Button>
-              )}
-            </div>
+            ) : (
+              <Button type="submit" disabled={isPending} className="bg-[#13850b] hover:bg-[#0f6909] text-white">
+                {isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
+                Créer le profil
+              </Button>
+            )}
           </div>
         </form>
         </div>

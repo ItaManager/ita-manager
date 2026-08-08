@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { FileEdit } from "lucide-react";
-import { ModaleCreationEmployeV2 } from "./modale-creation-employe-v2";
+import { Pencil } from "lucide-react";
+import { ModaleModificationEmploye } from "./modale-modification-employe";
 
 interface BoutonModifierEmployeProps {
   employeId: string;
@@ -28,17 +28,14 @@ export function BoutonModifierEmploye({
         className="p-2 hover:bg-muted rounded-lg transition-colors"
         title="Modifier l'employé"
       >
-        <FileEdit className="size-4 text-muted-foreground" />
+        <Pencil className="size-4 text-muted-foreground" />
       </button>
 
-      <ModaleCreationEmployeV2
+      <ModaleModificationEmploye
         ouvert={ouvert}
         onFermer={() => setOuvert(false)}
-        postes={postes}
-        nationalites={nationalites}
-        directions={directions}
-        services={services}
         employeId={employeId}
+        nationalites={nationalites}
       />
     </>
   );

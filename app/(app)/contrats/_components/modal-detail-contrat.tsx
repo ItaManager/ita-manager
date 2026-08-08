@@ -104,22 +104,14 @@ export function ModalDetailContrat({
 
   return (
     <Dialog open={ouvert} onOpenChange={onFermer}>
-      <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
-        <DialogHeader className="relative -mt-6 -mx-6 px-6 pt-6 pb-4 rounded-t-xl" style={{ backgroundColor: '#ebeaf2' }}>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onFermer}
-            className="absolute -right-2 -top-2 h-8 w-8"
-          >
-            <X className="size-4" />
-          </Button>
-          <DialogTitle className="text-xl font-semibold" style={{ color: '#1d186c' }}>
+      <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto p-0">
+        <DialogHeader className="border-b border-border px-6 py-4" style={{ backgroundColor: 'var(--primary-soft)' }}>
+          <DialogTitle className="text-lg font-semibold text-primary">
             Détail du contrat
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 mt-4">
+        <div className="space-y-6 px-6 py-4">
           <div className="grid grid-cols-2 gap-6">
             {/* Colonne gauche - Informations */}
             <div className="space-y-6">
@@ -141,13 +133,7 @@ export function ModalDetailContrat({
             <div>
               <h3 className="text-sm font-medium text-muted-foreground mb-2">Type de contrat</h3>
               <div>
-                {contrat.typeContrat === "CDD" ? (
-                  <Badge className="bg-warning-soft text-warning border-warning/20">CDD</Badge>
-                ) : contrat.typeContrat === "CDI" ? (
-                  <Badge className="border-[#13850b]/20" style={{ backgroundColor: '#e8f5e9', color: '#13850b' }}>CDI</Badge>
-                ) : (
-                  <Badge variant="outline">{contrat.typeContrat}</Badge>
-                )}
+                <Badge variant="secondary">{contrat.typeContrat}</Badge>
               </div>
             </div>
 
@@ -259,33 +245,34 @@ export function ModalDetailContrat({
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t">
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border">
+          <Button
+            variant="outline"
+            onClick={handleTelecharger}
+            className="gap-2"
+          >
+            <Download className="size-4" />
+            Télécharger PDF
+          </Button>
+          {contrat.actif && onRenouveler && (
             <Button
               variant="outline"
-              onClick={handleTelecharger}
-              className="gap-2 h-11 px-6"
+              onClick={() => onRenouveler(contrat)}
+              className="gap-2"
             >
-              <Download className="size-4" />
-              Télécharger PDF
+              <RefreshCw className="size-4" />
+              Renouveler
             </Button>
-            {contrat.actif && onRenouveler && (
-              <Button
-                variant="outline"
-                onClick={() => onRenouveler(contrat)}
-                className="gap-2 h-11 px-6"
-              >
-                <RefreshCw className="size-4" />
-                Renouveler
-              </Button>
-            )}
-            <Button
-              onClick={onFermer}
-              className="h-11 px-6"
-            >
-              Fermer
-            </Button>
-          </div>
+          )}
+          <Button
+            onClick={onFermer}
+            className="bg-[#13850b] hover:bg-[#0f6909] text-white rounded-full"
+          >
+            Fermer
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

@@ -1,95 +1,223 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useState, useEffect, useTransition } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Search, X, Loader2 } from "lucide-react";
 import type { TypeMainOeuvre } from "@prisma/client";
 
 interface FiltresEmployesClientProps {
   recherche?: string;
   typeMainOeuvre?: TypeMainOeuvre;
   directionId?: string;
+  serviceId?: string;
   statutDossier?: "COMPLET" | "INCOMPLET";
+  directions: Array<{ id: string; libelle: string }>;
+  services: Array<{ id: string; libelle: string; directionId: string }>;
+  counts: {
+    total: number;
+    permanents: number;
+    journaliers: number;
+    dossiersIncomplets: number;
+    sansAcces: number;
+  };
+  boutonAjout: React.ReactNode;
 }
 
 export function FiltresEmployesClient({
-  recherche,
+  recherche: rechercheInitiale,
   typeMainOeuvre,
   directionId,
+  serviceId,
   statutDossier,
+  directions,
+  services,
+  counts,
+  boutonAjout,
 }: FiltresEmployesClientProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
-  const [searchValue, setSearchValue] = useState(recherche || "");
+  const [recherche, setRecherche] = useState(rechercheInitiale || "");
 
-  const updateFilters = (key: string, value: string) => {
+  // Extraire le basePath de l'URL actuelle (ex: /employes ou /journaliers)
+  const basePath = pathname.split('?')[0];
+
+  // Debounce la recherche
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (recherche !== rechercheInitiale) {
+        const params = new URLSearchParams(searchParams.toString());
+        if (recherche) {
+          params.set("recherche", recherche);
+        } else {
+          params.delete("recherche");
+        }
+        params.set("page", "1");
+        startTransition(() => {
+          router.push(`${basePath}?${params.toString()}`);
+        });
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [recherche, rechercheInitiale, router, searchParams]);
+
+  const changerFiltre = (cle: string, valeur: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (value) {
-      params.set(key, value);
-    } else {
-      params.delete(key);
-    }
-    params.set("page", "1");
 
+    // Réinitialiser les filtres dépendants
+    if (cle === "typeMainOeuvre") {
+      // Si on change le type, on peut garder direction/service
+      if (valeur === typeMainOeuvre) {
+        params.delete("typeMainOeuvre");
+      } else {
+        params.set("typeMainOeuvre", valeur);
+      }
+    } else if (cle === "directionId") {
+      if (valeur === directionId) {
+        params.delete("directionId");
+        params.delete("serviceId"); // Reset service
+      } else {
+        params.set("directionId", valeur);
+        params.delete("serviceId"); // Reset service
+      }
+    } else if (cle === "serviceId") {
+      if (valeur === serviceId) {
+        params.delete("serviceId");
+      } else {
+        params.set("serviceId", valeur);
+      }
+    } else if (cle === "statutDossier") {
+      if (valeur === statutDossier) {
+        params.delete("statutDossier");
+      } else {
+        params.set("statutDossier", valeur);
+      }
+    }
+
+    params.set("page", "1");
     startTransition(() => {
-      router.push(`${pathname}?${params.toString()}`);
+      router.push(`${basePath}?${params.toString()}`);
     });
   };
 
-  const handleSearchChange = (value: string) => {
-    setSearchValue(value);
-    const timeoutId = setTimeout(() => {
-      updateFilters("recherche", value);
-    }, 500);
-    return () => clearTimeout(timeoutId);
+  const effacerRecherche = () => {
+    setRecherche("");
   };
 
+  // Filtrer les services selon la direction sélectionnée
+  const servicesFiltres = services.filter(
+    (s) => !directionId || s.directionId === directionId
+  );
+
   return (
-    <div className="flex items-center gap-4">
-      <div className="relative flex-1">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-primary pointer-events-none" />
-        <Input
-          placeholder="Rechercher par nom, prénom ou matricule..."
-          value={searchValue}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          className="pl-12 h-12 text-base border-2 border-border focus:border-primary transition-all shadow-sm focus:shadow-md"
-          disabled={isPending}
-        />
+    <div className="space-y-3">
+      {/* Barre de recherche avec bouton */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Rechercher par nom, prénom ou matricule..."
+            value={recherche}
+            onChange={(e) => setRecherche(e.target.value)}
+            className="pl-10 pr-10 h-10"
+          />
+          {recherche && (
+            <button
+              onClick={effacerRecherche}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Effacer la recherche"
+            >
+              <X className="size-4" />
+            </button>
+          )}
+        </div>
+        {boutonAjout}
       </div>
 
-      <select
-        value={typeMainOeuvre || ""}
-        onChange={(e) => updateFilters("typeMainOeuvre", e.target.value)}
-        disabled={isPending}
-        className="h-12 rounded-lg border-2 border-border bg-background px-4 text-base cursor-pointer min-w-[180px] transition-all hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm hover:shadow-md"
-      >
-        <option value="">Tous les types</option>
-        <option value="PERMANENT">Permanent</option>
-        <option value="JOURNALIER">Journalier</option>
-      </select>
+      {/* Filtres - Type de main d'œuvre */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <button onClick={() => changerFiltre("typeMainOeuvre", "PERMANENT")}>
+          <Badge
+            variant={typeMainOeuvre === "PERMANENT" ? "default" : "outline"}
+            className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+          >
+            Permanents{" "}
+            <span className="ml-1 opacity-70">({counts.permanents})</span>
+          </Badge>
+        </button>
+        <button onClick={() => changerFiltre("typeMainOeuvre", "JOURNALIER")}>
+          <Badge
+            variant={typeMainOeuvre === "JOURNALIER" ? "default" : "outline"}
+            className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+          >
+            Journaliers{" "}
+            <span className="ml-1 opacity-70">({counts.journaliers})</span>
+          </Badge>
+        </button>
+        <div className="w-px h-6 bg-border mx-1" />
+        {directions.map((dir) => (
+          <button
+            key={dir.id}
+            onClick={() => changerFiltre("directionId", dir.id)}
+          >
+            <Badge
+              variant={directionId === dir.id ? "default" : "outline"}
+              className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+            >
+              {dir.libelle}
+            </Badge>
+          </button>
+        ))}
+        {directionId && servicesFiltres.length > 0 && (
+          <>
+            <div className="w-px h-6 bg-border mx-1" />
+            {servicesFiltres.map((service) => (
+              <button
+                key={service.id}
+                onClick={() => changerFiltre("serviceId", service.id)}
+              >
+                <Badge
+                  variant={serviceId === service.id ? "default" : "outline"}
+                  className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                >
+                  {service.libelle}
+                </Badge>
+              </button>
+            ))}
+          </>
+        )}
+        <div className="w-px h-6 bg-border mx-1" />
+        <button onClick={() => changerFiltre("statutDossier", "INCOMPLET")}>
+          <Badge
+            variant={statutDossier === "INCOMPLET" ? "default" : "outline"}
+            className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+          >
+            Dossiers incomplets{" "}
+            <span className="ml-1 opacity-70">({counts.dossiersIncomplets})</span>
+          </Badge>
+        </button>
+        <button onClick={() => changerFiltre("statutDossier", "COMPLET")}>
+          <Badge
+            variant={statutDossier === "COMPLET" ? "default" : "outline"}
+            className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+          >
+            Dossiers complets
+          </Badge>
+        </button>
+      </div>
 
-      <select
-        value={directionId || ""}
-        onChange={(e) => updateFilters("directionId", e.target.value)}
-        disabled={isPending}
-        className="h-12 rounded-lg border-2 border-border bg-background px-4 text-base cursor-pointer min-w-[180px] transition-all hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm hover:shadow-md"
-      >
-        <option value="">Toutes les directions</option>
-      </select>
-
-      <select
-        value={statutDossier || ""}
-        onChange={(e) => updateFilters("statutDossier", e.target.value)}
-        disabled={isPending}
-        className="h-12 rounded-lg border-2 border-border bg-background px-4 text-base cursor-pointer min-w-[180px] transition-all hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm hover:shadow-md"
-      >
-        <option value="">Tous les statuts</option>
-        <option value="COMPLET">Dossier complet</option>
-        <option value="INCOMPLET">Dossier incomplet</option>
-      </select>
+      {/* Indicateur de chargement */}
+      {isPending && (
+        <div className="flex items-center gap-2">
+          <Loader2 className="size-4 animate-spin text-[#13850b]" />
+          <span className="text-xs text-muted-foreground">Chargement des données...</span>
+        </div>
+      )}
     </div>
   );
 }
