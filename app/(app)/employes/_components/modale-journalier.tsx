@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { AlertCircle, Loader2, X } from "lucide-react";
-import { creerJournalier } from "@/lib/actions/employes";
+import { creerJournalier, obtenirEmploye } from "@/lib/actions/employes";
 
 const schemaJournalier = z.object({
   nom: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
@@ -45,14 +45,17 @@ interface ModaleJournalierProps {
   directions: Array<{ id: string; libelle: string }>;
   services: Array<{ id: string; libelle: string; directionId: string }>;
   projets: Array<{ id: string; code: string; nom: string }>;
+  employeId?: string; // Pour le mode édition
 }
 
 export function ModaleJournalier({
   ouvert,
   onFermer,
+  employeId,
 }: ModaleJournalierProps) {
   const router = useRouter();
   const [erreur, setErreur] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const {
     register,
@@ -78,6 +81,37 @@ export function ModaleJournalier({
   });
 
   const typePieceIdentite = watch("typePieceIdentite");
+
+  // Charger les données de l'employé si mode édition
+  useEffect(() => {
+    if (ouvert && employeId) {
+      setIsLoading(true);
+      obtenirEmploye(employeId)
+        .then((employe) => {
+          if (employe) {
+            reset({
+              nom: employe.nom,
+              prenom: employe.prenom,
+              sexe: (employe.sexe as "MASCULIN" | "FEMININ") || undefined,
+              dateNaissance: employe.dateNaissance
+                ? new Date(employe.dateNaissance).toISOString().split("T")[0]
+                : "",
+              lieuNaissance: employe.lieuNaissance || "",
+              typePieceIdentite: undefined, // Pas dans le modèle actuel
+              numeroPieceIdentite: "",
+              telephone: employe.telephone,
+              numeroWave: employe.numeroWave || "",
+            });
+          }
+        })
+        .catch((err) => {
+          setErreur("Impossible de charger les données de l'employé");
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
+  }, [ouvert, employeId, reset]);
 
   // Options pour les Combobox
   const sexeOptions: ComboboxOption[] = [
@@ -128,20 +162,27 @@ export function ModaleJournalier({
             <X className="size-4" />
           </Button>
           <DialogTitle className="text-xl font-semibold" style={{ color: '#1d186c' }}>
-            Nouveau journalier
+            {employeId ? "Modifier le journalier" : "Nouveau journalier"}
           </DialogTitle>
           <p className="text-sm text-muted-foreground mt-2">
-            Créez le profil du journalier. L'affectation à un chantier se fera par la Direction Technique.
+            {employeId
+              ? "Modifiez les informations du journalier."
+              : "Créez le profil du journalier. L'affectation à un chantier se fera par la Direction Technique."}
           </p>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-4">
-          {erreur && (
-            <Alert variant="destructive">
-              <AlertCircle className="size-4" aria-hidden="true" />
-              <AlertDescription>{erreur}</AlertDescription>
-            </Alert>
-          )}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="size-8 animate-spin text-[#13850b]" />
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-4">
+            {erreur && (
+              <Alert variant="destructive">
+                <AlertCircle className="size-4" aria-hidden="true" />
+                <AlertDescription>{erreur}</AlertDescription>
+              </Alert>
+            )}
 
           {/* Identité */}
           <div className="space-y-4">
@@ -326,10 +367,11 @@ export function ModaleJournalier({
               {isSubmitting && (
                 <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
               )}
-              Créer le profil
+              {employeId ? "Enregistrer" : "Créer le profil"}
             </Button>
           </div>
         </form>
+        )}
       </DialogContent>
     </Dialog>
   );
