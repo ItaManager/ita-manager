@@ -241,11 +241,13 @@ export async function ListeEmployes({
                         </td>
                         <td className="py-3 px-4 text-sm">
                           {employe.competenceActuelle ? (
-                            <Badge variant="outline" className="font-normal">
+                            <Badge variant="secondary">
                               {employe.competenceActuelle}
                             </Badge>
                           ) : (
-                            <span className="text-orange-600 text-xs">⚠️ Non assignée</span>
+                            <Badge variant="outline" className="border-orange-300 bg-orange-50 text-orange-700">
+                              Non assignée
+                            </Badge>
                           )}
                         </td>
                         <td className="py-3 px-4 text-sm font-mono text-muted-foreground">
@@ -268,7 +270,7 @@ export async function ListeEmployes({
                           )}
                         </td>
                         <td className="py-3 px-4">
-                          <Badge variant={!employe.archiveLe ? "default" : "secondary"}>
+                          <Badge variant="secondary">
                             {!employe.archiveLe ? "Actif" : "Archivé"}
                           </Badge>
                         </td>
