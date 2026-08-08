@@ -28,17 +28,6 @@ export function ActionsJournalier({
 
   return (
     <div className="flex items-center gap-2">
-      {/* Bouton icône Modifier */}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setOuvertModifier(true)}
-        className="h-8 w-8"
-        title="Modifier le profil"
-      >
-        <Pencil className="size-4" />
-      </Button>
-
       {/* Menu actions */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

@@ -149,7 +149,7 @@ export async function ListeEmployes({
                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
                       Statut
                     </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground w-[100px]">
+                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground w-[60px]">
                       Actions
                     </th>
                   </>
