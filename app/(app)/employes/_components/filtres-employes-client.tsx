@@ -165,30 +165,6 @@ export function FiltresEmployesClient({
 
       {/* Filtres */}
       <div className="flex items-center gap-2 flex-wrap">
-        {/* Type de main d'œuvre - seulement sur page employés */}
-        {!isPageJournaliers && (
-          <>
-            <button onClick={() => changerFiltre("typeMainOeuvre", "PERMANENT")}>
-              <Badge
-                variant={typeMainOeuvre === "PERMANENT" ? "default" : "outline"}
-                className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
-              >
-                Permanents{" "}
-                <span className="ml-1 opacity-70">({counts.permanents})</span>
-              </Badge>
-            </button>
-            <button onClick={() => changerFiltre("typeMainOeuvre", "JOURNALIER")}>
-              <Badge
-                variant={typeMainOeuvre === "JOURNALIER" ? "default" : "outline"}
-                className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
-              >
-                Journaliers{" "}
-                <span className="ml-1 opacity-70">({counts.journaliers})</span>
-              </Badge>
-            </button>
-            <div className="w-px h-6 bg-border mx-1" />
-          </>
-        )}
 
         {/* Disponibilité - seulement sur page journaliers */}
         {isPageJournaliers && (
