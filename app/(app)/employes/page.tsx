@@ -6,6 +6,12 @@ import { ModuleLayout } from "@/components/layouts/module-layout";
 import { IndicateursEmployes } from "./_components/indicateurs-employes";
 import { TitreTaches } from "./_components/titre-taches";
 import { ListeTaches } from "./_components/liste-taches";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 interface PageEmployesProps {
   searchParams: Promise<{
@@ -49,16 +55,18 @@ export default async function PageEmployes({ searchParams }: PageEmployesProps) 
       </Suspense>
 
       {/* Tâches */}
-      <div className="bg-white rounded-xl border border-[#0000001a]">
-        <div className="px-6 py-4 border-b border-[#0000001a]">
-          <Suspense fallback={<h2 className="text-lg font-semibold text-[#18181a]">Vos tâches</h2>}>
-            <TitreTaches count={taches.length} />
-          </Suspense>
-        </div>
-        <div className="px-6 py-4">
-          <ListeTaches taches={taches} />
-        </div>
-      </div>
+      <Accordion type="single" collapsible defaultValue="taches" className="bg-white rounded-xl border border-[#0000001a]">
+        <AccordionItem value="taches" className="border-0">
+          <AccordionTrigger className="px-6 py-4 hover:no-underline">
+            <Suspense fallback={<h2 className="text-lg font-semibold text-[#18181a]">Vos tâches</h2>}>
+              <TitreTaches count={taches.length} />
+            </Suspense>
+          </AccordionTrigger>
+          <AccordionContent className="px-6 pb-4">
+            <ListeTaches taches={taches} />
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
       {/* Tableau */}
       <div className="bg-white rounded-xl border border-[#0000001a] p-6">
