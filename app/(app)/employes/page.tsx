@@ -37,13 +37,18 @@ export default async function PageEmployes({ searchParams }: PageEmployesProps) 
   // Charger les données de référence pour le formulaire de création
   const donneesReference = await obtenirDonneesReferenceEmploye();
 
-  // Calculer les compteurs pour les tabs
-  const { listerEmployes } = await import("@/lib/actions/employes");
-  const tousEmployes = await listerEmployes({});
-  const tabCounts = {
-    permanents: tousEmployes.items.filter((e) => e.typeMainOeuvre === "PERMANENT").length,
-    journaliers: tousEmployes.items.filter((e) => e.typeMainOeuvre === "JOURNALIER").length,
-  };
+  // Calculer les compteurs pour les tabs de manière plus efficace
+  const { prisma } = await import("@/lib/db/prisma");
+  const [permanents, journaliers] = await Promise.all([
+    prisma.employe.count({
+      where: { archiveLe: null, typeMainOeuvre: "PERMANENT" },
+    }),
+    prisma.employe.count({
+      where: { archiveLe: null, typeMainOeuvre: "JOURNALIER" },
+    }),
+  ]);
+
+  const tabCounts = { permanents, journaliers };
 
   return (
     <ModuleLayout
