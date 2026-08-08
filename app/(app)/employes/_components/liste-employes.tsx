@@ -234,6 +234,8 @@ export async function ListeEmployes({
                             employeId={employe.id}
                             employeNom={employe.nom}
                             employePrenom={employe.prenom}
+                            email={employe.email}
+                            aCompte={!!employe.profil}
                             nationalites={donneesReference.nationalites}
                           />
                         </td>

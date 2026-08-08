@@ -70,6 +70,7 @@ interface EmployeListItem {
       nom: string;
     } | null;
   } | null;
+  profil?: { id: string } | null; // Pour vérifier si l'employé a un compte
 }
 
 interface EmployeDetail {
@@ -255,6 +256,11 @@ export const listerEmployes = actionProtegee(
           },
           orderBy: { dateDebut: "desc" },
           take: 1,
+        },
+        profil: {
+          select: {
+            id: true,
+          },
         },
       },
       orderBy: { matricule: "desc" },
@@ -640,7 +646,7 @@ export const creerEmploye = actionProtegee(
           typeContrat: input.typeContrat,
           dateDebut: input.dateEmbauche,
           dateFin: input.dateFin,
-          salaire: input.salaire,
+          salaire: input.salaire ?? 0,
           signe: false,
         },
       });
@@ -929,6 +935,180 @@ export const archiverEmploye = actionProtegee(
       matricule: employe.matricule,
       message: `${employe.nom} ${employe.prenom} (${employe.matricule}) a été archivé.`,
     };
+  }
+);
+
+/**
+ * Obtenir la liste des rôles disponibles pour attribution.
+ * Utilisé lors de la création de compte employé.
+ */
+export const obtenirRolesDisponibles = actionProtegee(
+  "employe:modifier",
+  async (session) => {
+    const roles = await prisma.role.findMany({
+      select: {
+        id: true,
+        code: true,
+        libelle: true,
+        description: true,
+      },
+      orderBy: {
+        libelle: "asc",
+      },
+    });
+
+    return {
+      success: true,
+      roles,
+    };
+  }
+);
+
+/**
+ * Créer un compte d'accès pour un employé.
+ *
+ * Flux :
+ * 1. Vérifie que l'employé existe et n'a pas déjà de compte
+ * 2. Crée le compte Supabase via Admin API
+ * 3. Crée le Profil lié à l'employé
+ * 4. Attribue les rôles
+ * 5. Envoie l'email d'invitation avec mot de passe temporaire
+ *
+ * Permissions requises : employe:modifier
+ */
+export const creerCompteEmploye = actionProtegee(
+  "employe:modifier",
+  async (session, employeId: string, email: string, rolesIds: string[]) => {
+    // 1. Vérifier que l'employé existe
+    const employe = await prisma.employe.findUnique({
+      where: { id: employeId },
+      include: {
+        profil: true,
+      },
+    });
+
+    if (!employe) {
+      throw new Error("Employé introuvable.");
+    }
+
+    if (employe.archiveLe) {
+      throw new Error("Impossible de créer un compte pour un employé archivé.");
+    }
+
+    // 2. Vérifier qu'il n'a pas déjà un compte
+    if (employe.profil) {
+      throw new Error("Cet employé possède déjà un compte d'accès.");
+    }
+
+    // 3. Vérifier que l'email n'est pas déjà utilisé
+    const emailExiste = await prisma.profil.findUnique({
+      where: { email },
+    });
+
+    if (emailExiste) {
+      throw new Error("Cette adresse email est déjà utilisée par un autre compte.");
+    }
+
+    // 4. Vérifier que les rôles existent
+    if (rolesIds.length === 0) {
+      throw new Error("Au moins un rôle doit être attribué.");
+    }
+
+    const roles = await prisma.role.findMany({
+      where: { id: { in: rolesIds } },
+    });
+
+    if (roles.length !== rolesIds.length) {
+      throw new Error("Un ou plusieurs rôles sont invalides.");
+    }
+
+    // 5. Générer un mot de passe temporaire sécurisé
+    const motDePasseTemporaire = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12);
+
+    // 6. Créer le compte Supabase via Admin API
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const admin = createAdminClient();
+
+    const { data: userData, error: userError } = await admin.auth.admin.createUser({
+      email,
+      password: motDePasseTemporaire,
+      email_confirm: true, // Email déjà vérifié
+      user_metadata: {
+        employeId,
+        nom: employe.nom,
+        prenom: employe.prenom,
+      },
+    });
+
+    if (userError || !userData.user) {
+      console.error("Erreur création compte Supabase:", userError);
+      throw new Error(`Impossible de créer le compte Supabase : ${userError?.message || "Erreur inconnue"}`);
+    }
+
+    try {
+      // 7. Créer le Profil Prisma (transaction)
+      await prisma.$transaction(async (tx) => {
+        // Créer le profil
+        await tx.profil.create({
+          data: {
+            id: userData.user.id,
+            email,
+            employeId,
+            actif: true,
+          },
+        });
+
+        // Attribuer les rôles
+        await tx.profilRole.createMany({
+          data: rolesIds.map((roleId) => ({
+            profilId: userData.user.id,
+            roleId,
+          })),
+        });
+
+        // Journaliser la création
+        await tx.journalEvenement.create({
+          data: {
+            entite: "Profil",
+            entiteId: userData.user.id,
+            action: "CREATION",
+            auteurId: session.userId,
+            auteurNom: session.email,
+            details: {
+              employeId,
+              email,
+              rolesIds,
+            },
+            commentaire: `Création compte pour ${employe.nom} ${employe.prenom}`,
+          },
+        });
+      });
+
+      // 8. Envoyer l'email d'invitation (hors transaction)
+      // TODO: Implémenter l'envoi d'email via Resend
+      // Pour l'instant, on retourne le mot de passe temporaire pour le communiquer manuellement
+
+      return {
+        success: true,
+        message: `Compte créé avec succès pour ${employe.nom} ${employe.prenom}`,
+        email,
+        motDePasseTemporaire, // À communiquer à l'employé de manière sécurisée
+      };
+    } catch (error) {
+      // Rollback : supprimer le compte Supabase si la création du profil échoue
+      try {
+        await admin.auth.admin.deleteUser(userData.user.id);
+      } catch (deleteError) {
+        console.error("Erreur lors du rollback Supabase:", deleteError);
+      }
+
+      console.error("Erreur création profil:", error);
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : "Une erreur est survenue lors de la création du profil"
+      );
+    }
   }
 );
 
