@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Edit, Award, Eye, History, Archive, MoreVertical } from "lucide-react";
+import { Pencil, Eye, History, Archive, MoreVertical } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface ActionsJournalierProps {
@@ -25,35 +25,21 @@ export function ActionsJournalier({
 }: ActionsJournalierProps) {
   const router = useRouter();
   const [ouvertModifier, setOuvertModifier] = useState(false);
-  const [ouvertCompetence, setOuvertCompetence] = useState(false);
 
   return (
     <div className="flex items-center gap-2">
-      {/* Bouton Modifier */}
+      {/* Bouton icône Modifier */}
       <Button
         variant="ghost"
-        size="sm"
+        size="icon"
         onClick={() => setOuvertModifier(true)}
-        className="h-8 px-3 text-xs"
+        className="h-8 w-8"
         title="Modifier le profil"
       >
-        <Edit className="size-4 mr-1" />
-        Modifier
+        <Pencil className="size-4" />
       </Button>
 
-      {/* Bouton Assigner compétence */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setOuvertCompetence(true)}
-        className="h-8 px-3 text-xs border-[#13850b] text-[#13850b] hover:bg-[#13850b] hover:text-white"
-        title="Assigner une compétence (requis pour la paie)"
-      >
-        <Award className="size-4 mr-1" />
-        Compétence
-      </Button>
-
-      {/* Menu actions supplémentaires */}
+      {/* Menu actions */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -61,6 +47,10 @@ export function ActionsJournalier({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuItem onClick={() => setOuvertModifier(true)}>
+            <Pencil className="size-4 mr-2" />
+            Modifier
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => router.push(`/employes/${employeId}`)}>
             <Eye className="size-4 mr-2" />
             Voir le profil
@@ -82,7 +72,6 @@ export function ActionsJournalier({
 
       {/* TODO: Modales à implémenter */}
       {/* <ModaleModifierJournalier ... /> */}
-      {/* <ModaleAssignerCompetence ... /> */}
     </div>
   );
 }
