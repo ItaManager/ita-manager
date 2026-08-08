@@ -450,7 +450,7 @@ interface CreerEmployeInput {
   rib?: string;
 
   // Affectation
-  posteId: string;
+  posteId?: string; // Requis pour PERMANENT, optionnel pour JOURNALIER
   superieurId?: string;
   dateDebutAffectation: Date;
 
@@ -458,7 +458,7 @@ interface CreerEmployeInput {
   typeContrat: "CDI" | "CDD" | "INTERIM" | "STAGE";
   dateEmbauche: Date;
   dateFin?: Date;
-  salaire: number;
+  salaire?: number; // Optionnel pour JOURNALIER (taux variable)
 }
 
 /**
@@ -559,16 +559,18 @@ export const creerEmploye = actionProtegee(
         },
       });
 
-      // Créer l'affectation
-      await tx.affectation.create({
-        data: {
-          employeId: emp.id,
-          posteId: input.posteId,
-          // superieurId optionnel (null pour DG, obligatoire pour les autres)
-          ...(input.superieurId ? { superieurId: input.superieurId } : {}),
-          dateDebut: input.dateDebutAffectation,
-        },
-      });
+      // Créer l'affectation (seulement pour les permanents avec poste)
+      if (input.posteId) {
+        await tx.affectation.create({
+          data: {
+            employeId: emp.id,
+            posteId: input.posteId,
+            // superieurId optionnel (null pour DG, obligatoire pour les autres)
+            ...(input.superieurId ? { superieurId: input.superieurId } : {}),
+            dateDebut: input.dateDebutAffectation,
+          },
+        });
+      }
 
       // Créer le contrat
       await tx.contrat.create({

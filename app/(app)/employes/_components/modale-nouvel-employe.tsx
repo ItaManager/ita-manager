@@ -63,6 +63,7 @@ interface Formation {
 interface FormData {
   typeMainOeuvre: TypeMainOeuvre;
   // General
+  matricule?: string; // Optionnel : généré automatiquement si absent
   nom: string;
   prenom: string;
   email?: string;
