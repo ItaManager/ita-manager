@@ -61,6 +61,8 @@ export async function ListeEmployes({
     journaliers: tousEmployes.items.filter((e) => e.typeMainOeuvre === "JOURNALIER").length,
     dossiersIncomplets: tousEmployes.items.filter((e) => e.completudeDossier < 100).length,
     archives: tousEmployes.items.filter((e) => e.archiveLe !== null).length,
+    enMission: tousEmployes.items.filter((e) => e.typeMainOeuvre === "JOURNALIER" && e.disponibilite === "EN_MISSION").length,
+    disponibles: tousEmployes.items.filter((e) => e.typeMainOeuvre === "JOURNALIER" && e.disponibilite === "DISPONIBLE").length,
   };
 
   return (

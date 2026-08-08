@@ -200,41 +200,45 @@ export function FiltresEmployesClient({
           </>
         )}
 
-        {/* Directions et services - pour tous */}
-        {directions.map((dir) => (
-          <button
-            key={dir.id}
-            onClick={() => changerFiltre("directionId", dir.id)}
-          >
-            <Badge
-              variant={directionId === dir.id ? "default" : "outline"}
-              className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
-            >
-              {dir.libelle}
-            </Badge>
-          </button>
-        ))}
-        {directionId && servicesFiltres.length > 0 && (
+        {/* Directions et services - seulement pour page employés */}
+        {!isPageJournaliers && (
           <>
-            <div className="w-px h-6 bg-border mx-1" />
-            {servicesFiltres.map((service) => (
+            {directions.map((dir) => (
               <button
-                key={service.id}
-                onClick={() => changerFiltre("serviceId", service.id)}
+                key={dir.id}
+                onClick={() => changerFiltre("directionId", dir.id)}
               >
                 <Badge
-                  variant={serviceId === service.id ? "default" : "outline"}
+                  variant={directionId === dir.id ? "default" : "outline"}
                   className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
                 >
-                  {service.libelle}
+                  {dir.libelle}
                 </Badge>
               </button>
             ))}
+            {directionId && servicesFiltres.length > 0 && (
+              <>
+                <div className="w-px h-6 bg-border mx-1" />
+                {servicesFiltres.map((service) => (
+                  <button
+                    key={service.id}
+                    onClick={() => changerFiltre("serviceId", service.id)}
+                  >
+                    <Badge
+                      variant={serviceId === service.id ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      {service.libelle}
+                    </Badge>
+                  </button>
+                ))}
+              </>
+            )}
+            <div className="w-px h-6 bg-border mx-1" />
           </>
         )}
 
         {/* Statut dossier - pour tous */}
-        <div className="w-px h-6 bg-border mx-1" />
         <button onClick={() => changerFiltre("statutDossier", "INCOMPLET")}>
           <Badge
             variant={statutDossier === "INCOMPLET" ? "default" : "outline"}
