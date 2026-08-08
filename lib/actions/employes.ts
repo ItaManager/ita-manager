@@ -2469,6 +2469,52 @@ export const obtenirTachesEmployes = cache(actionProtegee(
       });
     }
 
+    // Tâches spécifiques aux journaliers
+    if (!typeMainOeuvre || typeMainOeuvre === "JOURNALIER") {
+      // Journaliers sans compétence assignée
+      const sansCompetence = await prisma.employe.count({
+        where: {
+          archiveLe: null,
+          typeMainOeuvre: "JOURNALIER",
+          competences: {
+            none: {
+              dateFin: null,
+            },
+          },
+        },
+      });
+
+      if (sansCompetence > 0) {
+        taches.push({
+          id: "sans-competence",
+          titre: "Assigner les compétences",
+          description: `${sansCompetence} journalier${sansCompetence > 1 ? "s n'ont" : " n'a"} pas de compétence assignée. Nécessaire pour calculer leur rémunération.`,
+          count: sansCompetence,
+          lien: "/personnel/competences/agents",
+        });
+      }
+
+      // Compétences sans taux (qui bloquent l'assignation)
+      const competencesSansTaux = await prisma.competence.count({
+        where: {
+          actif: true,
+          taux: {
+            none: {},
+          },
+        },
+      });
+
+      if (competencesSansTaux > 0) {
+        taches.push({
+          id: "competences-sans-taux",
+          titre: "Fixer les taux journaliers",
+          description: `${competencesSansTaux} compétence${competencesSansTaux > 1 ? "s n'ont" : " n'a"} pas de taux défini. Aucun journalier ne peut être assigné à ces compétences.`,
+          count: competencesSansTaux,
+          lien: "/personnel/competences",
+        });
+      }
+    }
+
     return {
       success: true,
       data: taches,
