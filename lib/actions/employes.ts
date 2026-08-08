@@ -26,6 +26,7 @@ interface FiltresEmployes {
   typeMainOeuvre?: TypeMainOeuvre;
   statutDossier?: "COMPLET" | "INCOMPLET";
   disponibilite?: "EN_MISSION" | "DISPONIBLE";
+  typeContrat?: "CDI" | "CDD" | "STAGE";
   page?: number;
 }
 
@@ -334,12 +335,20 @@ export const listerEmployes = actionProtegee(
       );
     }
 
+    // Filtre post-transformation : type de contrat
+    if (filtres.typeContrat) {
+      items = items.filter((item) => item.contratActuel?.typeContrat === filtres.typeContrat);
+    }
+
+    // Déterminer si on a des filtres post-transformation
+    const aFiltresPostTransform = !!(filtres.statutDossier || filtres.typeContrat);
+
     return {
       items,
-      total: filtres.statutDossier ? items.length : total, // Ajuster le total si filtre post-transform
+      total: aFiltresPostTransform ? items.length : total, // Ajuster le total si filtre post-transform
       page,
       parPage,
-      pages: Math.ceil((filtres.statutDossier ? items.length : total) / parPage),
+      pages: Math.ceil((aFiltresPostTransform ? items.length : total) / parPage),
     };
   }
 );

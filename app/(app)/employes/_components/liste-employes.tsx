@@ -27,6 +27,7 @@ interface ListeEmployesProps {
   typeMainOeuvre?: TypeMainOeuvre;
   statutDossier?: "COMPLET" | "INCOMPLET";
   disponibilite?: "EN_MISSION" | "DISPONIBLE";
+  typeContrat?: "CDI" | "CDD" | "STAGE";
   afficherArchives?: boolean;
   donneesReference: DonneesReference;
   tab: "permanents" | "journaliers";
@@ -41,6 +42,7 @@ export async function ListeEmployes({
   typeMainOeuvre,
   statutDossier,
   disponibilite,
+  typeContrat,
   afficherArchives,
   donneesReference,
   tab,
@@ -53,6 +55,7 @@ export async function ListeEmployes({
     typeMainOeuvre,
     statutDossier,
     disponibilite,
+    typeContrat,
   });
 
   // Filtrer les archives si demandé (pour les journaliers)
@@ -70,6 +73,9 @@ export async function ListeEmployes({
     archives: tousEmployes.items.filter((e) => e.typeMainOeuvre === "JOURNALIER" && e.archiveLe !== null).length,
     enMission: tousEmployes.items.filter((e) => e.typeMainOeuvre === "JOURNALIER" && e.disponibilite === "EN_MISSION").length,
     disponibles: tousEmployes.items.filter((e) => e.typeMainOeuvre === "JOURNALIER" && e.disponibilite === "DISPONIBLE").length,
+    cdi: tousEmployes.items.filter((e) => e.typeMainOeuvre === "PERMANENT" && e.contratActuel?.typeContrat === "CDI").length,
+    cdd: tousEmployes.items.filter((e) => e.typeMainOeuvre === "PERMANENT" && e.contratActuel?.typeContrat === "CDD").length,
+    stagiaires: tousEmployes.items.filter((e) => e.typeMainOeuvre === "PERMANENT" && e.contratActuel?.typeContrat === "STAGE").length,
   };
 
   return (
@@ -82,6 +88,7 @@ export async function ListeEmployes({
         serviceId={serviceId}
         statutDossier={statutDossier}
         disponibilite={disponibilite}
+        typeContrat={typeContrat}
         afficherArchives={afficherArchives}
         directions={donneesReference.directions}
         services={donneesReference.services}

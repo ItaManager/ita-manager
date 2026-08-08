@@ -21,6 +21,7 @@ interface PageEmployesProps {
     directionId?: string;
     serviceId?: string;
     statutDossier?: "COMPLET" | "INCOMPLET";
+    typeContrat?: "CDI" | "CDD" | "STAGE";
   }>;
 }
 
@@ -79,6 +80,7 @@ export default async function PageEmployes({ searchParams }: PageEmployesProps) 
             serviceId={params.serviceId}
             typeMainOeuvre="PERMANENT"
             statutDossier={params.statutDossier}
+            typeContrat={params.typeContrat}
             donneesReference={donneesReference}
             tab="permanents"
           />

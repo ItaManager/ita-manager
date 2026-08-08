@@ -14,6 +14,7 @@ interface FiltresEmployesClientProps {
   serviceId?: string;
   statutDossier?: "COMPLET" | "INCOMPLET";
   disponibilite?: "EN_MISSION" | "DISPONIBLE";
+  typeContrat?: "CDI" | "CDD" | "STAGE";
   afficherArchives?: boolean;
   directions: Array<{ id: string; libelle: string }>;
   services: Array<{ id: string; libelle: string; directionId: string }>;
@@ -25,6 +26,9 @@ interface FiltresEmployesClientProps {
     archives: number;
     enMission?: number;
     disponibles?: number;
+    cdi?: number;
+    cdd?: number;
+    stagiaires?: number;
   };
   boutonAjout: React.ReactNode;
 }
@@ -36,6 +40,7 @@ export function FiltresEmployesClient({
   serviceId,
   statutDossier,
   disponibilite,
+  typeContrat,
   afficherArchives,
   directions,
   services,
@@ -108,6 +113,12 @@ export function FiltresEmployesClient({
         params.delete("disponibilite");
       } else {
         params.set("disponibilite", valeur);
+      }
+    } else if (cle === "typeContrat") {
+      if (valeur === typeContrat) {
+        params.delete("typeContrat");
+      } else {
+        params.set("typeContrat", valeur);
       }
     } else if (cle === "archives") {
       // Toggle archives filter
@@ -185,6 +196,40 @@ export function FiltresEmployesClient({
               >
                 Disponibles{" "}
                 <span className="ml-1 opacity-70">({counts.disponibles || 0})</span>
+              </Badge>
+            </button>
+            <div className="w-px h-6 bg-border mx-1" />
+          </>
+        )}
+
+        {/* Type de contrat - seulement pour page employés */}
+        {!isPageJournaliers && (
+          <>
+            <button onClick={() => changerFiltre("typeContrat", "CDI")}>
+              <Badge
+                variant={typeContrat === "CDI" ? "default" : "outline"}
+                className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+              >
+                CDI{" "}
+                <span className="ml-1 opacity-70">({counts.cdi || 0})</span>
+              </Badge>
+            </button>
+            <button onClick={() => changerFiltre("typeContrat", "CDD")}>
+              <Badge
+                variant={typeContrat === "CDD" ? "default" : "outline"}
+                className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+              >
+                CDD{" "}
+                <span className="ml-1 opacity-70">({counts.cdd || 0})</span>
+              </Badge>
+            </button>
+            <button onClick={() => changerFiltre("typeContrat", "STAGE")}>
+              <Badge
+                variant={typeContrat === "STAGE" ? "default" : "outline"}
+                className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+              >
+                Stagiaire{" "}
+                <span className="ml-1 opacity-70">({counts.stagiaires || 0})</span>
               </Badge>
             </button>
             <div className="w-px h-6 bg-border mx-1" />

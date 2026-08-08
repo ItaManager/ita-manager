@@ -95,8 +95,8 @@ export function ModaleArchiverEmploye({
           <div className="space-y-4">
             <div className="rounded-lg bg-muted/50 px-4 py-3">
               <p className="text-sm text-muted-foreground">
-                L'archivage va clôturer toutes les affectations en cours et masquer
-                cet employé des listes actives. Cette action est réversible.
+                L'archivage bloque l'accès de cet employé à ITA Manager et clôture
+                toutes les affectations en cours. Cette action est réversible.
               </p>
             </div>
 
