@@ -1,13 +1,13 @@
 import { verifierAccesPage } from "@/lib/auth/page-access";
 import { Suspense } from "react";
-import { ListeEmployes } from "./_components/liste-employes";
+import { ListeEmployes } from "../employes/_components/liste-employes";
 import { obtenirDonneesReferenceEmploye, obtenirTachesEmployes } from "@/lib/actions/employes";
 import { ModuleLayout } from "@/components/layouts/module-layout";
-import { IndicateursEmployes } from "./_components/indicateurs-employes";
-import { TitreTaches } from "./_components/titre-taches";
-import { ListeTaches } from "./_components/liste-taches";
+import { IndicateursEmployes } from "../employes/_components/indicateurs-employes";
+import { TitreTaches } from "../employes/_components/titre-taches";
+import { ListeTaches } from "../employes/_components/liste-taches";
 
-interface PageEmployesProps {
+interface PageJournaliersProps {
   searchParams: Promise<{
     page?: string;
     limit?: string;
@@ -19,10 +19,10 @@ interface PageEmployesProps {
 }
 
 export const metadata = {
-  title: "Employés — ITA Manager",
+  title: "Journaliers — ITA Manager",
 };
 
-export default async function PageEmployes({ searchParams }: PageEmployesProps) {
+export default async function PageJournaliers({ searchParams }: PageJournaliersProps) {
   await verifierAccesPage("/employes");
 
   const params = await searchParams;
@@ -32,20 +32,20 @@ export default async function PageEmployes({ searchParams }: PageEmployesProps) 
   // Charger toutes les données en parallèle
   const [donneesReference, resultTaches] = await Promise.all([
     obtenirDonneesReferenceEmploye(),
-    obtenirTachesEmployes("PERMANENT"),
+    obtenirTachesEmployes("JOURNALIER"),
   ]);
 
   const taches = resultTaches.success ? resultTaches.data : [];
 
   return (
     <ModuleLayout
-      titre="Employés"
-      description="Gérez vos employés permanents (CDI/CDD)"
-      helpText="Les employés permanents (CDI/CDD) sont rattachés à un poste dans l'organigramme et disposent d'un compte d'accès ITA Manager."
+      titre="Journaliers"
+      description="Gérez vos employés journaliers (INTERIM)"
+      helpText="Les journaliers sont affectés directement aux chantiers avec des contrats courts. Ils sont rémunérés au jour pointé selon leur compétence et ne disposent pas de compte d'accès ITA Manager."
     >
       {/* Indicateurs */}
       <Suspense fallback={<div className="text-center py-4">Chargement indicateurs...</div>}>
-        <IndicateursEmployes typeMainOeuvre="PERMANENT" />
+        <IndicateursEmployes typeMainOeuvre="JOURNALIER" />
       </Suspense>
 
       {/* Tâches */}
@@ -69,10 +69,10 @@ export default async function PageEmployes({ searchParams }: PageEmployesProps) 
             recherche={params.recherche}
             directionId={params.directionId}
             serviceId={params.serviceId}
-            typeMainOeuvre="PERMANENT"
+            typeMainOeuvre="JOURNALIER"
             statutDossier={params.statutDossier}
             donneesReference={donneesReference}
-            tab="permanents"
+            tab="journaliers"
           />
         </Suspense>
       </div>

@@ -35,6 +35,7 @@ import {
   FileCheck,
   TrendingUp,
   Shield,
+  Award,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -79,9 +80,10 @@ const buildNavigation = (compteursAchats: CompteursBadges, compteursConges: Comp
     title: "PERSONNEL",
     items: [
       { label: "Employés", href: "/employes", icon: Users, moduleNumber: "M2", moduleName: "Employés" },
+      { label: "Journaliers", href: "/journaliers", icon: Users, moduleNumber: "M2", moduleName: "Employés" },
       { label: "Contrats", href: "/contrats", icon: FileText, moduleNumber: "M2", moduleName: "Employés" },
-      { label: "Compétences et taux", href: "/personnel/competences", icon: Briefcase, moduleNumber: "M17", moduleName: "Compétences" },
-      { label: "Agents et compétences", href: "/personnel/competences/agents", icon: Users, moduleNumber: "M17", moduleName: "Compétences" },
+      { label: "Compétences", href: "/personnel/competences", icon: Award, moduleNumber: "M17", moduleName: "Compétences" },
+      { label: "Assignations", href: "/personnel/competences/agents", icon: UserCog, moduleNumber: "M17", moduleName: "Compétences" },
     ],
   },
   {
@@ -90,7 +92,7 @@ const buildNavigation = (compteursAchats: CompteursBadges, compteursConges: Comp
       { label: "À valider (responsable)", href: "/conges/a-valider", icon: UserCheck, badge: compteursConges.aValiderN1, moduleNumber: "M3", moduleName: "Congés" },
       { label: "Contrôle RH", href: "/conges/controle", icon: FileCheck, badge: compteursConges.controleRH, moduleNumber: "M3", moduleName: "Congés" },
       { label: "Calendrier équipe", href: "/conges/calendrier", icon: Calendar, moduleNumber: "M3", moduleName: "Congés" },
-      { label: "Soldes équipe", href: "/conges/equipe", icon: Users, moduleNumber: "M3", moduleName: "Congés" },
+      { label: "Soldes équipe", href: "/conges/equipe", icon: BarChart3, moduleNumber: "M3", moduleName: "Congés" },
     ],
   },
   {
@@ -201,7 +203,7 @@ export function BarreLateraleClient({ userPermissions, compteursAchats, compteur
         <nav className="flex-1 overflow-y-auto px-4 py-4">
           {filteredNavigation.map((section) => (
             <div key={section.title} className="mb-6">
-              <h3 className="mb-2 px-3 text-xs font-semibold text-muted-foreground">
+              <h3 className="mb-2 px-3 text-xs font-semibold text-[#18181a]/60">
                 {section.title}
               </h3>
               <ul className="space-y-1">
@@ -214,11 +216,12 @@ export function BarreLateraleClient({ userPermissions, compteursAchats, compteur
                       <Link
                         href={item.href}
                         className={cn(
-                          "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors cursor-pointer",
+                          "flex items-center gap-3 rounded-lg px-4 py-3 text-sm transition-colors cursor-pointer",
                           isActive
-                            ? "bg-primary-soft text-primary"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                            ? "text-white font-semibold"
+                            : "text-[#18181a] hover:bg-muted hover:text-foreground font-medium"
                         )}
+                        style={isActive ? { backgroundColor: '#13850b' } : undefined}
                       >
                         <Icon className="size-5 shrink-0" aria-hidden="true" />
                         <span className="flex-1">{item.label}</span>
@@ -269,11 +272,12 @@ export function BarreLateraleClient({ userPermissions, compteursAchats, compteur
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors cursor-pointer",
+                  "flex items-center gap-3 rounded-lg px-4 py-3 text-sm transition-colors cursor-pointer",
                   isActive
-                    ? "bg-primary-soft text-primary"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    ? "text-white font-semibold"
+                    : "text-[#18181a] hover:bg-muted hover:text-foreground font-medium"
                 )}
+                style={isActive ? { backgroundColor: '#13850b' } : undefined}
               >
                 <Icon className="size-5 shrink-0" aria-hidden="true" />
                 <span className="flex-1">{item.label}</span>
