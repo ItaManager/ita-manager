@@ -225,6 +225,8 @@ export async function ListeEmployes({
                         <td className="py-3 px-4">
                           <ActionsEmploye
                             employeId={employe.id}
+                            employeNom={employe.nom}
+                            employePrenom={employe.prenom}
                             nationalites={donneesReference.nationalites}
                           />
                         </td>
