@@ -27,6 +27,7 @@ interface ListeEmployesProps {
   typeMainOeuvre?: TypeMainOeuvre;
   statutDossier?: "COMPLET" | "INCOMPLET";
   disponibilite?: "EN_MISSION" | "DISPONIBLE";
+  afficherArchives?: boolean;
   donneesReference: DonneesReference;
   tab: "permanents" | "journaliers";
 }
@@ -40,6 +41,7 @@ export async function ListeEmployes({
   typeMainOeuvre,
   statutDossier,
   disponibilite,
+  afficherArchives,
   donneesReference,
   tab,
 }: ListeEmployesProps) {
@@ -53,6 +55,11 @@ export async function ListeEmployes({
     disponibilite,
   });
 
+  // Filtrer les archives si demandé (pour les journaliers)
+  const employesFiltres = afficherArchives
+    ? employes.filter((e) => e.archiveLe !== null)
+    : employes;
+
   // Calculer les compteurs pour les filtres
   const tousEmployes = await listerEmployes({});
   const counts = {
@@ -60,7 +67,7 @@ export async function ListeEmployes({
     permanents: tousEmployes.items.filter((e) => e.typeMainOeuvre === "PERMANENT").length,
     journaliers: tousEmployes.items.filter((e) => e.typeMainOeuvre === "JOURNALIER").length,
     dossiersIncomplets: tousEmployes.items.filter((e) => e.completudeDossier < 100).length,
-    archives: tousEmployes.items.filter((e) => e.archiveLe !== null).length,
+    archives: tousEmployes.items.filter((e) => e.typeMainOeuvre === "JOURNALIER" && e.archiveLe !== null).length,
     enMission: tousEmployes.items.filter((e) => e.typeMainOeuvre === "JOURNALIER" && e.disponibilite === "EN_MISSION").length,
     disponibles: tousEmployes.items.filter((e) => e.typeMainOeuvre === "JOURNALIER" && e.disponibilite === "DISPONIBLE").length,
   };
@@ -75,6 +82,7 @@ export async function ListeEmployes({
         serviceId={serviceId}
         statutDossier={statutDossier}
         disponibilite={disponibilite}
+        afficherArchives={afficherArchives}
         directions={donneesReference.directions}
         services={donneesReference.services}
         counts={counts}
@@ -162,14 +170,14 @@ export async function ListeEmployes({
               </tr>
             </thead>
             <tbody>
-              {employes.length === 0 ? (
+              {employesFiltres.length === 0 ? (
                 <tr>
                   <td colSpan={tab === "permanents" ? 8 : 8} className="py-12 text-center text-muted-foreground">
                     Aucun {tab === "permanents" ? "employé permanent" : "journalier"} trouvé
                   </td>
                 </tr>
               ) : (
-                employes.map((employe) => (
+                employesFiltres.map((employe) => (
                   <tr
                     key={employe.id}
                     className="border-b border-border hover:bg-muted/50 transition-colors"

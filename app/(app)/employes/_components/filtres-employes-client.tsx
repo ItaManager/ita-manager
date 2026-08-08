@@ -14,6 +14,7 @@ interface FiltresEmployesClientProps {
   serviceId?: string;
   statutDossier?: "COMPLET" | "INCOMPLET";
   disponibilite?: "EN_MISSION" | "DISPONIBLE";
+  afficherArchives?: boolean;
   directions: Array<{ id: string; libelle: string }>;
   services: Array<{ id: string; libelle: string; directionId: string }>;
   counts: {
@@ -35,6 +36,7 @@ export function FiltresEmployesClient({
   serviceId,
   statutDossier,
   disponibilite,
+  afficherArchives,
   directions,
   services,
   counts,
@@ -100,6 +102,19 @@ export function FiltresEmployesClient({
         params.delete("statutDossier");
       } else {
         params.set("statutDossier", valeur);
+      }
+    } else if (cle === "disponibilite") {
+      if (valeur === disponibilite) {
+        params.delete("disponibilite");
+      } else {
+        params.set("disponibilite", valeur);
+      }
+    } else if (cle === "archives") {
+      // Toggle archives filter
+      if (params.get("archives") === "true") {
+        params.delete("archives");
+      } else {
+        params.set("archives", "true");
       }
     }
 
@@ -238,24 +253,41 @@ export function FiltresEmployesClient({
           </>
         )}
 
-        {/* Statut dossier - pour tous */}
-        <button onClick={() => changerFiltre("statutDossier", "INCOMPLET")}>
-          <Badge
-            variant={statutDossier === "INCOMPLET" ? "default" : "outline"}
-            className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
-          >
-            Dossiers incomplets{" "}
-            <span className="ml-1 opacity-70">({counts.dossiersIncomplets})</span>
-          </Badge>
-        </button>
-        <button onClick={() => changerFiltre("statutDossier", "COMPLET")}>
-          <Badge
-            variant={statutDossier === "COMPLET" ? "default" : "outline"}
-            className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
-          >
-            Dossiers complets
-          </Badge>
-        </button>
+        {/* Statut dossier - seulement pour page employés */}
+        {!isPageJournaliers && (
+          <>
+            <button onClick={() => changerFiltre("statutDossier", "INCOMPLET")}>
+              <Badge
+                variant={statutDossier === "INCOMPLET" ? "default" : "outline"}
+                className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+              >
+                Dossiers incomplets{" "}
+                <span className="ml-1 opacity-70">({counts.dossiersIncomplets})</span>
+              </Badge>
+            </button>
+            <button onClick={() => changerFiltre("statutDossier", "COMPLET")}>
+              <Badge
+                variant={statutDossier === "COMPLET" ? "default" : "outline"}
+                className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+              >
+                Dossiers complets
+              </Badge>
+            </button>
+          </>
+        )}
+
+        {/* Archives - seulement pour page journaliers */}
+        {isPageJournaliers && (
+          <button onClick={() => changerFiltre("archives", "")}>
+            <Badge
+              variant={afficherArchives ? "default" : "outline"}
+              className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+            >
+              Archives{" "}
+              <span className="ml-1 opacity-70">({counts.archives})</span>
+            </Badge>
+          </button>
+        )}
       </div>
 
       {/* Indicateur de chargement */}
