@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { UserPlus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { ModaleJournalier } from "./modale-journalier";
 
 interface BoutonAjouterJournalierProps {
@@ -22,10 +22,9 @@ export function BoutonAjouterJournalier({
     <>
       <Button
         onClick={() => setOuvert(true)}
-        variant="outline"
-        className="gap-2 h-9 px-4 text-sm rounded-full transition-all"
+        className="gap-2 h-9 px-4 text-sm rounded-full bg-primary hover:bg-primary-hover text-primary-foreground transition-all cursor-pointer shadow-sm hover:shadow-md"
       >
-        <UserPlus className="size-4" />
+        <Plus className="size-4" />
         Créer un journalier
       </Button>
 
