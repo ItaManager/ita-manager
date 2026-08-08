@@ -21,7 +21,7 @@ export async function TitreTaches({ count }: TitreTachesProps) {
 
   return (
     <h2 className="text-lg font-semibold text-[#18181a]">
-      Bonjour {prenom}, vous avez {count} {count <= 1 ? "tâche" : "tâches"} en attente
+      Bonjour{prenom ? ` ${prenom}` : ""}, vous avez {count} {count <= 1 ? "tâche" : "tâches"} en attente
     </h2>
   );
 }
