@@ -257,9 +257,15 @@ export async function ListeEmployes({
                           {employe.derniereMission || "Aucune"}
                         </td>
                         <td className="py-3 px-4">
-                          <Badge variant={employe.disponibilite === "EN_MISSION" ? "secondary" : "default"}>
-                            {employe.disponibilite === "EN_MISSION" ? "En mission" : "Disponible"}
-                          </Badge>
+                          {employe.disponibilite === "EN_MISSION" ? (
+                            <Badge variant="outline" className="border-orange-300 bg-orange-50 text-orange-700">
+                              En mission
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-green-100 text-green-700 border-green-200">
+                              Disponible
+                            </Badge>
+                          )}
                         </td>
                         <td className="py-3 px-4">
                           <Badge variant={!employe.archiveLe ? "default" : "secondary"}>
