@@ -56,7 +56,7 @@ interface EmployeListItem {
   telephone?: string | null;
   competenceActuelle?: string | null;
   tauxActuel?: number | null;
-  disponibilite?: "EN_MISSION" | "DISPONIBLE";
+  disponibilite?: "EN_MISSION" | "DISPONIBLE" | null;
   derniereMission?: string | null;
   contratActuel?: {
     typeContrat: string;
@@ -307,7 +307,7 @@ export const listerEmployes = actionProtegee(
         tauxActuel: aDonneesSensibles
           ? competenceActuelle?.competence.taux[0]?.montant?.toNumber() ?? null
           : null,
-        disponibilite: affectationChantierActuelle ? "EN_MISSION" : "DISPONIBLE",
+        disponibilite: e.archiveLe ? null : (affectationChantierActuelle ? "EN_MISSION" : "DISPONIBLE"),
         derniereMission: affectationChantierActuelle?.projet.nom ?? null,
         contratActuel: contratActuel
           ? {

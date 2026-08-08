@@ -263,10 +263,12 @@ export async function ListeEmployes({
                             <Badge variant="outline" className="border-orange-300 bg-orange-50 text-orange-700">
                               En mission
                             </Badge>
-                          ) : (
+                          ) : employe.disponibilite === "DISPONIBLE" ? (
                             <Badge className="bg-green-100 text-green-700 border-green-200">
                               Disponible
                             </Badge>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">—</span>
                           )}
                         </td>
                         <td className="py-3 px-4">
