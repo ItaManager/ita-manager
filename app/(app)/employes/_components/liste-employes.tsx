@@ -5,7 +5,7 @@ import type { TypeMainOeuvre } from "@prisma/client";
 import { FiltresEmployesClient } from "./filtres-employes-client";
 import { BoutonAjouterEmploye } from "./bouton-ajouter-employe";
 import { BoutonAjouterJournalier } from "./bouton-ajouter-journalier";
-import { BoutonModifierEmploye } from "./bouton-modifier-employe";
+import { ActionsEmploye } from "./actions-employe";
 import { ActionsJournalier } from "./actions-journalier";
 import { PaginationEmployes } from "./pagination-employes";
 
@@ -223,15 +223,10 @@ export async function ListeEmployes({
                           </Badge>
                         </td>
                         <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <BoutonModifierEmploye
-                              employeId={employe.id}
-                              postes={donneesReference.postes}
-                              nationalites={donneesReference.nationalites}
-                              directions={donneesReference.directions}
-                              services={donneesReference.services}
-                            />
-                          </div>
+                          <ActionsEmploye
+                            employeId={employe.id}
+                            nationalites={donneesReference.nationalites}
+                          />
                         </td>
                       </>
                     ) : (
