@@ -61,8 +61,8 @@ export default async function PageEmployes({ searchParams }: PageEmployesProps) 
         <TabsEmployes tab={tab} counts={tabCounts} />
       </div>
 
-      {/* Indicateurs spécifiques au tab */}
-      <Suspense fallback={<div>Chargement...</div>}>
+      {/* Test: Indicateurs */}
+      <Suspense fallback={<div className="text-center py-4">Chargement indicateurs...</div>}>
         <IndicateursEmployes />
       </Suspense>
 
@@ -82,7 +82,7 @@ export default async function PageEmployes({ searchParams }: PageEmployesProps) 
 
       {/* Tableau spécifique au tab */}
       <div className="bg-white rounded-xl border border-[#0000001a] p-6">
-        <Suspense fallback={<div>Chargement...</div>}>
+        <Suspense fallback={<div className="text-center py-8">Chargement du tableau...</div>}>
           <ListeEmployes
             page={page}
             limit={limit}
