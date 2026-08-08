@@ -8,6 +8,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -267,31 +269,24 @@ export function ModaleCreationEmployeV2({
 
   return (
     <Dialog open={ouvert} onOpenChange={onFermer}>
-      <DialogContent className="!max-w-6xl max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-0">
         {/* En-tête avec fond */}
-        <div className="sticky top-0 z-10 border-b border-border px-6 py-4" style={{ backgroundColor: 'var(--primary-soft)' }}>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <DialogTitle className="text-lg font-semibold text-primary">
-                {modeModification ? "Modification de l'employé" : "Création d'un nouveau compte"}
-              </DialogTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                Étape {etapeActuelle} sur {ETAPES.length} — {ETAPES[etapeActuelle - 1].titre}
-              </p>
-            </div>
-            <Button variant="ghost" size="icon" onClick={onFermer} className="hover:bg-muted">
-              <X className="size-5" />
-            </Button>
-          </div>
+        <DialogHeader className="sticky top-0 z-10 border-b border-border px-6 py-4" style={{ backgroundColor: 'var(--primary-soft)' }}>
+          <DialogTitle className="text-xl font-semibold text-[#1D186C]">
+            {modeModification ? "Modification de l'employé" : "Nouvel employé"}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground mt-1">
+            Étape {etapeActuelle} sur {ETAPES.length} — {ETAPES[etapeActuelle - 1].titre}
+          </DialogDescription>
 
           {/* Barre de progression */}
-          <div className="w-full bg-muted rounded-full h-2">
+          <div className="w-full bg-muted rounded-full h-2 mt-4">
             <div
               className="bg-primary h-2 rounded-full transition-all duration-300 shadow-sm"
               style={{ width: `${progressPourcentage}%` }}
             />
           </div>
-        </div>
+        </DialogHeader>
 
         {/* Contenu du formulaire */}
         <div className="p-6">
@@ -305,29 +300,29 @@ export function ModaleCreationEmployeV2({
                 <h3 className="text-sm font-semibold text-gray-700 mb-4">Identité</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="nom">
+                    <Label htmlFor="nom" className="text-sm font-medium">
                       Nom <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="nom"
                       {...register("nom", { required: true })}
-                      placeholder="Kouassi"
+                      placeholder="Kouassi" className="h-11 rounded-md"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="prenom">
+                    <Label htmlFor="prenom" className="text-sm font-medium">
                       Prénom <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="prenom"
                       {...register("prenom", { required: true })}
-                      placeholder="Aya"
+                      placeholder="Aya" className="h-11 rounded-md"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="sexe">
+                    <Label htmlFor="sexe" className="text-sm font-medium">
                       Sexe <span className="text-destructive">*</span>
                     </Label>
                     <Controller
@@ -348,7 +343,7 @@ export function ModaleCreationEmployeV2({
                   </div>
 
                   <div>
-                    <Label htmlFor="nationalite">
+                    <Label htmlFor="nationalite" className="text-sm font-medium">
                       Nationalité <span className="text-destructive">*</span>
                     </Label>
                     <Controller
@@ -367,22 +362,22 @@ export function ModaleCreationEmployeV2({
                   </div>
 
                   <div>
-                    <Label htmlFor="dateNaissance">
+                    <Label htmlFor="dateNaissance" className="text-sm font-medium">
                       Date de naissance <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="dateNaissance"
                       type="date"
-                      {...register("dateNaissance")}
+                      {...register("dateNaissance")} className="h-11 rounded-md"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="lieuNaissance">Lieu de naissance <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="lieuNaissance" className="text-sm font-medium">Lieu de naissance <span className="text-destructive">*</span></Label>
                     <Input
                       id="lieuNaissance"
                       {...register("lieuNaissance")}
-                      placeholder="Abidjan, Côte d'Ivoire"
+                      placeholder="Abidjan, Côte d'Ivoire" className="h-11 rounded-md"
                     />
                   </div>
                 </div>
@@ -393,7 +388,7 @@ export function ModaleCreationEmployeV2({
                 <h3 className="text-sm font-semibold text-gray-700 mb-4">Situation familiale</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="situationMatrimoniale">
+                    <Label htmlFor="situationMatrimoniale" className="text-sm font-medium">
                       Situation matrimoniale
                     </Label>
                     <Controller
@@ -416,13 +411,13 @@ export function ModaleCreationEmployeV2({
                   </div>
 
                   <div>
-                    <Label htmlFor="nombreEnfants">Nombre d'enfants à charge</Label>
+                    <Label htmlFor="nombreEnfants" className="text-sm font-medium">Nombre d'enfants à charge</Label>
                     <Input
                       id="nombreEnfants"
                       type="number"
                       min="0"
                       {...register("nombreEnfants", { valueAsNumber: true })}
-                      placeholder="0"
+                      placeholder="0" className="h-11 rounded-md"
                     />
                     <p className="text-xs text-muted-foreground mt-1">Pour le calcul de l'impôt</p>
                   </div>
@@ -434,42 +429,42 @@ export function ModaleCreationEmployeV2({
                 <h3 className="text-sm font-semibold text-gray-700 mb-4">Coordonnées</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="telephone">
+                    <Label htmlFor="telephone" className="text-sm font-medium">
                       Téléphone principal <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="telephone"
                       {...register("telephone", { required: true })}
-                      placeholder="+225 07 00 00 00 00"
+                      placeholder="+225 07 00 00 00 00" className="h-11 rounded-md"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="telephoneSecondaire">Téléphone secondaire</Label>
+                    <Label htmlFor="telephoneSecondaire" className="text-sm font-medium">Téléphone secondaire</Label>
                     <Input
                       id="telephoneSecondaire"
                       {...register("telephoneSecondaire")}
-                      placeholder="+225 05 00 00 00 00"
+                      placeholder="+225 05 00 00 00 00" className="h-11 rounded-md"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="email">Email professionnel</Label>
+                    <Label htmlFor="email" className="text-sm font-medium">Email professionnel</Label>
                     <Input
                       id="email"
                       type="email"
                       {...register("email")}
-                      placeholder="prenom.nom@ita.ci"
+                      placeholder="prenom.nom@ita.ci" className="h-11 rounded-md"
                     />
                     <p className="text-xs text-muted-foreground mt-1">Sera utilisé pour la création du compte</p>
                   </div>
 
                   <div>
-                    <Label htmlFor="adresse">Adresse de résidence</Label>
+                    <Label htmlFor="adresse" className="text-sm font-medium">Adresse de résidence</Label>
                     <Input
                       id="adresse"
                       {...register("adresse")}
-                      placeholder="Cocody, Angré 7e tranche"
+                      placeholder="Cocody, Angré 7e tranche" className="h-11 rounded-md"
                     />
                   </div>
                 </div>
@@ -480,20 +475,20 @@ export function ModaleCreationEmployeV2({
                 <h3 className="text-sm font-semibold text-gray-700 mb-4">Contact d'urgence</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="urgenceNom">Nom du contact</Label>
+                    <Label htmlFor="urgenceNom" className="text-sm font-medium">Nom du contact</Label>
                     <Input
                       id="urgenceNom"
                       {...register("urgenceNom")}
-                      placeholder="Nom et prénom"
+                      placeholder="Nom et prénom" className="h-11 rounded-md"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="urgenceTel">Téléphone du contact</Label>
+                    <Label htmlFor="urgenceTel" className="text-sm font-medium">Téléphone du contact</Label>
                     <Input
                       id="urgenceTel"
                       {...register("urgenceTel")}
-                      placeholder="+225 07 00 00 00 00"
+                      placeholder="+225 07 00 00 00 00" className="h-11 rounded-md"
                     />
                   </div>
                 </div>
@@ -504,12 +499,12 @@ export function ModaleCreationEmployeV2({
                 <h3 className="text-sm font-semibold text-gray-700 mb-4">Sécurité sociale</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="numeroCnps">Numéro CNPS</Label>
+                    <Label htmlFor="numeroCnps" className="text-sm font-medium">Numéro CNPS</Label>
                     <Input
                       id="numeroCnps"
                       {...register("numeroCnps")}
                       placeholder="1234567890"
-                      maxLength={10}
+                      maxLength={10} className="h-11 rounded-md"
                     />
                     <p className="text-xs text-muted-foreground mt-1">Si l'employé en possède déjà un</p>
                   </div>
@@ -521,7 +516,7 @@ export function ModaleCreationEmployeV2({
                 <h3 className="text-sm font-semibold text-gray-700 mb-4">Modalités de paiement</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
-                    <Label htmlFor="modePaiement">Mode de paiement</Label>
+                    <Label htmlFor="modePaiement" className="text-sm font-medium">Mode de paiement</Label>
                     <Controller
                       name="modePaiement"
                       control={control}
@@ -541,11 +536,11 @@ export function ModaleCreationEmployeV2({
 
                   {watch("modePaiement") === "VIREMENT" && (
                     <div className="col-span-2">
-                      <Label htmlFor="rib">RIB (Relevé d'Identité Bancaire)</Label>
+                      <Label htmlFor="rib" className="text-sm font-medium">RIB (Relevé d'Identité Bancaire)</Label>
                       <Input
                         id="rib"
                         {...register("rib")}
-                        placeholder="CI00 0000 0000 0000 0000 0000 00"
+                        placeholder="CI00 0000 0000 0000 0000 0000 00" className="h-11 rounded-md"
                       />
                       <p className="text-xs text-muted-foreground mt-1">Format IBAN ivoirien</p>
                     </div>
@@ -553,11 +548,11 @@ export function ModaleCreationEmployeV2({
 
                   {watch("modePaiement") === "WAVE" && (
                     <div className="col-span-2">
-                      <Label htmlFor="numeroWave">Numéro Wave</Label>
+                      <Label htmlFor="numeroWave" className="text-sm font-medium">Numéro Wave</Label>
                       <Input
                         id="numeroWave"
                         {...register("numeroWave")}
-                        placeholder="+225 07 00 00 00 00"
+                        placeholder="+225 07 00 00 00 00" className="h-11 rounded-md"
                       />
                       <p className="text-xs text-muted-foreground mt-1">Numéro de téléphone associé au compte Wave</p>
                     </div>
@@ -573,11 +568,11 @@ export function ModaleCreationEmployeV2({
               {/* Matricule ITA (auto-généré) */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Matricule ITA</Label>
+                  <Label className="text-sm font-medium">Matricule ITA</Label>
                   <Input
                     value="ITA-2026-0179"
                     disabled
-                    className="bg-gray-50"
+                    className="h-11 rounded-md bg-gray-50"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     Généré automatiquement selon le format ITA-AAAA-NNNN
@@ -585,11 +580,11 @@ export function ModaleCreationEmployeV2({
                 </div>
 
                 <div>
-                  <Label htmlFor="referenceInterne">Référence interne</Label>
+                  <Label htmlFor="referenceInterne" className="text-sm font-medium">Référence interne</Label>
                   <Input
                     id="referenceInterne"
                     {...register("referenceInterne")}
-                    placeholder="Ex : DP-052, DG-001, 2019TAYIX"
+                    placeholder="Ex : DP-052, DG-001, 2019TAYIX" className="h-11 rounded-md"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     Code interne déjà utilisé par l'entreprise avant la mise en service de l'application. Saisie
@@ -607,7 +602,7 @@ export function ModaleCreationEmployeV2({
                 <div className="space-y-4">
                   {/* 1. Direction */}
                   <div>
-                    <Label>
+                    <Label className="text-sm font-medium">
                       1. Direction <span className="text-destructive">*</span>
                     </Label>
                     <Controller
@@ -631,7 +626,7 @@ export function ModaleCreationEmployeV2({
 
                   {/* 2. Service */}
                   <div>
-                    <Label>
+                    <Label className="text-sm font-medium">
                       2. Service <span className="text-destructive">*</span>
                     </Label>
                     <Controller
@@ -654,7 +649,7 @@ export function ModaleCreationEmployeV2({
 
                   {/* 3. Poste */}
                   <div>
-                    <Label>
+                    <Label className="text-sm font-medium">
                       3. Poste <span className="text-destructive">*</span>
                     </Label>
                     <Controller
@@ -685,7 +680,7 @@ export function ModaleCreationEmployeV2({
 
               {/* Supérieur hiérarchique */}
               <div>
-                <Label>Supérieur hiérarchique</Label>
+                <Label className="text-sm font-medium">Supérieur hiérarchique</Label>
                 <Controller
                   name="superieurId"
                   control={control}
@@ -704,7 +699,7 @@ export function ModaleCreationEmployeV2({
 
               {/* Type de contrat */}
               <div>
-                <Label>
+                <Label className="text-sm font-medium">
                   Type de contrat <span className="text-destructive">*</span>
                 </Label>
                 <Controller
@@ -730,21 +725,21 @@ export function ModaleCreationEmployeV2({
               {/* Dates et salaire */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>
+                  <Label className="text-sm font-medium">
                     Date d'embauche <span className="text-destructive">*</span>
                   </Label>
-                  <Input type="date" {...register("dateEmbauche", { required: true })} />
+                  <Input type="date" {...register("dateEmbauche", { required: true })} className="h-11 rounded-md" />
                 </div>
 
                 {(typeContrat === "CDD" || typeContrat === "STAGE") && (
                   <div>
-                    <Label>Date de fin</Label>
-                    <Input type="date" {...register("dateFin")} />
+                    <Label className="text-sm font-medium">Date de fin</Label>
+                    <Input type="date" {...register("dateFin")} className="h-11 rounded-md" />
                   </div>
                 )}
 
                 <div className="col-span-2">
-                  <Label>
+                  <Label className="text-sm font-medium">
                     Salaire mensuel brut <span className="text-destructive">*</span>
                   </Label>
                   <div className="relative">
@@ -752,7 +747,7 @@ export function ModaleCreationEmployeV2({
                       type={salaireVisible ? "number" : "password"}
                       {...register("salaire", { required: true, valueAsNumber: true })}
                       placeholder={salaireVisible ? "0" : "••••••••"}
-                      className="pr-12"
+                      className="h-11 rounded-md pr-12"
                     />
                     <Button
                       type="button"
@@ -774,29 +769,30 @@ export function ModaleCreationEmployeV2({
           )}
 
           {/* Navigation */}
-          <div className="flex items-center justify-between pt-6 border-t">
+          <DialogFooter className="gap-3 px-6 py-4 border-t border-border">
             <Button
               type="button"
               variant="outline"
               onClick={etapePrecedente}
               disabled={etapeActuelle === 1}
+              className="rounded-full px-6"
             >
               <ChevronLeft className="size-4 mr-2" />
               Précédent
             </Button>
 
             {etapeActuelle < ETAPES.length ? (
-              <Button type="button" onClick={etapeSuivante} className="bg-[#13850b] hover:bg-[#0f6909] text-white">
+              <Button type="button" onClick={etapeSuivante} className="bg-[#13850b] hover:bg-[#0f6909] text-white rounded-full px-6">
                 Suivant
                 <ChevronRight className="size-4 ml-2" />
               </Button>
             ) : (
-              <Button type="submit" disabled={isPending} className="bg-[#13850b] hover:bg-[#0f6909] text-white">
+              <Button type="submit" disabled={isPending} className="bg-[#13850b] hover:bg-[#0f6909] text-white rounded-full px-6">
                 {isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
-                Créer le profil
+                {modeModification ? "Enregistrer" : "Créer le profil"}
               </Button>
             )}
-          </div>
+          </DialogFooter>
         </form>
         </div>
       </DialogContent>
