@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { ModaleJournalier } from "./modale-journalier";
 import { ModaleProfilJournalier } from "./modale-profil-journalier";
 import { ModaleHistoriqueMissions } from "./modale-historique-missions";
+import { ModaleArchiverJournalier } from "./modale-archiver-journalier";
 
 interface ActionsJournalierProps {
   employeId: string;
@@ -30,6 +31,7 @@ export function ActionsJournalier({
   const [ouvertModifier, setOuvertModifier] = useState(false);
   const [ouvertProfil, setOuvertProfil] = useState(false);
   const [ouvertHistorique, setOuvertHistorique] = useState(false);
+  const [ouvertArchiver, setOuvertArchiver] = useState(false);
 
   return (
     <div className="flex items-center gap-2">
@@ -55,7 +57,7 @@ export function ActionsJournalier({
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onClick={() => console.log("Archiver")}
+            onClick={() => setOuvertArchiver(true)}
             className="text-destructive focus:text-destructive cursor-pointer"
           >
             <Archive className="size-4 mr-2" />
@@ -85,6 +87,14 @@ export function ActionsJournalier({
       <ModaleHistoriqueMissions
         ouvert={ouvertHistorique}
         onClose={() => setOuvertHistorique(false)}
+        employeId={employeId}
+        employeNom={employeNom}
+        employePrenom={employePrenom}
+      />
+
+      <ModaleArchiverJournalier
+        ouvert={ouvertArchiver}
+        onClose={() => setOuvertArchiver(false)}
         employeId={employeId}
         employeNom={employeNom}
         employePrenom={employePrenom}
