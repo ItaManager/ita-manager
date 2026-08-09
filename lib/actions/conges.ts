@@ -1729,30 +1729,163 @@ export const listerEmployesSoldes = actionProtegee(
  */
 export async function obtenirStatistiquesConges(vue: string) {
   try {
-    // TODO: Implémenter avec vraies données
-    // Pour l'instant : données mockées
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return {
+        success: false,
+        data: { employesEligibles: 0, enAttente: 0, aValider: 0, tauxUtilisation: 0 }
+      };
+    }
+
+    const profil = await prisma.profil.findUnique({
+      where: { id: user.id },
+      include: {
+        employe: {
+          include: {
+            subordonnesEmploye: {
+              where: {
+                OR: [
+                  { dateFin: null },
+                  { dateFin: { gte: new Date() } },
+                ],
+              },
+              select: { employeId: true },
+            },
+            soldeCongés: {
+              where: { exercice: new Date().getFullYear() },
+            },
+          },
+        },
+      },
+    });
 
     // Vue équipe : indicateurs manager
     if (vue === "equipe") {
+      // 1. Employés éligibles (≥12 mois d'ancienneté)
+      const employes = await prisma.employe.findMany({
+        where: {
+          archiveLe: null,
+          typeMainOeuvre: { not: "JOURNALIER" },
+        },
+        include: {
+          contrats: {
+            orderBy: { dateDebut: "asc" },
+            take: 1,
+            select: { dateDebut: true },
+          },
+        },
+      });
+
+      const employesEligibles = employes.filter((emp) => {
+        if (!emp.contrats[0]) return false;
+        const dateEmbauche = new Date(emp.contrats[0].dateDebut);
+        const diffMs = new Date().getTime() - dateEmbauche.getTime();
+        const mois = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 30.44));
+        return mois >= 12;
+      }).length;
+
+      // 2. Demandes en attente (total équipe)
+      const enAttente = await prisma.absence.count({
+        where: {
+          statut: { in: ["ATTENTE_N1", "ATTENTE_RH"] },
+        },
+      });
+
+      // 3. À valider (subordonnés du manager)
+      let aValider = 0;
+      if (profil?.employe) {
+        const idsSubordonnes = profil.employe.subordonnesEmploye.map((s) => s.employeId);
+        if (idsSubordonnes.length > 0) {
+          aValider = await prisma.absence.count({
+            where: {
+              employeId: { in: idsSubordonnes },
+              statut: "ATTENTE_N1",
+            },
+          });
+        }
+      }
+
+      // 4. Taux d'utilisation (moyenne équipe)
+      const soldes = await prisma.soldeConge.groupBy({
+        by: ["employeId"],
+        where: { exercice: new Date().getFullYear() },
+        _sum: { jours: true },
+      });
+
+      let totalJoursUtilises = 0;
+      soldes.forEach((solde) => {
+        const joursUtilises = 30 - (Number(solde._sum.jours) || 0);
+        totalJoursUtilises += Math.max(0, joursUtilises);
+      });
+
+      const tauxUtilisation = soldes.length > 0
+        ? Math.round((totalJoursUtilises / (soldes.length * 30)) * 100)
+        : 0;
+
       return {
         success: true,
         data: {
-          employesEligibles: 18,
-          enAttente: 3,
-          aValider: 5,
-          tauxUtilisation: 27, // 8j/30j en moyenne
+          employesEligibles,
+          enAttente,
+          aValider,
+          tauxUtilisation,
         },
       };
     }
 
     // Vue personnelle
+    if (!profil?.employe) {
+      return {
+        success: false,
+        data: { soldeDisponible: 0, enAttente: 0, validesAnnee: 0, aValider: 0 },
+      };
+    }
+
+    // 1. Solde disponible
+    const soldeDisponible = profil.employe.soldeCongés.reduce((sum, mouvement) => {
+      return sum + Number(mouvement.jours);
+    }, 0);
+
+    // 2. Demandes en attente
+    const mesDemandesEnAttente = await prisma.absence.count({
+      where: {
+        employeId: profil.employe.id,
+        statut: { in: ["ATTENTE_N1", "ATTENTE_RH"] },
+      },
+    });
+
+    // 3. Validées dans l'année
+    const validesAnnee = await prisma.absence.count({
+      where: {
+        employeId: profil.employe.id,
+        statut: "VALIDEE",
+        creeLe: {
+          gte: new Date(new Date().getFullYear(), 0, 1),
+        },
+      },
+    });
+
+    // 4. À valider (si manager)
+    let aValider = 0;
+    const idsSubordonnes = profil.employe.subordonnesEmploye.map((s) => s.employeId);
+    if (idsSubordonnes.length > 0 && vue !== "mes-demandes") {
+      aValider = await prisma.absence.count({
+        where: {
+          employeId: { in: idsSubordonnes },
+          statut: "ATTENTE_N1",
+        },
+      });
+    }
+
     return {
       success: true,
       data: {
-        soldeDisponible: 22,
-        enAttente: 3,
-        validesAnnee: 8,
-        aValider: vue !== "mes-demandes" ? 5 : 0,
+        soldeDisponible,
+        enAttente: mesDemandesEnAttente,
+        validesAnnee,
+        aValider,
       },
     };
   } catch (error) {
