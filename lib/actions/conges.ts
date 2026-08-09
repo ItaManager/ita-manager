@@ -9,6 +9,7 @@
 
 import { prisma } from "@/lib/db/prisma";
 import { actionProtegee } from "@/lib/auth/guard";
+import { createClient } from "@/lib/supabase/server";
 import { StatutAbsence } from "@prisma/client";
 import type { Decimal } from "@prisma/client/runtime/library";
 import { format } from "date-fns";
@@ -1851,26 +1852,110 @@ export async function listerDemandesConges(filtres: {
  */
 export async function obtenirTachesConges() {
   try {
-    // TODO: Implémenter avec vraies données
-    // Pour l'instant : données mockées
-    const taches = [
-      {
-        id: "1",
-        type: "A_VALIDER_N1" as const,
-        titre: "3 demandes de congé à valider",
-        description: "Demandes de votre équipe en attente de validation",
-        lien: "/conges-permissions?vue=a-valider",
-        priorite: "HAUTE" as const,
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: true, data: [] };
+    }
+
+    // Récupérer le profil avec les permissions
+    const profil = await prisma.profil.findUnique({
+      where: { id: user.id },
+      include: {
+        roles: {
+          include: {
+            role: {
+              include: {
+                permissions: {
+                  include: {
+                    permission: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        employe: {
+          include: {
+            // Subordonnés (pour managers) - affectations où cet employé est le supérieur
+            subordonnesEmploye: {
+              where: {
+                OR: [
+                  { dateFin: null },
+                  { dateFin: { gte: new Date() } },
+                ],
+              },
+              select: {
+                employeId: true,
+              },
+            },
+          },
+        },
       },
-      {
-        id: "2",
-        type: "CONTROLE_RH" as const,
-        titre: "2 demandes en contrôle RH",
-        description: "Demandes validées N+1 à contrôler",
-        lien: "/conges-permissions?vue=controle-rh",
-        priorite: "NORMALE" as const,
-      },
-    ];
+    });
+
+    if (!profil) {
+      return { success: true, data: [] };
+    }
+
+    // Collecter toutes les permissions de tous les rôles
+    const permissions = profil.roles.flatMap((pr) =>
+      pr.role.permissions.map((p) => p.permission.code)
+    );
+    const taches: Array<{
+      id: string;
+      type: "A_VALIDER_N1" | "CONTROLE_RH" | "DOSSIER_INCOMPLET";
+      titre: string;
+      description: string;
+      lien: string;
+      priorite: "HAUTE" | "NORMALE" | "BASSE";
+    }> = [];
+
+    // TÂCHE 1 : Demandes à valider N+1 (managers)
+    if (permissions.includes("absence:valider-n1") && profil.employe) {
+      const idsSubordonnes = profil.employe.subordonnesEmploye.map((s) => s.employeId);
+
+      if (idsSubordonnes.length > 0) {
+        const countN1 = await prisma.absence.count({
+          where: {
+            employeId: { in: idsSubordonnes },
+            statut: "ATTENTE_N1",
+          },
+        });
+
+        if (countN1 > 0) {
+          taches.push({
+            id: "a-valider-n1",
+            type: "A_VALIDER_N1",
+            titre: `${countN1} demande${countN1 > 1 ? "s" : ""} de congé à valider`,
+            description: "Demandes de votre équipe en attente de validation",
+            lien: "/conges-permissions?vue=a-valider",
+            priorite: "HAUTE",
+          });
+        }
+      }
+    }
+
+    // TÂCHE 2 : Demandes à contrôler RH
+    if (permissions.includes("absence:valider-rh")) {
+      const countRH = await prisma.absence.count({
+        where: {
+          statut: "ATTENTE_RH",
+        },
+      });
+
+      if (countRH > 0) {
+        taches.push({
+          id: "controle-rh",
+          type: "CONTROLE_RH",
+          titre: `${countRH} demande${countRH > 1 ? "s" : ""} en contrôle RH`,
+          description: "Demandes validées N+1 à contrôler",
+          lien: "/conges-permissions?vue=controle-rh",
+          priorite: "NORMALE",
+        });
+      }
+    }
 
     return {
       success: true,
