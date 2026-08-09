@@ -739,6 +739,7 @@ export function ModaleCreationEmployeV2({
                       <p className="font-medium text-primary">
                         {directions.find(d => d.id === directionId)?.libelle || "Direction"}
                         {serviceId && ` › ${services.find(s => s.id === serviceId)?.libelle || "Service"}`}
+                        {posteId && ` › ${postes.find(p => p.id === posteId)?.libelle || "Poste"}`}
                       </p>
                     </div>
                   )}
