@@ -197,9 +197,9 @@ export const modifierConfigurationAlerte = actionProtegee(
         cle: `alerte:${validated.type}`,
         valeur: JSON.stringify(nouvelleConfig),
         type: "JSON",
+        groupe: "ALERTE",
         libelle: configExistante.libelle,
-        description: configExistante.description,
-        verrouille: false,
+        aide: configExistante.description,
       },
       update: {
         valeur: JSON.stringify(nouvelleConfig),
@@ -216,10 +216,10 @@ export const modifierConfigurationAlerte = actionProtegee(
         auteurId: session.userId,
         auteurNom: session.email,
         commentaire: `Configuration alerte "${configExistante.libelle}" modifiée`,
-        details: {
+        details: JSON.parse(JSON.stringify({
           avant: configExistante,
           apres: nouvelleConfig,
-        },
+        })),
       },
     });
 
@@ -249,9 +249,9 @@ export const initialiserConfigurationsAlertes = actionProtegee(
           cle: `alerte:${config.type}`,
           valeur: JSON.stringify(config),
           type: "JSON",
+          groupe: "ALERTE",
           libelle: config.libelle,
-          description: config.description,
-          verrouille: false,
+          aide: config.description,
         },
         update: {
           // Ne rien faire si existe déjà
@@ -262,6 +262,7 @@ export const initialiserConfigurationsAlertes = actionProtegee(
     await prisma.journalEvenement.create({
       data: {
         entite: "Parametre",
+        entiteId: "alerte:init",
         action: "CREATION",
         auteurId: session.userId,
         auteurNom: session.email,
@@ -306,6 +307,7 @@ export const envoyerEmailTestAlerte = actionProtegee(
     await prisma.journalEvenement.create({
       data: {
         entite: "Email",
+        entiteId: `test:${config.type}`,
         action: "CREATION",
         auteurId: session.userId,
         auteurNom: session.email,

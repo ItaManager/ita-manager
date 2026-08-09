@@ -64,7 +64,7 @@ export const obtenirStatistiquesSysteme = actionProtegee(
       // Nombre d'événements aujourd'hui
       prisma.journalEvenement.count({
         where: {
-          creeLe: {
+          survenuLe: {
             gte: new Date(new Date().setHours(0, 0, 0, 0)),
           },
         },
@@ -76,10 +76,10 @@ export const obtenirStatistiquesSysteme = actionProtegee(
           action: "CONNEXION",
         },
         orderBy: {
-          creeLe: "desc",
+          survenuLe: "desc",
         },
         select: {
-          creeLe: true,
+          survenuLe: true,
           auteurNom: true,
         },
       }),
@@ -145,11 +145,13 @@ export const obtenirAlertesSysteme = actionProtegee(
         where: { actif: false },
       }),
 
-      // Utilisateurs sans 2FA activé
+      // Utilisateurs sans 2FA activé - basé sur l'absence de codes de secours
       prisma.profil.count({
         where: {
           actif: true,
-          totpActive: false,
+          codesSecoursMfa: {
+            none: {},
+          },
         },
       }),
 
@@ -157,7 +159,7 @@ export const obtenirAlertesSysteme = actionProtegee(
       prisma.journalEvenement.count({
         where: {
           action: "REFUS",
-          creeLe: {
+          survenuLe: {
             gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
           },
         },
@@ -185,14 +187,14 @@ export const obtenirActiviteRecente = actionProtegee(
     const evenements = await prisma.journalEvenement.findMany({
       take: 20,
       orderBy: {
-        creeLe: "desc",
+        survenuLe: "desc",
       },
       select: {
         id: true,
         entite: true,
         action: true,
         auteurNom: true,
-        creeLe: true,
+        survenuLe: true,
         commentaire: true,
       },
     });
@@ -217,7 +219,7 @@ export const obtenirStatistiquesModules = actionProtegee(
     const evenementsParEntite = await prisma.journalEvenement.groupBy({
       by: ["entite"],
       where: {
-        creeLe: {
+        survenuLe: {
           gte: il7Jours,
         },
       },
