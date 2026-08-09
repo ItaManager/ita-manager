@@ -177,6 +177,7 @@ export function ModaleCreationEmployeV2({
   // Watch values
   const directionId = watch("directionId");
   const serviceId = watch("serviceId");
+  const posteId = watch("posteId");
   const typeContrat = watch("typeContrat");
 
   // Options pour combobox
