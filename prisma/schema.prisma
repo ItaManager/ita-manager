@@ -592,6 +592,9 @@ model Employe {
   /// M17 — Compétences (JOURNALIER uniquement)
   competences AffectationCompetence[]
 
+  /// M19 — Missions et frais de mission
+  missions Mission[]
+
   creeLe    DateTime  @default(now())
   modifieLe DateTime  @updatedAt
   /// Archivage, jamais suppression. Motif stocké dans JournalEvenement.
@@ -638,6 +641,17 @@ model Profil {
   visitesSaisies   Visite[]
   courriersSaisis  Courrier[] @relation("CourriersSaisis")
   courriersTraites Courrier[] @relation("CourriersTraites")
+
+  /// M19 — Missions et frais de mission
+  missionsVisees            Mission[]            @relation("VisaMission")
+  missionsValideesRh        Mission[]            @relation("ValidationRhMission")
+  missionsCloturees         Mission[]            @relation("ClotureMission")
+  missionsRefusees          Mission[]            @relation("RefusMission")
+  missionsAnnulees          Mission[]            @relation("AnnulationMission")
+  lignesFraisAcceptees      LigneFrais[]         @relation("ControlefraisMission")
+  lignesFraisRejetees       LigneFrais[]         @relation("RejetFraisMission")
+  versementsAvanceEffectues VersementAvance[]    @relation("VersementAvanceMission")
+  regularisationsApurees    Regularisation[]     @relation("ApurementMission")
 
   creeLe    DateTime  @default(now())
   modifieLe DateTime  @updatedAt
@@ -1234,6 +1248,9 @@ model Projet {
 
   /// M13 L1 — Lieux de stockage sur ce projet (si nature=CHANTIER)
   lieuxStockage LieuStockage[]
+
+  /// M19 — Missions rattachées à ce projet
+  missions Mission[]
 
   creeLe  DateTime @default(now())
   creePar String   @db.Uuid
@@ -3251,6 +3268,272 @@ model StationService {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// M19 — MISSIONS ET FRAIS DE MISSION
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * Mission — Livraison 1
+ *
+ * SEPT DÉCISIONS STRUCTURANTES (DECISIONS-M19.md § 2)
+ *
+ * 2.1  Les frais sont AVANCÉS, pas remboursés.
+ * 2.2  Saisie libre, justificatifs obligatoires. Contrôle ligne à ligne.
+ * 2.3  Le supérieur direct vise d'abord — aucune exception.
+ * 2.4  Le rapport justifie les frais. Pas de rapport, pas de régularisation.
+ * 2.5  Deux moyens de paiement — Wave par M15, ou espèces sous plafond.
+ * 2.6  Le statut se déduit, il ne se stocke pas. Onze états.
+ * 2.7  Une mission ne se supprime pas. Elle s'annule, et plus du tout
+ *      une fois l'avance versée.
+ *
+ * AUCUN CHAMP `statut`. lib/utils/missions.ts porte la fonction de
+ * déduction. L'ordre des tests compte — voir M19-MISSIONS.md § 3.1.
+ */
+model Mission {
+  id             String   @id @default(uuid())
+
+  /// Format MIS-AAAA-NNNN. Généré par le serveur.
+  reference      String   @unique
+
+  demandeurId    String
+  demandeur      Employe  @relation(fields: [demandeurId], references: [id])
+
+  objet          String
+  destination    String
+
+  /// Pays hors Côte d'Ivoire. Null si mission nationale. TODO: Ajouter foreign key quand Pays sera créé.
+  paysId         String?
+
+  moyenTransport MoyenTransport
+
+  dateDepart     DateTime @db.Date
+  dateRetour     DateTime @db.Date
+
+  /// Montant total des lignes d'estimation. Livraison 2.
+  fraisEstimes   Decimal  @db.Decimal(12, 0) @default(0)
+
+  /// Rattachement optionnel à un projet.
+  projetId       String?
+  projet         Projet?  @relation(fields: [projetId], references: [id])
+
+  // ────────────────────────────────────────────────────────────────────
+  // ÉVÉNEMENTS DU CIRCUIT — dans l'ordre chronologique
+  // ────────────────────────────────────────────────────────────────────
+
+  soumiseLe      DateTime?
+
+  viseeN1Le      DateTime?
+  viseeN1ParId   String?
+  viseeN1Par     Profil?   @relation("VisaMission", fields: [viseeN1ParId], references: [id])
+
+  valideeRhLe    DateTime?
+  valideeRhParId String?
+  valideeRhPar   Profil?   @relation("ValidationRhMission", fields: [valideeRhParId], references: [id])
+
+  /// Livraison 2 — L'avance a été versée par la DFC.
+  avanceVerseeLe DateTime?
+
+  rapportDeposeLe DateTime?
+
+  /// Livraison 2 — La régularisation est terminée.
+  clotureeLe     DateTime?
+  clotureeParId  String?
+  clotureePar    Profil?   @relation("ClotureMission", fields: [clotureeParId], references: [id])
+
+  /// Refus — à quelle étape (visa ou validation).
+  refuseeLe      DateTime?
+  refuseeParId   String?
+  refuseePar     Profil?   @relation("RefusMission", fields: [refuseeParId], references: [id])
+  motifRefus     String?
+  etapeRefus     EtapeRefus?
+
+  /// Annulation — seulement AVANT le versement de l'avance.
+  annuleeLe      DateTime?
+  annuleeParId   String?
+  annuleePar     Profil?   @relation("AnnulationMission", fields: [annuleeParId], references: [id])
+  motifAnnulation String?
+
+  // ────────────────────────────────────────────────────────────────────
+  // RELATIONS
+  // ────────────────────────────────────────────────────────────────────
+
+  /// Livraison 2
+  lignesFrais    LigneFrais[]
+
+  rapport        RapportMission?
+
+  /// Livraison 2
+  versements     VersementAvance[]
+
+  /// Livraison 2
+  regularisation Regularisation?
+
+  creeLe         DateTime @default(now())
+  modifieLe      DateTime @updatedAt
+
+  @@index([demandeurId, dateDepart])
+  @@index([dateRetour])
+  @@map("missions")
+}
+
+/**
+ * LigneFrais — Livraison 2
+ *
+ * Deux usages :
+ *   — estimation (avant le départ)
+ *   — dépense réelle (après le retour)
+ *
+ * Le contrôle porte sur les dépenses réelles, ligne à ligne.
+ * Les estimations n'engagent à rien.
+ */
+model LigneFrais {
+  id          String   @id @default(uuid())
+
+  missionId   String
+  mission     Mission  @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  /// ESTIMATION ou REEL
+  moment      MomentFrais
+
+  categorie   CategorieFrais
+  libelle     String
+  montant     Decimal  @db.Decimal(12, 0)
+
+  /// Contrôle DFC — lignes réelles uniquement.
+  /// Null si non encore contrôlée.
+  accepteeLe  DateTime?
+  accepteeParId String?
+  accepteePar Profil?  @relation("ControlefraisMission", fields: [accepteeParId], references: [id])
+
+  /// Si rejetée, motif obligatoire.
+  rejeteeLe   DateTime?
+  rejeteeParId String?
+  rejeteePar  Profil?  @relation("RejetFraisMission", fields: [rejeteeParId], references: [id])
+  motifRejet  String?
+
+  /// URL du justificatif — Cloudflare R2. Obligatoire pour dépenses réelles.
+  justificatif String?
+
+  creeLe      DateTime @default(now())
+  modifieLe   DateTime @updatedAt
+
+  @@index([missionId, moment])
+  @@map("lignes_frais")
+}
+
+/**
+ * RapportMission — Livraison 1
+ *
+ * RÈGLE BLOQUANTE : pas de rapport, pas de nouvelle mission.
+ */
+model RapportMission {
+  id           String   @id @default(uuid())
+
+  missionId    String   @unique
+  mission      Mission  @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  /// Objet réalisé — 30 caractères minimum.
+  objetRealise String
+
+  /// Résultats et conclusions — 30 caractères minimum.
+  resultats    String
+
+  /// Difficultés rencontrées — optionnel.
+  difficultes  String?
+
+  /// Recommandations — optionnel.
+  recommandations String?
+
+  deposeLe     DateTime @default(now())
+
+  @@map("rapports_mission")
+}
+
+/**
+ * VersementAvance — Livraison 2
+ *
+ * DEUX MOYENS (DECISIONS-M19.md § 2.5)
+ *
+ *   — WAVE : passe par M15, circuit à quatre yeux.
+ *   — ESPECES : plafonné (150 000 F proposé), émargement obligatoire.
+ *
+ * Une mission peut avoir plusieurs versements (acompte + complément).
+ */
+model VersementAvance {
+  id              String   @id @default(uuid())
+
+  missionId       String
+  mission         Mission  @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  montant         Decimal  @db.Decimal(12, 0)
+  moyen           MoyenPaiementMission
+
+  /// Si WAVE : lien vers la demande M15.
+  demandePaiementId String?
+
+  /// Si ESPECES : émargement obligatoire — PDF ou image.
+  emargement      String?
+
+  /// L'avance a été effectivement remise.
+  effectueLe      DateTime?
+  effectueParId   String?
+  effectuePar     Profil?  @relation("VersementAvanceMission", fields: [effectueParId], references: [id])
+
+  creeLe          DateTime @default(now())
+
+  @@index([missionId])
+  @@map("versements_avance")
+}
+
+/**
+ * Regularisation — Livraison 2
+ *
+ * TROIS CAS (DECISIONS-M19.md § 2.4)
+ *
+ *   — COMPLEMENT : dépenses > avance → versement à l'employé.
+ *   — RELIQUAT : dépenses < avance → l'employé doit de l'argent.
+ *   — EQUILIBRE : dépenses = avance → aucun mouvement.
+ *
+ * Le reliquat peut s'apurer par trois moyens : espèces, Wave, retenue sur
+ * salaire (si licite).
+ *
+ * RÈGLE : les totaux sont FIGÉS au moment du contrôle. Une modification
+ * ultérieure d'une ligne ne les change pas.
+ */
+model Regularisation {
+  id                String   @id @default(uuid())
+
+  missionId         String   @unique
+  mission           Mission  @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  /// Montant total des versements d'avance.
+  totalAvance       Decimal  @db.Decimal(12, 0)
+
+  /// Montant total des dépenses acceptées.
+  totalJustifie     Decimal  @db.Decimal(12, 0)
+
+  sens              SensRegularisation
+
+  /// Montant à verser (si COMPLEMENT) ou à rendre (si RELIQUAT).
+  montant           Decimal  @db.Decimal(12, 0)
+
+  /// COMPLEMENT ou RELIQUAT apuré.
+  apureeLe          DateTime?
+  apureeParId       String?
+  apureePar         Profil?  @relation("ApurementMission", fields: [apureeParId], references: [id])
+  moyenApurement    MoyenApurement?
+
+  /// Si WAVE : lien vers la demande M15.
+  demandePaiementId String?
+
+  /// Si ESPECES : émargement.
+  emargement        String?
+
+  creeLe            DateTime @default(now())
+
+  @@map("regularisations")
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // ENUMS M16
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -3283,4 +3566,53 @@ enum TypeCarburant {
 enum NatureDistribution {
   STATION /// Dépense — aucun stock ITA touché
   CUVE /// Mouvement de stock — le solde baisse
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ENUMS M19 — MISSIONS ET FRAIS DE MISSION
+// ═══════════════════════════════════════════════════════════════════════
+
+enum MoyenTransport {
+  VEHICULE_ITA      /// Un matériel de M13
+  TRANSPORT_COMMUN
+  VEHICULE_PERSONNEL
+  AVION
+  AUTRE
+}
+
+enum EtapeRefus {
+  N1
+  RH
+}
+
+enum MomentFrais {
+  ESTIMATION       /// Saisie à la demande, indicative
+  DEPENSE_REELLE   /// Saisie au retour, avec justificatif
+}
+
+enum CategorieFrais {
+  TRANSPORT
+  HEBERGEMENT
+  RESTAURATION
+  CARBURANT
+  PEAGE
+  COMMUNICATION
+  AUTRE
+}
+
+enum MoyenPaiementMission {
+  WAVE
+  ESPECES
+}
+
+enum SensRegularisation {
+  COMPLEMENT_DU      /// Les dépenses dépassent l'avance
+  RELIQUAT_A_RENDRE  /// L'avance dépasse les dépenses
+  EQUILIBRE          /// Solde nul
+}
+
+enum MoyenApurement {
+  WAVE
+  ESPECES
+  RETENUE_SUR_SALAIRE   /// Reliquat retenu sur la paie du mois
 }
