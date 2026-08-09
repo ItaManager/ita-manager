@@ -63,9 +63,7 @@ const buildNavigation = (compteursAchats: CompteursBadges, compteursConges: Comp
   {
     title: "MON ESPACE",
     items: [
-      { label: "Mes demandes de congé", href: "/conges", icon: Clock, moduleNumber: "M3", moduleName: "Congés" },
-      { label: "Mes soldes", href: "/conges/soldes", icon: TrendingUp, moduleNumber: "M3", moduleName: "Congés" },
-      { label: "Mon calendrier", href: "/conges/calendrier", icon: Calendar, moduleNumber: "M3", moduleName: "Congés" },
+      { label: "Congés et permissions", href: "/conges-permissions", icon: Calendar, moduleNumber: "M3", moduleName: "Congés" },
       { label: "Mes documents", href: "/documents", icon: FileStack, moduleNumber: "M2", moduleName: "Employés" },
     ],
   },
@@ -84,15 +82,6 @@ const buildNavigation = (compteursAchats: CompteursBadges, compteursConges: Comp
       { label: "Contrats", href: "/contrats", icon: FileText, moduleNumber: "M2", moduleName: "Employés" },
       { label: "Compétences", href: "/personnel/competences", icon: Award, moduleNumber: "M17", moduleName: "Compétences" },
       { label: "Assignations", href: "/personnel/competences/agents", icon: UserCog, moduleNumber: "M17", moduleName: "Compétences" },
-    ],
-  },
-  {
-    title: "GESTION ABSENCES",
-    items: [
-      { label: "À valider (responsable)", href: "/conges/a-valider", icon: UserCheck, badge: compteursConges.aValiderN1, moduleNumber: "M3", moduleName: "Congés" },
-      { label: "Contrôle RH", href: "/conges/controle", icon: FileCheck, badge: compteursConges.controleRH, moduleNumber: "M3", moduleName: "Congés" },
-      { label: "Calendrier équipe", href: "/conges/calendrier", icon: Calendar, moduleNumber: "M3", moduleName: "Congés" },
-      { label: "Soldes équipe", href: "/conges/equipe", icon: BarChart3, moduleNumber: "M3", moduleName: "Congés" },
     ],
   },
   {
