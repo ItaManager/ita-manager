@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { creerEmploye, obtenirEmploye, modifierEmploye } from "@/lib/actions/employes";
+import { creerPoste } from "@/lib/actions/organisation";
 import {
   toastSucces,
   toastErreur,
@@ -268,6 +269,47 @@ export function ModaleCreationEmployeV2({
   };
 
   const progressPourcentage = (etapeActuelle / ETAPES.length) * 100;
+
+  // Gestion création inline de poste
+  const handleCreerPoste = async (libelle: string) => {
+    try {
+      // Générer le code à partir du libellé
+      const code = libelle
+        .toUpperCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // Supprimer les accents
+        .replace(/[^A-Z0-9]/g, "_") // Remplacer tout sauf lettres/chiffres par _
+        .replace(/_+/g, "_") // Remplacer les _ multiples par un seul
+        .replace(/^_|_$/g, ""); // Supprimer les _ au début et fin
+
+      const result = await creerPoste({
+        code,
+        libelle,
+        niveau: "OPERATIONNEL", // Défaut pour les postes créés inline
+        directionId,
+        serviceId: serviceId || null,
+        reserveAdmin: false,
+        titulaireUnique: false,
+        ouvreDroitConges: true,
+      });
+
+      if (result.poste) {
+        // Mettre à jour le formulaire avec le nouveau poste
+        setValue("posteId", result.poste.id);
+
+        // Rafraîchir pour charger le nouveau poste dans les options
+        router.refresh();
+
+        if (result.cree) {
+          toastSucces("Poste créé", `Le poste "${libelle}" a été créé avec succès.`);
+        } else {
+          toastSucces("Poste existant", `Le poste "${libelle}" existe déjà et a été sélectionné.`);
+        }
+      }
+    } catch (error: any) {
+      toastErreur("Échec de la création du poste", error.message);
+    }
+  };
 
   return (
     <Dialog open={ouvert} onOpenChange={onFermer}>
@@ -684,6 +726,9 @@ export function ModaleCreationEmployeV2({
                           onChange={field.onChange}
                           placeholder="Choisir"
                           disabled={!directionId}
+                          allowCreate={true}
+                          onCreateNew={handleCreerPoste}
+                          createLabel="Créer le poste"
                         />
                       )}
                     />
@@ -692,7 +737,8 @@ export function ModaleCreationEmployeV2({
                   {directionId && (
                     <div className="bg-primary-soft border border-primary/20 rounded p-3 text-sm">
                       <p className="font-medium text-primary">
-                        Direction Financière et Comptable › Comptabilité
+                        {directions.find(d => d.id === directionId)?.libelle || "Direction"}
+                        {serviceId && ` › ${services.find(s => s.id === serviceId)?.libelle || "Service"}`}
                       </p>
                     </div>
                   )}
