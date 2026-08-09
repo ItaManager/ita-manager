@@ -1582,6 +1582,11 @@ export const listerEmployesSoldes = actionProtegee(
             id: true,
             creeLe: true,
             statut: true,
+            typeAbsence: {
+              select: {
+                libelle: true,
+              },
+            },
           },
         },
         // Premier contrat pour calculer l'éligibilité (12 mois)
@@ -1618,8 +1623,9 @@ export const listerEmployesSoldes = actionProtegee(
         return dateCreation >= seuil48h;
       }).length;
 
-      // Trouver la date de la dernière demande
+      // Trouver la date et le type de la dernière demande
       let dateDerniereDemande: Date | null = null;
+      let typeDerniereDemande: string | null = null;
       let estRecent = false;
       if (employe.absences.length > 0) {
         // Trier par date de création (plus récent en premier)
@@ -1627,6 +1633,7 @@ export const listerEmployesSoldes = actionProtegee(
           return new Date(b.creeLe).getTime() - new Date(a.creeLe).getTime();
         });
         dateDerniereDemande = new Date(demandesTries[0].creeLe);
+        typeDerniereDemande = demandesTries[0].typeAbsence.libelle;
         estRecent = dateDerniereDemande >= seuil48h;
       }
 
@@ -1653,6 +1660,7 @@ export const listerEmployesSoldes = actionProtegee(
         demandesEnAttente,
         nouvellesDemandes,
         dateDerniereDemande,
+        typeDerniereDemande,
         estRecent,
         eligible,
         moisDepuisEmbauche,
@@ -1722,6 +1730,21 @@ export async function obtenirStatistiquesConges(vue: string) {
   try {
     // TODO: Implémenter avec vraies données
     // Pour l'instant : données mockées
+
+    // Vue équipe : indicateurs manager
+    if (vue === "equipe") {
+      return {
+        success: true,
+        data: {
+          employesEligibles: 18,
+          enAttente: 3,
+          aValider: 5,
+          tauxUtilisation: 27, // 8j/30j en moyenne
+        },
+      };
+    }
+
+    // Vue personnelle
     return {
       success: true,
       data: {
