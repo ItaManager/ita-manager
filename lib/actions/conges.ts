@@ -1673,10 +1673,15 @@ export const listerEmployesSoldes = actionProtegee(
       );
     }
 
-    // Tri par nom par défaut
-    employesAvecSolde.sort((a: any, b: any) =>
-      `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`)
-    );
+    // Tri : demandes en attente en premier, puis par nom
+    employesAvecSolde.sort((a: any, b: any) => {
+      // D'abord par présence de demandes (avec demandes en premier)
+      if (a.demandesEnAttente > 0 && b.demandesEnAttente === 0) return -1;
+      if (a.demandesEnAttente === 0 && b.demandesEnAttente > 0) return 1;
+
+      // Ensuite par nom alphabétique
+      return `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`);
+    });
 
     const total = employesAvecSolde.length;
 

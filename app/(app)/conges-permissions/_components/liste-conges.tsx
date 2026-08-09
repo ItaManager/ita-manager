@@ -2,6 +2,7 @@ import { listerEmployesSoldes } from "@/lib/actions/conges";
 import { Badge } from "@/components/ui/badge";
 import { BarreRechercheConges } from "./barre-recherche-conges";
 import { PaginationConges } from "./pagination-conges";
+import { BoutonTraiterDemande } from "./bouton-traiter-demande";
 
 interface ListeCongesProps {
   page: number;
@@ -105,18 +106,13 @@ export async function ListeConges({
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        {employe.nouvellesDemandes > 0 && (
-                          <Badge variant="outline" className="border-[#13850b] bg-[#13850b]/10 text-[#13850b] font-bold">
-                            ITA
-                          </Badge>
-                        )}
-                        {employe.demandesEnAttente > 0 && (
-                          <Badge variant="outline" className="border-orange-300 bg-orange-50 text-orange-700">
-                            À valider ({employe.demandesEnAttente})
-                          </Badge>
-                        )}
-                      </div>
+                      {employe.demandesEnAttente > 0 && (
+                        <BoutonTraiterDemande
+                          employeId={employe.id}
+                          nom={employe.nom}
+                          prenom={employe.prenom}
+                        />
+                      )}
                     </td>
                   </tr>
                 ))
