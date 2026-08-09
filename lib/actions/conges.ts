@@ -1515,3 +1515,141 @@ export async function chargerCompteursConges() {
     return { aValiderN1: 0, controleRH: 0 };
   }
 }
+// =====================================================================
+// NOUVELLES ACTIONS — PAGE UNIFIÉE CONGÉS ET PERMISSIONS
+// =====================================================================
+
+/**
+ * Obtenir les statistiques pour les indicateurs
+ */
+export async function obtenirStatistiquesConges(vue: string) {
+  try {
+    // TODO: Implémenter avec vraies données
+    // Pour l'instant : données mockées
+    return {
+      success: true,
+      data: {
+        soldeDisponible: 22,
+        enAttente: 3,
+        validesAnnee: 8,
+        aValider: vue !== "mes-demandes" ? 5 : 0,
+      },
+    };
+  } catch (error) {
+    console.error("Erreur obtenirStatistiquesConges:", error);
+    return {
+      success: false,
+      data: {
+        soldeDisponible: 0,
+        enAttente: 0,
+        validesAnnee: 0,
+        aValider: 0,
+      },
+    };
+  }
+}
+
+/**
+ * Lister les demandes de congés avec filtres
+ */
+export async function listerDemandesConges(filtres: {
+  page: number;
+  recherche?: string;
+  statut?: "EN_ATTENTE" | "APPROUVE_N1" | "VALIDE_RH" | "REFUSE";
+  type?: "CONGE_ANNUEL" | "CONGE_MALADIE" | "PERMISSION" | "CONGE_SANS_SOLDE";
+  dateDebut?: string;
+  dateFin?: string;
+  vue: "mes-demandes" | "a-valider" | "controle-rh" | "equipe";
+}) {
+  try {
+    // TODO: Implémenter avec vraies données depuis Prisma
+    // Pour l'instant : données mockées
+    const demandes = [
+      {
+        id: "1",
+        employeNom: "Koné",
+        employePrenom: "Aya",
+        employeMatricule: "ITA-2024-0012",
+        typeLibelle: "Congé annuel",
+        dateDebut: "15/08/2026",
+        dateFin: "29/08/2026",
+        dureeJours: 10,
+        statut: "EN_ATTENTE" as const,
+      },
+      {
+        id: "2",
+        employeNom: "Touré",
+        employePrenom: "Ibrahim",
+        employeMatricule: "ITA-2023-0045",
+        typeLibelle: "Permission",
+        dateDebut: "12/08/2026",
+        dateFin: "12/08/2026",
+        dureeJours: 1,
+        statut: "APPROUVE_N1" as const,
+      },
+      {
+        id: "3",
+        employeNom: "Bamba",
+        employePrenom: "Fatou",
+        employeMatricule: "ITA-2025-0089",
+        typeLibelle: "Congé maladie",
+        dateDebut: "10/08/2026",
+        dateFin: "11/08/2026",
+        dureeJours: 2,
+        statut: "VALIDE_RH" as const,
+      },
+    ];
+
+    return {
+      items: demandes,
+      total: demandes.length,
+      pages: 1,
+    };
+  } catch (error) {
+    console.error("Erreur listerDemandesConges:", error);
+    return {
+      items: [],
+      total: 0,
+      pages: 0,
+    };
+  }
+}
+
+/**
+ * Obtenir les tâches urgentes liées aux congés
+ */
+export async function obtenirTachesConges() {
+  try {
+    // TODO: Implémenter avec vraies données
+    // Pour l'instant : données mockées
+    const taches = [
+      {
+        id: "1",
+        type: "A_VALIDER_N1" as const,
+        titre: "3 demandes de congé à valider",
+        description: "Demandes de votre équipe en attente de validation",
+        lien: "/conges-permissions?vue=a-valider",
+        priorite: "HAUTE" as const,
+      },
+      {
+        id: "2",
+        type: "CONTROLE_RH" as const,
+        titre: "2 demandes en contrôle RH",
+        description: "Demandes validées N+1 à contrôler",
+        lien: "/conges-permissions?vue=controle-rh",
+        priorite: "NORMALE" as const,
+      },
+    ];
+
+    return {
+      success: true,
+      data: taches,
+    };
+  } catch (error) {
+    console.error("Erreur obtenirTachesConges:", error);
+    return {
+      success: false,
+      data: [],
+    };
+  }
+}

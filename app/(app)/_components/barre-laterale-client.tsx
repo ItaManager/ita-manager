@@ -63,7 +63,6 @@ const buildNavigation = (compteursAchats: CompteursBadges, compteursConges: Comp
   {
     title: "MON ESPACE",
     items: [
-      { label: "Congés et permissions", href: "/conges-permissions", icon: Calendar, moduleNumber: "M3", moduleName: "Congés" },
       { label: "Mes documents", href: "/documents", icon: FileStack, moduleNumber: "M2", moduleName: "Employés" },
     ],
   },
@@ -80,6 +79,7 @@ const buildNavigation = (compteursAchats: CompteursBadges, compteursConges: Comp
       { label: "Employés", href: "/employes", icon: Users, moduleNumber: "M2", moduleName: "Employés" },
       { label: "Journaliers", href: "/journaliers", icon: Users, moduleNumber: "M2", moduleName: "Employés" },
       { label: "Contrats", href: "/contrats", icon: FileText, moduleNumber: "M2", moduleName: "Employés" },
+      { label: "Congés et permissions", href: "/conges-permissions", icon: Calendar, badge: compteursConges.aValiderN1 + compteursConges.controleRH, moduleNumber: "M3", moduleName: "Congés" },
       { label: "Compétences", href: "/personnel/competences", icon: Award, moduleNumber: "M17", moduleName: "Compétences" },
       { label: "Assignations", href: "/personnel/competences/agents", icon: UserCog, moduleNumber: "M17", moduleName: "Compétences" },
     ],
