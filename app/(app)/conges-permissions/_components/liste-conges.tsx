@@ -3,6 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { BarreRechercheConges } from "./barre-recherche-conges";
 import { PaginationConges } from "./pagination-conges";
 import { BoutonTraiterDemande } from "./bouton-traiter-demande";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 interface ListeCongesProps {
   page: number;
@@ -64,6 +66,9 @@ export async function ListeConges({
                   Solde
                 </th>
                 <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Dernière demande
+                </th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Actions
                 </th>
               </tr>
@@ -71,7 +76,7 @@ export async function ListeConges({
             <tbody>
               {employes.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-sm text-muted-foreground">
+                  <td colSpan={7} className="py-12 text-center text-sm text-muted-foreground">
                     Aucun employé trouvé
                   </td>
                 </tr>
@@ -104,6 +109,22 @@ export async function ListeConges({
                       <span className="font-mono text-sm">
                         {employe.soldeTotal}/30
                       </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      {employe.dateDerniereDemande ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">
+                            {format(new Date(employe.dateDerniereDemande), "dd/MM/yyyy", { locale: fr })}
+                          </span>
+                          {employe.estRecent && (
+                            <Badge variant="outline" className="border-[#13850b] bg-[#13850b]/10 text-[#13850b] text-xs">
+                              Nouveau
+                            </Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">—</span>
+                      )}
                     </td>
                     <td className="py-3 px-4">
                       {employe.demandesEnAttente > 0 && (

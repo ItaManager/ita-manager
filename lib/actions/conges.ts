@@ -1618,6 +1618,18 @@ export const listerEmployesSoldes = actionProtegee(
         return dateCreation >= seuil48h;
       }).length;
 
+      // Trouver la date de la dernière demande
+      let dateDerniereDemande: Date | null = null;
+      let estRecent = false;
+      if (employe.absences.length > 0) {
+        // Trier par date de création (plus récent en premier)
+        const demandesTries = [...employe.absences].sort((a: any, b: any) => {
+          return new Date(b.creeLe).getTime() - new Date(a.creeLe).getTime();
+        });
+        dateDerniereDemande = new Date(demandesTries[0].creeLe);
+        estRecent = dateDerniereDemande >= seuil48h;
+      }
+
       // Calculer l'éligibilité (12 mois après la date d'embauche)
       let eligible = false;
       let moisDepuisEmbauche = 0;
@@ -1640,6 +1652,8 @@ export const listerEmployesSoldes = actionProtegee(
         soldeTotal,
         demandesEnAttente,
         nouvellesDemandes,
+        dateDerniereDemande,
+        estRecent,
         eligible,
         moisDepuisEmbauche,
       };
