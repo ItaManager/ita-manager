@@ -1552,6 +1552,18 @@ export async function obtenirStatistiquesConges(vue: string) {
 /**
  * Lister les demandes de congés avec filtres
  */
+type DemandeConge = {
+  id: string;
+  employeNom: string;
+  employePrenom: string;
+  employeMatricule: string;
+  typeLibelle: string;
+  dateDebut: string;
+  dateFin: string;
+  dureeJours: number;
+  statut: "EN_ATTENTE" | "APPROUVE_N1" | "VALIDE_RH" | "REFUSE";
+};
+
 export async function listerDemandesConges(filtres: {
   page: number;
   recherche?: string;
@@ -1564,7 +1576,7 @@ export async function listerDemandesConges(filtres: {
   try {
     // TODO: Implémenter avec vraies données depuis Prisma
     // Pour l'instant : données mockées
-    const demandes = [
+    const demandes: DemandeConge[] = [
       {
         id: "1",
         employeNom: "Koné",
@@ -1574,7 +1586,7 @@ export async function listerDemandesConges(filtres: {
         dateDebut: "15/08/2026",
         dateFin: "29/08/2026",
         dureeJours: 10,
-        statut: "EN_ATTENTE" as const,
+        statut: "EN_ATTENTE",
       },
       {
         id: "2",
@@ -1585,7 +1597,7 @@ export async function listerDemandesConges(filtres: {
         dateDebut: "12/08/2026",
         dateFin: "12/08/2026",
         dureeJours: 1,
-        statut: "APPROUVE_N1" as const,
+        statut: "APPROUVE_N1",
       },
       {
         id: "3",
@@ -1596,7 +1608,7 @@ export async function listerDemandesConges(filtres: {
         dateDebut: "10/08/2026",
         dateFin: "11/08/2026",
         dureeJours: 2,
-        statut: "VALIDE_RH" as const,
+        statut: "VALIDE_RH",
       },
     ];
 
