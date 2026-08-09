@@ -296,8 +296,8 @@ export function ModaleCreationEmployeV2({
           {etapeActuelle === 1 && (
             <div className="space-y-6">
               {/* Section Identité */}
-              <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
-                <h3 className="text-sm font-semibold text-gray-700 mb-4">Identité</h3>
+              <div>
+                <h3 className="text-base font-semibold text-foreground mb-4 pb-2 border-b border-border">Identité</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="nom" className="text-sm font-medium">
@@ -384,8 +384,8 @@ export function ModaleCreationEmployeV2({
               </div>
 
               {/* Section Situation familiale */}
-              <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
-                <h3 className="text-sm font-semibold text-gray-700 mb-4">Situation familiale</h3>
+              <div>
+                <h3 className="text-base font-semibold text-foreground mb-4 pb-2 border-b border-border">Situation familiale</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="situationMatrimoniale" className="text-sm font-medium">
@@ -425,8 +425,8 @@ export function ModaleCreationEmployeV2({
               </div>
 
               {/* Section Coordonnées */}
-              <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
-                <h3 className="text-sm font-semibold text-gray-700 mb-4">Coordonnées</h3>
+              <div>
+                <h3 className="text-base font-semibold text-foreground mb-4 pb-2 border-b border-border">Coordonnées</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="telephone" className="text-sm font-medium">
@@ -471,8 +471,8 @@ export function ModaleCreationEmployeV2({
               </div>
 
               {/* Section Contact d'urgence */}
-              <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
-                <h3 className="text-sm font-semibold text-gray-700 mb-4">Contact d'urgence</h3>
+              <div>
+                <h3 className="text-base font-semibold text-foreground mb-4 pb-2 border-b border-border">Contact d'urgence</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="urgenceNom" className="text-sm font-medium">Nom du contact</Label>
@@ -495,8 +495,8 @@ export function ModaleCreationEmployeV2({
               </div>
 
               {/* Section Sécurité sociale */}
-              <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
-                <h3 className="text-sm font-semibold text-gray-700 mb-4">Sécurité sociale</h3>
+              <div>
+                <h3 className="text-base font-semibold text-foreground mb-4 pb-2 border-b border-border">Sécurité sociale</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="numeroCnps" className="text-sm font-medium">Numéro CNPS</Label>
@@ -512,8 +512,8 @@ export function ModaleCreationEmployeV2({
               </div>
 
               {/* Section Paiement */}
-              <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
-                <h3 className="text-sm font-semibold text-gray-700 mb-4">Modalités de paiement</h3>
+              <div>
+                <h3 className="text-base font-semibold text-foreground mb-4 pb-2 border-b border-border">Modalités de paiement</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
                     <Label htmlFor="modePaiement" className="text-sm font-medium">Mode de paiement</Label>
