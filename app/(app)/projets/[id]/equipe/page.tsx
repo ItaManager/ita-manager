@@ -75,7 +75,11 @@ async function ContenuEquipe({ projetId }: { projetId: string }) {
           </div>
         </div>
 
-        <ModalAffecterEmploye projetId={projetId} />
+        <ModalAffecterEmploye
+          projetId={projetId}
+          projetCode={projet.code}
+          projetNom={projet.nom}
+        />
       </div>
 
       {/* Statistiques */}
@@ -161,7 +165,11 @@ async function ContenuEquipe({ projetId }: { projetId: string }) {
                 Les affectations permettent de suivre les rôles fonctionnels sur le
                 projet.
               </p>
-              <ModalAffecterEmploye projetId={projetId} />
+              <ModalAffecterEmploye
+                projetId={projetId}
+                projetCode={projet.code}
+                projetNom={projet.nom}
+              />
             </div>
           ) : (
             <div className="rounded-md border">

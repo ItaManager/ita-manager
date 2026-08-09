@@ -89,7 +89,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
     );
   }
 
-  const statutConfig = STATUT_CONFIG[projet.statut];
+  const statutConfig = STATUT_CONFIG[projet.statut as StatutProjet];
 
   // Calculs
   const avancementAffiche =

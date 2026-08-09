@@ -69,7 +69,7 @@ export function ModaleCompetence({
           // Rafraîchir la page
           router.refresh();
         } else {
-          toast.error(result.error);
+          toast.error(result.message);
         }
       } else if (mode === "modifier" && competence) {
         const result = await modifierCompetence({
@@ -84,7 +84,7 @@ export function ModaleCompetence({
           onClose();
           router.refresh();
         } else {
-          toast.error(result.error);
+          toast.error(result.message);
         }
       }
     });

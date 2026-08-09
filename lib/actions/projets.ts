@@ -1162,17 +1162,16 @@ export const obtenirProjet = actionProtegee(
         affectations: {
           where: {
             dateFin: null,
-            roleFonctionnel: "CONDUCTEUR",
           },
           include: {
             employe: {
               select: {
                 nom: true,
                 prenom: true,
+                matricule: true,
               },
             },
           },
-          take: 1,
         },
       },
     });

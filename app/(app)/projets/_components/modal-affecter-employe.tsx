@@ -52,7 +52,7 @@ interface ModalAffecterEmployeProps {
   projetId: string;
   projetCode: string;
   projetNom: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   // Mode édition
   affectation?: AffectationData;
 }

@@ -167,12 +167,12 @@ export function PanneauDetailProjet({
                 <Badge
                   variant="secondary"
                   style={{
-                    backgroundColor: `${STATUT_LABELS[projet.statut].color}20`,
-                    color: STATUT_LABELS[projet.statut].color,
+                    backgroundColor: `${STATUT_LABELS[projet.statut as StatutProjet].color}20`,
+                    color: STATUT_LABELS[projet.statut as StatutProjet].color,
                   }}
                   className="shrink-0"
                 >
-                  {STATUT_LABELS[projet.statut].label}
+                  {STATUT_LABELS[projet.statut as StatutProjet].label}
                 </Badge>
               </div>
             </SheetHeader>

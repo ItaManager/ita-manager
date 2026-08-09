@@ -1,3 +1,4 @@
+import { obtenirTachesConges } from "@/lib/actions/conges";
 import Link from "next/link";
 import { AlertCircle, FileCheck, UserCheck } from "lucide-react";
 
@@ -10,11 +11,10 @@ interface Tache {
   priorite: "HAUTE" | "NORMALE" | "BASSE";
 }
 
-interface ListeTachesProps {
-  taches: Tache[];
-}
+export async function ListeTaches() {
+  const resultTaches = await obtenirTachesConges();
+  const taches = resultTaches.success ? resultTaches.data : [];
 
-export function ListeTaches({ taches }: ListeTachesProps) {
   if (taches.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground text-sm">

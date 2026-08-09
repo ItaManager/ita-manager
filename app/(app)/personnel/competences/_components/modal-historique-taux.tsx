@@ -45,7 +45,7 @@ export function ModalHistoriqueTaux({
       setIsLoading(true);
       historiqueTaux(competence.id)
         .then((result) => {
-          if (result.success && result.data) {
+          if (result.success && result.data && !Array.isArray(result.data)) {
             setVersions(result.data.taux);
           } else {
             setVersions([]);

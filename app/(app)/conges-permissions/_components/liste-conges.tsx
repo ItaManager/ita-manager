@@ -39,7 +39,7 @@ export async function ListeConges({
   });
 
   return (
-    <div>
+    <div className="bg-white rounded-xl border border-[#0000001a] p-6">
       {/* Tabs */}
       <TabsConges vueActive={vue} />
 
@@ -56,27 +56,27 @@ export async function ListeConges({
       </div>
 
       {/* Tableau */}
-      <div className="mt-6 bg-card rounded-xl border border-border overflow-hidden">
+      <div className="mt-6 rounded-xl border border-border overflow-hidden bg-card">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-muted/50">
               <tr className="border-b border-border">
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Demandeur
                 </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Type
                 </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Période
                 </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Durée
                 </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Statut
                 </th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Actions
                 </th>
               </tr>
@@ -84,7 +84,7 @@ export async function ListeConges({
             <tbody>
               {demandes.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-muted-foreground">
+                  <td colSpan={6} className="py-12 text-center text-sm text-muted-foreground">
                     Aucune demande trouvée
                   </td>
                 </tr>
@@ -92,7 +92,7 @@ export async function ListeConges({
                 demandes.map((demande) => (
                   <tr
                     key={demande.id}
-                    className="border-b border-border hover:bg-muted/50 transition-colors"
+                    className="border-b border-border hover:bg-muted/30 transition-colors"
                   >
                     <td className="py-3 px-4">
                       <Link href={`/conges-permissions/${demande.id}`} className="hover:opacity-80">
