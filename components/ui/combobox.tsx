@@ -103,7 +103,7 @@ export function Combobox({
             type="button"
             disabled={disabled}
             className={cn(
-              "w-full flex items-center justify-between h-12 px-4 border border-border rounded-lg bg-background hover:border-primary transition-colors text-left",
+              "w-full flex items-center justify-between h-11 px-4 border border-border rounded-md bg-background hover:border-primary transition-colors text-left",
               disabled && "opacity-50 cursor-not-allowed hover:border-border",
               className
             )}
@@ -121,7 +121,7 @@ export function Combobox({
             role="combobox"
             aria-expanded={open}
             className={cn(
-              "w-full justify-between",
+              "w-full justify-between h-11 rounded-md",
               !value && "text-muted-foreground",
               className
             )}
