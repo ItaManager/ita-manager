@@ -94,8 +94,8 @@ export async function ListeConges({
                         {employe.nom} {employe.prenom}
                       </div>
                       {!employe.eligible && (
-                        <div className="text-xs text-orange-600">
-                          Non éligible ({employe.moisDepuisEmbauche} mois)
+                        <div className="text-xs text-muted-foreground">
+                          {employe.moisDepuisEmbauche} mois d'ancienneté • 12 requis
                         </div>
                       )}
                     </td>
