@@ -603,6 +603,7 @@ model Employe {
   @@index([matricule])
   @@index([typeMainOeuvre])
   @@index([nationaliteId])
+  @@index([archiveLe, typeMainOeuvre]) // M20260808 — Optimise requêtes employés actifs par type
   @@map("employes")
 }
 
@@ -686,6 +687,7 @@ model Affectation {
   @@index([employeId])
   @@index([posteId])
   @@index([superieurId])
+  @@index([dateFin]) // M20260808 — Optimise recherche affectations actives
   @@map("affectations")
 }
 
@@ -3322,11 +3324,11 @@ model Mission {
   soumiseLe      DateTime?
 
   viseeN1Le      DateTime?
-  viseeN1ParId   String?
+  viseeN1ParId   String?   @db.Uuid
   viseeN1Par     Profil?   @relation("VisaMission", fields: [viseeN1ParId], references: [id])
 
   valideeRhLe    DateTime?
-  valideeRhParId String?
+  valideeRhParId String?   @db.Uuid
   valideeRhPar   Profil?   @relation("ValidationRhMission", fields: [valideeRhParId], references: [id])
 
   /// Livraison 2 — L'avance a été versée par la DFC.
@@ -3336,19 +3338,19 @@ model Mission {
 
   /// Livraison 2 — La régularisation est terminée.
   clotureeLe     DateTime?
-  clotureeParId  String?
+  clotureeParId  String?   @db.Uuid
   clotureePar    Profil?   @relation("ClotureMission", fields: [clotureeParId], references: [id])
 
   /// Refus — à quelle étape (visa ou validation).
   refuseeLe      DateTime?
-  refuseeParId   String?
+  refuseeParId   String?   @db.Uuid
   refuseePar     Profil?   @relation("RefusMission", fields: [refuseeParId], references: [id])
   motifRefus     String?
   etapeRefus     EtapeRefus?
 
   /// Annulation — seulement AVANT le versement de l'avance.
   annuleeLe      DateTime?
-  annuleeParId   String?
+  annuleeParId   String?   @db.Uuid
   annuleePar     Profil?   @relation("AnnulationMission", fields: [annuleeParId], references: [id])
   motifAnnulation String?
 
@@ -3401,12 +3403,12 @@ model LigneFrais {
   /// Contrôle DFC — lignes réelles uniquement.
   /// Null si non encore contrôlée.
   accepteeLe  DateTime?
-  accepteeParId String?
+  accepteeParId String? @db.Uuid
   accepteePar Profil?  @relation("ControlefraisMission", fields: [accepteeParId], references: [id])
 
   /// Si rejetée, motif obligatoire.
   rejeteeLe   DateTime?
-  rejeteeParId String?
+  rejeteeParId String? @db.Uuid
   rejeteePar  Profil?  @relation("RejetFraisMission", fields: [rejeteeParId], references: [id])
   motifRejet  String?
 
@@ -3475,7 +3477,7 @@ model VersementAvance {
 
   /// L'avance a été effectivement remise.
   effectueLe      DateTime?
-  effectueParId   String?
+  effectueParId   String?  @db.Uuid
   effectuePar     Profil?  @relation("VersementAvanceMission", fields: [effectueParId], references: [id])
 
   creeLe          DateTime @default(now())
@@ -3518,7 +3520,7 @@ model Regularisation {
 
   /// COMPLEMENT ou RELIQUAT apuré.
   apureeLe          DateTime?
-  apureeParId       String?
+  apureeParId       String?  @db.Uuid
   apureePar         Profil?  @relation("ApurementMission", fields: [apureeParId], references: [id])
   moyenApurement    MoyenApurement?
 

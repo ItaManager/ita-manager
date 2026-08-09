@@ -78,7 +78,7 @@ export function statutMission(
 
   if (m.valideeRhLe) {
     // Si frais estimés > 0, il faut verser l'avance
-    return m.fraisEstimes > 0 ? "ATTENTE_AVANCE" : "APPROUVEE";
+    return m.fraisEstimes.toNumber() > 0 ? "ATTENTE_AVANCE" : "APPROUVEE";
   }
 
   if (m.viseeN1Le) return "ATTENTE_RH";
