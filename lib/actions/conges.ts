@@ -1520,6 +1520,116 @@ export async function chargerCompteursConges() {
 // =====================================================================
 
 /**
+ * Lister tous les employés avec leurs soldes de congés
+ * Pour la vue d'équipe / RH
+ */
+export const listerEmployesSoldes = actionProtegee(
+  "employe:lire",
+  async (session) => {
+    const exerciceActuel = new Date().getFullYear();
+
+    // Récupérer tous les employés permanents non archivés
+    const employes = await prisma.employe.findMany({
+      where: {
+        archiveLe: null,
+        typeMainOeuvre: {
+          not: "JOURNALIER", // Journaliers exclus du module congés (M3 §7.1)
+        },
+      },
+      include: {
+        // Affectation actuelle pour direction/service
+        affectations: {
+          where: {
+            OR: [
+              { dateFin: null },
+              { dateFin: { gte: new Date() } },
+            ],
+          },
+          orderBy: { dateDebut: "desc" },
+          take: 1,
+          include: {
+            poste: {
+              select: {
+                libelle: true,
+                service: true,
+                direction: true,
+              },
+            },
+          },
+        },
+        // Soldes de l'exercice en cours
+        soldeCongés: {
+          where: { exercice: exerciceActuel },
+        },
+        // Demandes en attente de validation
+        absences: {
+          where: {
+            statut: {
+              in: ["ATTENTE_N1", "ATTENTE_RH"],
+            },
+          },
+        },
+        // Premier contrat pour calculer l'éligibilité (12 mois)
+        contrats: {
+          orderBy: { dateDebut: "asc" },
+          take: 1,
+          select: {
+            dateDebut: true,
+          },
+        },
+      },
+      orderBy: [
+        { nom: "asc" },
+        { prenom: "asc" },
+      ],
+    }) as any; // Type assertion nécessaire car Prisma a des problèmes avec les includes complexes
+
+    // Calculer le solde pour chaque employé
+    const employesAvecSolde = employes.map((employe: any) => {
+      // Calculer le solde total des mouvements
+      const soldeTotal = employe.soldeCongés.reduce((sum: number, mouvement: any) => {
+        return sum + Number(mouvement.jours);
+      }, 0);
+
+      // Déterminer l'affectation actuelle
+      const affectationActuelle = employe.affectations[0];
+      const direction = affectationActuelle?.poste?.direction?.nom || "Non affecté";
+      const service = affectationActuelle?.poste?.service?.nom || "Non affecté";
+
+      // Compter les demandes en attente
+      const demandesEnAttente = employe.absences.length;
+
+      // Calculer l'éligibilité (12 mois après la date d'embauche)
+      let eligible = false;
+      let moisDepuisEmbauche = 0;
+
+      if (employe.contrats[0]) {
+        const dateEmbauche = new Date(employe.contrats[0].dateDebut);
+        const maintenant = new Date();
+        const diffMs = maintenant.getTime() - dateEmbauche.getTime();
+        moisDepuisEmbauche = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 30.44)); // ~30.44 jours par mois
+        eligible = moisDepuisEmbauche >= 12;
+      }
+
+      return {
+        id: employe.id,
+        matricule: employe.matricule,
+        nom: employe.nom,
+        prenom: employe.prenom,
+        direction,
+        service,
+        soldeTotal,
+        demandesEnAttente,
+        eligible,
+        moisDepuisEmbauche,
+      };
+    });
+
+    return employesAvecSolde;
+  }
+);
+
+/**
  * Obtenir les statistiques pour les indicateurs
  */
 export async function obtenirStatistiquesConges(vue: string) {

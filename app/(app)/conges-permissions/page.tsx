@@ -6,37 +6,21 @@ import { ListeConges } from "./_components/liste-conges";
 import { ListeTaches } from "./_components/liste-taches";
 import { TitreTaches } from "./_components/titre-taches";
 
-interface PageCongesPermissionsProps {
-  searchParams: Promise<{
-    page?: string;
-    limit?: string;
-    recherche?: string;
-    statut?: "EN_ATTENTE" | "APPROUVE_N1" | "VALIDE_RH" | "REFUSE";
-    type?: "CONGE_ANNUEL" | "CONGE_MALADIE" | "PERMISSION" | "CONGE_SANS_SOLDE";
-    dateDebut?: string;
-    dateFin?: string;
-    vue?: "mes-demandes" | "a-valider" | "controle-rh" | "equipe";
-  }>;
-}
-
 export const metadata = {
   title: "Congés et permissions — ITA Manager",
 };
 
-export default async function PageCongesPermissions({ searchParams }: PageCongesPermissionsProps) {
+export default async function PageCongesPermissions() {
   await verifierAccesPage("/conges-permissions");
-
-  const params = await searchParams;
-  const vue = params.vue || "mes-demandes";
 
   return (
     <ModuleLayout
       titre="Congés et permissions"
-      description="Gérez vos demandes de congés, permissions et absences"
-      helpText="Suivez vos soldes de congés, créez des demandes, consultez le calendrier de l'équipe et validez les demandes selon votre rôle. Circuit de validation à 2 niveaux : validation N+1 puis contrôle RH."
+      description="Gérez les soldes de congés et les demandes de votre équipe"
+      helpText="Consultez les soldes de congés de tous les employés, suivez les demandes en attente et gérez les validations. Chaque employé dispose de 30 jours de congé par an (éligibilité après 12 mois d'ancienneté)."
       indicateurs={
         <Suspense fallback={<div>Chargement...</div>}>
-          <IndicateursConges vue={vue} />
+          <IndicateursConges vue="equipe" />
         </Suspense>
       }
       taches={{
@@ -53,16 +37,7 @@ export default async function PageCongesPermissions({ searchParams }: PageConges
       }}
     >
       <Suspense fallback={<div>Chargement...</div>}>
-        <ListeConges
-          recherche={params.recherche}
-          statut={params.statut}
-          type={params.type}
-          dateDebut={params.dateDebut}
-          dateFin={params.dateFin}
-          vue={vue}
-          page={params.page ? parseInt(params.page) : 1}
-          limit={params.limit ? parseInt(params.limit) : 20}
-        />
+        <ListeConges />
       </Suspense>
     </ModuleLayout>
   );
