@@ -6,12 +6,25 @@ import { ListeConges } from "./_components/liste-conges";
 import { ListeTaches } from "./_components/liste-taches";
 import { TitreTaches } from "./_components/titre-taches";
 
+interface PageCongesPermissionsProps {
+  searchParams: Promise<{
+    page?: string;
+    limit?: string;
+    recherche?: string;
+    filtre?: string;
+  }>;
+}
+
 export const metadata = {
   title: "Congés et permissions — ITA Manager",
 };
 
-export default async function PageCongesPermissions() {
+export default async function PageCongesPermissions({ searchParams }: PageCongesPermissionsProps) {
   await verifierAccesPage("/conges-permissions");
+
+  const params = await searchParams;
+  const page = params.page ? parseInt(params.page) : 1;
+  const limit = params.limit ? parseInt(params.limit) : 20;
 
   return (
     <ModuleLayout
@@ -37,7 +50,12 @@ export default async function PageCongesPermissions() {
       }}
     >
       <Suspense fallback={<div>Chargement...</div>}>
-        <ListeConges />
+        <ListeConges
+          page={page}
+          limit={limit}
+          recherche={params.recherche}
+          filtre={params.filtre}
+        />
       </Suspense>
     </ModuleLayout>
   );

@@ -1,11 +1,46 @@
 import { listerEmployesSoldes } from "@/lib/actions/conges";
 import { Badge } from "@/components/ui/badge";
+import { BarreRechercheConges } from "./barre-recherche-conges";
+import { PaginationConges } from "./pagination-conges";
 
-export async function ListeConges() {
-  const employes = await listerEmployesSoldes();
+interface ListeCongesProps {
+  page: number;
+  limit: number;
+  recherche?: string;
+  filtre?: string;
+}
+
+export async function ListeConges({
+  page,
+  limit,
+  recherche,
+  filtre,
+}: ListeCongesProps) {
+  const resultats = await listerEmployesSoldes({
+    page,
+    limit,
+    recherche,
+    filtre,
+  });
+
+  const { employes, total, counts } = resultats as {
+    employes: any[];
+    total: number;
+    counts: {
+      eligibles: number;
+      nonEligibles: number;
+      avecDemandes: number;
+      tous: number;
+    };
+  };
 
   return (
     <div className="bg-white rounded-xl border border-[#0000001a] p-6">
+      {/* Barre de recherche et filtres */}
+      <div className="flex flex-col gap-4 mb-6">
+        <BarreRechercheConges counts={counts} />
+      </div>
+
       {/* Tableau */}
       <div className="rounded-xl border border-border overflow-hidden bg-card">
         <div className="overflow-x-auto">
@@ -82,6 +117,9 @@ export async function ListeConges() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        <PaginationConges total={total} page={page} limit={limit} />
       </div>
     </div>
   );

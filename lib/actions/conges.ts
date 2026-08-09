@@ -1525,7 +1525,17 @@ export async function chargerCompteursConges() {
  */
 export const listerEmployesSoldes = actionProtegee(
   "employe:lire",
-  async (session) => {
+  async (session, params?: {
+    page?: number;
+    limit?: number;
+    recherche?: string;
+    filtre?: string;
+  }) => {
+    const page = params?.page || 1;
+    const limit = params?.limit || 20;
+    const recherche = params?.recherche || "";
+    const filtre = params?.filtre || "tous";
+
     const exerciceActuel = new Date().getFullYear();
 
     // Récupérer tous les employés permanents non archivés
@@ -1578,14 +1588,10 @@ export const listerEmployesSoldes = actionProtegee(
           },
         },
       },
-      orderBy: [
-        { nom: "asc" },
-        { prenom: "asc" },
-      ],
     }) as any; // Type assertion nécessaire car Prisma a des problèmes avec les includes complexes
 
-    // Calculer le solde pour chaque employé
-    const employesAvecSolde = employes.map((employe: any) => {
+    // Calculer le solde pour chaque employé et appliquer les filtres
+    let employesAvecSolde = employes.map((employe: any) => {
       // Calculer le solde total des mouvements
       const soldeTotal = employe.soldeCongés.reduce((sum: number, mouvement: any) => {
         return sum + Number(mouvement.jours);
@@ -1625,7 +1631,54 @@ export const listerEmployesSoldes = actionProtegee(
       };
     });
 
-    return employesAvecSolde;
+    // Calculer les counts AVANT filtrage (pour les badges)
+    const counts = {
+      eligibles: employesAvecSolde.filter((e: any) => e.eligible).length,
+      nonEligibles: employesAvecSolde.filter((e: any) => !e.eligible).length,
+      avecDemandes: employesAvecSolde.filter((e: any) => e.demandesEnAttente > 0).length,
+      tous: employesAvecSolde.length,
+    };
+
+    // Appliquer le filtre badge-based
+    if (filtre === "eligibles") {
+      employesAvecSolde = employesAvecSolde.filter((e: any) => e.eligible);
+    } else if (filtre === "non-eligibles") {
+      employesAvecSolde = employesAvecSolde.filter((e: any) => !e.eligible);
+    } else if (filtre === "avec-demandes") {
+      employesAvecSolde = employesAvecSolde.filter((e: any) => e.demandesEnAttente > 0);
+    }
+    // "tous" : pas de filtre
+
+    // Appliquer la recherche
+    if (recherche) {
+      const rechercheNormalisee = recherche.toLowerCase();
+      employesAvecSolde = employesAvecSolde.filter((e: any) =>
+        e.matricule.toLowerCase().includes(rechercheNormalisee) ||
+        e.nom.toLowerCase().includes(rechercheNormalisee) ||
+        e.prenom.toLowerCase().includes(rechercheNormalisee)
+      );
+    }
+
+    // Tri par nom par défaut
+    employesAvecSolde.sort((a: any, b: any) =>
+      `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`)
+    );
+
+    const total = employesAvecSolde.length;
+
+    // Appliquer la pagination
+    const debut = (page - 1) * limit;
+    const fin = debut + limit;
+    const employesPagines = employesAvecSolde.slice(debut, fin);
+
+    return {
+      employes: employesPagines,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      counts,
+    };
   }
 );
 
