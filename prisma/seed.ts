@@ -145,6 +145,13 @@ const MATRICE: Record<PermissionCode, readonly string[]> = {
   "carburant:distribuer": ["ADMIN", "AD"],
   "carburant:consulter": ["ADMIN", "AD", "DG", "DT"], // + Chef Service Logistique, Chef Garage (à créer)
   "carburant:reapprovisionner": ["ADMIN", "AD"],
+  // M19 — Missions et frais de mission
+  "mission:demander": ["ADMIN", "DG", "DRH", "RH", "DFC", "DT", "CT", "CC", "CE", "AD"],
+  "mission:traiter": ["ADMIN", "DRH", "RH"],
+  "mission:payer": ["ADMIN", "DFC"],
+  "mission:controler": ["ADMIN", "DFC"],
+  "mission:lire": ["ADMIN", "DG", "DRH", "DFC"],
+  "mission:parametres": ["ADMIN"],
 };
 
 // Compte Super Admin — accès technique de maintenance, sans Employe

@@ -338,6 +338,37 @@ export const PERMISSIONS = {
     libelle: "Créer une demande de réapprovisionnement",
     domaine: "ADMIN",
   },
+  // M19 — Missions et frais de mission
+  "mission:demander": {
+    code: "mission:demander",
+    libelle: "Créer une demande de mission et déposer un rapport",
+    domaine: "RH",
+  },
+  "mission:traiter": {
+    code: "mission:traiter",
+    libelle: "Valider ou refuser une mission",
+    domaine: "RH",
+  },
+  "mission:payer": {
+    code: "mission:payer",
+    libelle: "Verser l'avance de frais",
+    domaine: "PAIE",
+  },
+  "mission:controler": {
+    code: "mission:controler",
+    libelle: "Contrôler les justificatifs et régulariser",
+    domaine: "PAIE",
+  },
+  "mission:lire": {
+    code: "mission:lire",
+    libelle: "Consulter toutes les missions",
+    domaine: "PILOTAGE",
+  },
+  "mission:parametres": {
+    code: "mission:parametres",
+    libelle: "Configurer les paramètres du module Missions",
+    domaine: "ADMIN",
+  },
 } as const;
 
 export type PermissionCode = keyof typeof PERMISSIONS;

@@ -36,6 +36,7 @@ import {
   TrendingUp,
   Shield,
   Award,
+  Plane,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -82,6 +83,7 @@ const buildNavigation = (compteursAchats: CompteursBadges, compteursConges: Comp
       { label: "Congés et permissions", href: "/conges-permissions", icon: Calendar, badge: compteursConges.aValiderN1 + compteursConges.controleRH, moduleNumber: "M3", moduleName: "Congés" },
       { label: "Compétences", href: "/personnel/competences", icon: Award, moduleNumber: "M17", moduleName: "Compétences" },
       { label: "Assignations", href: "/personnel/competences/agents", icon: UserCog, moduleNumber: "M17", moduleName: "Compétences" },
+      { label: "Missions", href: "/missions", icon: Plane, moduleNumber: "M19", moduleName: "Missions" },
     ],
   },
   {
