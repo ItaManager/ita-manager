@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { ModaleDemandesEmploye } from "./modale-demandes-employe";
 
 interface BoutonTraiterDemandeProps {
   employeId: string;
@@ -26,10 +27,13 @@ export function BoutonTraiterDemande({
         À traiter
       </Button>
 
-      {/* TODO: Modale de détail des demandes */}
-      {ouvert && (
-        <div>Modale pour {nom} {prenom}</div>
-      )}
+      <ModaleDemandesEmploye
+        ouvert={ouvert}
+        onClose={() => setOuvert(false)}
+        employeId={employeId}
+        nom={nom}
+        prenom={prenom}
+      />
     </>
   );
 }

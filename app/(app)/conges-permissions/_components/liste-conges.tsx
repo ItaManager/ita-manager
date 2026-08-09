@@ -60,9 +60,6 @@ export async function ListeConges({
                   Direction
                 </th>
                 <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Service
-                </th>
-                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Solde
                 </th>
                 <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -76,7 +73,7 @@ export async function ListeConges({
             <tbody>
               {employes.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-sm text-muted-foreground">
+                  <td colSpan={6} className="py-12 text-center text-sm text-muted-foreground">
                     Aucun employé trouvé
                   </td>
                 </tr>
@@ -102,9 +99,6 @@ export async function ListeConges({
                     <td className="py-3 px-4 text-sm text-muted-foreground">
                       {employe.direction}
                     </td>
-                    <td className="py-3 px-4 text-sm text-muted-foreground">
-                      {employe.service}
-                    </td>
                     <td className="py-3 px-4">
                       <span className="font-mono text-sm">
                         {employe.soldeTotal}/30
@@ -112,15 +106,20 @@ export async function ListeConges({
                     </td>
                     <td className="py-3 px-4">
                       {employe.dateDerniereDemande ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-foreground">
+                              {employe.typeDerniereDemande?.toLowerCase().includes("congé") ? "Congé" : "Permission"}
+                            </span>
+                            {employe.estRecent && (
+                              <Badge variant="outline" className="border-[#13850b] bg-[#13850b]/10 text-[#13850b] text-xs">
+                                Nouveau
+                              </Badge>
+                            )}
+                          </div>
+                          <span className="text-xs text-muted-foreground">
                             {format(new Date(employe.dateDerniereDemande), "dd/MM/yyyy", { locale: fr })}
                           </span>
-                          {employe.estRecent && (
-                            <Badge variant="outline" className="border-[#13850b] bg-[#13850b]/10 text-[#13850b] text-xs">
-                              Nouveau
-                            </Badge>
-                          )}
                         </div>
                       ) : (
                         <span className="text-sm text-muted-foreground">—</span>
