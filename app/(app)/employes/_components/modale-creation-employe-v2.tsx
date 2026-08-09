@@ -71,7 +71,8 @@ interface FormData {
   rib?: string;
   // Étape 2
   experiences: Experience[];
-  // Étape 3
+  // Étape 2
+  matricule?: string;
   referenceInterne?: string;
   directionId: string;
   serviceId?: string;
@@ -572,7 +573,8 @@ export function ModaleCreationEmployeV2({
                   <Label className="text-sm font-medium">Matricule ITA</Label>
                   <div className="relative">
                     <Input
-                      value="ITA-2026-0179"
+                      {...register("matricule")}
+                      placeholder="ITA-2026-0179"
                       disabled={matriculeVerrouille}
                       className={matriculeVerrouille ? "h-11 rounded-md bg-gray-50 pr-12" : "h-11 rounded-md pr-12"}
                     />
