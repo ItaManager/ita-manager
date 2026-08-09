@@ -1,5 +1,4 @@
-import { IndicateurCard } from "@/components/indicateurs/indicateur-card";
-import { CalendarDays, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { CardIndicateur } from "@/components/indicateurs";
 import { obtenirStatistiquesConges } from "@/lib/actions/conges";
 
 interface IndicateursCongesProps {
@@ -17,37 +16,33 @@ export async function IndicateursConges({ vue }: IndicateursCongesProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <IndicateurCard
-        icon={CalendarDays}
+      <CardIndicateur
         label="Solde disponible"
         value={`${data.soldeDisponible} j`}
-        variant="success"
-        description="Jours de congés restants"
+        valueColor="#13850b"
+        helpText="Jours de congés restants pour l'année en cours"
       />
 
-      <IndicateurCard
-        icon={Clock}
+      <CardIndicateur
         label="En attente"
         value={data.enAttente}
-        variant="warning"
-        description="Demandes à traiter"
+        valueColor="#f59e0b"
+        helpText="Demandes en attente de traitement"
       />
 
-      <IndicateurCard
-        icon={CheckCircle2}
+      <CardIndicateur
         label="Validés (année)"
         value={data.validesAnnee}
-        variant="default"
-        description="Jours pris cette année"
+        valueColor="#18181a"
+        helpText="Jours de congés validés cette année"
       />
 
       {vue !== "mes-demandes" && (
-        <IndicateurCard
-          icon={AlertCircle}
+        <CardIndicateur
           label="À valider"
           value={data.aValider}
-          variant="error"
-          description="Demandes en attente de validation"
+          valueColor="#ef4444"
+          helpText="Demandes nécessitant votre validation"
         />
       )}
     </div>
