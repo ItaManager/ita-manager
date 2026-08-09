@@ -21,7 +21,7 @@ import {
   toastErreur,
   TOAST_MESSAGES,
 } from "@/lib/utils/toast";
-import { Loader2, ChevronLeft, ChevronRight, X, Eye, EyeOff } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, X, Eye, EyeOff, Lock, Unlock } from "lucide-react";
 import type { TypeMainOeuvre } from "@prisma/client";
 
 interface ModaleCreationEmployeProps {
@@ -104,6 +104,7 @@ export function ModaleCreationEmployeV2({
   const [etapeActuelle, setEtapeActuelle] = useState(1);
   const [salaireVisible, setSalaireVisible] = useState(false);
   const [chargement, setChargement] = useState(false);
+  const [matriculeVerrouille, setMatriculeVerrouille] = useState(true);
 
   const modeModification = !!employeId;
 
@@ -569,13 +570,31 @@ export function ModaleCreationEmployeV2({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium">Matricule ITA</Label>
-                  <Input
-                    value="ITA-2026-0179"
-                    disabled
-                    className="h-11 rounded-md bg-gray-50"
-                  />
+                  <div className="relative">
+                    <Input
+                      value="ITA-2026-0179"
+                      disabled={matriculeVerrouille}
+                      className={matriculeVerrouille ? "h-11 rounded-md bg-gray-50 pr-12" : "h-11 rounded-md pr-12"}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setMatriculeVerrouille(!matriculeVerrouille)}
+                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                      title={matriculeVerrouille ? "Déverrouiller pour modifier" : "Verrouiller"}
+                    >
+                      {matriculeVerrouille ? (
+                        <Lock className="size-4 text-muted-foreground" />
+                      ) : (
+                        <Unlock className="size-4 text-primary" />
+                      )}
+                    </Button>
+                  </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Généré automatiquement selon le format ITA-AAAA-NNNN
+                    {matriculeVerrouille
+                      ? "Généré automatiquement selon le format ITA-AAAA-NNNN"
+                      : "⚠️ Déverrouillé : vous pouvez modifier le matricule"}
                   </p>
                 </div>
 
