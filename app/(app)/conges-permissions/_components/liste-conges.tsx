@@ -105,11 +105,18 @@ export async function ListeConges({
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      {employe.demandesEnAttente > 0 && (
-                        <Badge variant="outline" className="border-orange-300 bg-orange-50 text-orange-700">
-                          À valider ({employe.demandesEnAttente})
-                        </Badge>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {employe.nouvellesDemandes > 0 && (
+                          <Badge variant="outline" className="border-[#13850b] bg-[#13850b]/10 text-[#13850b] font-bold">
+                            ITA
+                          </Badge>
+                        )}
+                        {employe.demandesEnAttente > 0 && (
+                          <Badge variant="outline" className="border-orange-300 bg-orange-50 text-orange-700">
+                            À valider ({employe.demandesEnAttente})
+                          </Badge>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

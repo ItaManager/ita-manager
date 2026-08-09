@@ -1578,6 +1578,11 @@ export const listerEmployesSoldes = actionProtegee(
               in: ["ATTENTE_N1", "ATTENTE_RH"],
             },
           },
+          select: {
+            id: true,
+            creeLe: true,
+            statut: true,
+          },
         },
         // Premier contrat pour calculer l'éligibilité (12 mois)
         contrats: {
@@ -1605,6 +1610,14 @@ export const listerEmployesSoldes = actionProtegee(
       // Compter les demandes en attente
       const demandesEnAttente = employe.absences.length;
 
+      // Détecter les nouvelles demandes (créées dans les dernières 48h)
+      const maintenant = new Date();
+      const seuil48h = new Date(maintenant.getTime() - 48 * 60 * 60 * 1000);
+      const nouvellesDemandes = employe.absences.filter((absence: any) => {
+        const dateCreation = new Date(absence.creeLe);
+        return dateCreation >= seuil48h;
+      }).length;
+
       // Calculer l'éligibilité (12 mois après la date d'embauche)
       let eligible = false;
       let moisDepuisEmbauche = 0;
@@ -1626,6 +1639,7 @@ export const listerEmployesSoldes = actionProtegee(
         service,
         soldeTotal,
         demandesEnAttente,
+        nouvellesDemandes,
         eligible,
         moisDepuisEmbauche,
       };
