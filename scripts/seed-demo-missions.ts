@@ -49,18 +49,17 @@ async function main() {
 
   const employe = profil.employe;
 
-  // Trouver un autre employé pour être le supérieur
+  // Trouver Declann ARMEL comme supérieur
   const superieur = await prisma.employe.findFirst({
     where: {
-      archiveLe: null,
-      id: { not: employe.id },
+      matricule: "DEC2025",
     },
     select: { id: true, prenom: true, nom: true },
   });
 
   if (!superieur) {
-    console.error("❌ Au moins 2 employés nécessaires");
-    console.error("   Lancez d'abord le seed principal");
+    console.error("❌ Employé Declann ARMEL (DEC2025) introuvable");
+    console.error("   Lancez d'abord scripts/seed-comptes-m19.ts");
     process.exit(1);
   }
 
