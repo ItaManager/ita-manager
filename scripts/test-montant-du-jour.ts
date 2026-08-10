@@ -31,7 +31,7 @@
  */
 
 import { prismaDirect as prisma } from "./lib/prisma-direct";
-import { montantDuJour } from "../lib/actions/competences";
+import { montantDuJour } from "../lib/competences/calculs";
 
 async function main() {
   console.log("🧪 Test du critère de recette CRITIQUE : montantDuJour()\\n");

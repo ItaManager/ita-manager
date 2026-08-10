@@ -8,6 +8,7 @@
 import { prisma } from "@/lib/db/prisma";
 import { actionProtegee, PERMISSIONS } from "@/lib/auth/guard";
 import { CategorieCompetence } from "@prisma/client";
+import { tauxEnVigueur, competenceALaDate, montantDuJour } from "@/lib/competences/calculs";
 
 // =====================================================================
 // FONCTIONS UTILITAIRES
@@ -347,17 +348,6 @@ interface FixerTauxParams {
 }
 
 /**
- * Renvoie le taux en vigueur à une date donnée
- * Code exact de M17-COMPETENCES.md § 3.4
- */
-export async function tauxEnVigueur(competenceId: string, date: Date) {
-  return await prisma.tauxJournalier.findFirst({
-    where: { competenceId, dateEffet: { lte: date } },
-    orderBy: { dateEffet: "desc" },
-  });
-}
-
-/**
  * Fixe ou révise le taux d'une compétence
  * Crée une NOUVELLE ligne — aucun UPDATE sur TauxJournalier
  */
@@ -547,39 +537,6 @@ interface AssignerCompetenceParams {
   competenceId: string;
   dateEffet: Date;
   motif?: string; // Requis si changement
-}
-
-/**
- * La compétence d'un agent à une date donnée
- * Code exact de M17-COMPETENCES.md § 3.4
- */
-export async function competenceALaDate(employeId: string, date: Date) {
-  return await prisma.affectationCompetence.findFirst({
-    where: {
-      employeId,
-      dateEffet: { lte: date },
-      OR: [{ dateFin: null }, { dateFin: { gte: date } }],
-    },
-    include: { competence: true },
-  });
-}
-
-/**
- * Le montant d'un jour pointé — DEUX lectures historisées
- * Code exact de M17-COMPETENCES.md § 3.4
- *
- * C'EST LE CRITÈRE DE RECETTE LE PLUS IMPORTANT DE M17
- */
-export async function montantDuJour(employeId: string, jour: Date): Promise<number | null> {
-  const aff = await competenceALaDate(employeId, jour);
-  if (!aff) return null; // pas de compétence ce jour-là
-
-  const taux = await prisma.tauxJournalier.findFirst({
-    where: { competenceId: aff.competenceId, dateEffet: { lte: jour } },
-    orderBy: { dateEffet: "desc" },
-  });
-
-  return taux?.montant ? parseFloat(taux.montant.toString()) : null;
 }
 
 /**
