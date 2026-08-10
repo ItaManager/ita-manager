@@ -5,6 +5,25 @@
 "use server";
 
 import { prisma } from "@/lib/db/prisma";
+import { exigerPermission } from "@/lib/auth/guard";
+import { createClient } from "@/lib/supabase/server";
+
+/**
+ * Vérifie que l'utilisateur est authentifié et retourne son userId.
+ * À utiliser pour les actions sans permission spécifique.
+ */
+async function obtenirUtilisateurAuth(): Promise<string> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("Non authentifié");
+  }
+
+  return user.id;
+}
 
 /**
  * Vérifie si l'employé peut créer une nouvelle mission.
@@ -104,6 +123,20 @@ interface CreerMissionInput {
  */
 export async function creerMission(input: CreerMissionInput) {
   try {
+    // Authentification — vérifier que l'employeId appartient à l'utilisateur
+    const userId = await obtenirUtilisateurAuth();
+    const profil = await prisma.profil.findUnique({
+      where: { id: userId },
+      select: { employeId: true },
+    });
+
+    if (profil?.employeId !== input.employeId) {
+      return {
+        success: false,
+        message: "Vous ne pouvez créer une mission que pour votre propre compte",
+      };
+    }
+
     // Vérifier le blocage
     const peut = await peutCreerMission(input.employeId);
     if (!peut) {
@@ -190,6 +223,20 @@ interface VisaerN1Input {
  * Si pas de supérieur (DG), la mission passe directement à la RH.
  */
 export async function visaerN1(input: VisaerN1Input) {
+  // Authentification — vérifier que l'employeId appartient à l'utilisateur
+  const userId = await obtenirUtilisateurAuth();
+  const profil = await prisma.profil.findUnique({
+    where: { id: userId },
+    select: { employeId: true },
+  });
+
+  if (profil?.employeId !== input.employeId) {
+    return {
+      success: false,
+      message: "Vous ne pouvez viser que pour votre propre compte",
+    };
+  }
+
   const { missionId, decision, motif, employeId } = input;
 
   // Récupérer la mission avec le demandeur et son affectation
@@ -345,6 +392,8 @@ interface ValiderRHInput {
  * la RH peut quand même valider (cas exceptionnel).
  */
 export async function validerRH(input: ValiderRHInput) {
+  await exigerPermission("mission:traiter");
+
   const { missionId, decision, motif } = input;
 
   const mission = await prisma.mission.findUnique({
@@ -412,6 +461,20 @@ interface DeposerRapportInput {
  *   (empêche les rapports en trois mots)
  */
 export async function deposerRapport(input: DeposerRapportInput) {
+  // Authentification — vérifier que l'employeId appartient à l'utilisateur
+  const userId = await obtenirUtilisateurAuth();
+  const profil = await prisma.profil.findUnique({
+    where: { id: userId },
+    select: { employeId: true },
+  });
+
+  if (profil?.employeId !== input.employeId) {
+    return {
+      success: false,
+      message: "Vous ne pouvez déposer un rapport que pour votre propre compte",
+    };
+  }
+
   const { missionId, employeId, objetRealise, resultats } = input;
 
   // Vérifier que les champs font au moins 30 caractères
