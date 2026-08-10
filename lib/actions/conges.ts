@@ -8,7 +8,7 @@
  */
 
 import { prisma } from "@/lib/db/prisma";
-import { actionProtegee } from "@/lib/auth/guard";
+import { actionProtegee, exigerPermission } from "@/lib/auth/guard";
 import { createClient } from "@/lib/supabase/server";
 import { StatutAbsence } from "@prisma/client";
 import type { Decimal } from "@prisma/client/runtime/library";
@@ -1729,6 +1729,12 @@ export const listerEmployesSoldes = actionProtegee(
  */
 export async function obtenirStatistiquesConges(vue: string) {
   try {
+    // Vue équipe nécessite permission absence:valider (managers/RH)
+    // Vue personnelle : accès authentifié uniquement
+    if (vue === "équipe") {
+      await exigerPermission("absence:valider");
+    }
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
