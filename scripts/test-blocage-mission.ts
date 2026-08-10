@@ -98,10 +98,43 @@ async function main() {
   }
   console.log(`  ✓ OK\n`);
 
-  // Nettoyage
+  // Nettoyage de la mission clôturée
   await prisma.mission.delete({ where: { id: mission.id } });
 
-  console.log("✅ Tous les tests passent\n");
+  // TEST 3 : Ne doit PAS bloquer si mission refusée
+  const missionRefusee = await prisma.mission.create({
+    data: {
+      reference: `MIS-TEST-REFUS-${Date.now()}`,
+      demandeurId: employe.id,
+      objet: "Test mission refusée",
+      destination: "Bouaké",
+      moyenTransport: "VEHICULE_ITA",
+      dateDepart: dateDepart,
+      dateRetour: dateRetour,
+      fraisEstimes: 0,
+      soumiseLe: new Date(),
+      refuseeLe: new Date(),
+      motifRefus: "Budget insuffisant",
+      etapeRefus: "N1",
+    },
+  });
+
+  const test3 = await peutCreerMission(employe.id);
+  console.log(`Test 3 — Mission passée sans rapport MAIS refusée :`);
+  console.log(`  Attendu : true (ne bloque pas)`);
+  console.log(`  Obtenu  : ${test3}`);
+
+  if (test3 !== true) {
+    console.error(`  ❌ ÉCHEC — ne devrait pas bloquer`);
+    await prisma.mission.delete({ where: { id: missionRefusee.id } });
+    process.exit(1);
+  }
+  console.log(`  ✓ OK\n`);
+
+  // Nettoyage
+  await prisma.mission.delete({ where: { id: missionRefusee.id } });
+
+  console.log("✅ Tous les tests passent (3/3)\n");
 }
 
 main()
