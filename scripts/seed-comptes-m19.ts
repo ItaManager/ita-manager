@@ -58,8 +58,7 @@ async function seedDeclannArmel() {
         libelle: "Conducteur de Travaux",
         directionId: direction.id,
         serviceId: service?.id || null,
-        niveauHierarchique: "N_PLUS_1",
-        pointageObligatoire: false,
+        niveau: "CADRE",
       },
     });
   }
@@ -99,8 +98,6 @@ async function seedDeclannArmel() {
       data: {
         employeId: employe.id,
         posteId: poste.id,
-        directionId: direction.id,
-        serviceId: service?.id || null,
         dateDebut: new Date("2025-01-01"),
         dateFin: null,
       },
@@ -140,6 +137,7 @@ async function seedDeclannArmel() {
     where: { id: userId },
     create: {
       id: userId,
+      email: DECLANN_EMAIL,
       employeId: employe.id,
       actif: true,
     },
@@ -213,6 +211,7 @@ async function seedCompteDRH() {
     where: { id: userId },
     create: {
       id: userId,
+      email: DRH_EMAIL,
       employeId: null, // Compte sans employé rattaché
       actif: true,
     },
