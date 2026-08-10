@@ -64,8 +64,8 @@ function analyzeFile(filePath: string): Violation[] {
         continue;
       }
 
-      // Examiner les 30 lignes suivantes pour détecter 3 formes de garde
-      const nextLines = lines.slice(i, i + 30).join("\n");
+      // Examiner les 50 lignes suivantes pour détecter 3 formes de garde
+      const nextLines = lines.slice(i, i + 50).join("\n");
 
       const hasPermissionGuard =
         nextLines.includes("actionProtegee") ||
