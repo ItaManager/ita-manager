@@ -11,7 +11,7 @@
 
 import { cache } from "react";
 import { prisma } from "@/lib/db/prisma";
-import { actionProtegee } from "@/lib/auth/guard";
+import { actionProtegee, exigerPermission } from "@/lib/auth/guard";
 import { createClient } from "@/lib/supabase/server";
 import { TypeMainOeuvre } from "@prisma/client";
 
@@ -2149,8 +2149,13 @@ export const listerHistoriqueEmploye = actionProtegee(
 
 /**
  * Récupère les tâches d'un projet pour le sélecteur cascading
+ * Utilisée dans le formulaire de création d'employé
  */
 export async function obtenirTachesProjet(projetId: string) {
+  // Contrôle d'accès : seuls les utilisateurs autorisés à créer des employés
+  // peuvent accéder aux données de projets (contexte : formulaire employé)
+  await exigerPermission("employe:creer");
+
   const taches = await prisma.tache.findMany({
     where: { projetId },
     orderBy: { libelle: "asc" },
@@ -2168,16 +2173,13 @@ export async function obtenirTachesProjet(projetId: string) {
  * Minimal : libelle uniquement, dates par défaut = aujourd'hui + 30 jours
  */
 export async function creerTacheInline(projetId: string, libelle: string) {
+  // Contrôle d'accès : seuls les utilisateurs autorisés à créer des employés
+  // peuvent créer des tâches inline (contexte : formulaire employé)
+  await exigerPermission("employe:creer");
+
   const today = new Date();
   const in30Days = new Date();
   in30Days.setDate(today.getDate() + 30);
-
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("Non authentifié");
-  }
 
   const tache = await prisma.tache.create({
     data: {
@@ -2276,17 +2278,13 @@ export async function recupererBrouillonEmploye() {
  * Supprime le brouillon après création réussie de l'employé
  */
 export async function supprimerBrouillonEmploye() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // Contrôle d'accès : workflow de création d'employé
+  const session = await exigerPermission("employe:creer");
 
-  if (!user) {
-    return;
-  }
-
-  // Data-link control via WHERE clause : ne supprime que les brouillons de l'utilisateur
+  // Data-link control : ne supprime que les brouillons de l'utilisateur connecté
   await prisma.brouillon.deleteMany({
     where: {
-      profilId: user.id,
+      profilId: session.userId,
       entite: "Employe",
       entiteId: null,
     },
