@@ -272,3 +272,122 @@ export async function visaerN1(input: VisaerN1Input) {
     return { success: true, message: "Mission refusée" };
   }
 }
+
+/**
+ * Détecte les chevauchements entre une mission et les congés validés.
+ *
+ * Une mission ne peut pas chevaucher un congé validé par la RH.
+ * Cette fonction est appelée par l'écran RH pour signaler les conflits.
+ *
+ * @param employeId - UUID de l'employé
+ * @param dateDepart - Date de départ de la mission
+ * @param dateRetour - Date de retour de la mission
+ * @returns Liste des congés qui chevauchent la mission
+ */
+export async function detecterChevauchementConges(
+  employeId: string,
+  dateDepart: Date,
+  dateRetour: Date
+) {
+  // Normaliser les dates à minuit UTC
+  const debut = new Date(dateDepart);
+  debut.setUTCHours(0, 0, 0, 0);
+  const fin = new Date(dateRetour);
+  fin.setUTCHours(0, 0, 0, 0);
+
+  // Chercher les congés validés qui chevauchent la période de la mission
+  const congesChevauches = await prisma.absence.findMany({
+    where: {
+      employeId,
+      // Congé validé par RH (décision RH = "VALIDE")
+      decisionRH: "VALIDE",
+      decisionRHLe: {
+        not: null,
+      },
+      annuleeLe: null,
+      // Chevauchement :
+      // congé commence avant la fin de la mission
+      // ET congé se termine après le début de la mission
+      dateDebut: {
+        lte: fin,
+      },
+      dateFin: {
+        gte: debut,
+      },
+    },
+    select: {
+      id: true,
+      dateDebut: true,
+      dateFin: true,
+      nombreJours: true,
+      typeAbsence: {
+        select: {
+          libelle: true,
+        },
+      },
+    },
+  });
+
+  return congesChevauches;
+}
+
+interface ValiderRHInput {
+  missionId: string;
+  decision: "VALIDER" | "REFUSER";
+  motif?: string;
+}
+
+/**
+ * Validation RH — dernière étape avant versement avance (si fraisEstimes > 0).
+ *
+ * La RH vérifie que la mission ne chevauche pas un congé validé.
+ * Si chevauchement détecté, l'interface affiche un avertissement mais
+ * la RH peut quand même valider (cas exceptionnel).
+ */
+export async function validerRH(input: ValiderRHInput) {
+  const { missionId, decision, motif } = input;
+
+  const mission = await prisma.mission.findUnique({
+    where: { id: missionId },
+  });
+
+  if (!mission) {
+    return { success: false, message: "Mission introuvable" };
+  }
+
+  // Vérifier le statut
+  if (mission.valideeRhLe !== null || mission.refuseeLe !== null) {
+    return { success: false, message: "Cette mission a déjà été traitée" };
+  }
+
+  // La mission doit avoir été visée par le N+1
+  if (mission.viseeN1Le === null) {
+    return { success: false, message: "La mission n'a pas encore été visée par le N+1" };
+  }
+
+  // Validation : motif obligatoire pour refus
+  if (decision === "REFUSER" && !motif) {
+    return { success: false, message: "Le motif du refus est obligatoire" };
+  }
+
+  // Appliquer la décision
+  if (decision === "VALIDER") {
+    await prisma.mission.update({
+      where: { id: missionId },
+      data: {
+        valideeRhLe: new Date(),
+      },
+    });
+    return { success: true, message: "Mission validée par la RH" };
+  } else {
+    await prisma.mission.update({
+      where: { id: missionId },
+      data: {
+        refuseeLe: new Date(),
+        motifRefus: motif,
+        etapeRefus: "RH",
+      },
+    });
+    return { success: true, message: "Mission refusée" };
+  }
+}
