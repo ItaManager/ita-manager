@@ -175,3 +175,100 @@ export async function creerMission(input: CreerMissionInput) {
     };
   }
 }
+
+interface VisaerN1Input {
+  missionId: string;
+  decision: "VALIDER" | "REFUSER";
+  motif?: string;
+  employeId: string; // ID de l'employé qui décide (depuis son profil)
+}
+
+/**
+ * Visa du N+1 — contrôle par lien de données, pas par permission.
+ *
+ * Le supérieur est récupéré depuis l'affectation du demandeur.
+ * Si pas de supérieur (DG), la mission passe directement à la RH.
+ */
+export async function visaerN1(input: VisaerN1Input) {
+  const { missionId, decision, motif, employeId } = input;
+
+  // Récupérer la mission avec le demandeur et son affectation
+  const mission = await prisma.mission.findUnique({
+    where: { id: missionId },
+    include: {
+      demandeur: {
+        include: {
+          affectations: {
+            where: {
+              dateFin: null, // Affectation en cours
+            },
+            select: {
+              superieurId: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!mission) {
+    return { success: false, message: "Mission introuvable" };
+  }
+
+  // Vérifier le statut
+  if (mission.viseeN1Le !== null || mission.refuseeLe !== null) {
+    return { success: false, message: "Cette mission a déjà été traitée" };
+  }
+
+  // Récupérer l'affectation en cours du demandeur
+  const affectation = mission.demandeur.affectations[0];
+
+  if (!affectation) {
+    return { success: false, message: "Le demandeur n'a pas d'affectation active" };
+  }
+
+  // Pas de supérieur → DG → passer direct à RH
+  if (!affectation.superieurId) {
+    await prisma.mission.update({
+      where: { id: missionId },
+      data: {
+        viseeN1Le: new Date(),
+        // Mission passe directement à validation RH
+      },
+    });
+    return { success: true, message: "Mission validée automatiquement (pas de supérieur)" };
+  }
+
+  // Vérifier que l'utilisateur est bien le supérieur
+  const estSuperieur = affectation.superieurId === employeId;
+
+  if (!estSuperieur) {
+    return { success: false, message: "Vous n'êtes pas le supérieur hiérarchique de ce demandeur" };
+  }
+
+  // Validation : motif obligatoire pour refus
+  if (decision === "REFUSER" && !motif) {
+    return { success: false, message: "Le motif du refus est obligatoire" };
+  }
+
+  // Appliquer la décision
+  if (decision === "VALIDER") {
+    await prisma.mission.update({
+      where: { id: missionId },
+      data: {
+        viseeN1Le: new Date(),
+      },
+    });
+    return { success: true, message: "Mission visée par le N+1" };
+  } else {
+    await prisma.mission.update({
+      where: { id: missionId },
+      data: {
+        refuseeLe: new Date(),
+        motifRefus: motif,
+        etapeRefus: "N1",
+      },
+    });
+    return { success: true, message: "Mission refusée" };
+  }
+}
