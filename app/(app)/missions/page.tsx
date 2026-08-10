@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db/prisma";
 import { verifierAccesPage } from "@/lib/auth/page-access";
 import { BoutonNouvelleMission } from "./_components/bouton-nouvelle-mission";
+import { ModaleDeposerRapport } from "./_components/modale-deposer-rapport";
 
 export default async function MissionsPage() {
   const userId = await verifierAccesPage("/missions");
@@ -62,31 +63,55 @@ export default async function MissionsPage() {
       ) : (
         <div className="rounded-lg border">
           <div className="p-4 border-b font-medium bg-muted/50">
-            <div className="grid grid-cols-5 gap-4">
+            <div className="grid grid-cols-6 gap-4">
               <div>Référence</div>
               <div>Objet</div>
               <div>Destination</div>
               <div>Dates</div>
               <div className="text-right">Montant</div>
+              <div className="text-right">Actions</div>
             </div>
           </div>
           <div className="divide-y">
-            {missions.map((mission) => (
-              <div key={mission.id} className="p-4 hover:bg-muted/30 transition-colors">
-                <div className="grid grid-cols-5 gap-4">
-                  <div className="font-medium">{mission.reference}</div>
-                  <div>{mission.objet}</div>
-                  <div>{mission.destination}</div>
-                  <div className="text-sm">
-                    {new Date(mission.dateDepart).toLocaleDateString("fr-FR")} →{" "}
-                    {new Date(mission.dateRetour).toLocaleDateString("fr-FR")}
-                  </div>
-                  <div className="text-right tabular-nums">
-                    {mission.fraisEstimes.toString()} F
+            {missions.map((mission) => {
+              const aujourdhuiCivile = new Date();
+              aujourdhuiCivile.setUTCHours(0, 0, 0, 0);
+
+              const rapportAttend =
+                mission.valideeRhLe !== null &&
+                mission.rapportDeposeLe === null &&
+                mission.dateRetour < aujourdhuiCivile &&
+                mission.refuseeLe === null;
+
+              return (
+                <div key={mission.id} className="p-4 hover:bg-muted/30 transition-colors">
+                  <div className="grid grid-cols-6 gap-4 items-center">
+                    <div className="font-medium">{mission.reference}</div>
+                    <div>{mission.objet}</div>
+                    <div>{mission.destination}</div>
+                    <div className="text-sm">
+                      {new Date(mission.dateDepart).toLocaleDateString("fr-FR")} →{" "}
+                      {new Date(mission.dateRetour).toLocaleDateString("fr-FR")}
+                    </div>
+                    <div className="text-right tabular-nums">
+                      {mission.fraisEstimes.toString()} F
+                    </div>
+                    <div className="text-right">
+                      {rapportAttend && profil.employeId && (
+                        <ModaleDeposerRapport
+                          missionId={mission.id}
+                          employeId={profil.employeId}
+                          reference={mission.reference}
+                        />
+                      )}
+                      {mission.rapportDeposeLe && (
+                        <span className="text-xs text-green-600">Rapport déposé</span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
