@@ -69,6 +69,7 @@ const buildNavigation = (
     title: "MON ESPACE",
     items: [
       { label: "Mes documents", href: "/documents", icon: FileStack, moduleNumber: "M2", moduleName: "Employés" },
+      { label: "Mes missions", href: "/missions", icon: Plane, moduleNumber: "M19", moduleName: "Missions" },
     ],
   },
   {
@@ -87,9 +88,8 @@ const buildNavigation = (
       { label: "Congés et permissions", href: "/conges-permissions", icon: Calendar, badge: compteursConges.aValiderN1 + compteursConges.controleRH, moduleNumber: "M3", moduleName: "Congés" },
       { label: "Compétences", href: "/personnel/competences", icon: Award, moduleNumber: "M17", moduleName: "Compétences" },
       { label: "Assignations", href: "/personnel/competences/agents", icon: UserCog, moduleNumber: "M17", moduleName: "Compétences" },
-      { label: "Missions", href: "/missions", icon: Plane, moduleNumber: "M19", moduleName: "Missions" },
-      { label: "À viser", href: "/missions/visa-n1", icon: CheckSquare, badge: compteursMissions.aViser, moduleNumber: "M19", moduleName: "Missions" },
-      { label: "À traiter", href: "/missions/validation-rh", icon: ClipboardList, badge: compteursMissions.aTraiter, moduleNumber: "M19", moduleName: "Missions" },
+      { label: "Missions — À viser", href: "/missions/visa-n1", icon: CheckSquare, badge: compteursMissions.aViser, moduleNumber: "M19", moduleName: "Missions" },
+      { label: "Missions — À traiter", href: "/missions/validation-rh", icon: ClipboardList, badge: compteursMissions.aTraiter, moduleNumber: "M19", moduleName: "Missions" },
     ],
   },
   {
