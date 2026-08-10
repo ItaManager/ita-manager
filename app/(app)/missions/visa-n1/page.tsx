@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/db/prisma";
 import { verifierAccesPage } from "@/lib/auth/page-access";
+import { Suspense } from "react";
+import { ModuleLayout } from "@/components/layouts/module-layout";
 import { ModaleViserN1 } from "../_components/modale-viser-n1";
 import { formaterDateCivile } from "@/lib/dates";
 import { ClipboardCheck } from "lucide-react";
@@ -83,14 +85,11 @@ export default async function VisaN1MissionsPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold">Visa N+1 — Missions</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Missions de vos collaborateurs en attente de votre visa
-        </p>
-      </div>
-
+    <ModuleLayout
+      titre="Visa N+1 — Missions"
+      description="Missions de vos collaborateurs en attente de votre visa"
+      helpText="Examinez les demandes de mission de vos subordonnés directs. Vérifiez si la mission est justifiée et si vous pouvez vous passer de cette personne pendant la période indiquée. Votre visa déclenche ensuite la validation RH."
+    >
       {missions.length === 0 ? (
         <div className="rounded-lg border border-dashed p-12 text-center">
           <ClipboardCheck className="size-12 mx-auto text-muted-foreground mb-3" />
@@ -200,6 +199,6 @@ export default async function VisaN1MissionsPage() {
           })}
         </div>
       )}
-    </div>
+    </ModuleLayout>
   );
 }

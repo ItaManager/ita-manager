@@ -4,6 +4,7 @@ import { detecterChevauchementConges } from "@/lib/missions/utils";
 import { ModaleValiderRH } from "../_components/modale-valider-rh";
 import { formaterDateCivile } from "@/lib/dates";
 import { AlertTriangle } from "lucide-react";
+import { ModuleLayout } from "@/components/layouts/module-layout";
 
 export default async function ValidationRHMissionsPage() {
   await exigerPermission("mission:traiter");
@@ -53,14 +54,11 @@ export default async function ValidationRHMissionsPage() {
   );
 
   return (
-    <div className="p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold">Validation RH — Missions</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Valider les missions visées par les N+1 et détecter les chevauchements de congés
-        </p>
-      </div>
-
+    <ModuleLayout
+      titre="Validation RH — Missions"
+      description="Valider les missions visées par les N+1 et détecter les chevauchements de congés"
+      helpText="Contrôle final avant le départ en mission. Vérifiez la cohérence avec les congés validés, l'absence de blocage administratif, et le respect des procédures. Votre validation déclenche le versement de l'avance de frais."
+    >
       {missionsAvecChevauchements.length === 0 ? (
         <div className="rounded-lg border border-dashed p-12 text-center">
           <p className="text-muted-foreground">
@@ -182,6 +180,6 @@ export default async function ValidationRHMissionsPage() {
           ))}
         </div>
       )}
-    </div>
+    </ModuleLayout>
   );
 }

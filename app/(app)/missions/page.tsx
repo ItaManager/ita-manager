@@ -1,5 +1,11 @@
 import { prisma } from "@/lib/db/prisma";
 import { verifierAccesPage } from "@/lib/auth/page-access";
+import { Suspense } from "react";
+import { ModuleLayout } from "@/components/layouts/module-layout";
+import { IndicateursMissions } from "./_components/indicateurs-missions";
+import { ListeMissions } from "./_components/liste-missions";
+import { ListeTaches } from "./_components/liste-taches";
+import { TitreTaches } from "./_components/titre-taches";
 import { BoutonNouvelleMission } from "./_components/bouton-nouvelle-mission";
 import { ModaleDeposerRapport } from "./_components/modale-deposer-rapport";
 import { peutCreerMission } from "@/lib/missions/utils";
@@ -49,33 +55,32 @@ export default async function MissionsPage() {
       })
     : null;
 
-  // Récupérer les missions de l'employé
-  const missions = await prisma.mission.findMany({
-    where: {
-      demandeurId: profil.employeId,
-    },
-    orderBy: {
-      dateDepart: "desc",
-    },
-    include: {
-      demandeur: {
-        select: {
-          prenom: true,
-          nom: true,
-        },
-      },
-    },
-  });
-
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold">Mes missions</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gérez vos demandes de mission et rapports
-          </p>
-        </div>
+    <ModuleLayout
+      titre="Mes missions"
+      description="Gérez vos demandes de mission et rapports"
+      helpText="Demandez une mission pour un déplacement professionnel. Une fois validée par votre N+1 puis par la RH, vous recevrez une avance de frais. À votre retour, déposez le rapport avec les justificatifs. Tant qu'un rapport est en attente, vous ne pouvez pas demander de nouvelle mission."
+      indicateurs={
+        <Suspense fallback={<div>Chargement...</div>}>
+          <IndicateursMissions />
+        </Suspense>
+      }
+      taches={{
+        titre: (
+          <Suspense fallback={<h2 className="text-lg font-semibold text-[#18181a]">Vos tâches</h2>}>
+            <TitreTaches />
+          </Suspense>
+        ),
+        contenu: (
+          <Suspense fallback={<div className="text-sm text-muted-foreground">Chargement...</div>}>
+            <ListeTaches />
+          </Suspense>
+        ),
+      }}
+    >
+      {/* Bouton nouvelle mission + bandeau blocage */}
+      <div className="mb-6 flex items-center justify-between">
+        <div />
         <BoutonNouvelleMission
           employeId={profil.employeId}
           bloque={!peut}
@@ -113,68 +118,10 @@ export default async function MissionsPage() {
         </div>
       )}
 
-      {missions.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-12 text-center">
-          <p className="text-muted-foreground mb-4">
-            Vous n'avez aucune mission enregistrée
-          </p>
-          <BoutonNouvelleMission employeId={profil.employeId} />
-        </div>
-      ) : (
-        <div className="rounded-lg border">
-          <div className="p-4 border-b font-medium bg-muted/50">
-            <div className="grid grid-cols-6 gap-4">
-              <div>Référence</div>
-              <div>Objet</div>
-              <div>Destination</div>
-              <div>Dates</div>
-              <div className="text-right">Montant</div>
-              <div className="text-right">Actions</div>
-            </div>
-          </div>
-          <div className="divide-y">
-            {missions.map((mission) => {
-              const aujourdhuiCivile = new Date();
-              aujourdhuiCivile.setUTCHours(0, 0, 0, 0);
-
-              const rapportAttend =
-                mission.valideeRhLe !== null &&
-                mission.rapportDeposeLe === null &&
-                mission.dateRetour < aujourdhuiCivile &&
-                mission.refuseeLe === null;
-
-              return (
-                <div key={mission.id} className="p-4 hover:bg-muted/30 transition-colors">
-                  <div className="grid grid-cols-6 gap-4 items-center">
-                    <div className="font-medium">{mission.reference}</div>
-                    <div>{mission.objet}</div>
-                    <div>{mission.destination}</div>
-                    <div className="text-sm">
-                      {new Date(mission.dateDepart).toLocaleDateString("fr-FR")} →{" "}
-                      {new Date(mission.dateRetour).toLocaleDateString("fr-FR")}
-                    </div>
-                    <div className="text-right tabular-nums">
-                      {mission.fraisEstimes.toString()} F
-                    </div>
-                    <div className="text-right">
-                      {rapportAttend && profil.employeId && (
-                        <ModaleDeposerRapport
-                          missionId={mission.id}
-                          employeId={profil.employeId}
-                          reference={mission.reference}
-                        />
-                      )}
-                      {mission.rapportDeposeLe && (
-                        <span className="text-xs text-green-600">Rapport déposé</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
+      {/* Liste des missions */}
+      <Suspense fallback={<div>Chargement...</div>}>
+        <ListeMissions />
+      </Suspense>
+    </ModuleLayout>
   );
 }
