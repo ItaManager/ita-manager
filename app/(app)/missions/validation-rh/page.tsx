@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 import { exigerPermission } from "@/lib/auth/guard";
-import { detecterChevauchementConges } from "@/lib/actions/missions";
+import { detecterChevauchementConges } from "@/lib/missions/utils";
 import { ModaleValiderRH } from "../_components/modale-valider-rh";
 import { formaterDateCivile } from "@/lib/dates";
 import { AlertTriangle } from "lucide-react";

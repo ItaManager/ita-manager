@@ -202,7 +202,7 @@ Même si le code est imparfait.
 
 ---
 
-## Seize règles issues de défauts constatés
+## Dix-sept règles issues de défauts constatés
 
 ### Sur les données
 
@@ -262,6 +262,94 @@ ls components/ui/
 **15 · Ne pas inventer de travail.**
 
 **16 · Un fichier de migration appliquée ne se touche jamais.**
+
+### Sur la sécurité
+
+**17 · Un fichier "use server" n'exporte QUE des Server Actions**
+
+**Problème observé** : lib/actions/competences.ts portait "use server" + 3 fonctions
+utilitaires exportées → 3 endpoints HTTP publics exposés (dont `montantDuJour`, le
+calcul de paie). *Observé trois fois — 2 août, M17, M19.*
+
+**La règle** :
+
+Un fichier portant `"use server"` au niveau fichier transforme TOUTE fonction exportée
+en endpoint HTTP public.
+
+Dans `lib/actions/*.ts` :
+
+1. **Mutations et lectures authentifiées** → Server Actions avec `actionProtegee`
+2. **Utilitaires de calcul** → `lib/[module]/calculs.ts` SANS "use server"
+3. **Fonctions serveur→serveur** → `lib/[module]/` SANS "use server"
+
+**Critère de décision** :
+
+Si une fonction n'est jamais appelée depuis un composant client, elle n'a rien à
+faire dans lib/actions/. Vérifie avant d'écrire :
+
+```bash
+grep -rn "nomDeLaFonction" app --include="*.tsx" | grep -v "use server"
+```
+
+Aucun résultat → c'est un utilitaire, il va dans `lib/[module]/`.
+
+**Motifs acceptés** (reconnus par verify-actions-protegees.ts) :
+
+```typescript
+actionProtegee("x:y", ...)           // Permission
+exigerPermission("x:y")              // Permission
+profil?.employeId !== input.employeId // Lien de données
+```
+
+Une fonction exportée sans l'un de ces motifs est une **faille**.
+
+**Sur le contrôle par lien de données** :
+
+Un contrôle par lien de données est aussi valable qu'une permission — c'est ce que M3
+fait sur `deciderN1`, et M19 sur `visaerN1`. Le viseur est celui vers qui pointe
+`Affectation.superieurId` ; aucune permission ne peut exprimer ça.
+
+Mais il doit être EXPLICITE et lever une exception. Un `if` qui renvoie une liste
+vide n'est pas un contrôle.
+
+**Exemples** :
+
+✅ **Correct** — Action protégée par lien de données
+```typescript
+// lib/actions/missions.ts
+"use server";
+
+export async function creerMission(input) {
+  const profil = await getProfileId();
+  if (profil?.employeId !== input.employeId) {
+    throw new Error("Vous ne pouvez créer une mission que pour votre propre compte");
+  }
+  // ...
+}
+```
+
+✅ **Correct** — Utilitaire déplacé
+```typescript
+// lib/competences/calculs.ts (PAS de "use server")
+export async function tauxEnVigueur(competenceId, date) {
+  return await prisma.tauxJournalier.findFirst(...)
+}
+```
+
+❌ **Faille** — Utilitaire exporté d'un fichier "use server"
+```typescript
+// lib/actions/competences.ts
+"use server";
+
+// ❌ Devient endpoint HTTP → montantDuJour appelable par n'importe qui
+export async function montantDuJour(employeId, jour) {
+  // calcul paie
+}
+```
+
+**Vérification** : `npm run verify` détecte les exports sans garde.
+
+---
 
 **Aucun résidu de développement.**
 

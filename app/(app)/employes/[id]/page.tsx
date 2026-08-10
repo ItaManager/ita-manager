@@ -5,8 +5,8 @@ import {
   listerDocumentsEmploye,
   listerContratsEmploye,
   listerHistoriqueEmploye,
-  obtenirDonneesReferenceEmploye,
 } from "@/lib/actions/employes";
+import { obtenirDonneesReferenceEmploye } from "@/lib/employes/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

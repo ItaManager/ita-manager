@@ -1,7 +1,8 @@
 import { verifierAccesPage } from "@/lib/auth/page-access";
 import { Suspense } from "react";
 import { ListeEmployes } from "./_components/liste-employes";
-import { obtenirDonneesReferenceEmploye, obtenirTachesEmployes } from "@/lib/actions/employes";
+import { obtenirDonneesReferenceEmploye } from "@/lib/employes/utils";
+import { obtenirTachesEmployes } from "@/lib/actions/employes";
 import { ModuleLayout } from "@/components/layouts/module-layout";
 import { IndicateursEmployes } from "./_components/indicateurs-employes";
 import { TitreTaches } from "./_components/titre-taches";

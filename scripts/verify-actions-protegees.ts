@@ -20,20 +20,12 @@ const ACTIONS_DIR = path.join(process.cwd(), "lib/actions");
 
 // Fonctions exemptées avec justification
 //
-// deconnecter : appelable sans session, par construction (logout endpoint)
-// enregistrerPointage : protégée par jeton d'appareil (M12 § 3), voir presences.ts:67-79
-// Brouillons : données personnelles filtrées par profilId + data-link control explicite
-// Compteurs congés : auth + vérification permissions inline + filtre par subordinates
+// Une exemption se justifie si l'action ne PEUT PAS porter de permission.
+// Les actions avec contrôle par lien de données ne sont PAS exemptées :
+// le script les reconnaît via les motifs employeId/profilId/permissions.includes
 const EXEMPTIONS: Record<string, string> = {
   "deconnecter": "Endpoint public de logout, authentification via createClient()",
   "enregistrerPointage": "Authentification par jeton appareil + code employé haché (M12 § 3)",
-  "sauvegarderBrouillonEmploye": "Données personnelles, auth + filter profilId + data-link check",
-  "recupererBrouillonEmploye": "Données personnelles, auth + filter profilId + data-link check",
-  "supprimerBrouillonEmploye": "Données personnelles, auth + filter profilId (deleteMany)",
-  "chargerCompteursConges": "Auth + permissions.includes() inline + filtre subordinates",
-  "obtenirStatistiquesConges": "Auth + permissions.includes() inline + filtre subordinates/vue",
-  "obtenirTachesConges": "Auth + permissions.includes() inline + filtre subordinates",
-  "listerDemandesConges": "Auth + vérification vue/permissions + TODO filtre data selon vue",
 };
 
 type Violation = {
@@ -72,19 +64,28 @@ function analyzeFile(filePath: string): Violation[] {
         continue;
       }
 
-      // Examiner les 3 lignes suivantes pour actionProtegee ou exigerPermission
-      const nextLines = lines.slice(i, i + 3).join("\n");
+      // Examiner les 30 lignes suivantes pour détecter 3 formes de garde
+      const nextLines = lines.slice(i, i + 30).join("\n");
 
-      const hasGuard =
+      const hasPermissionGuard =
         nextLines.includes("actionProtegee") ||
         nextLines.includes("exigerPermission");
+
+      // Détecter contrôle par lien de données (data-link control)
+      // Motifs : profil?.employeId !== / .employeId !== / profilId !== / auteurId !==
+      const hasDataLinkGuard =
+        /profil\?\.employeId\s*!==/.test(nextLines) ||
+        /\.employeId\s*!==\s*(?:input|session|user)\.employeId/.test(nextLines) ||
+        /\.profilId\s*!==\s*user\.id/.test(nextLines) ||
+        /\.auteurId\s*!==/.test(nextLines) ||
+        /permissions\.includes\(/.test(nextLines);
 
       // Vérifier si c'est un alias vers une fonction protégée (même ligne)
       const isAlias = line.includes("=") &&
         !line.includes("actionProtegee") &&
         /=\s*\w+Logique\s*;/.test(line);
 
-      if (!hasGuard && !isAlias) {
+      if (!hasPermissionGuard && !hasDataLinkGuard && !isAlias) {
         violations.push({
           file: path.basename(filePath),
           line: lineNumber,
