@@ -60,7 +60,11 @@ interface NavSection {
   items: NavItem[];
 }
 
-const buildNavigation = (compteursAchats: CompteursBadges, compteursConges: CompteursConges): NavSection[] => [
+const buildNavigation = (
+  compteursAchats: CompteursBadges,
+  compteursConges: CompteursConges,
+  compteursMissions: CompteursMissions
+): NavSection[] => [
   {
     title: "MON ESPACE",
     items: [
@@ -84,6 +88,8 @@ const buildNavigation = (compteursAchats: CompteursBadges, compteursConges: Comp
       { label: "Compétences", href: "/personnel/competences", icon: Award, moduleNumber: "M17", moduleName: "Compétences" },
       { label: "Assignations", href: "/personnel/competences/agents", icon: UserCog, moduleNumber: "M17", moduleName: "Compétences" },
       { label: "Missions", href: "/missions", icon: Plane, moduleNumber: "M19", moduleName: "Missions" },
+      { label: "À viser", href: "/missions/visa-n1", icon: CheckSquare, badge: compteursMissions.aViser, moduleNumber: "M19", moduleName: "Missions" },
+      { label: "À traiter", href: "/missions/validation-rh", icon: ClipboardList, badge: compteursMissions.aTraiter, moduleNumber: "M19", moduleName: "Missions" },
     ],
   },
   {
@@ -152,17 +158,23 @@ interface CompteursConges {
   controleRH: number;
 }
 
+interface CompteursMissions {
+  aViser: number;
+  aTraiter: number;
+}
+
 interface BarreLateraleClientProps {
   userPermissions: string[];
   compteursAchats: CompteursBadges;
   compteursConges: CompteursConges;
+  compteursMissions: CompteursMissions;
 }
 
-export function BarreLateraleClient({ userPermissions, compteursAchats, compteursConges }: BarreLateraleClientProps) {
+export function BarreLateraleClient({ userPermissions, compteursAchats, compteursConges, compteursMissions }: BarreLateraleClientProps) {
   const pathname = usePathname();
 
   // Construire la navigation avec les compteurs dynamiques
-  const navigation = buildNavigation(compteursAchats, compteursConges);
+  const navigation = buildNavigation(compteursAchats, compteursConges, compteursMissions);
 
   // Filtrer les sections en fonction des permissions
   const filteredNavigation = navigation.map((section) => ({

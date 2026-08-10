@@ -448,3 +448,91 @@ export async function deposerRapport(input: DeposerRapportInput) {
 
   return { success: true, message: "Rapport déposé avec succès" };
 }
+
+// =====================================================================
+// COMPTEURS POUR NAVIGATION
+// =====================================================================
+
+/**
+ * Charge les compteurs de badges pour le module Missions
+ * Utilisé par la barre latérale pour afficher les badges de notification
+ *
+ * Retourne { aViser: 0, aTraiter: 0 } même sans permissions
+ * Les compteurs sont à 0 si l'utilisateur n'a pas les droits ou données appropriés
+ */
+export async function chargerCompteursMissions() {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { aViser: 0, aTraiter: 0 };
+    }
+
+    const profil = await prisma.profil.findUnique({
+      where: { id: user.id },
+      include: {
+        roles: {
+          include: {
+            role: { include: { permissions: { include: { permission: true } } } },
+          },
+        },
+        employe: true,
+      },
+    });
+
+    const permissions =
+      profil?.roles.flatMap((pr) =>
+        pr.role.permissions.map((rp) => rp.permission.code)
+      ) ?? [];
+
+    const compteurs = {
+      aViser: 0,
+      aTraiter: 0,
+    };
+
+    // COMPTEUR 1 : À viser (N+1) — contrôle par lien de données
+    // Missions soumises de mes subordonnés directs
+    if (profil?.employe) {
+      const affectationsSubordonnes = await prisma.affectation.findMany({
+        where: {
+          superieurId: profil.employe.id,
+          dateFin: null, // Affectation en cours
+        },
+        select: { employeId: true },
+      });
+
+      const subordinesIds = affectationsSubordonnes.map((a) => a.employeId);
+
+      if (subordinesIds.length > 0) {
+        compteurs.aViser = await prisma.mission.count({
+          where: {
+            demandeurId: { in: subordinesIds },
+            soumiseLe: { not: null },
+            viseeN1Le: null,
+            refuseeLe: null,
+          },
+        });
+      }
+    }
+
+    // COMPTEUR 2 : À traiter (RH) — contrôle par permission
+    // Missions visées N+1, en attente de validation RH
+    if (permissions.includes("mission:traiter")) {
+      compteurs.aTraiter = await prisma.mission.count({
+        where: {
+          viseeN1Le: { not: null },
+          valideeRhLe: null,
+          refuseeLe: null,
+        },
+      });
+    }
+
+    return compteurs;
+  } catch (error) {
+    console.error("Erreur lors du chargement des compteurs missions:", error);
+    return { aViser: 0, aTraiter: 0 };
+  }
+}

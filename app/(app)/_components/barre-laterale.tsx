@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db/prisma";
 import { BarreLateraleClient } from "./barre-laterale-client";
 import { chargerCompteursAchats } from "@/lib/actions/compteurs-achats";
 import { chargerCompteursConges } from "@/lib/actions/conges";
+import { chargerCompteursMissions } from "@/lib/actions/missions";
 
 export async function BarreLaterale() {
   const supabase = await createClient();
@@ -41,11 +42,15 @@ export async function BarreLaterale() {
   // Charger les compteurs de badges pour les congés
   const compteursConges = await chargerCompteursConges();
 
+  // Charger les compteurs de badges pour les missions
+  const compteursMissions = await chargerCompteursMissions();
+
   return (
     <BarreLateraleClient
       userPermissions={userPermissions}
       compteursAchats={compteursAchats}
       compteursConges={compteursConges}
+      compteursMissions={compteursMissions}
     />
   );
 }
