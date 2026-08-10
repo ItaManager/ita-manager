@@ -31,21 +31,38 @@ async function main() {
   });
   console.log("✓ Nettoyage missions de démo précédentes\n");
 
-  // Trouver deux employés pour créer une relation supérieur/subordonné
-  const employes = await prisma.employe.findMany({
-    where: { archiveLe: null },
-    take: 2,
+  // Trouver l'employé lié au compte armelgnakpa7@gmail.com
+  const profil = await prisma.profil.findUnique({
+    where: { email: "armelgnakpa7@gmail.com" },
+    include: {
+      employe: {
+        select: { id: true, prenom: true, nom: true },
+      },
+    },
+  });
+
+  if (!profil?.employe) {
+    console.error("❌ Aucun employé lié au compte armelgnakpa7@gmail.com");
+    console.error("   Créez d'abord le lien dans le seed principal");
+    process.exit(1);
+  }
+
+  const employe = profil.employe;
+
+  // Trouver un autre employé pour être le supérieur
+  const superieur = await prisma.employe.findFirst({
+    where: {
+      archiveLe: null,
+      id: { not: employe.id },
+    },
     select: { id: true, prenom: true, nom: true },
   });
 
-  if (employes.length < 2) {
+  if (!superieur) {
     console.error("❌ Au moins 2 employés nécessaires");
     console.error("   Lancez d'abord le seed principal");
     process.exit(1);
   }
-
-  const employe = employes[0];
-  const superieur = employes[1];
 
   console.log(`Employé demandeur : ${employe.prenom} ${employe.nom}`);
   console.log(`Supérieur (N+1) : ${superieur.prenom} ${superieur.nom}\n`);
