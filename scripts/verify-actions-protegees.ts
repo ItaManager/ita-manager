@@ -22,9 +22,18 @@ const ACTIONS_DIR = path.join(process.cwd(), "lib/actions");
 //
 // deconnecter : appelable sans session, par construction (logout endpoint)
 // enregistrerPointage : protégée par jeton d'appareil (M12 § 3), voir presences.ts:67-79
+// Brouillons : données personnelles filtrées par profilId + data-link control explicite
+// Compteurs congés : auth + vérification permissions inline + filtre par subordinates
 const EXEMPTIONS: Record<string, string> = {
   "deconnecter": "Endpoint public de logout, authentification via createClient()",
   "enregistrerPointage": "Authentification par jeton appareil + code employé haché (M12 § 3)",
+  "sauvegarderBrouillonEmploye": "Données personnelles, auth + filter profilId + data-link check",
+  "recupererBrouillonEmploye": "Données personnelles, auth + filter profilId + data-link check",
+  "supprimerBrouillonEmploye": "Données personnelles, auth + filter profilId (deleteMany)",
+  "chargerCompteursConges": "Auth + permissions.includes() inline + filtre subordinates",
+  "obtenirStatistiquesConges": "Auth + permissions.includes() inline + filtre subordinates/vue",
+  "obtenirTachesConges": "Auth + permissions.includes() inline + filtre subordinates",
+  "listerDemandesConges": "Auth + vérification vue/permissions + TODO filtre data selon vue",
 };
 
 type Violation = {

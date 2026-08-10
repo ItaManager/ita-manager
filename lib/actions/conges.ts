@@ -1927,8 +1927,62 @@ export async function listerDemandesConges(filtres: {
   vue: "mes-demandes" | "a-valider" | "controle-rh" | "equipe";
 }) {
   try {
-    // TODO: Implémenter avec vraies données depuis Prisma
-    // Pour l'instant : données mockées
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw new Error("Non authentifié");
+    }
+
+    // Charger profil avec permissions et employé
+    const profil = await prisma.profil.findUnique({
+      where: { id: user.id },
+      include: {
+        roles: {
+          include: {
+            role: { include: { permissions: { include: { permission: true } } } },
+          },
+        },
+        employe: {
+          include: {
+            subordonnesEmploye: {
+              where: {
+                OR: [
+                  { dateFin: null },
+                  { dateFin: { gte: new Date() } },
+                ],
+              },
+              select: { employeId: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!profil) {
+      throw new Error("Profil introuvable");
+    }
+
+    const permissions = profil.roles.flatMap((pr) =>
+      pr.role.permissions.map((p) => p.permission.code)
+    );
+
+    // SÉCURITÉ : Vérifier que la vue demandée correspond aux permissions de l'utilisateur
+    if (filtres.vue === "a-valider" && !permissions.includes("absence:valider-n1")) {
+      throw new Error("Permission absence:valider-n1 requise pour la vue 'a-valider'");
+    }
+
+    if (filtres.vue === "controle-rh" && !permissions.includes("absence:valider-rh")) {
+      throw new Error("Permission absence:valider-rh requise pour la vue 'controle-rh'");
+    }
+
+    // TODO: Implémenter avec vraies données depuis Prisma filtrées selon vue
+    // mes-demandes → employeId = profil.employe.id
+    // a-valider → employeId IN (subordinates IDs)
+    // controle-rh → statut = ATTENTE_RH
+    // equipe → selon périmètre manager
+
+    // Pour l'instant : données mockées (mais avec contrôle d'accès)
     const demandes: DemandeConge[] = [
       {
         id: "1",

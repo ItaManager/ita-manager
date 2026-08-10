@@ -2290,7 +2290,7 @@ export async function creerTacheInline(projetId: string, libelle: string) {
 /**
  * Sauvegarde automatique du formulaire employé (toutes les 2s après dernière frappe)
  * Utilise le modèle Brouillon créé en M0.
- * Pas de permission requise : lié à la session utilisateur.
+ * Pas de permission requise : lié à la session utilisateur + data-link control.
  */
 export async function sauvegarderBrouillonEmploye(donnees: any) {
   const supabase = await createClient();
@@ -2308,6 +2308,11 @@ export async function sauvegarderBrouillonEmploye(donnees: any) {
       entiteId: null,
     },
   });
+
+  // Data-link control : vérifier que le brouillon appartient bien à l'utilisateur
+  if (existant && existant.profilId !== user.id) {
+    throw new Error("Accès refusé : données d'un autre utilisateur");
+  }
 
   if (existant) {
     // Mettre à jour
@@ -2347,6 +2352,11 @@ export async function recupererBrouillonEmploye() {
     },
   });
 
+  // Data-link control : vérifier que le brouillon appartient bien à l'utilisateur
+  if (brouillon && brouillon.profilId !== user.id) {
+    throw new Error("Accès refusé : données d'un autre utilisateur");
+  }
+
   return brouillon?.donnees || null;
 }
 
@@ -2361,6 +2371,7 @@ export async function supprimerBrouillonEmploye() {
     return;
   }
 
+  // Data-link control via WHERE clause : ne supprime que les brouillons de l'utilisateur
   await prisma.brouillon.deleteMany({
     where: {
       profilId: user.id,
