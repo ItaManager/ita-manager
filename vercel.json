@@ -5,10 +5,6 @@
       "schedule": "0 6 * * *"
     },
     {
-      "path": "/api/cron/reprise-paiements",
-      "schedule": "0 * * * *"
-    },
-    {
       "path": "/api/cron/purge-visites",
       "schedule": "0 2 * * *"
     }
