@@ -65,7 +65,7 @@ export function BoutonCalculer({ periodeId }: Props) {
             disabled={loading}
             className="rounded-full"
           >
-            {loading && <Loader2 className="size-4 animate-spin mr-2" />}
+            {loading && <Loader2 className="size-4 animate-spin mr-3" />}
             Confirmer
           </AlertDialogAction>
         </AlertDialogFooter>
