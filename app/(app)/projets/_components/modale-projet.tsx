@@ -14,13 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { Loader2, RefreshCw } from "lucide-react";
 import { creerProjet, genererCodeProjet } from "@/lib/actions/projets";
 import { toast } from "sonner";
@@ -252,21 +246,19 @@ export function ModaleProjet({ ouvert, onClose }: ModaleProjetProps) {
               <Label htmlFor="cyclePaie" className="text-sm font-medium">
                 Cycle de paie <span className="text-destructive">*</span>
               </Label>
-              <Select
+              <Combobox
                 value={cyclePaie}
-                onValueChange={(value) => setCyclePaie(value as CyclePaie)}
-                required
-              >
-                <SelectTrigger id="cyclePaie" className="h-11">
-                  <SelectValue placeholder="Sélectionner" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="JOURNALIER">Journalier</SelectItem>
-                  <SelectItem value="HEBDOMADAIRE">Hebdomadaire</SelectItem>
-                  <SelectItem value="QUINZAINE">Quinzaine</SelectItem>
-                  <SelectItem value="MENSUEL">Mensuel</SelectItem>
-                </SelectContent>
-              </Select>
+                onChange={(value) => setCyclePaie(value as CyclePaie)}
+                options={[
+                  { value: "JOURNALIER", label: "Journalier" },
+                  { value: "HEBDOMADAIRE", label: "Hebdomadaire" },
+                  { value: "QUINZAINE", label: "Quinzaine" },
+                  { value: "MENSUEL", label: "Mensuel" },
+                ]}
+                placeholder="Sélectionner"
+                searchPlaceholder="Rechercher un cycle..."
+                className="h-11"
+              />
             </div>
           </div>
 
