@@ -161,74 +161,74 @@ export function ModaleEditionChamp({
               </div>
             ) : (
               <>
-            {type === "periode" ? (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="dateDebut">Date de début</Label>
-                  <Input
-                    id="dateDebut"
-                    type="date"
-                    value={dateDebut}
-                    onChange={(e) => setDateDebut(e.target.value)}
-                    className="h-11"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="dateFin">Date de fin</Label>
-                  <Input
-                    id="dateFin"
-                    type="date"
-                    value={dateFin}
-                    onChange={(e) => setDateFin(e.target.value)}
-                    className="h-11"
-                    min={dateDebut}
-                  />
-                </div>
-              </div>
-            ) : type === "cyclePaie" ? (
-              <div className="space-y-2">
-                <Label htmlFor={champ}>{label}</Label>
-                <Combobox
-                  value={valeur}
-                  onChange={(value) => setValeur(value as CyclePaie)}
-                  options={[
-                    { value: "JOURNALIER", label: "Journalier" },
-                    { value: "HEBDOMADAIRE", label: "Hebdomadaire" },
-                    { value: "QUINZAINE", label: "Quinzaine" },
-                    { value: "MENSUEL", label: "Mensuel" },
-                  ]}
-                  placeholder="Sélectionner"
-                  searchPlaceholder="Rechercher..."
-                  className="h-11"
-                />
-              </div>
-            ) : type === "textarea" ? (
-              <div className="space-y-2">
-                <Label htmlFor={champ}>{label}</Label>
-                <Textarea
-                  id={champ}
-                  value={valeur}
-                  onChange={(e) => setValeur(e.target.value)}
-                  className="min-h-[100px] resize-none"
-                  placeholder={`Saisir ${label.toLowerCase()}`}
-                />
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Label htmlFor={champ}>{label}</Label>
-                <Input
-                  id={champ}
-                  type={type}
-                  value={valeur}
-                  onChange={(e) => setValeur(e.target.value)}
-                  className="h-11"
-                  placeholder={`Saisir ${label.toLowerCase()}`}
-                  min={type === "number" ? "0" : undefined}
-                  step={type === "number" ? "1" : undefined}
-                />
-              </div>
-            )}
-            </>
+                {type === "periode" ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="dateDebut">Date de début</Label>
+                      <Input
+                        id="dateDebut"
+                        type="date"
+                        value={dateDebut}
+                        onChange={(e) => setDateDebut(e.target.value)}
+                        className="h-11"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dateFin">Date de fin</Label>
+                      <Input
+                        id="dateFin"
+                        type="date"
+                        value={dateFin}
+                        onChange={(e) => setDateFin(e.target.value)}
+                        className="h-11"
+                        min={dateDebut}
+                      />
+                    </div>
+                  </div>
+                ) : type === "cyclePaie" ? (
+                  <div className="space-y-2">
+                    <Label htmlFor={champ}>{label}</Label>
+                    <Combobox
+                      value={valeur}
+                      onChange={(value) => setValeur(value as CyclePaie)}
+                      options={[
+                        { value: "JOURNALIER", label: "Journalier" },
+                        { value: "HEBDOMADAIRE", label: "Hebdomadaire" },
+                        { value: "QUINZAINE", label: "Quinzaine" },
+                        { value: "MENSUEL", label: "Mensuel" },
+                      ]}
+                      placeholder="Sélectionner"
+                      searchPlaceholder="Rechercher..."
+                      className="h-11"
+                    />
+                  </div>
+                ) : type === "textarea" ? (
+                  <div className="space-y-2">
+                    <Label htmlFor={champ}>{label}</Label>
+                    <Textarea
+                      id={champ}
+                      value={valeur}
+                      onChange={(e) => setValeur(e.target.value)}
+                      className="min-h-[100px] resize-none"
+                      placeholder={`Saisir ${label.toLowerCase()}`}
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label htmlFor={champ}>{label}</Label>
+                    <Input
+                      id={champ}
+                      type={type}
+                      value={valeur}
+                      onChange={(e) => setValeur(e.target.value)}
+                      className="h-11"
+                      placeholder={`Saisir ${label.toLowerCase()}`}
+                      min={type === "number" ? "0" : undefined}
+                      step={type === "number" ? "1" : undefined}
+                    />
+                  </div>
+                )}
+              </>
             )}
 
             <DialogFooter>
