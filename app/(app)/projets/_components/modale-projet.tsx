@@ -230,21 +230,44 @@ export function ModaleProjet({ ouvert, onClose }: ModaleProjetProps) {
             </div>
           </div>
 
-          {/* Montant */}
-          <div className="space-y-2">
-            <Label htmlFor="montantMarche" className="text-sm font-medium">
-              Montant du marché (FCFA)
-            </Label>
-            <Input
-              id="montantMarche"
-              type="number"
-              value={montantMarche}
-              onChange={(e) => setMontantMarche(e.target.value)}
-              placeholder="50000000"
-              className="h-11 tabular-nums"
-              min="0"
-              step="1"
-            />
+          {/* Montant et Cycle de paie */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="montantMarche" className="text-sm font-medium">
+                Montant du marché (FCFA)
+              </Label>
+              <Input
+                id="montantMarche"
+                type="number"
+                value={montantMarche}
+                onChange={(e) => setMontantMarche(e.target.value)}
+                placeholder="50000000"
+                className="h-11 tabular-nums"
+                min="0"
+                step="1"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cyclePaie" className="text-sm font-medium">
+                Cycle de paie <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={cyclePaie}
+                onValueChange={(value) => setCyclePaie(value as CyclePaie)}
+                required
+              >
+                <SelectTrigger id="cyclePaie" className="h-11">
+                  <SelectValue placeholder="Sélectionner" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="JOURNALIER">Journalier</SelectItem>
+                  <SelectItem value="HEBDOMADAIRE">Hebdomadaire</SelectItem>
+                  <SelectItem value="QUINZAINE">Quinzaine</SelectItem>
+                  <SelectItem value="MENSUEL">Mensuel</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Dates */}
@@ -275,51 +298,6 @@ export function ModaleProjet({ ouvert, onClose }: ModaleProjetProps) {
                 min={dateDebut}
               />
             </div>
-          </div>
-
-          {/* Cycle de paie */}
-          <div className="space-y-2">
-            <Label htmlFor="cyclePaie" className="text-sm font-medium">
-              Cycle de paie <span className="text-destructive">*</span>
-            </Label>
-            <Select
-              value={cyclePaie}
-              onValueChange={(value) => setCyclePaie(value as CyclePaie)}
-              required
-            >
-              <SelectTrigger id="cyclePaie" className="h-11">
-                <SelectValue placeholder="Sélectionner un cycle de paie" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="JOURNALIER">
-                  <div className="flex flex-col items-start">
-                    <span className="font-medium">Journalier</span>
-                    <span className="text-xs text-muted-foreground">Paie quotidienne</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="HEBDOMADAIRE">
-                  <div className="flex flex-col items-start">
-                    <span className="font-medium">Hebdomadaire</span>
-                    <span className="text-xs text-muted-foreground">Paie chaque semaine</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="QUINZAINE">
-                  <div className="flex flex-col items-start">
-                    <span className="font-medium">Quinzaine</span>
-                    <span className="text-xs text-muted-foreground">Paie tous les 15 jours</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="MENSUEL">
-                  <div className="flex flex-col items-start">
-                    <span className="font-medium">Mensuel</span>
-                    <span className="text-xs text-muted-foreground">Paie en fin de mois</span>
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Fréquence de paie du projet
-            </p>
           </div>
 
           <DialogFooter className="gap-2 px-6 py-4 border-t border-border">
