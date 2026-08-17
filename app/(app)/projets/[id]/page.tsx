@@ -26,6 +26,7 @@ import { ModalAffecterEmploye } from "../_components/modal-affecter-employe";
 import { ModalComposerEquipe } from "../_components/modal-composer-equipe";
 import { ModaleEditionChamp } from "../_components/modale-edition-champ";
 import { ModaleAssignerConducteur } from "../_components/modale-assigner-conducteur";
+import { ModalTache } from "../_components/modal-tache";
 
 interface PageDetailProjetProps {
   params: Promise<{ id: string }>;
@@ -53,6 +54,8 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
   const [rechercheAffectation, setRechercheAffectation] = useState("");
   const [pageAffectation, setPageAffectation] = useState(1);
   const ITEMS_PAR_PAGE = 10;
+  const [modalTacheOuverte, setModalTacheOuverte] = useState(false);
+  const [tacheSelectionnee, setTacheSelectionnee] = useState<any>(null);
 
   useEffect(() => {
     chargerProjet();
@@ -73,6 +76,26 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
     } finally {
       setLoading(false);
     }
+  }
+
+  function ouvrirModalCreationTache() {
+    setTacheSelectionnee(null);
+    setModalTacheOuverte(true);
+  }
+
+  function ouvrirModalEditionTache(tache: any) {
+    setTacheSelectionnee(tache);
+    setModalTacheOuverte(true);
+  }
+
+  function fermerModalTache() {
+    setModalTacheOuverte(false);
+    setTacheSelectionnee(null);
+  }
+
+  function handleSuccesTache() {
+    chargerProjet();
+    fermerModalTache();
   }
 
   if (loading) {
@@ -423,7 +446,10 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
           {/* En-tête Tâches */}
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Tâches</h2>
-            <Button className="gap-2 h-10 px-4 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground transition-all">
+            <Button
+              onClick={ouvrirModalCreationTache}
+              className="gap-2 h-10 px-4 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground transition-all"
+            >
               <Plus className="size-4" />
               Ajouter
             </Button>
@@ -464,7 +490,11 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                         : null;
 
                     return (
-                      <tr key={tache.id} className="border-b hover:bg-muted/30">
+                      <tr
+                        key={tache.id}
+                        onClick={() => ouvrirModalEditionTache(tache)}
+                        className="border-b hover:bg-muted/30 cursor-pointer"
+                      >
                         <td className="py-3 px-4 text-sm">{tache.libelle}</td>
                         <td className="py-3 px-4 text-sm text-muted-foreground">
                           {tache.dateDebut
@@ -907,6 +937,15 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
           </CardContent>
         </Card>
       )}
+
+      {/* Modal de gestion des tâches */}
+      <ModalTache
+        projetId={projet.id}
+        tache={tacheSelectionnee}
+        ouvert={modalTacheOuverte}
+        onFermer={fermerModalTache}
+        onSuccess={handleSuccesTache}
+      />
     </div>
   );
 }
