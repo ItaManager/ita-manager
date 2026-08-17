@@ -571,6 +571,7 @@ model Employe {
   affectationsChantier AffectationChantier[]
   tachesResponsable    Tache[]              @relation("TachesResponsable")
   affectationsTaches   AffectationTache[]
+  projetsConducteur    Projet[]             @relation("ConducteurProjet")
 
   /// M6 — Relevés d'activité
   relevesChefChantier ReleveActivite[]
@@ -1238,6 +1239,10 @@ model Projet {
   /// HEBDOMADAIRE, QUINZAINE, MENSUEL
   /// Figé après la première période de paie
   cyclePaie CyclePaie?
+
+  /// Conducteur de travaux responsable du projet
+  conducteurId String?
+  conducteur   Employe? @relation("ConducteurProjet", fields: [conducteurId], references: [id])
 
   /// Relations
   taches               Tache[]

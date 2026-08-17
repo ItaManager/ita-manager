@@ -1,0 +1,2 @@
+-- Migration rolled back due to type mismatch (uuid vs text)
+-- Corrected in migration 20260817225XXX_ajout_conducteur_projet

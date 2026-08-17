@@ -170,7 +170,7 @@ export const modifierProjet = actionProtegee(
   ) => {
     const projet = await prisma.projet.findUnique({
       where: { id: projetId },
-      include: { lieuLivraison: true },
+      include: { lieuLivraison: true, conducteur: true },
     });
 
     if (!projet) {
@@ -222,11 +222,11 @@ export const modifierProjet = actionProtegee(
       updateData.cyclePaie = donnees.cyclePaie;
       modifications.push(`Cycle de paie: ${projet.cyclePaie} → ${donnees.cyclePaie}`);
     }
-    // NOTE: conducteurId n'existe pas encore dans le schéma Projet
-    // if (donnees.conducteurId !== undefined && donnees.conducteurId !== projet.conducteurId) {
-    //   updateData.conducteurId = donnees.conducteurId;
-    //   modifications.push(`Conducteur modifié`);
-    // }
+    if (donnees.conducteurId !== undefined && donnees.conducteurId !== projet.conducteurId) {
+      updateData.conducteurId = donnees.conducteurId;
+      const ancienNom = projet.conducteur ? `${projet.conducteur.prenom} ${projet.conducteur.nom}` : 'Non assigné';
+      modifications.push(`Conducteur: ${ancienNom} → ${donnees.conducteurId ? 'Modifié' : 'Non assigné'}`);
+    }
 
     // Si aucune modification, ne rien faire
     if (Object.keys(updateData).length === 0 && !donnees.localisation) {
