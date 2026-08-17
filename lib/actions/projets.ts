@@ -1218,3 +1218,226 @@ export const obtenirProjet = actionProtegee(
     };
   }
 );
+
+// =====================================================================
+// TÂCHES ET NOTIFICATIONS
+// =====================================================================
+
+export interface TacheProjet {
+  id: string;
+  type: 'brouillon' | 'taches-en-cours' | 'validation' | 'retard' | 'alerte';
+  titre: string;
+  description: string;
+  priorite: 'haute' | 'moyenne' | 'basse';
+  lien?: string;
+  count?: number;
+  date?: Date;
+}
+
+/**
+ * Récupère les tâches en attente selon le rôle de l'utilisateur
+ */
+export const obtenirTachesProjets = actionProtegee(
+  "projet:creer",
+  async (session) => {
+    // Récupérer les rôles de l'utilisateur
+    const profil = await prisma.profil.findUnique({
+      where: { id: session.userId },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    if (!profil) {
+      return { success: true, data: [] };
+    }
+
+    const roles = profil.roles.map((pr) => pr.role.code);
+    const taches: TacheProjet[] = [];
+    const aujourdhui = new Date();
+    aujourdhui.setHours(0, 0, 0, 0);
+
+    // ALERTES CRITIQUES (priorité haute)
+
+    // 1. Tâches en retard
+    const tachesEnRetard = await prisma.tache.findMany({
+      where: {
+        dateFin: { lt: aujourdhui },
+        OR: [
+          { avancementConstate: { lt: 100 } },
+          { avancementConstate: null },
+        ],
+        projet: {
+          statut: { in: ["EN_COURS", "OUVERT"] },
+        },
+      },
+      include: {
+        projet: {
+          select: { id: true, code: true, nom: true },
+        },
+      },
+    });
+
+    if (tachesEnRetard.length > 0) {
+      const projetsAffectes = new Set(tachesEnRetard.map(t => t.projet.id)).size;
+      taches.push({
+        id: "taches-retard",
+        type: "alerte",
+        titre: `${tachesEnRetard.length} tâche${tachesEnRetard.length > 1 ? 's' : ''} en retard`,
+        description: `Sur ${projetsAffectes} projet${projetsAffectes > 1 ? 's' : ''}`,
+        priorite: "haute",
+        lien: "/projets?statut=EN_COURS",
+        count: tachesEnRetard.length,
+      });
+    }
+
+    // 2. Jalons en retard
+    const jalonsEnRetard = await prisma.jalon.findMany({
+      where: {
+        datePrevisionnelle: { lt: aujourdhui },
+        statut: { not: "VALIDE" },
+        projet: {
+          statut: { in: ["EN_COURS", "OUVERT"] },
+        },
+      },
+      include: {
+        projet: {
+          select: { id: true, code: true, nom: true },
+        },
+      },
+    });
+
+    if (jalonsEnRetard.length > 0) {
+      const projetsAffectes = new Set(jalonsEnRetard.map(j => j.projet.id)).size;
+      taches.push({
+        id: "jalons-retard",
+        type: "alerte",
+        titre: `${jalonsEnRetard.length} jalon${jalonsEnRetard.length > 1 ? 's' : ''} en retard`,
+        description: `Sur ${projetsAffectes} projet${projetsAffectes > 1 ? 's' : ''}`,
+        priorite: "haute",
+        lien: "/projets?statut=EN_COURS",
+        count: jalonsEnRetard.length,
+      });
+    }
+
+    // 3. Jalons à valider (proches de la date prévisionnelle)
+    const dans7Jours = new Date(aujourdhui);
+    dans7Jours.setDate(dans7Jours.getDate() + 7);
+
+    const jalonsAValider = await prisma.jalon.count({
+      where: {
+        statut: "ATTENTE",
+        datePrevisionnelle: {
+          gte: aujourdhui,
+          lte: dans7Jours,
+        },
+        projet: {
+          statut: { in: ["EN_COURS", "OUVERT"] },
+        },
+      },
+    });
+
+    if (jalonsAValider > 0) {
+      taches.push({
+        id: "jalons-a-valider",
+        type: "validation",
+        titre: `${jalonsAValider} jalon${jalonsAValider > 1 ? 's' : ''} à valider`,
+        description: "Dans les 7 prochains jours",
+        priorite: "moyenne",
+        lien: "/projets?statut=EN_COURS",
+        count: jalonsAValider,
+      });
+    }
+
+    // TÂCHES NORMALES
+
+    // Projets brouillons à compléter
+    const projetsBrouillons = await prisma.projet.count({
+      where: { statut: "BROUILLON" },
+    });
+
+    if (projetsBrouillons > 0) {
+      taches.push({
+        id: "brouillons",
+        type: "brouillon",
+        titre: `${projetsBrouillons} projet${projetsBrouillons > 1 ? 's' : ''} en brouillon`,
+        description: "Projets créés mais non finalisés",
+        priorite: "moyenne",
+        lien: "/projets?statut=BROUILLON",
+        count: projetsBrouillons,
+      });
+    }
+
+    // Projets en cours avec tâches incomplètes
+    const projetsAvecTaches = await prisma.projet.findMany({
+      where: {
+        statut: "EN_COURS",
+        taches: {
+          some: {
+            OR: [
+              { avancementConstate: { lt: 100 } },
+              { avancementConstate: null },
+            ],
+          },
+        },
+      },
+      include: {
+        taches: {
+          where: {
+            OR: [
+              { avancementConstate: { lt: 100 } },
+              { avancementConstate: null },
+            ],
+          },
+        },
+      },
+    });
+
+    const totalTaches = projetsAvecTaches.reduce((sum, p) => sum + p.taches.length, 0);
+
+    if (totalTaches > 0) {
+      taches.push({
+        id: "taches-en-cours",
+        type: "taches-en-cours",
+        titre: `${totalTaches} tâche${totalTaches > 1 ? 's' : ''} en cours`,
+        description: `Sur ${projetsAvecTaches.length} projet${projetsAvecTaches.length > 1 ? 's' : ''}`,
+        priorite: "haute",
+        lien: "/projets?statut=EN_COURS",
+        count: totalTaches,
+      });
+    }
+
+    // Projets suspendus à reprendre (si admin/DG)
+    if (roles.includes("ADMIN") || roles.includes("DG")) {
+      const projetsSuspendus = await prisma.projet.count({
+        where: { statut: "SUSPENDU" },
+      });
+
+      if (projetsSuspendus > 0) {
+        taches.push({
+          id: "suspendus",
+          type: "validation",
+          titre: `${projetsSuspendus} projet${projetsSuspendus > 1 ? 's' : ''} suspendu${projetsSuspendus > 1 ? 's' : ''}`,
+          description: "Projets en attente de reprise",
+          priorite: "basse",
+          lien: "/projets?statut=SUSPENDU",
+          count: projetsSuspendus,
+        });
+      }
+    }
+
+    // Trier par priorité
+    const prioriteOrdre = { haute: 0, moyenne: 1, basse: 2 };
+    taches.sort((a, b) => prioriteOrdre[a.priorite] - prioriteOrdre[b.priorite]);
+
+    return {
+      success: true,
+      data: taches,
+      total: taches.length,
+    };
+  }
+);
