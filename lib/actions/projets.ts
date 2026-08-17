@@ -1369,6 +1369,20 @@ export const obtenirProjet = actionProtegee(
         },
         taches: {
           orderBy: { dateDebut: "asc" },
+          include: {
+            responsable: {
+              select: {
+                id: true,
+                nom: true,
+                prenom: true,
+              },
+            },
+            affectations: {
+              select: {
+                employeId: true,
+              },
+            },
+          },
         },
         affectations: {
           where: {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import {
   Dialog,
@@ -14,9 +14,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Combobox } from "@/components/ui/combobox";
 import { creerTache, modifierTache, supprimerTache } from "@/lib/actions/projets";
+import { listerEmployes } from "@/lib/actions/employes";
 import { toast } from "sonner";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, X } from "lucide-react";
 
 interface ModalTacheProps {
   projetId: string;
@@ -27,6 +29,8 @@ interface ModalTacheProps {
     dateDebut: Date;
     dateFin: Date;
     avancementPlanifie: number;
+    responsableId?: string | null;
+    affectations?: Array<{ employeId: string }>;
   };
   ouvert: boolean;
   onFermer: () => void;
@@ -50,6 +54,13 @@ export function ModalTache({
 }: ModalTacheProps) {
   const [chargement, setChargement] = useState(false);
   const [suppression, setSuppression] = useState(false);
+  const [employes, setEmployes] = useState<any[]>([]);
+  const [responsableId, setResponsableId] = useState<string>(
+    tache?.responsableId || ""
+  );
+  const [employeIds, setEmployeIds] = useState<string[]>(
+    tache?.affectations?.map((a) => a.employeId) || []
+  );
 
   const {
     register,
@@ -74,6 +85,25 @@ export function ModalTache({
         },
   });
 
+  // Charger la liste des employés
+  useEffect(() => {
+    if (ouvert) {
+      chargerEmployes();
+      // Réinitialiser les affectations
+      setResponsableId(tache?.responsableId || "");
+      setEmployeIds(tache?.affectations?.map((a) => a.employeId) || []);
+    }
+  }, [ouvert, tache]);
+
+  async function chargerEmployes() {
+    try {
+      const data = await listerEmployes();
+      setEmployes(data.items || []);
+    } catch (error) {
+      toast.error("Erreur lors du chargement des employés");
+    }
+  }
+
   async function onSubmit(data: FormulaireTache) {
     setChargement(true);
     try {
@@ -85,6 +115,8 @@ export function ModalTache({
           dateDebut: new Date(data.dateDebut),
           dateFin: new Date(data.dateFin),
           avancementPlanifie: data.avancementPlanifie,
+          responsableId: responsableId || undefined,
+          employeIds,
         });
         toast.success("Tâche modifiée avec succès");
       } else {
@@ -96,6 +128,8 @@ export function ModalTache({
           dateDebut: new Date(data.dateDebut),
           dateFin: new Date(data.dateFin),
           avancementPlanifie: data.avancementPlanifie,
+          responsableId: responsableId || undefined,
+          employeIds,
         });
         toast.success("Tâche créée avec succès");
       }
@@ -225,6 +259,74 @@ export function ModalTache({
               <p className="text-sm text-red-500 mt-1">
                 {errors.avancementPlanifie.message}
               </p>
+            )}
+          </div>
+
+          {/* Responsable */}
+          <div>
+            <Label htmlFor="responsable">Responsable de la tâche</Label>
+            <Combobox
+              value={responsableId}
+              onChange={setResponsableId}
+              options={[
+                { value: "", label: "Aucun responsable" },
+                ...employes.map((emp) => ({
+                  value: emp.id,
+                  label: `${emp.prenom} ${emp.nom}`,
+                })),
+              ]}
+              placeholder="Sélectionner un responsable"
+              searchPlaceholder="Rechercher..."
+            />
+          </div>
+
+          {/* Employés affectés */}
+          <div>
+            <Label>Employés affectés</Label>
+            <Combobox
+              value=""
+              onChange={(value) => {
+                if (value && !employeIds.includes(value)) {
+                  setEmployeIds([...employeIds, value]);
+                }
+              }}
+              options={employes
+                .filter((emp) => !employeIds.includes(emp.id))
+                .map((emp) => ({
+                  value: emp.id,
+                  label: `${emp.prenom} ${emp.nom}`,
+                }))}
+              placeholder="Ajouter un employé"
+              searchPlaceholder="Rechercher..."
+            />
+            {employeIds.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {employeIds.map((empId) => {
+                  const emp = employes.find((e) => e.id === empId);
+                  if (!emp) return null;
+                  return (
+                    <div
+                      key={empId}
+                      className="flex items-center justify-between py-1.5 px-2 bg-muted rounded-md text-sm"
+                    >
+                      <span>
+                        {emp.prenom} {emp.nom}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setEmployeIds(employeIds.filter((id) => id !== empId))
+                        }
+                        className="h-6 w-6 p-0 hover:bg-background"
+                      >
+                        <X className="size-3.5" />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
 
