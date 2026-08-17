@@ -36,6 +36,7 @@ export const creerProjet = actionProtegee(
       nom: string;
       description?: string;
       maitreOuvrage?: string;
+      localisation?: string;
       montantMarche?: number;
       dateDebut?: Date;
       dateFin?: Date;
@@ -45,17 +46,23 @@ export const creerProjet = actionProtegee(
     // Créer le projet ET son lieu de livraison en une seule transaction
     const projet = await prisma.projet.create({
       data: {
-        ...donnees,
+        code: donnees.code,
+        nom: donnees.nom,
+        description: donnees.description,
+        maitreOuvrage: donnees.maitreOuvrage,
         montantMarche: donnees.montantMarche
           ? donnees.montantMarche
           : null,
+        dateDebut: donnees.dateDebut,
+        dateFin: donnees.dateFin,
+        cyclePaie: donnees.cyclePaie,
         statut: "BROUILLON",
         creePar: session.userId,
         // Création automatique du lieu de livraison (M5 §5.2)
         lieuLivraison: {
           create: {
             libelle: `Chantier ${donnees.nom}`,
-            adresse: "",
+            adresse: donnees.localisation || "",
             creePar: session.userId,
           },
         },

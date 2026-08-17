@@ -31,6 +31,7 @@ export function ModaleProjet({ ouvert, onClose }: ModaleProjetProps) {
   const [nom, setNom] = useState("");
   const [description, setDescription] = useState("");
   const [maitreOuvrage, setMaitreOuvrage] = useState("");
+  const [localisation, setLocalisation] = useState("");
   const [montantMarche, setMontantMarche] = useState("");
   const [dateDebut, setDateDebut] = useState("");
   const [dateFin, setDateFin] = useState("");
@@ -57,6 +58,7 @@ export function ModaleProjet({ ouvert, onClose }: ModaleProjetProps) {
           nom: nom.trim(),
           description: description.trim() || undefined,
           maitreOuvrage: maitreOuvrage.trim() || undefined,
+          localisation: localisation.trim() || undefined,
           montantMarche: montantMarche ? parseFloat(montantMarche) : undefined,
           dateDebut: dateDebut ? new Date(dateDebut) : undefined,
           dateFin: dateFin ? new Date(dateFin) : undefined,
@@ -70,6 +72,7 @@ export function ModaleProjet({ ouvert, onClose }: ModaleProjetProps) {
         setNom("");
         setDescription("");
         setMaitreOuvrage("");
+        setLocalisation("");
         setMontantMarche("");
         setDateDebut("");
         setDateFin("");
@@ -153,7 +156,7 @@ export function ModaleProjet({ ouvert, onClose }: ModaleProjetProps) {
             />
           </div>
 
-          {/* Maître d'ouvrage et Montant */}
+          {/* Maître d'ouvrage et Localisation */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="maitreOuvrage" className="text-sm font-medium">
@@ -169,20 +172,37 @@ export function ModaleProjet({ ouvert, onClose }: ModaleProjetProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="montantMarche" className="text-sm font-medium">
-                Montant du marché (FCFA)
+              <Label htmlFor="localisation" className="text-sm font-medium">
+                Localisation
               </Label>
               <Input
-                id="montantMarche"
-                type="number"
-                value={montantMarche}
-                onChange={(e) => setMontantMarche(e.target.value)}
-                placeholder="50000000"
-                className="h-11 tabular-nums"
-                min="0"
-                step="1"
+                id="localisation"
+                value={localisation}
+                onChange={(e) => setLocalisation(e.target.value)}
+                placeholder="Abidjan, Cocody, Angré 8e tranche"
+                className="h-11"
               />
+              <p className="text-xs text-muted-foreground">
+                Adresse du chantier
+              </p>
             </div>
+          </div>
+
+          {/* Montant */}
+          <div className="space-y-2">
+            <Label htmlFor="montantMarche" className="text-sm font-medium">
+              Montant du marché (FCFA)
+            </Label>
+            <Input
+              id="montantMarche"
+              type="number"
+              value={montantMarche}
+              onChange={(e) => setMontantMarche(e.target.value)}
+              placeholder="50000000"
+              className="h-11 tabular-nums"
+              min="0"
+              step="1"
+            />
           </div>
 
           {/* Dates */}
