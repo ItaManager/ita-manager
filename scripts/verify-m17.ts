@@ -153,19 +153,30 @@ verifier(
   fichierContient("lib/actions/competences.ts", "export const assignerCompetence")
 );
 
+// Fonctions de calcul déplacées dans lib/competences/calculs.ts (R-17)
+verifier(
+  "Fichier lib/competences/calculs.ts existe",
+  fichierExiste("lib/competences/calculs.ts")
+);
+
 verifier(
   "Fonction montantDuJour existe (CRITIQUE)",
-  fichierContient("lib/actions/competences.ts", "export async function montantDuJour")
+  fichierContient("lib/competences/calculs.ts", "export async function montantDuJour")
 );
 
 verifier(
   "Fonction tauxEnVigueur existe",
-  fichierContient("lib/actions/competences.ts", "export async function tauxEnVigueur")
+  fichierContient("lib/competences/calculs.ts", "export async function tauxEnVigueur")
 );
 
 verifier(
   "Fonction competenceALaDate existe",
-  fichierContient("lib/actions/competences.ts", "export async function competenceALaDate")
+  fichierContient("lib/competences/calculs.ts", "export async function competenceALaDate")
+);
+
+verifier(
+  "Calculs importés dans competences.ts",
+  fichierContient("lib/actions/competences.ts", 'from "@/lib/competences/calculs"')
 );
 
 verifier(

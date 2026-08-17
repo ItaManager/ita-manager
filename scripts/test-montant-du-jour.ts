@@ -36,13 +36,14 @@ import { montantDuJour } from "../lib/competences/calculs";
 async function main() {
   console.log("🧪 Test du critère de recette CRITIQUE : montantDuJour()\\n");
 
-  // 1. Créer les compétences
-  console.log("1️⃣  Création des compétences...");
+  // 1. Créer les compétences de test avec des noms uniques
+  console.log("1️⃣  Création des compétences de test...");
 
+  const timestamp = Date.now();
   const manoeuvre = await prisma.competence.create({
     data: {
-      libelle: "Manœuvre",
-      libelleNormalise: "manoeuvre",
+      libelle: `TEST-Manœuvre-${timestamp}`,
+      libelleNormalise: `test-manoeuvre-${timestamp}`,
       categorie: "BASE",
       actif: true,
       creeParId: "test-system",
@@ -51,8 +52,8 @@ async function main() {
 
   const macon = await prisma.competence.create({
     data: {
-      libelle: "Maçon",
-      libelleNormalise: "macon",
+      libelle: `TEST-Maçon-${timestamp}`,
+      libelleNormalise: `test-macon-${timestamp}`,
       categorie: "QUALIFIE",
       actif: true,
       creeParId: "test-system",
