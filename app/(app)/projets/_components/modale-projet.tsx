@@ -14,6 +14,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2, RefreshCw } from "lucide-react";
 import { creerProjet, genererCodeProjet } from "@/lib/actions/projets";
 import { toast } from "sonner";
@@ -271,103 +278,48 @@ export function ModaleProjet({ ouvert, onClose }: ModaleProjetProps) {
           </div>
 
           {/* Cycle de paie */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">
+          <div className="space-y-2">
+            <Label htmlFor="cyclePaie" className="text-sm font-medium">
               Cycle de paie <span className="text-destructive">*</span>
             </Label>
-            <div className="grid grid-cols-2 gap-3">
-              <label
-                className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                  cyclePaie === "JOURNALIER"
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50 hover:bg-accent/50"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="cyclePaie"
-                  value="JOURNALIER"
-                  checked={cyclePaie === "JOURNALIER"}
-                  onChange={() => setCyclePaie("JOURNALIER")}
-                  className="mt-0.5"
-                />
-                <div className="flex-1">
-                  <div className="font-medium text-foreground">Journalier</div>
-                  <div className="text-sm text-muted-foreground mt-0.5">
-                    Paie quotidienne
+            <Select
+              value={cyclePaie}
+              onValueChange={(value) => setCyclePaie(value as CyclePaie)}
+              required
+            >
+              <SelectTrigger id="cyclePaie" className="h-11">
+                <SelectValue placeholder="Sélectionner un cycle de paie" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="JOURNALIER">
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium">Journalier</span>
+                    <span className="text-xs text-muted-foreground">Paie quotidienne</span>
                   </div>
-                </div>
-              </label>
-
-              <label
-                className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                  cyclePaie === "HEBDOMADAIRE"
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50 hover:bg-accent/50"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="cyclePaie"
-                  value="HEBDOMADAIRE"
-                  checked={cyclePaie === "HEBDOMADAIRE"}
-                  onChange={() => setCyclePaie("HEBDOMADAIRE")}
-                  className="mt-0.5"
-                />
-                <div className="flex-1">
-                  <div className="font-medium text-foreground">Hebdomadaire</div>
-                  <div className="text-sm text-muted-foreground mt-0.5">
-                    Paie chaque semaine
+                </SelectItem>
+                <SelectItem value="HEBDOMADAIRE">
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium">Hebdomadaire</span>
+                    <span className="text-xs text-muted-foreground">Paie chaque semaine</span>
                   </div>
-                </div>
-              </label>
-
-              <label
-                className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                  cyclePaie === "QUINZAINE"
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50 hover:bg-accent/50"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="cyclePaie"
-                  value="QUINZAINE"
-                  checked={cyclePaie === "QUINZAINE"}
-                  onChange={() => setCyclePaie("QUINZAINE")}
-                  className="mt-0.5"
-                />
-                <div className="flex-1">
-                  <div className="font-medium text-foreground">Quinzaine</div>
-                  <div className="text-sm text-muted-foreground mt-0.5">
-                    Paie tous les 15 jours
+                </SelectItem>
+                <SelectItem value="QUINZAINE">
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium">Quinzaine</span>
+                    <span className="text-xs text-muted-foreground">Paie tous les 15 jours</span>
                   </div>
-                </div>
-              </label>
-
-              <label
-                className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                  cyclePaie === "MENSUEL"
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50 hover:bg-accent/50"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="cyclePaie"
-                  value="MENSUEL"
-                  checked={cyclePaie === "MENSUEL"}
-                  onChange={() => setCyclePaie("MENSUEL")}
-                  className="mt-0.5"
-                />
-                <div className="flex-1">
-                  <div className="font-medium text-foreground">Mensuel</div>
-                  <div className="text-sm text-muted-foreground mt-0.5">
-                    Paie en fin de mois
+                </SelectItem>
+                <SelectItem value="MENSUEL">
+                  <div className="flex flex-col items-start">
+                    <span className="font-medium">Mensuel</span>
+                    <span className="text-xs text-muted-foreground">Paie en fin de mois</span>
                   </div>
-                </div>
-              </label>
-            </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Fréquence de paie du projet
+            </p>
           </div>
 
           <DialogFooter className="gap-2 px-6 py-4 border-t border-border">
