@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -335,26 +336,25 @@ export function ModaleProjet({ ouvert, onClose }: ModaleProjetProps) {
             </div>
           </div>
 
-          {/* Footer avec boutons */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-border sticky bottom-0 bg-white pb-2 -mx-6 px-6">
+          <DialogFooter className="gap-2 px-6 py-4 border-t border-border">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={isPending}
-              className="h-10 px-6"
+              className="rounded-full"
             >
               Annuler
             </Button>
             <Button
               type="submit"
               disabled={isPending}
-              className="h-10 px-6 gap-2"
+              className="bg-[#13850b] hover:bg-[#0f6909] text-white rounded-full"
             >
-              {isPending && <Loader2 className="size-4 animate-spin" />}
+              {isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
               Créer le projet
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
