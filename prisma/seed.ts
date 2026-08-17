@@ -692,6 +692,40 @@ async function seedCompetencesM17() {
   console.log(`  ✅ ${competencesData.length} compétences et taux créés`);
 }
 
+/**
+ * Seed — Paramètres système
+ */
+async function seedParametres() {
+  const parametres = [
+    {
+      cle: "format.code_projet",
+      libelle: "Format du code projet",
+      valeur: "CH-{YYYY}-{NNN}",
+      type: "STRING",
+      groupe: "Nomenclature",
+      aide: "Format du code auto-généré. {YYYY} = année, {NNN} = numéro séquentiel sur 3 chiffres. Ex: CH-2026-001",
+    },
+    {
+      cle: "prefix.code_projet",
+      libelle: "Préfixe code projet",
+      valeur: "CH",
+      type: "STRING",
+      groupe: "Nomenclature",
+      aide: "Préfixe utilisé dans le code projet (CH = Chantier)",
+    },
+  ];
+
+  for (const param of parametres) {
+    await prisma.parametre.upsert({
+      where: { cle: param.cle },
+      create: param,
+      update: param,
+    });
+  }
+
+  console.log(`  ✅ ${parametres.length} paramètres système créés`);
+}
+
 async function main() {
   console.log("🌱 Seed M0 + M1 + M17 — début\n");
 
@@ -712,7 +746,11 @@ async function main() {
   console.log("\n=== MODULE M17 ===");
   await seedCompetencesM17();
 
-  console.log("\n✅ Seed M0 + M1 + M17 — terminé");
+  // Paramètres système
+  console.log("\n=== PARAMÈTRES SYSTÈME ===");
+  await seedParametres();
+
+  console.log("\n✅ Seed M0 + M1 + M17 + Paramètres — terminé");
 }
 
 main()

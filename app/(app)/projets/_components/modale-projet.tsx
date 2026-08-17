@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
@@ -14,8 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from "lucide-react";
-import { creerProjet } from "@/lib/actions/projets";
+import { Loader2, RefreshCw } from "lucide-react";
+import { creerProjet, genererCodeProjet } from "@/lib/actions/projets";
 import { toast } from "sonner";
 import { CyclePaie } from "@prisma/client";
 
@@ -27,6 +27,7 @@ interface ModaleProjetProps {
 export function ModaleProjet({ ouvert, onClose }: ModaleProjetProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [codeLoading, setCodeLoading] = useState(false);
 
   const [code, setCode] = useState("");
   const [nom, setNom] = useState("");
@@ -37,6 +38,25 @@ export function ModaleProjet({ ouvert, onClose }: ModaleProjetProps) {
   const [dateDebut, setDateDebut] = useState("");
   const [dateFin, setDateFin] = useState("");
   const [cyclePaie, setCyclePaie] = useState<CyclePaie>("QUINZAINE");
+
+  // Générer le code automatiquement à l'ouverture de la modale
+  useEffect(() => {
+    if (ouvert && !code) {
+      chargerCodeProjet();
+    }
+  }, [ouvert]);
+
+  const chargerCodeProjet = async () => {
+    setCodeLoading(true);
+    try {
+      const codeGenere = await genererCodeProjet();
+      setCode(codeGenere);
+    } catch (error) {
+      toast.error("Erreur lors de la génération du code");
+    } finally {
+      setCodeLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,16 +132,30 @@ export function ModaleProjet({ ouvert, onClose }: ModaleProjetProps) {
               <Label htmlFor="code" className="text-sm font-medium">
                 Code projet <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="code"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder="CH-2026-001"
-                required
-                className="h-11"
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  id="code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="CH-2026-001"
+                  required
+                  className="h-11"
+                  disabled={codeLoading}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={chargerCodeProjet}
+                  disabled={codeLoading || isPending}
+                  className="h-11 w-11 shrink-0"
+                  title="Régénérer le code"
+                >
+                  <RefreshCw className={`size-4 ${codeLoading ? "animate-spin" : ""}`} />
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground">
-                Code unique du projet
+                Code unique auto-généré (modifiable)
               </p>
             </div>
 
