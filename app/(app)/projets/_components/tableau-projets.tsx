@@ -182,14 +182,27 @@ export async function TableauProjets({
                       {/* Dates */}
                       <td className="py-4 px-4">
                         <div className="flex flex-col gap-1">
-                          {projet.dateDebut && (
+                          {projet.dateDebut || projet.dateFin ? (
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <Calendar className="size-3" />
                               <span>
-                                {format(new Date(projet.dateDebut), "dd/MM/yyyy", {
-                                  locale: fr,
-                                })}
+                                {projet.dateDebut
+                                  ? format(new Date(projet.dateDebut), "dd/MM/yyyy", {
+                                      locale: fr,
+                                    })
+                                  : "—"}
+                                {" → "}
+                                {projet.dateFin
+                                  ? format(new Date(projet.dateFin), "dd/MM/yyyy", {
+                                      locale: fr,
+                                    })
+                                  : "—"}
                               </span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Calendar className="size-3" />
+                              <span>Non planifié</span>
                             </div>
                           )}
                           {projet.conducteur && (
