@@ -243,6 +243,52 @@ export function ModaleProjet({ ouvert, onClose }: ModaleProjetProps) {
             <div className="grid grid-cols-2 gap-3">
               <label
                 className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  cyclePaie === "JOURNALIER"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50 hover:bg-accent/50"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="cyclePaie"
+                  value="JOURNALIER"
+                  checked={cyclePaie === "JOURNALIER"}
+                  onChange={() => setCyclePaie("JOURNALIER")}
+                  className="mt-0.5"
+                />
+                <div className="flex-1">
+                  <div className="font-medium text-foreground">Journalier</div>
+                  <div className="text-sm text-muted-foreground mt-0.5">
+                    Paie quotidienne
+                  </div>
+                </div>
+              </label>
+
+              <label
+                className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  cyclePaie === "HEBDOMADAIRE"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50 hover:bg-accent/50"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="cyclePaie"
+                  value="HEBDOMADAIRE"
+                  checked={cyclePaie === "HEBDOMADAIRE"}
+                  onChange={() => setCyclePaie("HEBDOMADAIRE")}
+                  className="mt-0.5"
+                />
+                <div className="flex-1">
+                  <div className="font-medium text-foreground">Hebdomadaire</div>
+                  <div className="text-sm text-muted-foreground mt-0.5">
+                    Paie chaque semaine
+                  </div>
+                </div>
+              </label>
+
+              <label
+                className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
                   cyclePaie === "QUINZAINE"
                     ? "border-primary bg-primary/5"
                     : "border-border hover:border-primary/50 hover:bg-accent/50"

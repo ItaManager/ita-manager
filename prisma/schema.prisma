@@ -274,6 +274,7 @@ enum StatutProjet {
 }
 
 enum CyclePaie {
+  JOURNALIER
   HEBDOMADAIRE
   QUINZAINE
   MENSUEL
