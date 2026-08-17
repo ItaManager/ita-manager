@@ -1,37 +1,46 @@
-import { prisma } from "@/lib/db/prisma";
+import { obtenirTachesProjets } from "@/lib/actions/projets";
 import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/db/prisma";
 
 export async function TitreTaches() {
+  const result = await obtenirTachesProjets();
+  const count = result.success ? result.data.length : 0;
+
+  // Get user's name
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) return <h2 className="text-lg font-semibold text-[#18181a]">Vos tâches</h2>;
+  let prenom = "";
+  if (user) {
+    const profil = await prisma.profil.findUnique({
+      where: { id: user.id },
+      include: { employe: true },
+    });
 
-  // Compter les tâches à traiter
-  const nombreTaches = await prisma.projet.count({
-    where: {
-      OR: [
-        { statut: "BROUILLON" }, // Projets en brouillon à compléter
-        {
-          statut: "EN_COURS",
-          taches: {
-            some: {
-              avancementConstate: { lt: 100 },
-            },
-          },
-        },
-      ],
-    },
-  });
+    // Si lié à un employé, utiliser le prénom de l'employé
+    if (profil?.employe?.prenom) {
+      prenom = profil.employe.prenom;
+    } else if (profil?.email) {
+      // Fallback : extraire le prénom de l'email
+      const emailPrefix = profil.email.split("@")[0];
+      const cleanName = emailPrefix.replace(/\d+/g, ""); // Retirer les chiffres
+
+      if (cleanName.length > 8) {
+        const splitAtCaps = cleanName.match(/[A-Z][a-z]+/g);
+        if (splitAtCaps && splitAtCaps.length > 1) {
+          prenom = splitAtCaps.join(" ");
+        } else {
+          prenom = cleanName.charAt(0).toUpperCase() + cleanName.slice(1, 5).toLowerCase();
+        }
+      } else {
+        prenom = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+      }
+    }
+  }
 
   return (
-    <h2 className="text-lg font-semibold text-[#18181a] flex items-center gap-2">
-      Vos tâches
-      {nombreTaches > 0 && (
-        <span className="inline-flex items-center justify-center size-6 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold tabular-nums">
-          {nombreTaches}
-        </span>
-      )}
+    <h2 className="text-lg font-semibold text-[#18181a]">
+      Bonjour {prenom}, vous avez {count} {count <= 1 ? "tâche" : "tâches"} en attente
     </h2>
   );
 }

@@ -2,14 +2,15 @@ import { Suspense } from "react";
 import { verifierAccesPage } from "@/lib/auth/page-access";
 import { ModuleLayout } from "@/components/layouts/module-layout";
 import { IndicateursProjets } from "./_components/indicateurs-projets";
-import { ListeProjets } from "./_components/liste-projets";
+import { TableauProjets } from "./_components/tableau-projets";
 import { ListeTaches } from "./_components/liste-taches";
 import { TitreTaches } from "./_components/titre-taches";
+import { StatutProjet } from "@prisma/client";
 
 interface PageProjetsProps {
   searchParams: Promise<{
     recherche?: string;
-    statut?: "BROUILLON" | "OUVERT" | "EN_COURS" | "SUSPENDU" | "CLOTURE";
+    statut?: StatutProjet;
     page?: string;
     limit?: string;
   }>;
@@ -50,7 +51,12 @@ export default async function ProjetsPage({
       }}
     >
       <Suspense fallback={<div>Chargement...</div>}>
-        <ListeProjets />
+        <TableauProjets
+          recherche={params.recherche}
+          statut={params.statut}
+          page={params.page ? parseInt(params.page) : 1}
+          limit={params.limit ? parseInt(params.limit) : 20}
+        />
       </Suspense>
     </ModuleLayout>
   );

@@ -1,117 +1,53 @@
-import { prisma } from "@/lib/db/prisma";
-import { createClient } from "@/lib/supabase/server";
-import { AlertCircle, FolderOpen, ListChecks } from "lucide-react";
+import { obtenirTachesProjets } from "@/lib/actions/projets";
+import { ChevronRight, Info } from "lucide-react";
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 
 export async function ListeTaches() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const result = await obtenirTachesProjets();
 
-  if (!user) {
+  if (!result.success || result.data.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
-        Connectez-vous pour voir vos tâches
-      </p>
+      <div className="text-center py-8">
+        <Info className="size-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+        <p className="text-sm text-muted-foreground">
+          Aucune tâche en attente pour le moment.
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          Tous les projets sont à jour.
+        </p>
+      </div>
     );
   }
 
-  // Projets à compléter (brouillons)
-  const projetsBrouillons = await prisma.projet.findMany({
-    where: { statut: "BROUILLON" },
-    select: {
-      id: true,
-      code: true,
-      nom: true,
-    },
-    take: 3,
-    orderBy: { creeLe: "desc" },
-  });
-
-  // Projets en cours avec tâches
-  const projetsEnCours = await prisma.projet.findMany({
-    where: {
-      statut: "EN_COURS",
-    },
-    select: {
-      id: true,
-      code: true,
-      nom: true,
-      taches: {
-        where: {
-          OR: [
-            { avancementConstate: { lt: 100 } },
-            { avancementConstate: null },
-          ],
-        },
-        select: { id: true },
-      },
-    },
-    take: 3,
-    orderBy: { dateDebut: "desc" },
-  });
-
-  const taches = [
-    ...projetsBrouillons.map((p) => ({
-      id: p.id,
-      type: "brouillon" as const,
-      titre: `Compléter ${p.code}`,
-      description: p.nom,
-      lien: `/projets/${p.id}`,
-      icon: FolderOpen,
-      couleur: "text-amber-600",
-    })),
-    ...projetsEnCours.map((p) => ({
-      id: p.id,
-      type: "taches" as const,
-      titre: `${p.taches.length} tâche${p.taches.length > 1 ? "s" : ""} en cours`,
-      description: `${p.code} — ${p.nom}`,
-      lien: `/projets/${p.id}`,
-      icon: ListChecks,
-      couleur: "text-blue-600",
-    })),
-  ];
-
-  if (taches.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        Aucune tâche en attente
-      </p>
-    );
-  }
+  const taches = result.data;
 
   return (
     <div className="space-y-3">
-      {taches.map((tache) => {
-        const Icon = tache.icon;
-        return (
-          <Link
-            key={`${tache.type}-${tache.id}`}
-            href={tache.lien}
-            className="block p-3 rounded-md border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-colors"
-          >
-            <div className="flex items-start gap-3">
-              <Icon className={`size-5 mt-0.5 ${tache.couleur}`} />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
-                  {tache.titre}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                  {tache.description}
-                </p>
-              </div>
-            </div>
-          </Link>
-        );
-      })}
-
-      {taches.length >= 6 && (
+      {taches.map((tache) => (
         <Link
-          href="/projets"
-          className="block text-center text-sm text-primary hover:underline pt-2"
+          key={tache.id}
+          href={tache.lien || "/projets"}
+          className="flex items-start gap-3 py-3 border-b border-[#0000000d] hover:bg-[#f9fafb] transition-colors group"
         >
-          Voir tous les projets →
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-sm font-medium text-[#18181a]">
+                {tache.titre}
+              </p>
+              {tache.count && tache.count > 0 && (
+                <Badge variant="secondary" className="shrink-0">
+                  {tache.count}
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {tache.description}
+            </p>
+          </div>
+          <ChevronRight className="size-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0 mt-0.5" />
         </Link>
-      )}
+      ))}
     </div>
   );
 }
