@@ -178,9 +178,16 @@ export const modifierProjet = actionProtegee(
       throw new Error("Projet introuvable");
     }
 
-    // SÉCURITÉ : Bloquer la modification des projets clôturés
+    // SÉCURITÉ : Bloquer la modification des projets clôturés et suspendus
+    // Exception : on peut changer le statut d'un projet suspendu (pour le reprendre)
+    const modifieAutreQueStatut = Object.keys(donnees).some(key => key !== 'statut');
+
     if (projet.statut === "CLOTURE") {
       throw new Error("Impossible de modifier un projet clôturé");
+    }
+
+    if (projet.statut === "SUSPENDU" && modifieAutreQueStatut) {
+      throw new Error("Impossible de modifier un projet suspendu. Reprenez d'abord le projet pour le modifier.");
     }
 
     // Construire les données de mise à jour + traçabilité
