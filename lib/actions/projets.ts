@@ -146,6 +146,83 @@ export const creerProjet = actionProtegee(
 );
 
 /**
+ * Modifier un projet
+ *
+ * Permet la modification des informations de base du projet
+ */
+export const modifierProjet = actionProtegee(
+  "projet:creer",
+  async (
+    session,
+    projetId: string,
+    donnees: {
+      nom?: string;
+      description?: string;
+      maitreOuvrage?: string;
+      localisation?: string;
+      montantMarche?: number | null;
+      dateDebut?: Date | null;
+      dateFin?: Date | null;
+      cyclePaie?: CyclePaie;
+      conducteurId?: string | null;
+    }
+  ) => {
+    const projet = await prisma.projet.findUnique({
+      where: { id: projetId },
+      include: { lieuLivraison: true },
+    });
+
+    if (!projet) {
+      throw new Error("Projet introuvable");
+    }
+
+    // Construire les données de mise à jour
+    const updateData: any = {};
+    if (donnees.nom !== undefined) updateData.nom = donnees.nom;
+    if (donnees.description !== undefined) updateData.description = donnees.description;
+    if (donnees.maitreOuvrage !== undefined) updateData.maitreOuvrage = donnees.maitreOuvrage;
+    if (donnees.montantMarche !== undefined) updateData.montantMarche = donnees.montantMarche;
+    if (donnees.dateDebut !== undefined) updateData.dateDebut = donnees.dateDebut;
+    if (donnees.dateFin !== undefined) updateData.dateFin = donnees.dateFin;
+    if (donnees.cyclePaie !== undefined) updateData.cyclePaie = donnees.cyclePaie;
+    if (donnees.conducteurId !== undefined) updateData.conducteurId = donnees.conducteurId;
+
+    const projetMisAJour = await prisma.projet.update({
+      where: { id: projetId },
+      data: updateData,
+      include: {
+        lieuLivraison: true,
+      },
+    });
+
+    // Mettre à jour le lieu de livraison si localisation change
+    if (donnees.localisation !== undefined && projet.lieuLivraison) {
+      await prisma.lieuLivraison.update({
+        where: { id: projet.lieuLivraison.id },
+        data: {
+          adresse: donnees.localisation,
+        },
+      });
+    }
+
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "Projet",
+        entiteId: projetId,
+        action: "MODIFICATION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        commentaire: `Projet modifié : ${projet.code}`,
+      },
+    });
+
+    revalidatePath("/projets");
+    revalidatePath(`/projets/${projetId}`);
+    return serializeProjet(projetMisAJour);
+  }
+);
+
+/**
  * Ouvrir un projet — BROUILLON → OUVERT
  *
  * RÈGLE MÉTIER (M5 §8.1) : Cycle de vie du projet

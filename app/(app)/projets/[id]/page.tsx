@@ -24,6 +24,8 @@ import { format, differenceInDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import { ModalAffecterEmploye } from "../_components/modal-affecter-employe";
 import { ModalComposerEquipe } from "../_components/modal-composer-equipe";
+import { ModaleEditionChamp } from "../_components/modale-edition-champ";
+import { ModaleAssignerConducteur } from "../_components/modale-assigner-conducteur";
 
 interface PageDetailProjetProps {
   params: Promise<{ id: string }>;
@@ -137,43 +139,75 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
               </div>
 
               {/* Titre */}
-              <h1 className="text-3xl font-bold">{projet.nom}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-3xl font-bold">{projet.nom}</h1>
+                <ModaleEditionChamp
+                  projetId={projet.id}
+                  champ="nom"
+                  label="Nom du projet"
+                  valeurActuelle={projet.nom}
+                  type="text"
+                  onSuccess={chargerProjet}
+                />
+              </div>
 
               {/* Informations */}
               <div className="flex items-center gap-6">
-                {projet.maitreOuvrage && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Building2 className="size-4" />
-                    <span>{projet.maitreOuvrage}</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Building2 className="size-4" />
+                  <span>{projet.maitreOuvrage || "Non défini"}</span>
+                  <ModaleEditionChamp
+                    projetId={projet.id}
+                    champ="maitreOuvrage"
+                    label="Maître d'ouvrage"
+                    valeurActuelle={projet.maitreOuvrage}
+                    type="text"
+                    onSuccess={chargerProjet}
+                  />
+                </div>
 
-                {projet.localisation && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="size-4" />
-                    <span>{projet.localisation}</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <MapPin className="size-4" />
+                  <span>{projet.localisation || "Non défini"}</span>
+                  <ModaleEditionChamp
+                    projetId={projet.id}
+                    champ="localisation"
+                    label="Localisation"
+                    valeurActuelle={projet.localisation}
+                    type="text"
+                    onSuccess={chargerProjet}
+                  />
+                </div>
               </div>
             </div>
 
             {/* Montant du marché */}
-            {projet.montantMarche && (
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground uppercase mb-1">
+            <div className="text-right">
+              <div className="flex items-center justify-end gap-2 mb-1">
+                <p className="text-xs text-muted-foreground uppercase">
                   Montant du marché
                 </p>
-                <p className="text-3xl font-bold text-green-600">
-                  {projet.montantMarche.toLocaleString("fr-FR").replace(/,/g, " ")}
-                </p>
-                <p className="text-sm text-muted-foreground">FCFA</p>
-                {projet.montantAvenant && (
-                  <p className="text-sm text-primary mt-2">
-                    dont {projet.montantAvenant.toLocaleString("fr-FR").replace(/,/g, " ")} F d'avenant
-                  </p>
-                )}
+                <ModaleEditionChamp
+                  projetId={projet.id}
+                  champ="montantMarche"
+                  label="Montant du marché (FCFA)"
+                  valeurActuelle={projet.montantMarche}
+                  type="number"
+                  onSuccess={chargerProjet}
+                />
               </div>
-            )}
+              <p className="text-3xl font-bold text-green-600">
+                {projet.montantMarche
+                  ? projet.montantMarche.toLocaleString("fr-FR").replace(/,/g, " ")
+                  : "Non défini"}
+              </p>
+              <p className="text-sm text-muted-foreground">FCFA</p>
+              {projet.montantAvenant && (
+                <p className="text-sm text-primary mt-2">
+                  dont {projet.montantAvenant.toLocaleString("fr-FR").replace(/,/g, " ")} F d'avenant
+                </p>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -223,19 +257,36 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
       <div className="grid grid-cols-2 gap-6">
         {/* Période */}
         <div>
-          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
-            Période
-          </p>
-          {projet.dateDebut && projet.dateFin ? (
+          <div className="flex items-center gap-2 mb-2">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">
+              Période
+            </p>
+            <ModaleEditionChamp
+              projetId={projet.id}
+              champ="periode"
+              label="Période"
+              valeurActuelle={{
+                debut: projet.dateDebut,
+                fin: projet.dateFin,
+              }}
+              type="periode"
+              onSuccess={chargerProjet}
+            />
+          </div>
+          {projet.dateDebut || projet.dateFin ? (
             <>
               <p className="text-base font-semibold">
-                {format(new Date(projet.dateDebut), "dd/MM/yyyy", {
-                  locale: fr,
-                })}{" "}
+                {projet.dateDebut
+                  ? format(new Date(projet.dateDebut), "dd/MM/yyyy", {
+                      locale: fr,
+                    })
+                  : "—"}{" "}
                 →{" "}
-                {format(new Date(projet.dateFin), "dd/MM/yyyy", {
-                  locale: fr,
-                })}
+                {projet.dateFin
+                  ? format(new Date(projet.dateFin), "dd/MM/yyyy", {
+                      locale: fr,
+                    })
+                  : "—"}
               </p>
               {joursRestants !== null && (
                 <p
@@ -260,9 +311,21 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
         {/* Conducteur de travaux */}
         <div>
-          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
-            Conducteur de travaux
-          </p>
+          <div className="flex items-center gap-2 mb-2">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">
+              Conducteur de travaux
+            </p>
+            <ModaleAssignerConducteur
+              projetId={projet.id}
+              conducteurActuelId={projet.conducteur?.id}
+              conducteurActuelNom={
+                projet.conducteur
+                  ? `${projet.conducteur.prenom} ${projet.conducteur.nom}`
+                  : undefined
+              }
+              onSuccess={chargerProjet}
+            />
+          </div>
           {projet.conducteur ? (
             <>
               <p className="text-base font-semibold">
