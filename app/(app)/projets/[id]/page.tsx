@@ -136,6 +136,14 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                 >
                   {statutConfig.label}
                 </Badge>
+                <ModaleEditionChamp
+                  projetId={projet.id}
+                  champ="statut"
+                  label="Statut du projet"
+                  valeurActuelle={projet.statut}
+                  type="statutProjet"
+                  onSuccess={chargerProjet}
+                />
               </div>
 
               {/* Titre */}

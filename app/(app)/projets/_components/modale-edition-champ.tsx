@@ -17,7 +17,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { Loader2, Pencil } from "lucide-react";
 import { modifierProjet } from "@/lib/actions/projets";
 import { toast } from "sonner";
-import { CyclePaie } from "@prisma/client";
+import { CyclePaie, StatutProjet } from "@prisma/client";
 
 type TypeChamp =
   | "text"
@@ -25,6 +25,7 @@ type TypeChamp =
   | "number"
   | "date"
   | "cyclePaie"
+  | "statutProjet"
   | "periode";
 
 interface ModaleEditionChampProps {
@@ -196,6 +197,24 @@ export function ModaleEditionChamp({
                         { value: "HEBDOMADAIRE", label: "Hebdomadaire" },
                         { value: "QUINZAINE", label: "Quinzaine" },
                         { value: "MENSUEL", label: "Mensuel" },
+                      ]}
+                      placeholder="Sélectionner"
+                      searchPlaceholder="Rechercher..."
+                      className="h-11"
+                    />
+                  </div>
+                ) : type === "statutProjet" ? (
+                  <div className="space-y-2">
+                    <Label htmlFor={champ}>{label}</Label>
+                    <Combobox
+                      value={valeur}
+                      onChange={(value) => setValeur(value as StatutProjet)}
+                      options={[
+                        { value: "BROUILLON", label: "Brouillon" },
+                        { value: "OUVERT", label: "Ouvert" },
+                        { value: "EN_COURS", label: "En cours" },
+                        { value: "SUSPENDU", label: "Suspendu" },
+                        { value: "CLOTURE", label: "Clôturé" },
                       ]}
                       placeholder="Sélectionner"
                       searchPlaceholder="Rechercher..."

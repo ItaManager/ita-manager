@@ -166,6 +166,7 @@ export const modifierProjet = actionProtegee(
       dateFin?: Date | null;
       cyclePaie?: CyclePaie;
       conducteurId?: string | null;
+      statut?: StatutProjet;
     }
   ) => {
     const projet = await prisma.projet.findUnique({
@@ -226,6 +227,17 @@ export const modifierProjet = actionProtegee(
       updateData.conducteurId = donnees.conducteurId;
       const ancienNom = projet.conducteur ? `${projet.conducteur.prenom} ${projet.conducteur.nom}` : 'Non assigné';
       modifications.push(`Conducteur: ${ancienNom} → ${donnees.conducteurId ? 'Modifié' : 'Non assigné'}`);
+    }
+    if (donnees.statut !== undefined && donnees.statut !== projet.statut) {
+      updateData.statut = donnees.statut;
+      const STATUT_LABELS: Record<StatutProjet, string> = {
+        BROUILLON: "Brouillon",
+        OUVERT: "Ouvert",
+        EN_COURS: "En cours",
+        SUSPENDU: "Suspendu",
+        CLOTURE: "Clôturé",
+      };
+      modifications.push(`Statut: ${STATUT_LABELS[projet.statut]} → ${STATUT_LABELS[donnees.statut]}`);
     }
 
     // Si aucune modification, ne rien faire
