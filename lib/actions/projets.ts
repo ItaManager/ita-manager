@@ -149,9 +149,10 @@ export const creerProjet = actionProtegee(
  * Modifier un projet
  *
  * Permet la modification des informations de base du projet
+ * SÉCURITÉ : Bloque la modification des projets clôturés
  */
 export const modifierProjet = actionProtegee(
-  "projet:creer",
+  "projet:modifier",
   async (
     session,
     projetId: string,
@@ -176,16 +177,61 @@ export const modifierProjet = actionProtegee(
       throw new Error("Projet introuvable");
     }
 
-    // Construire les données de mise à jour
+    // SÉCURITÉ : Bloquer la modification des projets clôturés
+    if (projet.statut === "CLOTURE") {
+      throw new Error("Impossible de modifier un projet clôturé");
+    }
+
+    // Construire les données de mise à jour + traçabilité
     const updateData: any = {};
-    if (donnees.nom !== undefined) updateData.nom = donnees.nom;
-    if (donnees.description !== undefined) updateData.description = donnees.description;
-    if (donnees.maitreOuvrage !== undefined) updateData.maitreOuvrage = donnees.maitreOuvrage;
-    if (donnees.montantMarche !== undefined) updateData.montantMarche = donnees.montantMarche;
-    if (donnees.dateDebut !== undefined) updateData.dateDebut = donnees.dateDebut;
-    if (donnees.dateFin !== undefined) updateData.dateFin = donnees.dateFin;
-    if (donnees.cyclePaie !== undefined) updateData.cyclePaie = donnees.cyclePaie;
-    if (donnees.conducteurId !== undefined) updateData.conducteurId = donnees.conducteurId;
+    const modifications: string[] = [];
+
+    if (donnees.nom !== undefined && donnees.nom !== projet.nom) {
+      updateData.nom = donnees.nom;
+      modifications.push(`Nom: "${projet.nom}" → "${donnees.nom}"`);
+    }
+    if (donnees.description !== undefined && donnees.description !== projet.description) {
+      updateData.description = donnees.description;
+      modifications.push(`Description modifiée`);
+    }
+    if (donnees.maitreOuvrage !== undefined && donnees.maitreOuvrage !== projet.maitreOuvrage) {
+      updateData.maitreOuvrage = donnees.maitreOuvrage;
+      modifications.push(`Maître d'ouvrage: "${projet.maitreOuvrage || 'Non défini'}" → "${donnees.maitreOuvrage || 'Non défini'}"`);
+    }
+    if (donnees.montantMarche !== undefined && donnees.montantMarche !== Number(projet.montantMarche)) {
+      updateData.montantMarche = donnees.montantMarche;
+      modifications.push(`Montant: ${Number(projet.montantMarche)?.toLocaleString() || 'Non défini'} → ${donnees.montantMarche?.toLocaleString() || 'Non défini'} FCFA`);
+    }
+    if (donnees.dateDebut !== undefined) {
+      const ancienne = projet.dateDebut ? new Date(projet.dateDebut).toISOString().split('T')[0] : null;
+      const nouvelle = donnees.dateDebut ? new Date(donnees.dateDebut).toISOString().split('T')[0] : null;
+      if (ancienne !== nouvelle) {
+        updateData.dateDebut = donnees.dateDebut;
+        modifications.push(`Date début: ${ancienne || '—'} → ${nouvelle || '—'}`);
+      }
+    }
+    if (donnees.dateFin !== undefined) {
+      const ancienne = projet.dateFin ? new Date(projet.dateFin).toISOString().split('T')[0] : null;
+      const nouvelle = donnees.dateFin ? new Date(donnees.dateFin).toISOString().split('T')[0] : null;
+      if (ancienne !== nouvelle) {
+        updateData.dateFin = donnees.dateFin;
+        modifications.push(`Date fin: ${ancienne || '—'} → ${nouvelle || '—'}`);
+      }
+    }
+    if (donnees.cyclePaie !== undefined && donnees.cyclePaie !== projet.cyclePaie) {
+      updateData.cyclePaie = donnees.cyclePaie;
+      modifications.push(`Cycle de paie: ${projet.cyclePaie} → ${donnees.cyclePaie}`);
+    }
+    // NOTE: conducteurId n'existe pas encore dans le schéma Projet
+    // if (donnees.conducteurId !== undefined && donnees.conducteurId !== projet.conducteurId) {
+    //   updateData.conducteurId = donnees.conducteurId;
+    //   modifications.push(`Conducteur modifié`);
+    // }
+
+    // Si aucune modification, ne rien faire
+    if (Object.keys(updateData).length === 0 && !donnees.localisation) {
+      return serializeProjet(projet);
+    }
 
     const projetMisAJour = await prisma.projet.update({
       where: { id: projetId },
@@ -197,14 +243,19 @@ export const modifierProjet = actionProtegee(
 
     // Mettre à jour le lieu de livraison si localisation change
     if (donnees.localisation !== undefined && projet.lieuLivraison) {
-      await prisma.lieuLivraison.update({
-        where: { id: projet.lieuLivraison.id },
-        data: {
-          adresse: donnees.localisation,
-        },
-      });
+      const ancienne = projet.lieuLivraison.adresse;
+      if (ancienne !== donnees.localisation) {
+        await prisma.lieuLivraison.update({
+          where: { id: projet.lieuLivraison.id },
+          data: {
+            adresse: donnees.localisation,
+          },
+        });
+        modifications.push(`Localisation: "${ancienne || 'Non défini'}" → "${donnees.localisation || 'Non défini'}"`);
+      }
     }
 
+    // Journalisation détaillée
     await prisma.journalEvenement.create({
       data: {
         entite: "Projet",
@@ -212,7 +263,7 @@ export const modifierProjet = actionProtegee(
         action: "MODIFICATION",
         auteurId: session.userId,
         auteurNom: session.email,
-        commentaire: `Projet modifié : ${projet.code}`,
+        commentaire: `${projet.code} : ${modifications.join(' | ')}`,
       },
     });
 

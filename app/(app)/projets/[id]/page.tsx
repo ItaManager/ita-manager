@@ -194,6 +194,8 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                   valeurActuelle={projet.montantMarche}
                   type="number"
                   onSuccess={chargerProjet}
+                  requireConfirmation
+                  confirmationMessage="Modifier le montant du marché peut impacter les budgets et états financiers. Confirmer ?"
                 />
               </div>
               <p className="text-3xl font-bold text-green-600">
@@ -271,6 +273,8 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
               }}
               type="periode"
               onSuccess={chargerProjet}
+              requireConfirmation
+              confirmationMessage="Modifier la période du projet peut impacter le planning et les échéances. Confirmer ?"
             />
           </div>
           {projet.dateDebut || projet.dateFin ? (

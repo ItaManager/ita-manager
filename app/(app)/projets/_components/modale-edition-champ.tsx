@@ -34,6 +34,8 @@ interface ModaleEditionChampProps {
   valeurActuelle: any;
   type?: TypeChamp;
   onSuccess?: () => void;
+  requireConfirmation?: boolean;
+  confirmationMessage?: string;
 }
 
 export function ModaleEditionChamp({
@@ -43,6 +45,8 @@ export function ModaleEditionChamp({
   valeurActuelle,
   type = "text",
   onSuccess,
+  requireConfirmation = false,
+  confirmationMessage,
 }: ModaleEditionChampProps) {
   const [ouvert, setOuvert] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -57,9 +61,16 @@ export function ModaleEditionChamp({
       ? new Date(valeurActuelle.fin).toISOString().split("T")[0]
       : ""
   );
+  const [attenteConfirmation, setAttenteConfirmation] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Si confirmation requise et pas encore confirmé, afficher la confirmation
+    if (requireConfirmation && !attenteConfirmation) {
+      setAttenteConfirmation(true);
+      return;
+    }
 
     startTransition(async () => {
       try {
@@ -79,6 +90,7 @@ export function ModaleEditionChamp({
         await modifierProjet(projetId, donnees);
         toast.success("Modification enregistrée");
         setOuvert(false);
+        setAttenteConfirmation(false);
         onSuccess?.();
       } catch (error) {
         toast.error(
@@ -106,7 +118,13 @@ export function ModaleEditionChamp({
     } else {
       setValeur(valeurActuelle || "");
     }
+    setAttenteConfirmation(false);
     setOuvert(true);
+  };
+
+  const handleCancel = () => {
+    setAttenteConfirmation(false);
+    setOuvert(false);
   };
 
   return (
@@ -121,16 +139,28 @@ export function ModaleEditionChamp({
         <Pencil className="size-3.5 text-muted-foreground hover:text-foreground" />
       </Button>
 
-      <Dialog open={ouvert} onOpenChange={setOuvert}>
+      <Dialog open={ouvert} onOpenChange={handleCancel}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Modifier {label.toLowerCase()}</DialogTitle>
+            <DialogTitle>
+              {attenteConfirmation ? "Confirmer la modification" : `Modifier ${label.toLowerCase()}`}
+            </DialogTitle>
             <DialogDescription>
-              Modifiez l'information ci-dessous
+              {attenteConfirmation
+                ? confirmationMessage || "Confirmez-vous cette modification ?"
+                : "Modifiez l'information ci-dessous"}
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {attenteConfirmation ? (
+              <div className="py-4 px-3 bg-amber-50 border border-amber-200 rounded-md">
+                <p className="text-sm text-amber-900">
+                  Cette modification peut avoir un impact significatif sur le projet.
+                </p>
+              </div>
+            ) : (
+              <>
             {type === "periode" ? (
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -198,12 +228,14 @@ export function ModaleEditionChamp({
                 />
               </div>
             )}
+            </>
+            )}
 
             <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setOuvert(false)}
+                onClick={handleCancel}
                 disabled={isPending}
                 className="rounded-full"
               >
@@ -215,7 +247,7 @@ export function ModaleEditionChamp({
                 className="bg-[#13850b] hover:bg-[#0f6909] text-white rounded-full"
               >
                 {isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
-                Enregistrer
+                {attenteConfirmation ? "Confirmer" : "Enregistrer"}
               </Button>
             </DialogFooter>
           </form>
