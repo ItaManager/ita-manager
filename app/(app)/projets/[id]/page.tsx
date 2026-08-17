@@ -77,7 +77,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-8 max-w-7xl">
+      <div className="space-y-6 px-[60px] max-w-[1200px] mx-auto py-8">
         <p className="text-center text-muted-foreground">Chargement...</p>
       </div>
     );
@@ -85,7 +85,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
   if (!projet) {
     return (
-      <div className="container mx-auto py-8 max-w-7xl">
+      <div className="space-y-6 px-[60px] max-w-[1200px] mx-auto py-8">
         <p className="text-center text-muted-foreground">Projet introuvable</p>
       </div>
     );
@@ -106,7 +106,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
     : null;
 
   return (
-    <div className="container mx-auto py-6 max-w-7xl space-y-6">
+    <div className="space-y-6 px-[60px] max-w-[1200px] mx-auto py-6">
       {/* Bouton retour */}
       <Button
         variant="ghost"
