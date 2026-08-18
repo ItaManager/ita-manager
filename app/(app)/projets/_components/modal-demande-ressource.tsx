@@ -216,22 +216,20 @@ export function ModalDemandeRessource({
           </div>
 
           {/* Tâches concernées */}
-          {taches.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="taches">Tâches concernées</Label>
-              <MultiCombobox
-                options={tacheOptions}
-                value={tachesSelectionnees}
-                onChange={setTachesSelectionnees}
-                placeholder="Sélectionner les tâches..."
-                searchPlaceholder="Rechercher une tâche..."
-                emptyText="Aucune tâche trouvée"
-              />
-              <p className="text-xs text-muted-foreground">
-                Optionnel
-              </p>
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="taches">Tâches concernées</Label>
+            <MultiCombobox
+              options={tacheOptions}
+              value={tachesSelectionnees}
+              onChange={setTachesSelectionnees}
+              placeholder="Sélectionner les tâches..."
+              searchPlaceholder="Rechercher une tâche..."
+              emptyText="Aucune tâche trouvée"
+            />
+            <p className="text-xs text-muted-foreground">
+              Optionnel
+            </p>
+          </div>
 
           {/* Matériels demandés */}
           <div className="space-y-3">
