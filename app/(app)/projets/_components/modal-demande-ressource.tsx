@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -119,24 +127,17 @@ export function ModalDemandeRessource({
     }
   };
 
-  if (!ouvert) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-background rounded-lg shadow-lg w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
-        {/* En-tête */}
-        <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-background">
-          <h2 className="text-lg font-semibold">Nouvelle demande de ressource</h2>
-          <button
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <X className="size-5" />
-          </button>
-        </div>
+    <Dialog open={ouvert} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Nouvelle demande de ressource</DialogTitle>
+          <DialogDescription>
+            Demander du matériel ou des engins pour ce projet
+          </DialogDescription>
+        </DialogHeader>
 
-        {/* Formulaire */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Période */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -306,8 +307,7 @@ export function ModalDemandeRessource({
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4">
+          <DialogFooter>
             <Button
               type="button"
               variant="outline"
@@ -324,9 +324,9 @@ export function ModalDemandeRessource({
             >
               {loading ? "Création..." : "Créer la demande"}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
