@@ -2,22 +2,26 @@ import { Suspense } from "react";
 import { verifierAccesPage } from "@/lib/auth/page-access";
 import { prisma } from "@/lib/db/prisma";
 import { RegistreMateriel } from "./_components/registre-materiel";
-import { FormNouveauMateriel } from "./_components/form-nouveau-materiel";
 
 export const metadata = {
   title: "Registre Matériel — ITA Manager",
 };
 
-type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
+interface PageRessourcesProps {
+  searchParams: Promise<{
+    recherche?: string;
+    filtre?: "disponibles" | "en-service" | "en-maintenance" | "hors-service" | "vehicules" | "engins" | "materiel" | "outillage" | "tous";
+    page?: string;
+    limit?: string;
+  }>;
+}
 
-export default async function RessourcesPage(props: {
-  searchParams: SearchParams;
-}) {
+export default async function RessourcesPage({
+  searchParams,
+}: PageRessourcesProps) {
   await verifierAccesPage("/ressources");
 
-  const searchParams = await props.searchParams;
-  const page = parseInt((searchParams.page as string) || "1");
-  const recherche = (searchParams.q as string) || "";
+  const params = await searchParams;
 
   // Charger les familles et lieux pour le formulaire
   const familles = await prisma.familleMateriel.findMany({
@@ -41,30 +45,15 @@ export default async function RessourcesPage(props: {
   });
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">
-            Registre Matériel
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Parc matériel · Échéances · Affectations
-          </p>
-        </div>
-
-        <FormNouveauMateriel familles={familles} lieux={lieux} />
-      </div>
-
-      <Suspense
-        key={`${page}-${recherche}`}
-        fallback={
-          <div className="rounded-md border p-12 text-center">
-            <p className="text-sm text-muted-foreground">Chargement...</p>
-          </div>
-        }
-      >
-        <RegistreMateriel page={page} recherche={recherche} />
-      </Suspense>
-    </div>
+    <Suspense fallback={<div>Chargement...</div>}>
+      <RegistreMateriel
+        recherche={params.recherche}
+        filtre={params.filtre}
+        page={params.page ? parseInt(params.page) : 1}
+        limit={params.limit ? parseInt(params.limit) : 20}
+        familles={familles}
+        lieux={lieux}
+      />
+    </Suspense>
   );
 }

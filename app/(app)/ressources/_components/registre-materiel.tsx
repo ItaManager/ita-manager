@@ -1,124 +1,156 @@
 import { listerMaterielM13 } from "@/lib/actions/logistique";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Lock, Wrench } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Lock, Wrench, Eye } from "lucide-react";
 import Link from "next/link";
-import { RechercheMateriel } from "./recherche-materiel";
+import { BarreRechercheMateriel } from "./barre-recherche-materiel";
 import { PaginationMateriel } from "./pagination-materiel";
+import { prisma } from "@/lib/db/prisma";
+
+interface RegistreMaterielProps {
+  recherche?: string;
+  filtre?: "disponibles" | "en-service" | "en-maintenance" | "hors-service" | "vehicules" | "engins" | "materiel" | "outillage" | "tous";
+  page?: number;
+  limit?: number;
+  familles: Array<{ id: string; code: string; libelle: string; type: string }>;
+  lieux: Array<{ id: string; libelle: string }>;
+}
 
 export async function RegistreMateriel({
-  page,
   recherche,
-}: {
-  page: number;
-  recherche: string;
-}) {
-  const resultat = await listerMaterielM13({ page, recherche });
+  filtre = "tous",
+  page = 1,
+  limit = 20,
+  familles,
+  lieux,
+}: RegistreMaterielProps) {
+  const resultat = await listerMaterielM13({ page, recherche, filtre, limit });
 
-  if (resultat.total === 0 && !recherche) {
-    return (
-      <div className="rounded-md border p-12 text-center">
-        <Wrench className="size-12 mx-auto text-muted-foreground mb-4" />
-        <p className="text-sm text-muted-foreground">
-          Aucun matériel enregistré
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Le parc matériel sera visible ici
-        </p>
-      </div>
-    );
-  }
+  // Compter pour les filtres (tous les matériels sans filtre)
+  const tousMateriels = await prisma.materiel.findMany({
+    select: { statut: true, type: true },
+  });
+
+  const counts = {
+    disponibles: tousMateriels.filter((m) => m.statut === "DISPONIBLE").length,
+    enService: tousMateriels.filter((m) => ["EN_MISSION", "AFFECTE"].includes(m.statut)).length,
+    enMaintenance: tousMateriels.filter((m) => m.statut === "EN_MAINTENANCE").length,
+    horsService: tousMateriels.filter((m) => ["HORS_SERVICE", "EN_PANNE", "REFORME"].includes(m.statut)).length,
+    vehicules: tousMateriels.filter((m) => ["VEHICULE_LEGER", "VEHICULE_LOURD"].includes(m.type)).length,
+    engins: tousMateriels.filter((m) => m.type === "ENGIN").length,
+    materiel: tousMateriels.filter((m) => m.type === "PETIT_MATERIEL").length,
+    outillage: tousMateriels.filter((m) => ["OUTILLAGE", "MOBILIER", "CONTENEUR"].includes(m.type)).length,
+    tous: tousMateriels.length,
+  };
+
+  // Filtrer résultats par recherche côté serveur (déjà fait dans listerMaterielM13)
+  let resultats = resultat.items;
+  const total = resultat.total;
 
   return (
-    <div className="space-y-4">
-      <RechercheMateriel recherche={recherche} />
+    <div className="bg-white rounded-xl border border-[#0000001a] p-6">
+      {/* Recherche et filtres */}
+      <BarreRechercheMateriel counts={counts} familles={familles} lieux={lieux} />
 
-      {resultat.total === 0 ? (
-        <div className="rounded-md border p-12 text-center">
-          <p className="text-sm text-muted-foreground">
-            Aucun résultat pour « {recherche} »
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Essayez une autre recherche (code ITA, ancien N° parc, code long)
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[120px]">Code ITA</TableHead>
-                  <TableHead>Désignation</TableHead>
-                  <TableHead className="w-[140px]">Famille</TableHead>
-                  <TableHead className="w-[120px]">Type</TableHead>
-                  <TableHead className="w-[120px]">Statut</TableHead>
-                  <TableHead className="w-[120px]">Lieu</TableHead>
-                  <TableHead className="w-[120px] text-right">
-                    Coût
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {resultat.items.map((item) => (
-                  <TableRow key={item.id} className="cursor-pointer hover:bg-muted/50">
-                    <TableCell className="font-mono text-xs">
+      {/* Tableau */}
+      <div className="mt-6 rounded-xl border border-border overflow-hidden bg-card">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-muted/50">
+              <tr className="border-b border-border">
+                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Code ITA
+                </th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Désignation
+                </th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Type
+                </th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Famille
+                </th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Statut
+                </th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Immatriculation
+                </th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {resultats.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center">
+                    <Wrench className="size-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-sm text-muted-foreground">
+                      {recherche ? `Aucun résultat pour « ${recherche} »` : "Aucun matériel"}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {recherche
+                        ? "Essayez une autre recherche"
+                        : "Le parc matériel sera visible ici"}
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                resultats.map((materiel) => (
+                  <tr key={materiel.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                    <td className="py-3 px-4">
                       <Link
-                        href={`/ressources/${item.id}`}
-                        className="hover:underline"
+                        href={`/ressources/${materiel.id}`}
+                        className="font-mono text-xs text-primary hover:underline"
                       >
-                        {item.codeIta}
+                        {materiel.codeIta}
                       </Link>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {item.designation}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {item.famille.libelle}
-                    </TableCell>
-                    <TableCell>
+                    </td>
+                    <td className="py-3 px-4">
+                      <p className="font-medium text-sm">{materiel.designation}</p>
+                    </td>
+                    <td className="py-3 px-4">
                       <Badge variant="outline" className="text-xs">
-                        {formatTypeMaterie(item.type)}
+                        {formatTypeMaterie(materiel.type)}
                       </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getStatutVariant(item.statut)}>
-                        {formatStatut(item.statut)}
+                    </td>
+                    <td className="py-3 px-4 text-sm text-muted-foreground">
+                      {materiel.famille.libelle}
+                    </td>
+                    <td className="py-3 px-4">
+                      <Badge variant={getStatutVariant(materiel.statut)} className="text-xs">
+                        {formatStatut(materiel.statut)}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {item.lieuBase?.libelle || "—"}
-                    </TableCell>
-                    <TableCell className="text-right text-sm tabular-nums">
-                      {item.coutAcquisition !== null ? (
-                        `${item.coutAcquisition.toLocaleString("fr-FR")} F`
-                      ) : (
-                        <span className="flex items-center justify-end gap-1 text-muted-foreground">
-                          <Lock className="size-3" aria-label="Accès restreint" />
-                          Masqué
-                        </span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                    </td>
+                    <td className="py-3 px-4 text-sm font-mono">
+                      {materiel.immatriculation || "—"}
+                    </td>
+                    <td className="py-3 px-4">
+                      <Link href={`/ressources/${materiel.id}`}>
+                        <Button variant="ghost" size="sm" className="h-8 px-2">
+                          <Eye className="size-4 mr-1" />
+                          Voir
+                        </Button>
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
+      {/* Pagination */}
+      {total > 0 && (
+        <div className="mt-4">
           <PaginationMateriel
             page={resultat.page}
             totalPages={resultat.totalPages}
             total={resultat.total}
-            recherche={recherche}
           />
-        </>
+        </div>
       )}
     </div>
   );

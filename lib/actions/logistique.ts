@@ -24,6 +24,9 @@ export type MaterielRegistreItem = {
   numeroParcAncien: string | null;
   codeLong: string | null;
   designation: string;
+  immatriculation: string | null;
+  marque: string | null;
+  modele: string | null;
   famille: {
     code: string;
     libelle: string;
@@ -60,10 +63,12 @@ export const listerMaterielM13 = actionProtegee(
     params: {
       page?: number;
       recherche?: string; // Recherche sur les 3 codes
+      filtre?: "disponibles" | "en-service" | "en-maintenance" | "hors-service" | "vehicules" | "engins" | "materiel" | "outillage" | "tous";
+      limit?: number;
     } = {}
   ): Promise<ResultatListeMateriel> => {
     const page = params.page || 1;
-    const perPage = 25; // E-01 : 25 lignes
+    const perPage = params.limit || 25; // E-01 : 25 lignes par défaut
     const skip = (page - 1) * perPage;
 
     // Vérifier permission pour les coûts
@@ -85,7 +90,39 @@ export const listerMaterielM13 = actionProtegee(
           },
         },
         { codeLong: { contains: rechercheTrimmed, mode: "insensitive" } },
+        { designation: { contains: rechercheTrimmed, mode: "insensitive" } },
+        { marque: { contains: rechercheTrimmed, mode: "insensitive" } },
+        { immatriculation: { contains: rechercheTrimmed, mode: "insensitive" } },
       ];
+    }
+
+    // Appliquer les filtres
+    const filtre = params.filtre || "tous";
+    switch (filtre) {
+      case "disponibles":
+        where.statut = "DISPONIBLE";
+        break;
+      case "en-service":
+        where.statut = { in: ["EN_MISSION", "AFFECTE"] };
+        break;
+      case "en-maintenance":
+        where.statut = "EN_MAINTENANCE";
+        break;
+      case "hors-service":
+        where.statut = { in: ["HORS_SERVICE", "EN_PANNE", "REFORME"] };
+        break;
+      case "vehicules":
+        where.type = { in: ["VEHICULE_LEGER", "VEHICULE_LOURD"] };
+        break;
+      case "engins":
+        where.type = "ENGIN";
+        break;
+      case "materiel":
+        where.type = "PETIT_MATERIEL";
+        break;
+      case "outillage":
+        where.type = { in: ["OUTILLAGE", "MOBILIER", "CONTENEUR"] };
+        break;
     }
 
     // Compter le total
@@ -100,6 +137,9 @@ export const listerMaterielM13 = actionProtegee(
         numeroParcAncien: true,
         codeLong: true,
         designation: true,
+        immatriculation: true,
+        marque: true,
+        modele: true,
         famille: {
           select: {
             code: true,
@@ -126,6 +166,9 @@ export const listerMaterielM13 = actionProtegee(
       numeroParcAncien: m.numeroParcAncien,
       codeLong: m.codeLong,
       designation: m.designation,
+      immatriculation: m.immatriculation,
+      marque: m.marque,
+      modele: m.modele,
       famille: m.famille,
       type: m.type,
       statut: m.statut,

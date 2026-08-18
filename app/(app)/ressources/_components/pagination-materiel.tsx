@@ -8,12 +8,10 @@ export function PaginationMateriel({
   page,
   totalPages,
   total,
-  recherche,
 }: {
   page: number;
   totalPages: number;
   total: number;
-  recherche: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
