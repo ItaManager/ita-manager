@@ -617,7 +617,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             onClick={() => setOngletActif("tableau-bord")}
             className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
               ongletActif === "tableau-bord"
-                ? "bg-white text-foreground shadow-sm"
+                ? "bg-white text-primary shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -628,7 +628,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             onClick={() => setOngletActif("avancement")}
             className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
               ongletActif === "avancement"
-                ? "bg-white text-foreground shadow-sm"
+                ? "bg-white text-primary shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -639,7 +639,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             onClick={() => setOngletActif("equipes")}
             className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
               ongletActif === "equipes"
-                ? "bg-white text-foreground shadow-sm"
+                ? "bg-white text-primary shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -650,7 +650,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             onClick={() => setOngletActif("budget")}
             className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
               ongletActif === "budget"
-                ? "bg-white text-foreground shadow-sm"
+                ? "bg-white text-primary shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -661,7 +661,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             onClick={() => setOngletActif("jalons")}
             className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
               ongletActif === "jalons"
-                ? "bg-white text-foreground shadow-sm"
+                ? "bg-white text-primary shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -672,7 +672,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             onClick={() => setOngletActif("planning")}
             className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
               ongletActif === "planning"
-                ? "bg-white text-foreground shadow-sm"
+                ? "bg-white text-primary shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -683,7 +683,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             onClick={() => setOngletActif("notes")}
             className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
               ongletActif === "notes"
-                ? "bg-white text-foreground shadow-sm"
+                ? "bg-white text-primary shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -694,7 +694,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             onClick={() => setOngletActif("documents")}
             className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
               ongletActif === "documents"
-                ? "bg-white text-foreground shadow-sm"
+                ? "bg-white text-primary shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -705,7 +705,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             onClick={() => setOngletActif("risques")}
             className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
               ongletActif === "risques"
-                ? "bg-white text-foreground shadow-sm"
+                ? "bg-white text-primary shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -716,7 +716,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             onClick={() => setOngletActif("photos")}
             className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
               ongletActif === "photos"
-                ? "bg-white text-foreground shadow-sm"
+                ? "bg-white text-primary shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -727,7 +727,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             onClick={() => setOngletActif("ressources")}
             className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
               ongletActif === "ressources"
-                ? "bg-white text-foreground shadow-sm"
+                ? "bg-white text-primary shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
