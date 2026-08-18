@@ -35,6 +35,7 @@ import { ModaleAssignerConducteur } from "../_components/modale-assigner-conduct
 import { ModalTache } from "../_components/modal-tache";
 import { ModalAffecterEquipeRapide } from "../_components/modal-affecter-equipe-rapide";
 import { ModalJalon } from "../_components/modal-jalon";
+import { AlertDialogConfirm } from "@/components/ui/alert-dialog-confirm";
 
 interface PageDetailProjetProps {
   params: Promise<{ id: string }>;
@@ -67,6 +68,8 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
   const [modalJalonOuverte, setModalJalonOuverte] = useState(false);
   const [jalonSelectionne, setJalonSelectionne] = useState<any>(null);
   const [jalonEnCoursValidation, setJalonEnCoursValidation] = useState<string | null>(null);
+  const [confirmationValidationOuverte, setConfirmationValidationOuverte] = useState(false);
+  const [jalonAValider, setJalonAValider] = useState<{ id: string; libelle: string } | null>(null);
 
   useEffect(() => {
     chargerProjet();
@@ -129,20 +132,26 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
     fermerModalJalon();
   }
 
-  async function handleValiderJalon(jalonId: string, jalonLibelle: string) {
-    if (!confirm(`Confirmer la validation du jalon "${jalonLibelle}" ?`)) {
-      return;
-    }
+  function handleValiderJalon(jalonId: string, jalonLibelle: string) {
+    setJalonAValider({ id: jalonId, libelle: jalonLibelle });
+    setConfirmationValidationOuverte(true);
+  }
 
-    setJalonEnCoursValidation(jalonId);
+  async function confirmerValidationJalon() {
+    if (!jalonAValider) return;
+
+    setConfirmationValidationOuverte(false);
+    setJalonEnCoursValidation(jalonAValider.id);
+
     try {
-      await validerJalonRapide(jalonId);
+      await validerJalonRapide(jalonAValider.id);
       toast.success("Jalon validé avec succès");
       await chargerProjet();
     } catch (error: any) {
       toast.error(error.message || "Erreur lors de la validation");
     } finally {
       setJalonEnCoursValidation(null);
+      setJalonAValider(null);
     }
   }
 
@@ -1280,6 +1289,17 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
         ouvert={modalJalonOuverte}
         onFermer={fermerModalJalon}
         onSuccess={handleSuccesJalon}
+      />
+
+      {/* Confirmation de validation de jalon */}
+      <AlertDialogConfirm
+        open={confirmationValidationOuverte}
+        onOpenChange={setConfirmationValidationOuverte}
+        onConfirm={confirmerValidationJalon}
+        titre="Valider le jalon"
+        description={`Êtes-vous sûr de vouloir valider le jalon "${jalonAValider?.libelle}" ? Cette action enregistrera la date et l'auteur de validation.`}
+        labelConfirm="Valider"
+        labelCancel="Annuler"
       />
     </div>
   );
