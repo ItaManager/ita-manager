@@ -32,7 +32,10 @@ interface ModalTacheProps {
     dateFin: Date;
     avancementPlanifie: number;
     responsableId?: string | null;
-    affectations?: Array<{ employeId: string }>;
+    affectations?: Array<{
+      employeId?: string;
+      employe?: { id: string; nom: string; prenom: string };
+    }>;
   };
   ouvert: boolean;
   onFermer: () => void;
@@ -63,7 +66,9 @@ export function ModalTache({
     tache?.responsableId || ""
   );
   const [employeIds, setEmployeIds] = useState<string[]>(
-    tache?.affectations?.map((a) => a.employeId) || []
+    tache?.affectations
+      ?.map((a) => a.employe?.id || a.employeId)
+      .filter((id): id is string => !!id) || []
   );
 
   const {
@@ -89,15 +94,38 @@ export function ModalTache({
         },
   });
 
-  // Charger la liste des employés
+  // Charger la liste des employés et réinitialiser le formulaire
   useEffect(() => {
     if (ouvert) {
       chargerEmployes();
       // Réinitialiser les affectations
       setResponsableId(tache?.responsableId || "");
-      setEmployeIds(tache?.affectations?.map((a) => a.employeId) || []);
+      setEmployeIds(
+        tache?.affectations
+          ?.map((a) => a.employe?.id || a.employeId)
+          .filter((id): id is string => !!id) || []
+      );
+
+      // Réinitialiser le formulaire avec les valeurs de la tâche
+      if (tache) {
+        reset({
+          libelle: tache.libelle,
+          description: tache.description || "",
+          dateDebut: new Date(tache.dateDebut).toISOString().split("T")[0],
+          dateFin: new Date(tache.dateFin).toISOString().split("T")[0],
+          avancementPlanifie: tache.avancementPlanifie,
+        });
+      } else {
+        reset({
+          libelle: "",
+          description: "",
+          dateDebut: "",
+          dateFin: "",
+          avancementPlanifie: 0,
+        });
+      }
     }
-  }, [ouvert, tache]);
+  }, [ouvert, tache, reset]);
 
   async function chargerEmployes() {
     try {
