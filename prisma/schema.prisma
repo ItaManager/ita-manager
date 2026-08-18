@@ -301,6 +301,34 @@ enum CategorieDocumentProjet {
   AUTRE         // Autres documents
 }
 
+enum TypeRisqueIncident {
+  RISQUE    // Menace potentielle
+  INCIDENT  // Événement qui s'est produit
+}
+
+enum GraviteRisqueIncident {
+  FAIBLE
+  MOYENNE
+  ELEVEE
+  CRITIQUE
+}
+
+enum StatutRisqueIncident {
+  OUVERT
+  EN_TRAITEMENT
+  RESOLU
+  CLOTURE
+}
+
+enum TypeNoteProjet {
+  GENERALE       // Note générale
+  TECHNIQUE      // Observation technique
+  QUALITE        // Contrôle qualité
+  SECURITE       // Sécurité sur chantier
+  ADMINISTRATIVE // Administrative
+  REUNION        // Compte-rendu de réunion
+}
+
 enum RoleFonctionnel {
   CONDUCTEUR
   CHARGE_ETUDES
@@ -577,10 +605,12 @@ model Employe {
   pointagesBureau PointageBureau[]
 
   /// M5 — Projets (chaîne fonctionnelle)
-  affectationsChantier AffectationChantier[]
-  tachesResponsable    Tache[]              @relation("TachesResponsable")
-  affectationsTaches   AffectationTache[]
-  projetsConducteur    Projet[]             @relation("ConducteurProjet")
+  affectationsChantier       AffectationChantier[]
+  tachesResponsable          Tache[]              @relation("TachesResponsable")
+  affectationsTaches         AffectationTache[]
+  projetsConducteur          Projet[]             @relation("ConducteurProjet")
+  risquesIncidentsResponsable RisqueIncident[]
+  notesProjets               NoteProjet[]
 
   /// M6 — Relevés d'activité
   relevesChefChantier ReleveActivite[]
@@ -1257,6 +1287,8 @@ model Projet {
   taches               Tache[]
   jalons               Jalon[]
   documents            DocumentProjet[]
+  risquesIncidents     RisqueIncident[]
+  notes                NoteProjet[]
   affectations         AffectationChantier[]
   lieuLivraison        LieuLivraison?
   releves              ReleveActivite[]
@@ -1399,6 +1431,60 @@ model DocumentProjet {
   deposeLe    DateTime @default(now())
 
   @@map("documents_projets")
+}
+
+/// Risque ou incident identifié sur un projet
+model RisqueIncident {
+  id String @id @default(cuid())
+
+  projetId String
+  projet   Projet @relation(fields: [projetId], references: [id], onDelete: Cascade)
+
+  type     TypeRisqueIncident
+  gravite  GraviteRisqueIncident
+  statut   StatutRisqueIncident  @default(OUVERT)
+
+  titre       String
+  description String?
+
+  /// Mesures préventives (si RISQUE) ou correctives (si INCIDENT)
+  mesures String?
+
+  /// Responsable du traitement
+  responsableId String?
+  responsable   Employe? @relation(fields: [responsableId], references: [id])
+
+  dateIdentification DateTime @default(now())
+  dateResolution     DateTime?
+
+  creePar String @db.Uuid
+  creeLe  DateTime @default(now())
+
+  @@map("risques_incidents")
+}
+
+/// Note ou observation liée à un projet (journal de bord)
+model NoteProjet {
+  id String @id @default(cuid())
+
+  projetId String
+  projet   Projet @relation(fields: [projetId], references: [id], onDelete: Cascade)
+
+  type    TypeNoteProjet
+  titre   String?
+  contenu String
+
+  /// Auteur de la note
+  auteurId  String
+  auteur    Employe  @relation(fields: [auteurId], references: [id])
+
+  creeLe DateTime @default(now())
+
+  /// Note épinglée (affichée en priorité)
+  epinglee Boolean @default(false)
+
+  @@map("notes_projets")
+  @@index([projetId, creeLe])
 }
 
 /// Assignation d'un employé à une tâche (Many-to-Many)

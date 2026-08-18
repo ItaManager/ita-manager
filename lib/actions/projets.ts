@@ -1706,6 +1706,204 @@ export const supprimerRisqueIncident = actionProtegee(
 );
 
 // =====================================================================
+// NOTES ET OBSERVATIONS
+// =====================================================================
+
+/**
+ * Créer une note sur un projet
+ */
+export const creerNoteProjet = actionProtegee(
+  "projet:modifier",
+  async (
+    session,
+    input: {
+      projetId: string;
+      type: "GENERALE" | "TECHNIQUE" | "QUALITE" | "SECURITE" | "ADMINISTRATIVE" | "REUNION";
+      titre?: string;
+      contenu: string;
+      epinglee?: boolean;
+    }
+  ) => {
+    const profil = await prisma.profil.findUnique({
+      where: { id: session.userId },
+      select: { employeId: true },
+    });
+
+    if (!profil?.employeId) {
+      throw new Error("Profil employé introuvable");
+    }
+
+    const employeId = profil.employeId;
+
+    const projet = await prisma.projet.findUnique({
+      where: { id: input.projetId },
+      select: { code: true },
+    });
+
+    if (!projet) {
+      throw new Error("Projet introuvable");
+    }
+
+    const note = await prisma.$transaction(async (tx) => {
+      const nouvelle = await tx.noteProjet.create({
+        data: {
+          projetId: input.projetId,
+          type: input.type,
+          titre: input.titre,
+          contenu: input.contenu,
+          epinglee: input.epinglee || false,
+          auteurId: employeId,
+        },
+        include: {
+          auteur: {
+            select: {
+              nom: true,
+              prenom: true,
+            },
+          },
+        },
+      });
+
+      await tx.journalEvenement.create({
+        data: {
+          entite: "NoteProjet",
+          entiteId: nouvelle.id,
+          action: "CREATION",
+          auteurId: session.userId,
+          auteurNom: session.email,
+          commentaire: `Note ${input.type} créée — Projet ${projet.code}${input.titre ? ` : ${input.titre}` : ""}`,
+        },
+      });
+
+      return nouvelle;
+    });
+
+    revalidatePath(`/projets/${input.projetId}`);
+    return note;
+  }
+);
+
+/**
+ * Modifier une note de projet
+ */
+export const modifierNoteProjet = actionProtegee(
+  "projet:modifier",
+  async (
+    session,
+    noteId: string,
+    input: {
+      titre?: string;
+      contenu?: string;
+      type?: "GENERALE" | "TECHNIQUE" | "QUALITE" | "SECURITE" | "ADMINISTRATIVE" | "REUNION";
+    }
+  ) => {
+    const note = await prisma.noteProjet.findUnique({
+      where: { id: noteId },
+      include: { projet: true },
+    });
+
+    if (!note) {
+      throw new Error("Note introuvable");
+    }
+
+    const noteMaj = await prisma.$transaction(async (tx) => {
+      const maj = await tx.noteProjet.update({
+        where: { id: noteId },
+        data: input,
+        include: {
+          auteur: {
+            select: {
+              nom: true,
+              prenom: true,
+            },
+          },
+        },
+      });
+
+      await tx.journalEvenement.create({
+        data: {
+          entite: "NoteProjet",
+          entiteId: noteId,
+          action: "MODIFICATION",
+          auteurId: session.userId,
+          auteurNom: session.email,
+          commentaire: `Note modifiée — Projet ${note.projet.code}`,
+        },
+      });
+
+      return maj;
+    });
+
+    revalidatePath(`/projets/${note.projetId}`);
+    return noteMaj;
+  }
+);
+
+/**
+ * Épingler ou désépingler une note
+ */
+export const epinglerNoteProjet = actionProtegee(
+  "projet:modifier",
+  async (session, noteId: string, epinglee: boolean) => {
+    const note = await prisma.noteProjet.findUnique({
+      where: { id: noteId },
+      include: { projet: true },
+    });
+
+    if (!note) {
+      throw new Error("Note introuvable");
+    }
+
+    const noteMaj = await prisma.noteProjet.update({
+      where: { id: noteId },
+      data: { epinglee },
+    });
+
+    revalidatePath(`/projets/${note.projetId}`);
+    return noteMaj;
+  }
+);
+
+/**
+ * Supprimer une note de projet
+ */
+export const supprimerNoteProjet = actionProtegee(
+  "projet:modifier",
+  async (session, noteId: string) => {
+    const note = await prisma.noteProjet.findUnique({
+      where: { id: noteId },
+      include: { projet: true },
+    });
+
+    if (!note) {
+      throw new Error("Note introuvable");
+    }
+
+    const projetId = note.projetId;
+    const projetCode = note.projet.code;
+
+    await prisma.$transaction(async (tx) => {
+      await tx.noteProjet.delete({
+        where: { id: noteId },
+      });
+
+      await tx.journalEvenement.create({
+        data: {
+          entite: "NoteProjet",
+          entiteId: noteId,
+          action: "SUPPRESSION",
+          auteurId: session.userId,
+          auteurNom: session.email,
+          commentaire: `Note supprimée — Projet ${projetCode}`,
+        },
+      });
+    });
+
+    revalidatePath(`/projets/${projetId}`);
+  }
+);
+
+// =====================================================================
 // AFFECTATIONS CHANTIER
 // =====================================================================
 
@@ -2063,6 +2261,21 @@ export const obtenirProjet = actionProtegee(
           orderBy: { dateIdentification: "desc" },
           include: {
             responsable: {
+              select: {
+                id: true,
+                nom: true,
+                prenom: true,
+              },
+            },
+          },
+        },
+        notes: {
+          orderBy: [
+            { epinglee: "desc" },
+            { creeLe: "desc" },
+          ],
+          include: {
+            auteur: {
               select: {
                 id: true,
                 nom: true,
