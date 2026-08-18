@@ -534,8 +534,10 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
       </div>
 
       {/* Onglets */}
-      <div className="border-b">
-        <div className="flex items-center gap-6">
+      <Card>
+        <CardContent className="p-0">
+          <div className="border-b">
+            <div className="flex items-center gap-6 px-4">
           <button
             onClick={() => setOngletActif("tableau-bord")}
             className={`pb-3 px-2 text-sm font-medium transition-colors relative ${
@@ -544,7 +546,6 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <BarChart3 className="size-4 inline mr-2" />
             Tableau de bord
             {ongletActif === "tableau-bord" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
@@ -559,7 +560,6 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <TrendingUp className="size-4 inline mr-2" />
             Avancement
             {ongletActif === "avancement" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
@@ -574,8 +574,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <User className="size-4 inline mr-2" />
-            Équipes (0)
+            Équipes
             {ongletActif === "equipes" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
@@ -603,8 +602,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <CalendarIcon className="size-4 inline mr-2" />
-            Jalons (0)
+            Jalons
             {ongletActif === "jalons" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
@@ -618,7 +616,6 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <BarChart3 className="size-4 inline mr-2" />
             Planning
             {ongletActif === "planning" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
@@ -633,8 +630,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <FileText className="size-4 inline mr-2" />
-            Notes ({projet?.notes?.length || 0})
+            Notes
             {ongletActif === "notes" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
@@ -648,8 +644,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Paperclip className="size-4 inline mr-2" />
-            Documents ({projet?.documents?.length || 0})
+            Documents
             {ongletActif === "documents" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
@@ -663,8 +658,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <AlertTriangle className="size-4 inline mr-2" />
-            Risques ({projet?.risquesIncidents?.length || 0})
+            Risques
             {ongletActif === "risques" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
@@ -678,8 +672,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Camera className="size-4 inline mr-2" />
-            Photos ({projet?.documents?.filter((d: any) => d.typeMime?.startsWith("image/")).length || 0})
+            Photos
             {ongletActif === "photos" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
@@ -693,17 +686,15 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Truck className="size-4 inline mr-2" />
-            Ressources ({projet?.affectationsMateriel?.filter((a: any) => {
-              const now = new Date();
-              return new Date(a.dateDebut) <= now && new Date(a.dateFin) >= now;
-            }).length || 0})
+            Ressources
             {ongletActif === "ressources" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
           </button>
-        </div>
-      </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Contenu de l'onglet Tableau de bord */}
       {ongletActif === "tableau-bord" && (
