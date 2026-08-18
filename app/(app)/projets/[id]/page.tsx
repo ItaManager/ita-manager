@@ -67,8 +67,8 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
   const [projet, setProjet] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [ongletActif, setOngletActif] = useState<
-    "avancement" | "equipes" | "budget" | "jalons" | "planning" | "notes" | "documents" | "risques"
-  >("avancement");
+    "tableau-bord" | "avancement" | "equipes" | "budget" | "jalons" | "planning" | "notes" | "documents" | "risques"
+  >("tableau-bord");
   const [rechercheAffectation, setRechercheAffectation] = useState("");
   const [pageAffectation, setPageAffectation] = useState(1);
   const ITEMS_PAR_PAGE = 10;
@@ -515,6 +515,21 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
       <div className="border-b">
         <div className="flex items-center gap-6">
           <button
+            onClick={() => setOngletActif("tableau-bord")}
+            className={`pb-3 px-2 text-sm font-medium transition-colors relative ${
+              ongletActif === "tableau-bord"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <BarChart3 className="size-4 inline mr-2" />
+            Tableau de bord
+            {ongletActif === "tableau-bord" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+            )}
+          </button>
+
+          <button
             onClick={() => setOngletActif("avancement")}
             className={`pb-3 px-2 text-sm font-medium transition-colors relative ${
               ongletActif === "avancement"
@@ -634,6 +649,271 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
           </button>
         </div>
       </div>
+
+      {/* Contenu de l'onglet Tableau de bord */}
+      {ongletActif === "tableau-bord" && (
+        <div className="space-y-6">
+          {/* KPIs principaux */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Avancement global */}
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm text-muted-foreground">Avancement</p>
+                  <TrendingUp className="size-4 text-muted-foreground" />
+                </div>
+                <p className="text-3xl font-bold tabular-nums">
+                  {avancementAffiche} %
+                </p>
+                <div className="mt-3 h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#13850b] rounded-full transition-all"
+                    style={{ width: `${avancementAffiche}%` }}
+                  />
+                </div>
+                {ecartAvancement !== null && ecartAvancement !== 0 && (
+                  <p className={`text-xs mt-2 ${ecartAvancement > 0 ? "text-green-600" : "text-orange-500"}`}>
+                    {ecartAvancement > 0 ? "+" : ""}{ecartAvancement} pts {ecartAvancement > 0 ? "d'avance" : "de retard"}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Tâches */}
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm text-muted-foreground">Tâches</p>
+                  <CheckCircle2 className="size-4 text-muted-foreground" />
+                </div>
+                <p className="text-3xl font-bold tabular-nums">
+                  {projet.taches?.filter((t: any) => t.avancement === 100).length || 0}
+                  <span className="text-lg text-muted-foreground">
+                    /{projet.taches?.length || 0}
+                  </span>
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  terminées
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Jalons */}
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm text-muted-foreground">Jalons</p>
+                  <Flag className="size-4 text-muted-foreground" />
+                </div>
+                <p className="text-3xl font-bold tabular-nums">
+                  {projet.jalons?.filter((j: any) => j.valide).length || 0}
+                  <span className="text-lg text-muted-foreground">
+                    /{projet.jalons?.length || 0}
+                  </span>
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  validés
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Risques */}
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm text-muted-foreground">Risques</p>
+                  <AlertTriangle className="size-4 text-muted-foreground" />
+                </div>
+                <p className="text-3xl font-bold tabular-nums">
+                  {projet.risquesIncidents?.filter((r: any) =>
+                    r.statut === "OUVERT" || r.statut === "EN_TRAITEMENT"
+                  ).length || 0}
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {projet.risquesIncidents?.filter((r: any) =>
+                    r.gravite === "CRITIQUE" || r.gravite === "ELEVEE"
+                  ).length || 0} critiques/élevés
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Alertes et points d'attention */}
+          {(projet.taches?.some((t: any) =>
+              t.dateFin && new Date(t.dateFin) < new Date() && t.avancement < 100
+            ) ||
+            projet.risquesIncidents?.some((r: any) =>
+              (r.gravite === "CRITIQUE" || r.gravite === "ELEVEE") &&
+              (r.statut === "OUVERT" || r.statut === "EN_TRAITEMENT")
+            ) ||
+            projet.jalons?.some((j: any) =>
+              !j.valide && j.dateEcheance && new Date(j.dateEcheance) < new Date()
+            )) && (
+            <Card className="border-orange-200 bg-orange-50/50">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <AlertTriangle className="size-5 text-orange-600" />
+                  <h3 className="font-semibold text-orange-900">Points d'attention</h3>
+                </div>
+                <div className="space-y-3">
+                  {/* Tâches en retard */}
+                  {projet.taches?.filter((t: any) =>
+                    t.dateFin && new Date(t.dateFin) < new Date() && t.avancement < 100
+                  ).map((tache: any) => (
+                    <div key={tache.id} className="flex items-start gap-2 text-sm">
+                      <XCircle className="size-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <span className="font-medium">Tâche en retard :</span>{" "}
+                        {tache.libelle}
+                        <span className="text-muted-foreground ml-1">
+                          (échéance {format(new Date(tache.dateFin), "dd/MM/yyyy")})
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Risques critiques ouverts */}
+                  {projet.risquesIncidents?.filter((r: any) =>
+                    (r.gravite === "CRITIQUE" || r.gravite === "ELEVEE") &&
+                    (r.statut === "OUVERT" || r.statut === "EN_TRAITEMENT")
+                  ).map((risque: any) => (
+                    <div key={risque.id} className="flex items-start gap-2 text-sm">
+                      <AlertTriangle className="size-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <span className="font-medium">
+                          {risque.type === "INCIDENT" ? "Incident" : "Risque"} {risque.gravite.toLowerCase()} :
+                        </span>{" "}
+                        {risque.titre}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Jalons en retard */}
+                  {projet.jalons?.filter((j: any) =>
+                    !j.valide && j.dateEcheance && new Date(j.dateEcheance) < new Date()
+                  ).map((jalon: any) => (
+                    <div key={jalon.id} className="flex items-start gap-2 text-sm">
+                      <Clock className="size-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <span className="font-medium">Jalon non validé :</span>{" "}
+                        {jalon.libelle}
+                        <span className="text-muted-foreground ml-1">
+                          (prévu le {format(new Date(jalon.dateEcheance), "dd/MM/yyyy")})
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Informations rapides */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Notes épinglées */}
+            {projet.notes?.filter((n: any) => n.epinglee).length > 0 && (
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <FileText className="size-5 text-muted-foreground" />
+                    <h3 className="font-semibold">Notes épinglées</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {projet.notes
+                      .filter((n: any) => n.epinglee)
+                      .slice(0, 3)
+                      .map((note: any) => (
+                        <div key={note.id} className="text-sm border-l-2 border-[#13850b] pl-3 py-1">
+                          {note.titre && (
+                            <p className="font-medium mb-1">{note.titre}</p>
+                          )}
+                          <p className="text-muted-foreground line-clamp-2">
+                            {note.contenu}
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Équipe */}
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <User className="size-5 text-muted-foreground" />
+                  <h3 className="font-semibold">Équipe</h3>
+                </div>
+                <div className="space-y-3">
+                  {projet.chefProjetId && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Chef de projet</span>
+                      <span className="font-medium">
+                        {projet.chefProjet?.prenom} {projet.chefProjet?.nom}
+                      </span>
+                    </div>
+                  )}
+                  {projet.conducteurId && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Conducteur</span>
+                      <span className="font-medium">
+                        {projet.conducteur?.prenom} {projet.conducteur?.nom}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between text-sm pt-2 border-t">
+                    <span className="text-muted-foreground">Personnel affecté</span>
+                    <span className="font-medium tabular-nums">
+                      {projet.affectations?.filter((a: any) => !a.dateFin).length || 0} personnes
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Documents récents */}
+          {projet.documents?.length > 0 && (
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Paperclip className="size-5 text-muted-foreground" />
+                    <h3 className="font-semibold">Documents récents</h3>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setOngletActif("documents")}
+                    className="text-sm"
+                  >
+                    Voir tout
+                    <ChevronRight className="size-4 ml-1" />
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {projet.documents.slice(0, 5).map((doc: any) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <Paperclip className="size-4 text-muted-foreground flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate">{doc.nomFichier}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(doc.deposeLe), "dd MMM yyyy", { locale: fr })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
 
       {/* Contenu de l'onglet Avancement */}
       {ongletActif === "avancement" && (
