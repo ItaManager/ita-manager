@@ -442,91 +442,95 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
       {/* Informations complémentaires */}
       <div className="grid grid-cols-2 gap-4">
         {/* Période */}
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">
-              Période
-            </p>
-            <ModaleEditionChamp
-              projetId={projet.id}
-              champ="periode"
-              label="Période"
-              valeurActuelle={{
-                debut: projet.dateDebut,
-                fin: projet.dateFin,
-              }}
-              type="periode"
-              onSuccess={chargerProjet}
-              requireConfirmation
-              confirmationMessage="Modifier la période du projet peut impacter le planning et les échéances. Confirmer ?"
-            />
-          </div>
-          {projet.dateDebut || projet.dateFin ? (
-            <>
-              <p className="text-base font-semibold">
-                {projet.dateDebut
-                  ? format(new Date(projet.dateDebut), "dd/MM/yyyy", {
-                      locale: fr,
-                    })
-                  : "—"}{" "}
-                →{" "}
-                {projet.dateFin
-                  ? format(new Date(projet.dateFin), "dd/MM/yyyy", {
-                      locale: fr,
-                    })
-                  : "—"}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                Période
               </p>
-              {joursRestants !== null && (
-                <p
-                  className={`text-sm mt-1 ${
-                    joursRestants < 0
-                      ? "text-destructive"
-                      : joursRestants <= 30
-                      ? "text-orange-500"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {joursRestants < 0
-                    ? `${Math.abs(joursRestants)} jours dépassés`
-                    : `${joursRestants} jours restants`}
+              <ModaleEditionChamp
+                projetId={projet.id}
+                champ="periode"
+                label="Période"
+                valeurActuelle={{
+                  debut: projet.dateDebut,
+                  fin: projet.dateFin,
+                }}
+                type="periode"
+                onSuccess={chargerProjet}
+                requireConfirmation
+                confirmationMessage="Modifier la période du projet peut impacter le planning et les échéances. Confirmer ?"
+              />
+            </div>
+            {projet.dateDebut || projet.dateFin ? (
+              <>
+                <p className="text-base font-semibold">
+                  {projet.dateDebut
+                    ? format(new Date(projet.dateDebut), "dd/MM/yyyy", {
+                        locale: fr,
+                      })
+                    : "—"}{" "}
+                  →{" "}
+                  {projet.dateFin
+                    ? format(new Date(projet.dateFin), "dd/MM/yyyy", {
+                        locale: fr,
+                      })
+                    : "—"}
                 </p>
-              )}
-            </>
-          ) : (
-            <p className="text-base text-muted-foreground">Non définie</p>
-          )}
-        </div>
+                {joursRestants !== null && (
+                  <p
+                    className={`text-sm mt-1 ${
+                      joursRestants < 0
+                        ? "text-destructive"
+                        : joursRestants <= 30
+                        ? "text-orange-500"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {joursRestants < 0
+                      ? `${Math.abs(joursRestants)} jours dépassés`
+                      : `${joursRestants} jours restants`}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="text-base text-muted-foreground">Non définie</p>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Conducteur de travaux */}
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">
-              Conducteur de travaux
-            </p>
-            <ModaleAssignerConducteur
-              projetId={projet.id}
-              conducteurActuelId={projet.conducteur?.id}
-              conducteurActuelNom={
-                projet.conducteur
-                  ? `${projet.conducteur.prenom} ${projet.conducteur.nom}`
-                  : undefined
-              }
-              onSuccess={chargerProjet}
-            />
-          </div>
-          {projet.conducteur ? (
-            <>
-              <p className="text-base font-semibold">
-                {projet.conducteur.prenom} {projet.conducteur.nom}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                Conducteur de travaux
               </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                référent fonctionnel — vise les relevés
-              </p>
-            </>
-          ) : (
-            <p className="text-base text-muted-foreground">Non assigné</p>
-          )}
-        </div>
+              <ModaleAssignerConducteur
+                projetId={projet.id}
+                conducteurActuelId={projet.conducteur?.id}
+                conducteurActuelNom={
+                  projet.conducteur
+                    ? `${projet.conducteur.prenom} ${projet.conducteur.nom}`
+                    : undefined
+                }
+                onSuccess={chargerProjet}
+              />
+            </div>
+            {projet.conducteur ? (
+              <>
+                <p className="text-base font-semibold">
+                  {projet.conducteur.prenom} {projet.conducteur.nom}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  référent fonctionnel — vise les relevés
+                </p>
+              </>
+            ) : (
+              <p className="text-base text-muted-foreground">Non assigné</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Onglets */}
