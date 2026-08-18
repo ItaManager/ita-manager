@@ -1318,6 +1318,159 @@ export const validerJalonRapide = actionProtegee(
 );
 
 // =====================================================================
+// DOCUMENTS PROJET
+// =====================================================================
+
+/**
+ * Ajouter un document à un projet
+ */
+export const ajouterDocumentProjet = actionProtegee(
+  "projet:modifier",
+  async (session, input: {
+    projetId: string;
+    categorie: string;
+    nomFichier: string;
+    cheminStorage: string;
+    taille: number;
+    typeMime: string;
+  }) => {
+    const projet = await prisma.projet.findUnique({
+      where: { id: input.projetId },
+    });
+
+    if (!projet) {
+      throw new Error("Projet introuvable");
+    }
+
+    const documentId = crypto.randomUUID();
+
+    const document = await prisma.$transaction(async (tx) => {
+      const nouveauDoc = await tx.documentProjet.create({
+        data: {
+          id: documentId,
+          projetId: input.projetId,
+          categorie: input.categorie as any,
+          nomFichier: input.nomFichier,
+          cheminStorage: input.cheminStorage,
+          taille: input.taille,
+          typeMime: input.typeMime,
+          deposeParId: session.userId,
+        },
+      });
+
+      await tx.journalEvenement.create({
+        data: {
+          entite: "DocumentProjet",
+          entiteId: nouveauDoc.id,
+          action: "CREATION",
+          auteurId: session.userId,
+          auteurNom: session.email,
+          commentaire: `Document ajouté au projet ${projet.code} : ${input.nomFichier}`,
+        },
+      });
+
+      return nouveauDoc;
+    });
+
+    revalidatePath(`/projets/${input.projetId}`);
+    return document;
+  }
+);
+
+/**
+ * Télécharger un document projet (génère URL signée 60s)
+ */
+export const telechargerDocumentProjet = actionProtegee(
+  "projet:modifier",
+  async (session, documentId: string) => {
+    const document = await prisma.documentProjet.findUnique({
+      where: { id: documentId },
+      include: {
+        projet: true,
+      },
+    });
+
+    if (!document) {
+      throw new Error("Document introuvable");
+    }
+
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+
+    const { data, error } = await supabase.storage
+      .from("projets-documents")
+      .createSignedUrl(document.cheminStorage, 60);
+
+    if (error || !data?.signedUrl) {
+      throw new Error("Impossible de générer le lien de téléchargement.");
+    }
+
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "DocumentProjet",
+        entiteId: documentId,
+        action: "CONSULTATION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        commentaire: `Document téléchargé — Projet ${document.projet.code} : ${document.nomFichier}`,
+      },
+    });
+
+    return data.signedUrl;
+  }
+);
+
+/**
+ * Supprimer un document projet
+ */
+export const supprimerDocumentProjet = actionProtegee(
+  "projet:modifier",
+  async (session, documentId: string) => {
+    const document = await prisma.documentProjet.findUnique({
+      where: { id: documentId },
+      include: {
+        projet: true,
+      },
+    });
+
+    if (!document) {
+      throw new Error("Document introuvable");
+    }
+
+    const projetId = document.projetId;
+    const projetCode = document.projet.code;
+    const nomFichier = document.nomFichier;
+
+    // 1. Supprimer de Supabase Storage
+    try {
+      const { createClient } = await import("@/lib/supabase/server");
+      const supabase = await createClient();
+      await supabase.storage.from("projets-documents").remove([document.cheminStorage]);
+    } catch (error) {
+      console.error("Erreur suppression Storage:", error);
+    }
+
+    // 2. Transaction database
+    await prisma.$transaction(async (tx) => {
+      await tx.documentProjet.delete({ where: { id: documentId } });
+
+      await tx.journalEvenement.create({
+        data: {
+          entite: "DocumentProjet",
+          entiteId: documentId,
+          action: "SUPPRESSION",
+          auteurId: session.userId,
+          auteurNom: session.email,
+          commentaire: `Document supprimé — Projet ${projetCode} : ${nomFichier}`,
+        },
+      });
+    });
+
+    revalidatePath(`/projets/${projetId}`);
+  }
+);
+
+// =====================================================================
 // AFFECTATIONS CHANTIER
 // =====================================================================
 

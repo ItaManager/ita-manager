@@ -292,6 +292,15 @@ enum StatutJalon {
   ABANDONNE
 }
 
+enum CategorieDocumentProjet {
+  PLAN          // Plans d'architecte, plans d'exécution
+  CONTRAT       // Contrats, avenants
+  RAPPORT       // Rapports de suivi, compte-rendus
+  DEVIS         // Devis, factures
+  AUTORISATION  // Permis de construire, autorisations
+  AUTRE         // Autres documents
+}
+
 enum RoleFonctionnel {
   CONDUCTEUR
   CHARGE_ETUDES
@@ -1247,6 +1256,7 @@ model Projet {
   /// Relations
   taches               Tache[]
   jalons               Jalon[]
+  documents            DocumentProjet[]
   affectations         AffectationChantier[]
   lieuLivraison        LieuLivraison?
   releves              ReleveActivite[]
@@ -1361,6 +1371,34 @@ model DocumentJalon {
   deposeLe    DateTime @default(now())
 
   @@map("documents_jalons")
+}
+
+/// Document attaché à un projet (plans, contrats, rapports, etc.)
+/// Stocké dans Supabase Storage (bucket privé). Accès par URL signée courte.
+model DocumentProjet {
+  id String @id @db.Uuid @default(dbgenerated("gen_random_uuid()"))
+
+  projetId String
+  projet   Projet @relation(fields: [projetId], references: [id], onDelete: Cascade)
+
+  /// Catégorie du document
+  categorie CategorieDocumentProjet
+
+  /// Nom original du fichier
+  nomFichier    String
+  /// Chemin dans le bucket Supabase Storage
+  cheminStorage String
+
+  /// Taille en octets
+  taille Int
+
+  /// Type MIME (application/pdf, image/jpeg, etc.)
+  typeMime String
+
+  deposeParId String   @db.Uuid
+  deposeLe    DateTime @default(now())
+
+  @@map("documents_projets")
 }
 
 /// Assignation d'un employé à une tâche (Many-to-Many)
