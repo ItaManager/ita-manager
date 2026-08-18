@@ -32,6 +32,7 @@ import {
   Upload,
   AlertTriangle,
   Truck,
+  Camera,
 } from "lucide-react";
 import { StatutProjet } from "@prisma/client";
 import { format, differenceInDays } from "date-fns";
@@ -69,7 +70,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
   const [projet, setProjet] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [ongletActif, setOngletActif] = useState<
-    "tableau-bord" | "avancement" | "equipes" | "budget" | "jalons" | "planning" | "notes" | "documents" | "risques"
+    "tableau-bord" | "avancement" | "equipes" | "budget" | "jalons" | "planning" | "notes" | "documents" | "risques" | "photos"
   >("tableau-bord");
   const [rechercheAffectation, setRechercheAffectation] = useState("");
   const [pageAffectation, setPageAffectation] = useState(1);
@@ -647,6 +648,21 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             <AlertTriangle className="size-4 inline mr-2" />
             Risques ({projet?.risquesIncidents?.length || 0})
             {ongletActif === "risques" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+            )}
+          </button>
+
+          <button
+            onClick={() => setOngletActif("photos")}
+            className={`pb-3 px-2 text-sm font-medium transition-colors relative ${
+              ongletActif === "photos"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Camera className="size-4 inline mr-2" />
+            Photos ({projet?.documents?.filter((d: any) => d.typeMime?.startsWith("image/")).length || 0})
+            {ongletActif === "photos" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
           </button>
@@ -2182,6 +2198,96 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                   })}
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Contenu de l'onglet Photos */}
+      {ongletActif === "photos" && (
+        <div className="space-y-6">
+          {/* En-tête */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold">Photos du projet</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Galerie photos de suivi du chantier
+              </p>
+            </div>
+            <Button
+              disabled
+              className="gap-2 rounded-full bg-muted text-muted-foreground cursor-not-allowed"
+              title="Upload disponible prochainement (Supabase Storage à configurer)"
+            >
+              <Upload className="size-4" />
+              Ajouter des photos
+            </Button>
+          </div>
+
+          {/* Galerie photos */}
+          {(() => {
+            const photos = projet.documents?.filter((d: any) => d.typeMime?.startsWith("image/")) || [];
+
+            if (photos.length === 0) {
+              return (
+                <Card>
+                  <CardContent className="p-12">
+                    <div className="text-center">
+                      <Camera className="size-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                      <p className="text-muted-foreground mb-2">
+                        Aucune photo disponible
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Les photos de suivi du chantier apparaîtront ici
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            }
+
+            return (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {photos.map((photo: any) => (
+                  <Card key={photo.id} className="overflow-hidden group hover:shadow-lg transition-shadow">
+                    <CardContent className="p-0">
+                      {/* Image placeholder */}
+                      <div className="aspect-square bg-muted flex items-center justify-center relative">
+                        <Camera className="size-12 text-muted-foreground opacity-30" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute bottom-0 left-0 right-0 p-3 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                          <p className="text-xs font-medium truncate">{photo.nomFichier}</p>
+                        </div>
+                      </div>
+
+                      {/* Info */}
+                      <div className="p-3 border-t">
+                        <p className="text-sm font-medium truncate mb-1">{photo.nomFichier}</p>
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>{format(new Date(photo.deposeLe), "dd/MM/yyyy", { locale: fr })}</span>
+                          <span>{(photo.taille / 1024).toFixed(0)} Ko</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            );
+          })()}
+
+          {/* Message info upload */}
+          <Card className="border-dashed">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="size-5 text-orange-500 mt-0.5 flex-shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium mb-1">Upload de photos à venir</p>
+                  <p className="text-muted-foreground">
+                    L'ajout de photos sera disponible après la configuration du stockage Supabase.
+                    Les photos seront automatiquement optimisées et sécurisées.
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
