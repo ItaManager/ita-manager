@@ -107,7 +107,8 @@ export function ModalAffecterEquipeRapide({
     return (
       j.nom.toLowerCase().includes(term) ||
       j.prenom.toLowerCase().includes(term) ||
-      j.matricule?.toLowerCase().includes(term)
+      j.matricule?.toLowerCase().includes(term) ||
+      j.competence?.toLowerCase().includes(term)
     );
   });
 
@@ -132,7 +133,7 @@ export function ModalAffecterEquipeRapide({
             <Label htmlFor="recherche">Rechercher un journalier</Label>
             <Input
               id="recherche"
-              placeholder="Nom, prénom ou matricule..."
+              placeholder="Nom, prénom, matricule ou compétence..."
               value={recherche}
               onChange={(e) => setRecherche(e.target.value)}
               className="h-12"
