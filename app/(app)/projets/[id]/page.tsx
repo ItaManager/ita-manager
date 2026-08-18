@@ -57,8 +57,6 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
   const ITEMS_PAR_PAGE = 10;
   const [modalTacheOuverte, setModalTacheOuverte] = useState(false);
   const [tacheSelectionnee, setTacheSelectionnee] = useState<any>(null);
-  const [modalEquipeRapideOuverte, setModalEquipeRapideOuverte] = useState(false);
-  const [tachePourEquipe, setTachePourEquipe] = useState<any>(null);
 
   useEffect(() => {
     chargerProjet();
@@ -99,21 +97,6 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
   function handleSuccesTache() {
     chargerProjet();
     fermerModalTache();
-  }
-
-  function ouvrirModalEquipeRapide(tache: any) {
-    setTachePourEquipe(tache);
-    setModalEquipeRapideOuverte(true);
-  }
-
-  function fermerModalEquipeRapide() {
-    setModalEquipeRapideOuverte(false);
-    setTachePourEquipe(null);
-  }
-
-  function handleSuccesEquipe() {
-    chargerProjet();
-    fermerModalEquipeRapide();
   }
 
   if (loading) {
@@ -557,15 +540,24 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                           className="py-3 px-4 text-center"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => ouvrirModalEquipeRapide(tache)}
-                            className="h-8 w-8 p-0"
-                            title="Composer l'équipe rapidement"
+                          <ModalAffecterEquipeRapide
+                            tacheId={tache.id}
+                            tacheLibelle={tache.libelle}
+                            projetCode={projet.code}
+                            projetNom={projet.nom}
+                            employeIdsActuels={
+                              tache.affectations?.map((a: any) => a.employeId) || []
+                            }
                           >
-                            <Users className="size-4" />
-                          </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              title="Composer l'équipe rapidement"
+                            >
+                              <Users className="size-4" />
+                            </Button>
+                          </ModalAffecterEquipeRapide>
                         </td>
                       </tr>
                     );
@@ -970,20 +962,6 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
         onFermer={fermerModalTache}
         onSuccess={handleSuccesTache}
       />
-
-      {/* Modal d'affectation rapide d'équipe */}
-      {tachePourEquipe && (
-        <ModalAffecterEquipeRapide
-          tacheId={tachePourEquipe.id}
-          tacheLibelle={tachePourEquipe.libelle}
-          employeIdsActuels={
-            tachePourEquipe.affectations?.map((a: any) => a.employeId) || []
-          }
-          ouvert={modalEquipeRapideOuverte}
-          onFermer={fermerModalEquipeRapide}
-          onSuccess={handleSuccesEquipe}
-        />
-      )}
     </div>
   );
 }
