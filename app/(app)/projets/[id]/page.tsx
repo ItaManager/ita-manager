@@ -27,6 +27,9 @@ import {
   Link2,
   BarChart3,
   FileText,
+  Download,
+  Trash2,
+  Upload,
 } from "lucide-react";
 import { StatutProjet } from "@prisma/client";
 import { format, differenceInDays } from "date-fns";
@@ -62,7 +65,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
   const [projet, setProjet] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [ongletActif, setOngletActif] = useState<
-    "avancement" | "equipes" | "budget" | "jalons" | "planning" | "notes"
+    "avancement" | "equipes" | "budget" | "jalons" | "planning" | "notes" | "documents"
   >("avancement");
   const [rechercheAffectation, setRechercheAffectation] = useState("");
   const [pageAffectation, setPageAffectation] = useState(1);
@@ -572,6 +575,21 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             <FileText className="size-4 inline mr-2" />
             Notes ({projet?.notes?.length || 0})
             {ongletActif === "notes" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+            )}
+          </button>
+
+          <button
+            onClick={() => setOngletActif("documents")}
+            className={`pb-3 px-2 text-sm font-medium transition-colors relative ${
+              ongletActif === "documents"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Paperclip className="size-4 inline mr-2" />
+            Documents ({projet?.documents?.length || 0})
+            {ongletActif === "documents" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
           </button>
@@ -1512,6 +1530,127 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                               <Pencil className="size-4" />
                             </Button>
                           </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Onglet Documents */}
+      {ongletActif === "documents" && (
+        <div className="space-y-6">
+          {/* En-tête */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold">Documents du projet</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Plans, contrats, rapports et autres documents
+              </p>
+            </div>
+            <Button
+              className="gap-2 rounded-full bg-[#13850b] hover:bg-[#0f6909] text-white"
+            >
+              <Upload className="size-4" />
+              Ajouter un document
+            </Button>
+          </div>
+
+          {/* Liste des documents */}
+          <Card>
+            <CardContent className="p-6">
+              {!projet.documents || projet.documents.length === 0 ? (
+                <div className="py-12 text-center">
+                  <Paperclip className="size-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                  <p className="text-muted-foreground mb-2">
+                    Aucun document enregistré
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Ajoutez des plans, contrats, rapports ou autres documents liés au projet
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {projet.documents.map((doc: any) => {
+                    const categorieLabels: Record<string, string> = {
+                      PLAN: "Plan",
+                      CONTRAT: "Contrat",
+                      RAPPORT: "Rapport",
+                      DEVIS: "Devis",
+                      AUTORISATION: "Autorisation",
+                      AUTRE: "Autre",
+                    };
+
+                    const categorieColors: Record<string, string> = {
+                      PLAN: "#3B82F6",
+                      CONTRAT: "#10B981",
+                      RAPPORT: "#8B5CF6",
+                      DEVIS: "#F59E0B",
+                      AUTORISATION: "#EF4444",
+                      AUTRE: "#6B7280",
+                    };
+
+                    const formatTaille = (bytes: number) => {
+                      if (bytes < 1024) return `${bytes} o`;
+                      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
+                      return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+                    };
+
+                    return (
+                      <div
+                        key={doc.id}
+                        className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/30 transition-colors"
+                      >
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className="size-10 rounded-md bg-muted flex items-center justify-center">
+                            <Paperclip className="size-5 text-muted-foreground" />
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-medium text-sm truncate">
+                                {doc.nomFichier}
+                              </h3>
+                              <Badge
+                                style={{
+                                  backgroundColor: `${categorieColors[doc.categorie]}20`,
+                                  color: categorieColors[doc.categorie],
+                                }}
+                                className="text-xs"
+                              >
+                                {categorieLabels[doc.categorie]}
+                              </Badge>
+                            </div>
+
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                              <span>{formatTaille(doc.taille)}</span>
+                              <span>•</span>
+                              <span>
+                                {format(new Date(doc.deposeLe), "dd MMM yyyy", { locale: fr })}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                          >
+                            <Download className="size-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
                         </div>
                       </div>
                     );
