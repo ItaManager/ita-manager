@@ -71,7 +71,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
   const [projet, setProjet] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [ongletActif, setOngletActif] = useState<
-    "tableau-bord" | "avancement" | "equipes" | "budget" | "jalons" | "planning" | "notes" | "documents" | "risques" | "photos"
+    "tableau-bord" | "avancement" | "equipes" | "budget" | "jalons" | "planning" | "notes" | "documents" | "risques" | "photos" | "ressources"
   >("tableau-bord");
   const [rechercheAffectation, setRechercheAffectation] = useState("");
   const [pageAffectation, setPageAffectation] = useState(1);
@@ -664,6 +664,24 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             <Camera className="size-4 inline mr-2" />
             Photos ({projet?.documents?.filter((d: any) => d.typeMime?.startsWith("image/")).length || 0})
             {ongletActif === "photos" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+            )}
+          </button>
+
+          <button
+            onClick={() => setOngletActif("ressources")}
+            className={`pb-3 px-2 text-sm font-medium transition-colors relative ${
+              ongletActif === "ressources"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Truck className="size-4 inline mr-2" />
+            Ressources ({projet?.affectationsMateriel?.filter((a: any) => {
+              const now = new Date();
+              return new Date(a.dateDebut) <= now && new Date(a.dateFin) >= now;
+            }).length || 0})
+            {ongletActif === "ressources" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
           </button>
@@ -2367,6 +2385,178 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                   <p className="text-muted-foreground">
                     L'ajout de photos sera disponible après la configuration du stockage Supabase.
                     Les photos seront automatiquement optimisées et sécurisées.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Contenu de l'onglet Ressources */}
+      {ongletActif === "ressources" && (
+        <div className="space-y-6">
+          {/* En-tête */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold">Ressources matérielles</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Matériel et engins affectés au projet
+              </p>
+            </div>
+          </div>
+
+          {/* Liste des affectations */}
+          {projet?.affectationsMateriel && projet.affectationsMateriel.length > 0 ? (
+            <div className="space-y-4">
+              {projet.affectationsMateriel
+                .sort((a: any, b: any) => {
+                  const aDebut = new Date(a.dateDebut);
+                  const bDebut = new Date(b.dateDebut);
+                  return bDebut.getTime() - aDebut.getTime();
+                })
+                .map((affectation: any) => {
+                  const now = new Date();
+                  const dateDebut = new Date(affectation.dateDebut);
+                  const dateFin = new Date(affectation.dateFin);
+                  const estActif = dateDebut <= now && dateFin >= now;
+                  const estFutur = dateDebut > now;
+                  const estPasse = dateFin < now;
+
+                  return (
+                    <Card key={affectation.id}>
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between gap-4">
+                          {/* Informations principales */}
+                          <div className="flex-1 space-y-3">
+                            <div className="flex items-start gap-3">
+                              <Truck className="size-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3 className="font-semibold">
+                                    {affectation.materiel.designation}
+                                  </h3>
+                                  <Badge
+                                    variant="outline"
+                                    className="text-xs font-mono"
+                                  >
+                                    {affectation.materiel.codeIta}
+                                  </Badge>
+                                </div>
+                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                                  <span>Type : {affectation.materiel.type}</span>
+                                  {affectation.materiel.marque && (
+                                    <span>
+                                      {affectation.materiel.marque}
+                                      {affectation.materiel.modele && ` ${affectation.materiel.modele}`}
+                                    </span>
+                                  )}
+                                  {affectation.materiel.immatriculation && (
+                                    <span className="font-mono">
+                                      {affectation.materiel.immatriculation}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Période d'affectation */}
+                            <div className="flex items-center gap-4 text-sm pl-8">
+                              <div className="flex items-center gap-2">
+                                <CalendarIcon className="size-4 text-muted-foreground" />
+                                <span>
+                                  Du{" "}
+                                  <span className="font-medium">
+                                    {format(dateDebut, "d MMM yyyy", { locale: fr })}
+                                  </span>
+                                  {" "}au{" "}
+                                  <span className="font-medium">
+                                    {format(dateFin, "d MMM yyyy", { locale: fr })}
+                                  </span>
+                                </span>
+                              </div>
+                              {affectation.commentaire && (
+                                <span className="text-muted-foreground">
+                                  • {affectation.commentaire}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Statut et badges */}
+                          <div className="flex flex-col items-end gap-2">
+                            {estActif && (
+                              <Badge className="bg-green-100 text-green-800 border-green-200">
+                                <CheckCircle2 className="size-3 mr-1" />
+                                En cours
+                              </Badge>
+                            )}
+                            {estFutur && (
+                              <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                                <Clock className="size-3 mr-1" />
+                                À venir
+                              </Badge>
+                            )}
+                            {estPasse && (
+                              <Badge variant="outline" className="text-muted-foreground">
+                                Terminée
+                              </Badge>
+                            )}
+                            <Badge
+                              variant="outline"
+                              className={
+                                affectation.materiel.statut === "DISPONIBLE"
+                                  ? "border-green-300 text-green-700"
+                                  : affectation.materiel.statut === "EN_SERVICE"
+                                  ? "border-blue-300 text-blue-700"
+                                  : affectation.materiel.statut === "EN_MAINTENANCE"
+                                  ? "border-orange-300 text-orange-700"
+                                  : "border-red-300 text-red-700"
+                              }
+                            >
+                              {affectation.materiel.statut === "DISPONIBLE" && "Disponible"}
+                              {affectation.materiel.statut === "EN_SERVICE" && "En service"}
+                              {affectation.materiel.statut === "EN_MAINTENANCE" && "Maintenance"}
+                              {affectation.materiel.statut === "HORS_SERVICE" && "Hors service"}
+                            </Badge>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Truck className="size-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-semibold mb-2">
+                  Aucune ressource affectée
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Ce projet n'a pas encore de matériel ou d'engins affectés.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  La gestion des affectations de matériel se fait via le module{" "}
+                  <span className="font-medium">M13 — Logistique</span>
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Note informative */}
+          <Card className="border-blue-200 bg-blue-50/50">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="size-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium text-blue-900 mb-1">
+                    Gestion via le module Logistique
+                  </p>
+                  <p className="text-blue-800">
+                    L'affectation et la désaffectation de matériel se font via le module{" "}
+                    <span className="font-medium">M13 — Logistique</span>.
+                    Cet onglet affiche uniquement les ressources actuellement liées au projet.
                   </p>
                 </div>
               </div>
