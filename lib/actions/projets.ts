@@ -1471,6 +1471,241 @@ export const supprimerDocumentProjet = actionProtegee(
 );
 
 // =====================================================================
+// RISQUES ET INCIDENTS
+// =====================================================================
+
+/**
+ * Créer un risque ou incident
+ */
+export const creerRisqueIncident = actionProtegee(
+  "projet:modifier",
+  async (
+    session,
+    input: {
+      projetId: string;
+      type: "RISQUE" | "INCIDENT";
+      gravite: "FAIBLE" | "MOYENNE" | "ELEVEE" | "CRITIQUE";
+      titre: string;
+      description?: string;
+      mesures?: string;
+      responsableId?: string;
+    }
+  ) => {
+    const projet = await prisma.projet.findUnique({
+      where: { id: input.projetId },
+      select: { code: true },
+    });
+
+    if (!projet) {
+      throw new Error("Projet introuvable");
+    }
+
+    const risque = await prisma.$transaction(async (tx) => {
+      const nouveau = await tx.risqueIncident.create({
+        data: {
+          projetId: input.projetId,
+          type: input.type,
+          gravite: input.gravite,
+          titre: input.titre,
+          description: input.description,
+          mesures: input.mesures,
+          responsableId: input.responsableId,
+          creePar: session.userId,
+        },
+        include: {
+          responsable: {
+            select: {
+              nom: true,
+              prenom: true,
+            },
+          },
+        },
+      });
+
+      await tx.journalEvenement.create({
+        data: {
+          entite: "RisqueIncident",
+          entiteId: nouveau.id,
+          action: "CREATION",
+          auteurId: session.userId,
+          auteurNom: session.email,
+          commentaire: `${input.type === "RISQUE" ? "Risque" : "Incident"} créé — Projet ${projet.code} : ${input.titre}`,
+        },
+      });
+
+      return nouveau;
+    });
+
+    revalidatePath(`/projets/${input.projetId}`);
+    return risque;
+  }
+);
+
+/**
+ * Modifier un risque ou incident
+ */
+export const modifierRisqueIncident = actionProtegee(
+  "projet:modifier",
+  async (
+    session,
+    risqueId: string,
+    input: {
+      gravite?: "FAIBLE" | "MOYENNE" | "ELEVEE" | "CRITIQUE";
+      titre?: string;
+      description?: string;
+      mesures?: string;
+      responsableId?: string;
+    }
+  ) => {
+    const risque = await prisma.risqueIncident.findUnique({
+      where: { id: risqueId },
+      include: { projet: true },
+    });
+
+    if (!risque) {
+      throw new Error("Risque/incident introuvable");
+    }
+
+    const risqueMaj = await prisma.$transaction(async (tx) => {
+      const maj = await tx.risqueIncident.update({
+        where: { id: risqueId },
+        data: input,
+        include: {
+          responsable: {
+            select: {
+              nom: true,
+              prenom: true,
+            },
+          },
+        },
+      });
+
+      await tx.journalEvenement.create({
+        data: {
+          entite: "RisqueIncident",
+          entiteId: risqueId,
+          action: "MODIFICATION",
+          auteurId: session.userId,
+          auteurNom: session.email,
+          commentaire: `${risque.type === "RISQUE" ? "Risque" : "Incident"} modifié — Projet ${risque.projet.code} : ${risque.titre}`,
+        },
+      });
+
+      return maj;
+    });
+
+    revalidatePath(`/projets/${risque.projetId}`);
+    return risqueMaj;
+  }
+);
+
+/**
+ * Changer le statut d'un risque/incident
+ */
+export const changerStatutRisqueIncident = actionProtegee(
+  "projet:modifier",
+  async (
+    session,
+    risqueId: string,
+    nouveauStatut: "OUVERT" | "EN_TRAITEMENT" | "RESOLU" | "CLOTURE"
+  ) => {
+    const risque = await prisma.risqueIncident.findUnique({
+      where: { id: risqueId },
+      include: { projet: true },
+    });
+
+    if (!risque) {
+      throw new Error("Risque/incident introuvable");
+    }
+
+    const risqueMaj = await prisma.$transaction(async (tx) => {
+      const maj = await tx.risqueIncident.update({
+        where: { id: risqueId },
+        data: {
+          statut: nouveauStatut,
+          dateResolution:
+            nouveauStatut === "RESOLU" || nouveauStatut === "CLOTURE"
+              ? new Date()
+              : null,
+        },
+        include: {
+          responsable: {
+            select: {
+              nom: true,
+              prenom: true,
+            },
+          },
+        },
+      });
+
+      const statutsLabels = {
+        OUVERT: "ouvert",
+        EN_TRAITEMENT: "en traitement",
+        RESOLU: "résolu",
+        CLOTURE: "clôturé",
+      };
+
+      await tx.journalEvenement.create({
+        data: {
+          entite: "RisqueIncident",
+          entiteId: risqueId,
+          action: "MODIFICATION",
+          auteurId: session.userId,
+          auteurNom: session.email,
+          commentaire: `${risque.type === "RISQUE" ? "Risque" : "Incident"} passé à "${statutsLabels[nouveauStatut]}" — Projet ${risque.projet.code} : ${risque.titre}`,
+        },
+      });
+
+      return maj;
+    });
+
+    revalidatePath(`/projets/${risque.projetId}`);
+    return risqueMaj;
+  }
+);
+
+/**
+ * Supprimer un risque ou incident
+ */
+export const supprimerRisqueIncident = actionProtegee(
+  "projet:modifier",
+  async (session, risqueId: string) => {
+    const risque = await prisma.risqueIncident.findUnique({
+      where: { id: risqueId },
+      include: { projet: true },
+    });
+
+    if (!risque) {
+      throw new Error("Risque/incident introuvable");
+    }
+
+    const projetId = risque.projetId;
+    const projetCode = risque.projet.code;
+    const titre = risque.titre;
+    const type = risque.type;
+
+    await prisma.$transaction(async (tx) => {
+      await tx.risqueIncident.delete({
+        where: { id: risqueId },
+      });
+
+      await tx.journalEvenement.create({
+        data: {
+          entite: "RisqueIncident",
+          entiteId: risqueId,
+          action: "SUPPRESSION",
+          auteurId: session.userId,
+          auteurNom: session.email,
+          commentaire: `${type === "RISQUE" ? "Risque" : "Incident"} supprimé — Projet ${projetCode} : ${titre}`,
+        },
+      });
+    });
+
+    revalidatePath(`/projets/${projetId}`);
+  }
+);
+
+// =====================================================================
 // AFFECTATIONS CHANTIER
 // =====================================================================
 
@@ -1819,6 +2054,21 @@ export const obtenirProjet = actionProtegee(
           orderBy: { datePrevisionnelle: "asc" },
           include: {
             document: true,
+          },
+        },
+        documents: {
+          orderBy: { deposeLe: "desc" },
+        },
+        risquesIncidents: {
+          orderBy: { dateIdentification: "desc" },
+          include: {
+            responsable: {
+              select: {
+                id: true,
+                nom: true,
+                prenom: true,
+              },
+            },
           },
         },
         taches: {
