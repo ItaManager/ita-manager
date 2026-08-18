@@ -18,15 +18,16 @@ import {
   Pencil,
   Search,
   ChevronRight,
+  Users,
 } from "lucide-react";
 import { StatutProjet } from "@prisma/client";
 import { format, differenceInDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import { ModalAffecterEmploye } from "../_components/modal-affecter-employe";
-import { ModalComposerEquipe } from "../_components/modal-composer-equipe";
 import { ModaleEditionChamp } from "../_components/modale-edition-champ";
 import { ModaleAssignerConducteur } from "../_components/modale-assigner-conducteur";
 import { ModalTache } from "../_components/modal-tache";
+import { ModalAffecterEquipeRapide } from "../_components/modal-affecter-equipe-rapide";
 
 interface PageDetailProjetProps {
   params: Promise<{ id: string }>;
@@ -56,6 +57,8 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
   const ITEMS_PAR_PAGE = 10;
   const [modalTacheOuverte, setModalTacheOuverte] = useState(false);
   const [tacheSelectionnee, setTacheSelectionnee] = useState<any>(null);
+  const [modalEquipeRapideOuverte, setModalEquipeRapideOuverte] = useState(false);
+  const [tachePourEquipe, setTachePourEquipe] = useState<any>(null);
 
   useEffect(() => {
     chargerProjet();
@@ -96,6 +99,21 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
   function handleSuccesTache() {
     chargerProjet();
     fermerModalTache();
+  }
+
+  function ouvrirModalEquipeRapide(tache: any) {
+    setTachePourEquipe(tache);
+    setModalEquipeRapideOuverte(true);
+  }
+
+  function fermerModalEquipeRapide() {
+    setModalEquipeRapideOuverte(false);
+    setTachePourEquipe(null);
+  }
+
+  function handleSuccesEquipe() {
+    chargerProjet();
+    fermerModalEquipeRapide();
   }
 
   if (loading) {
@@ -478,6 +496,9 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground uppercase">
                     Écart
                   </th>
+                  <th className="text-center py-3 px-4 text-sm font-medium text-muted-foreground uppercase w-[120px]">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -532,13 +553,27 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                             "—"
                           )}
                         </td>
+                        <td
+                          className="py-3 px-4 text-center"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => ouvrirModalEquipeRapide(tache)}
+                            className="h-8 w-8 p-0"
+                            title="Composer l'équipe rapidement"
+                          >
+                            <Users className="size-4" />
+                          </Button>
+                        </td>
                       </tr>
                     );
                   })
                 ) : (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="py-12 text-center text-sm text-muted-foreground"
                     >
                       Aucune tâche créée
@@ -852,24 +887,13 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
           {/* Section Équipes sur site */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <h2 className="text-xl font-semibold">Équipes sur site</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Équipes ITA et lots sous-traités. Deux natures, deux
-                  traitements.
-                </p>
-              </div>
-              <ModalComposerEquipe
-                projetId={projet.id}
-                projetCode={projet.code}
-                projetNom={projet.nom}
-              >
-                <Button className="gap-2 h-10 px-4 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground transition-all">
-                  <Plus className="size-4" />
-                  Composer une équipe
-                </Button>
-              </ModalComposerEquipe>
+            <div className="mb-2">
+              <h2 className="text-xl font-semibold">Équipes sur site</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Encadrants affectés au projet. Pour affecter des journaliers
+                à une tâche, utilisez le bouton{" "}
+                <Users className="inline size-3.5" /> dans l'onglet Avancement.
+              </p>
             </div>
           </div>
 
@@ -946,6 +970,20 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
         onFermer={fermerModalTache}
         onSuccess={handleSuccesTache}
       />
+
+      {/* Modal d'affectation rapide d'équipe */}
+      {tachePourEquipe && (
+        <ModalAffecterEquipeRapide
+          tacheId={tachePourEquipe.id}
+          tacheLibelle={tachePourEquipe.libelle}
+          employeIdsActuels={
+            tachePourEquipe.affectations?.map((a: any) => a.employeId) || []
+          }
+          ouvert={modalEquipeRapideOuverte}
+          onFermer={fermerModalEquipeRapide}
+          onSuccess={handleSuccesEquipe}
+        />
+      )}
     </div>
   );
 }

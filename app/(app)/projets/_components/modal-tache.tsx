@@ -104,6 +104,11 @@ export function ModalTache({
     }
   }
 
+  // Filtrer les journaliers pour les affectations
+  const journaliers = employes.filter(
+    (emp) => emp.typeMainOeuvre === "JOURNALIER"
+  );
+
   async function onSubmit(data: FormulaireTache) {
     setChargement(true);
     try {
@@ -280,9 +285,9 @@ export function ModalTache({
             />
           </div>
 
-          {/* Employés affectés */}
+          {/* Employés affectés (journaliers uniquement) */}
           <div>
-            <Label>Employés affectés</Label>
+            <Label>Employés affectés (journaliers)</Label>
             <Combobox
               value=""
               onChange={(value) => {
@@ -290,13 +295,13 @@ export function ModalTache({
                   setEmployeIds([...employeIds, value]);
                 }
               }}
-              options={employes
+              options={journaliers
                 .filter((emp) => !employeIds.includes(emp.id))
                 .map((emp) => ({
                   value: emp.id,
                   label: `${emp.prenom} ${emp.nom}`,
                 }))}
-              placeholder="Ajouter un employé"
+              placeholder="Ajouter un journalier"
               searchPlaceholder="Rechercher..."
             />
             {employeIds.length > 0 && (
