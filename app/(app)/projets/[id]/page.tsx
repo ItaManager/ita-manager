@@ -26,6 +26,7 @@ import {
   Paperclip,
   Link2,
   BarChart3,
+  FileText,
 } from "lucide-react";
 import { StatutProjet } from "@prisma/client";
 import { format, differenceInDays } from "date-fns";
@@ -36,6 +37,7 @@ import { ModaleAssignerConducteur } from "../_components/modale-assigner-conduct
 import { ModalTache } from "../_components/modal-tache";
 import { ModalAffecterEquipeRapide } from "../_components/modal-affecter-equipe-rapide";
 import { ModalJalon } from "../_components/modal-jalon";
+import { ModalNote } from "../_components/modal-note";
 import { AlertDialogConfirm } from "@/components/ui/alert-dialog-confirm";
 import { GanttChart } from "../_components/gantt-chart";
 
@@ -60,7 +62,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
   const [projet, setProjet] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [ongletActif, setOngletActif] = useState<
-    "avancement" | "equipes" | "budget" | "jalons" | "planning"
+    "avancement" | "equipes" | "budget" | "jalons" | "planning" | "notes"
   >("avancement");
   const [rechercheAffectation, setRechercheAffectation] = useState("");
   const [pageAffectation, setPageAffectation] = useState(1);
@@ -72,6 +74,8 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
   const [jalonEnCoursValidation, setJalonEnCoursValidation] = useState<string | null>(null);
   const [confirmationValidationOuverte, setConfirmationValidationOuverte] = useState(false);
   const [jalonAValider, setJalonAValider] = useState<{ id: string; libelle: string } | null>(null);
+  const [modalNoteOuverte, setModalNoteOuverte] = useState(false);
+  const [noteSelectionnee, setNoteSelectionnee] = useState<any>(null);
 
   useEffect(() => {
     chargerProjet();
@@ -167,6 +171,26 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
       setJalonEnCoursValidation(null);
       setJalonAValider(null);
     }
+  }
+
+  function ouvrirModalCreationNote() {
+    setNoteSelectionnee(null);
+    setModalNoteOuverte(true);
+  }
+
+  function ouvrirModalEditionNote(note: any) {
+    setNoteSelectionnee(note);
+    setModalNoteOuverte(true);
+  }
+
+  function fermerModalNote() {
+    setModalNoteOuverte(false);
+    setNoteSelectionnee(null);
+  }
+
+  function handleSuccesNote() {
+    chargerProjet();
+    fermerModalNote();
   }
 
   if (loading) {
@@ -533,6 +557,21 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             <BarChart3 className="size-4 inline mr-2" />
             Planning
             {ongletActif === "planning" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+            )}
+          </button>
+
+          <button
+            onClick={() => setOngletActif("notes")}
+            className={`pb-3 px-2 text-sm font-medium transition-colors relative ${
+              ongletActif === "notes"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <FileText className="size-4 inline mr-2" />
+            Notes ({projet?.notes?.length || 0})
+            {ongletActif === "notes" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
           </button>
@@ -1364,6 +1403,126 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
         </div>
       )}
 
+      {/* Onglet Notes */}
+      {ongletActif === "notes" && (
+        <div className="space-y-6">
+          {/* En-tête */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold">Notes et observations</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Journal de bord du projet
+              </p>
+            </div>
+            <Button
+              onClick={ouvrirModalCreationNote}
+              className="gap-2 rounded-full bg-[#13850b] hover:bg-[#0f6909] text-white"
+            >
+              <Plus className="size-4" />
+              Nouvelle note
+            </Button>
+          </div>
+
+          {/* Liste des notes */}
+          <Card>
+            <CardContent className="p-6">
+              {!projet.notes || projet.notes.length === 0 ? (
+                <div className="py-12 text-center">
+                  <FileText className="size-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                  <p className="text-muted-foreground mb-2">
+                    Aucune note enregistrée
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Ajoutez des observations, comptes-rendus ou notes techniques
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {projet.notes.map((note: any) => {
+                    const typeLabels: Record<string, string> = {
+                      GENERALE: "Générale",
+                      TECHNIQUE: "Technique",
+                      QUALITE: "Qualité",
+                      SECURITE: "Sécurité",
+                      ADMINISTRATIVE: "Administrative",
+                      REUNION: "Réunion",
+                    };
+
+                    const typeColors: Record<string, string> = {
+                      GENERALE: "#6B7280",
+                      TECHNIQUE: "#3B82F6",
+                      QUALITE: "#10B981",
+                      SECURITE: "#EF4444",
+                      ADMINISTRATIVE: "#8B5CF6",
+                      REUNION: "#F59E0B",
+                    };
+
+                    return (
+                      <div
+                        key={note.id}
+                        className="rounded-lg border p-4 hover:bg-muted/30 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center gap-2">
+                              {note.epinglee && (
+                                <div className="size-2 rounded-full bg-[#13850b]" />
+                              )}
+                              {note.titre && (
+                                <h3 className="font-semibold text-base">{note.titre}</h3>
+                              )}
+                              <Badge
+                                style={{
+                                  backgroundColor: `${typeColors[note.type]}20`,
+                                  color: typeColors[note.type],
+                                }}
+                                className="text-xs"
+                              >
+                                {typeLabels[note.type]}
+                              </Badge>
+                            </div>
+
+                            <p className="text-sm whitespace-pre-wrap">
+                              {note.contenu}
+                            </p>
+
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1.5">
+                                <User className="size-3" />
+                                <span>
+                                  {note.auteur.prenom} {note.auteur.nom}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <Clock className="size-3" />
+                                <span>
+                                  {format(new Date(note.creeLe), "dd MMM yyyy à HH:mm", { locale: fr })}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Button
+                              onClick={() => ouvrirModalEditionNote(note)}
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                            >
+                              <Pencil className="size-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Modal de gestion des tâches */}
       <ModalTache
         projetId={projet.id}
@@ -1396,6 +1555,16 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
         labelConfirm="Valider"
         labelCancel="Annuler"
       />
+
+      {/* Modal de gestion des notes */}
+      {modalNoteOuverte && (
+        <ModalNote
+          projetId={projet.id}
+          note={noteSelectionnee}
+          onClose={fermerModalNote}
+          onSuccess={handleSuccesNote}
+        />
+      )}
     </div>
   );
 }
