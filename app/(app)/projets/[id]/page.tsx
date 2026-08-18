@@ -42,6 +42,7 @@ import { ModalTache } from "../_components/modal-tache";
 import { ModalAffecterEquipeRapide } from "../_components/modal-affecter-equipe-rapide";
 import { ModalJalon } from "../_components/modal-jalon";
 import { ModalNote } from "../_components/modal-note";
+import { ModalRisque } from "../_components/modal-risque";
 import { AlertDialogConfirm } from "@/components/ui/alert-dialog-confirm";
 import { GanttChart } from "../_components/gantt-chart";
 
@@ -80,6 +81,8 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
   const [jalonAValider, setJalonAValider] = useState<{ id: string; libelle: string } | null>(null);
   const [modalNoteOuverte, setModalNoteOuverte] = useState(false);
   const [noteSelectionnee, setNoteSelectionnee] = useState<any>(null);
+  const [modalRisqueOuverte, setModalRisqueOuverte] = useState(false);
+  const [risqueSelectionne, setRisqueSelectionne] = useState<any>(null);
 
   useEffect(() => {
     chargerProjet();
@@ -195,6 +198,26 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
   function handleSuccesNote() {
     chargerProjet();
     fermerModalNote();
+  }
+
+  function ouvrirModalCreationRisque() {
+    setRisqueSelectionne(null);
+    setModalRisqueOuverte(true);
+  }
+
+  function ouvrirModalEditionRisque(risque: any) {
+    setRisqueSelectionne(risque);
+    setModalRisqueOuverte(true);
+  }
+
+  function fermerModalRisque() {
+    setModalRisqueOuverte(false);
+    setRisqueSelectionne(null);
+  }
+
+  function handleSuccesRisque() {
+    chargerProjet();
+    fermerModalRisque();
   }
 
   if (loading) {
@@ -1690,6 +1713,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
               </p>
             </div>
             <Button
+              onClick={ouvrirModalCreationRisque}
               className="gap-2 rounded-full bg-[#13850b] hover:bg-[#0f6909] text-white"
             >
               <Plus className="size-4" />
@@ -1804,6 +1828,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
                           <div className="flex items-center gap-2">
                             <Button
+                              onClick={() => ouvrirModalEditionRisque(risque)}
                               variant="ghost"
                               size="sm"
                               className="h-8 w-8 p-0"
@@ -1862,6 +1887,16 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
           note={noteSelectionnee}
           onClose={fermerModalNote}
           onSuccess={handleSuccesNote}
+        />
+      )}
+
+      {/* Modal de gestion des risques/incidents */}
+      {modalRisqueOuverte && (
+        <ModalRisque
+          projetId={projet.id}
+          risque={risqueSelectionne}
+          onClose={fermerModalRisque}
+          onSuccess={handleSuccesRisque}
         />
       )}
     </div>
