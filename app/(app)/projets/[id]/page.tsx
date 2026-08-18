@@ -2,7 +2,8 @@
 
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { obtenirProjet } from "@/lib/actions/projets";
+import { obtenirProjet, validerJalonRapide } from "@/lib/actions/projets";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -65,6 +66,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
   const [tacheSelectionnee, setTacheSelectionnee] = useState<any>(null);
   const [modalJalonOuverte, setModalJalonOuverte] = useState(false);
   const [jalonSelectionne, setJalonSelectionne] = useState<any>(null);
+  const [jalonEnCoursValidation, setJalonEnCoursValidation] = useState<string | null>(null);
 
   useEffect(() => {
     chargerProjet();
@@ -125,6 +127,23 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
   function handleSuccesJalon() {
     chargerProjet();
     fermerModalJalon();
+  }
+
+  async function handleValiderJalon(jalonId: string, jalonLibelle: string) {
+    if (!confirm(`Confirmer la validation du jalon "${jalonLibelle}" ?`)) {
+      return;
+    }
+
+    setJalonEnCoursValidation(jalonId);
+    try {
+      await validerJalonRapide(jalonId);
+      toast.success("Jalon validé avec succès");
+      await chargerProjet();
+    } catch (error: any) {
+      toast.error(error.message || "Erreur lors de la validation");
+    } finally {
+      setJalonEnCoursValidation(null);
+    }
   }
 
   if (loading) {
@@ -1194,17 +1213,40 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                                 </div>
                               </div>
 
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  ouvrirModalEditionJalon(jalon);
-                                }}
-                              >
-                                <Pencil className="size-4" />
-                              </Button>
+                              <div className="flex items-center gap-2">
+                                {/* Bouton Valider (visible uniquement si ATTENTE) */}
+                                {estEnAttente && (
+                                  <Button
+                                    size="sm"
+                                    disabled={jalonEnCoursValidation === jalon.id}
+                                    className="h-8 px-3 text-xs bg-[#13850b] hover:bg-[#0f6909] text-white rounded-full"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleValiderJalon(jalon.id, jalon.libelle);
+                                    }}
+                                  >
+                                    {jalonEnCoursValidation === jalon.id ? (
+                                      <CheckCircle2 className="size-3 mr-1 animate-spin" />
+                                    ) : (
+                                      <CheckCircle2 className="size-3 mr-1" />
+                                    )}
+                                    Valider
+                                  </Button>
+                                )}
+
+                                {/* Bouton Modifier */}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    ouvrirModalEditionJalon(jalon);
+                                  }}
+                                >
+                                  <Pencil className="size-4" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </div>

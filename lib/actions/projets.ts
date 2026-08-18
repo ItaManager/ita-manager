@@ -1269,6 +1269,54 @@ export const supprimerDocumentJalon = actionProtegee(
   }
 );
 
+/**
+ * Valider un jalon rapidement (passage ATTENTE → VALIDÉ)
+ */
+export const validerJalonRapide = actionProtegee(
+  "projet:modifier",
+  async (session, jalonId: string) => {
+    const jalon = await prisma.jalon.findUnique({
+      where: { id: jalonId },
+      include: {
+        projet: true,
+      },
+    });
+
+    if (!jalon) {
+      throw new Error("Jalon introuvable");
+    }
+
+    if (jalon.statut !== "ATTENTE") {
+      throw new Error(`Ce jalon est déjà ${jalon.statut === "VALIDE" ? "validé" : "abandonné"}`);
+    }
+
+    // Mise à jour du statut
+    const jalonValide = await prisma.jalon.update({
+      where: { id: jalonId },
+      data: {
+        statut: "VALIDE",
+        valideLe: new Date(),
+        validePar: session.userId,
+      },
+    });
+
+    // Journaliser
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "Jalon",
+        entiteId: jalonId,
+        action: "MODIFICATION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        commentaire: `Jalon validé : ${jalon.libelle}`,
+      },
+    });
+
+    revalidatePath(`/projets/${jalon.projetId}`);
+    return jalonValide;
+  }
+);
+
 // =====================================================================
 // AFFECTATIONS CHANTIER
 // =====================================================================
