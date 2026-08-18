@@ -611,167 +611,130 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
       )}
 
       {/* Onglets */}
-      <Card>
-        <CardContent className="p-0">
-          <div className="border-b">
-            <div className="flex items-center gap-6 px-4">
+      <div className="bg-neutral-100/50 rounded-full p-1">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => setOngletActif("tableau-bord")}
-            className={`pb-3 px-2 text-sm font-medium transition-colors relative ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
               ongletActif === "tableau-bord"
-                ? "text-primary"
+                ? "bg-white text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Tableau
-            {ongletActif === "tableau-bord" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-            )}
           </button>
 
           <button
             onClick={() => setOngletActif("avancement")}
-            className={`pb-3 px-2 text-sm font-medium transition-colors relative ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
               ongletActif === "avancement"
-                ? "text-primary"
+                ? "bg-white text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Avancement
-            {ongletActif === "avancement" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-            )}
           </button>
 
           <button
             onClick={() => setOngletActif("equipes")}
-            className={`pb-3 px-2 text-sm font-medium transition-colors relative ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
               ongletActif === "equipes"
-                ? "text-primary"
+                ? "bg-white text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Équipes
-            {ongletActif === "equipes" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-            )}
           </button>
 
           <button
             onClick={() => setOngletActif("budget")}
-            className={`pb-3 px-2 text-sm font-medium transition-colors relative ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
               ongletActif === "budget"
-                ? "text-primary"
+                ? "bg-white text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Budget
-            {ongletActif === "budget" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-            )}
           </button>
 
           <button
             onClick={() => setOngletActif("jalons")}
-            className={`pb-3 px-2 text-sm font-medium transition-colors relative ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
               ongletActif === "jalons"
-                ? "text-primary"
+                ? "bg-white text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Jalons
-            {ongletActif === "jalons" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-            )}
           </button>
 
           <button
             onClick={() => setOngletActif("planning")}
-            className={`pb-3 px-2 text-sm font-medium transition-colors relative ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
               ongletActif === "planning"
-                ? "text-primary"
+                ? "bg-white text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Planning
-            {ongletActif === "planning" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-            )}
           </button>
 
           <button
             onClick={() => setOngletActif("notes")}
-            className={`pb-3 px-2 text-sm font-medium transition-colors relative ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
               ongletActif === "notes"
-                ? "text-primary"
+                ? "bg-white text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Notes
-            {ongletActif === "notes" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-            )}
           </button>
 
           <button
             onClick={() => setOngletActif("documents")}
-            className={`pb-3 px-2 text-sm font-medium transition-colors relative ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
               ongletActif === "documents"
-                ? "text-primary"
+                ? "bg-white text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Documents
-            {ongletActif === "documents" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-            )}
           </button>
 
           <button
             onClick={() => setOngletActif("risques")}
-            className={`pb-3 px-2 text-sm font-medium transition-colors relative ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
               ongletActif === "risques"
-                ? "text-primary"
+                ? "bg-white text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Risques
-            {ongletActif === "risques" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-            )}
           </button>
 
           <button
             onClick={() => setOngletActif("photos")}
-            className={`pb-3 px-2 text-sm font-medium transition-colors relative ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
               ongletActif === "photos"
-                ? "text-primary"
+                ? "bg-white text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Photos
-            {ongletActif === "photos" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-            )}
           </button>
 
           <button
             onClick={() => setOngletActif("ressources")}
-            className={`pb-3 px-2 text-sm font-medium transition-colors relative ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
               ongletActif === "ressources"
-                ? "text-primary"
+                ? "bg-white text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Ressources
-            {ongletActif === "ressources" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-            )}
           </button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Contenu de l'onglet Tableau de bord */}
       {ongletActif === "tableau-bord" && (
