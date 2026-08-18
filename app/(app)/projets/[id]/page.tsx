@@ -143,12 +143,24 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
     setConfirmationValidationOuverte(false);
     setJalonEnCoursValidation(jalonAValider.id);
 
+    // Mutation optimiste : mise à jour immédiate de l'UI
+    setProjet((prev: any) => ({
+      ...prev,
+      jalons: prev.jalons.map((j: any) =>
+        j.id === jalonAValider.id
+          ? { ...j, statut: "VALIDE", valideLe: new Date() }
+          : j
+      ),
+    }));
+
     try {
       await validerJalonRapide(jalonAValider.id);
       toast.success("Jalon validé avec succès");
-      await chargerProjet();
+      // Pas besoin de recharger, l'UI est déjà à jour
     } catch (error: any) {
       toast.error(error.message || "Erreur lors de la validation");
+      // En cas d'erreur, recharger pour avoir l'état correct
+      await chargerProjet();
     } finally {
       setJalonEnCoursValidation(null);
       setJalonAValider(null);
