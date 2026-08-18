@@ -33,6 +33,7 @@ import {
   AlertTriangle,
   Truck,
   Camera,
+  DollarSign,
 } from "lucide-react";
 import { StatutProjet } from "@prisma/client";
 import { format, differenceInDays } from "date-fns";
@@ -1461,104 +1462,185 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
       {ongletActif === "budget" && (
         <div className="space-y-6">
+          {/* En-tête */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold">Budget projet</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Suivi financier et postes de dépenses
+              </p>
+            </div>
+          </div>
+
           {/* Vue d'ensemble financière */}
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardContent className="p-6">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
-                  Montant du marché
-                </p>
-                <p className="text-3xl font-bold text-[#13850b]">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm text-muted-foreground uppercase tracking-wide">
+                    Montant du marché
+                  </p>
+                  <DollarSign className="size-5 text-muted-foreground" />
+                </div>
+                <p className="text-3xl font-bold tabular-nums text-[#13850b]">
                   {projet.montantMarche
                     ? new Intl.NumberFormat("fr-FR", {
-                        style: "currency",
-                        currency: "XOF",
                         minimumFractionDigits: 0,
-                      }).format(projet.montantMarche)
-                    : "Non défini"}
+                        maximumFractionDigits: 0,
+                      }).format(Number(projet.montantMarche))
+                    : "—"}
                 </p>
-                <div className="mt-4 flex items-center gap-2">
+                <p className="text-xs text-muted-foreground mt-1">FCFA</p>
+                <div className="mt-4">
                   <ModaleEditionChamp
                     projetId={projet.id}
                     champ="montantMarche"
-                    label="Montant du marché"
+                    label="Montant du marché (FCFA)"
                     valeurActuelle={projet.montantMarche}
                     type="number"
                     onSuccess={chargerProjet}
                   />
-                  <span className="text-xs text-muted-foreground">
-                    Modifier
-                  </span>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardContent className="p-6">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
-                  Budget prévisionnel
-                </p>
-                <p className="text-3xl font-bold text-blue-600">
-                  {projet.budgetPrevisionnel
-                    ? new Intl.NumberFormat("fr-FR", {
-                        style: "currency",
-                        currency: "XOF",
-                        minimumFractionDigits: 0,
-                      }).format(projet.budgetPrevisionnel)
-                    : "—"}
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Estimation interne
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
-                  Marge prévisionnelle
-                </p>
-                <p className="text-3xl font-bold">
-                  {projet.montantMarche && projet.budgetPrevisionnel
-                    ? new Intl.NumberFormat("fr-FR", {
-                        style: "currency",
-                        currency: "XOF",
-                        minimumFractionDigits: 0,
-                      }).format(projet.montantMarche - projet.budgetPrevisionnel)
-                    : "—"}
-                </p>
-                {projet.montantMarche && projet.budgetPrevisionnel && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {(
-                      ((projet.montantMarche - projet.budgetPrevisionnel) /
-                        projet.montantMarche) *
-                      100
-                    ).toFixed(1)}{" "}
-                    % du marché
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm text-muted-foreground uppercase tracking-wide">
+                    Avancement projet
                   </p>
+                  <TrendingUp className="size-5 text-muted-foreground" />
+                </div>
+                <p className="text-3xl font-bold tabular-nums">
+                  {avancementAffiche} %
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">Avancement constaté</p>
+                {projet.montantMarche && (
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Valeur réalisée estimée</span>
+                      <span className="font-semibold tabular-nums">
+                        {new Intl.NumberFormat("fr-FR", {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        }).format((Number(projet.montantMarche) * avancementAffiche) / 100)} F
+                      </span>
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>
           </div>
 
-          {/* Section Suivi budgétaire */}
+          {/* Répartition par poste */}
           <Card>
             <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-4">
-                Suivi budgétaire détaillé
-              </h3>
-              <div className="rounded-lg bg-muted/30 p-8 text-center">
-                <Building2 className="size-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-                <p className="text-sm text-muted-foreground mb-2">
-                  Le suivi des dépenses réelles sera disponible avec
-                  l'intégration des modules suivants :
-                </p>
-                <ul className="text-sm text-muted-foreground space-y-1 max-w-md mx-auto">
-                  <li>• M8 - Achats (matériaux, fournitures)</li>
-                  <li>• M9 - Transports (location véhicules)</li>
-                  <li>• M19 - Relevés d'activité (main d'œuvre)</li>
-                  <li>• M21 - Paie (charges salariales)</li>
-                </ul>
+              <h3 className="text-lg font-semibold mb-4">Répartition budgétaire indicative</h3>
+
+              <div className="space-y-4">
+                {/* Main d'œuvre */}
+                <div className="flex items-center justify-between py-3 border-b">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                    <div>
+                      <p className="font-medium">Main d'œuvre</p>
+                      <p className="text-xs text-muted-foreground">
+                        {projet.affectations?.filter((a: any) => !a.dateFin).length || 0} personnes actuellement affectées
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold tabular-nums">30 %</p>
+                    <p className="text-xs text-muted-foreground">Estimation standard</p>
+                  </div>
+                </div>
+
+                {/* Matériaux */}
+                <div className="flex items-center justify-between py-3 border-b">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <div>
+                      <p className="font-medium">Matériaux et fournitures</p>
+                      <p className="text-xs text-muted-foreground">
+                        Dépenses à suivre via module M8 Achats
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold tabular-nums">40 %</p>
+                    <p className="text-xs text-muted-foreground">Estimation standard</p>
+                  </div>
+                </div>
+
+                {/* Matériel */}
+                <div className="flex items-center justify-between py-3 border-b">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-orange-500" />
+                    <div>
+                      <p className="font-medium">Matériel et engins</p>
+                      <p className="text-xs text-muted-foreground">
+                        {projet.affectationsMateriel?.filter((a: any) => {
+                          const now = new Date();
+                          return new Date(a.dateDebut) <= now && new Date(a.dateFin) >= now;
+                        }).length || 0} équipements actuellement affectés
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold tabular-nums">15 %</p>
+                    <p className="text-xs text-muted-foreground">Estimation standard</p>
+                  </div>
+                </div>
+
+                {/* Sous-traitance */}
+                <div className="flex items-center justify-between py-3 border-b">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-purple-500" />
+                    <div>
+                      <p className="font-medium">Sous-traitance</p>
+                      <p className="text-xs text-muted-foreground">
+                        Prestations externes
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold tabular-nums">10 %</p>
+                    <p className="text-xs text-muted-foreground">Estimation standard</p>
+                  </div>
+                </div>
+
+                {/* Divers */}
+                <div className="flex items-center justify-between py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-gray-500" />
+                    <div>
+                      <p className="font-medium">Divers et imprévus</p>
+                      <p className="text-xs text-muted-foreground">
+                        Frais administratifs, transport, etc.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold tabular-nums">5 %</p>
+                    <p className="text-xs text-muted-foreground">Estimation standard</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Note explicative */}
+              <div className="mt-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="size-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm">
+                    <p className="font-medium text-orange-900 mb-1">Suivi des dépenses réelles à venir</p>
+                    <p className="text-orange-800">
+                      Le suivi détaillé des dépenses sera disponible avec l'intégration des modules :
+                      M8 (Achats), M9 (Transports), M19 (Relevés d'activité), M21 (Paie).
+                      Les pourcentages ci-dessus sont des estimations standards pour le BTP en Côte d'Ivoire.
+                    </p>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
