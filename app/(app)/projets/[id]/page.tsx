@@ -2690,6 +2690,8 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
       {/* Modal de demande de ressource */}
       <ModalDemandeRessource
         projetId={projet.id}
+        projetCode={projet.code}
+        projetNom={projet.nom}
         ouvert={modalDemandeRessourceOuverte}
         taches={projet?.taches || []}
         materiels={materielsDisponibles}
