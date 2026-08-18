@@ -382,7 +382,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                   confirmationMessage="Modifier le montant du marché peut impacter les budgets et états financiers. Confirmer ?"
                 />
               </div>
-              <p className="text-xl font-bold text-green-600">
+              <p className="text-xl font-bold text-[#111111]">
                 {projet.montantMarche
                   ? projet.montantMarche.toLocaleString("fr-FR").replace(/,/g, " ")
                   : "Non défini"}
@@ -1513,7 +1513,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                   </p>
                   <DollarSign className="size-4 text-muted-foreground" />
                 </div>
-                <p className="text-xl font-bold tabular-nums text-[#13850b]">
+                <p className="text-xl font-bold tabular-nums text-[#111111]">
                   {projet.montantMarche
                     ? new Intl.NumberFormat("fr-FR", {
                         minimumFractionDigits: 0,
