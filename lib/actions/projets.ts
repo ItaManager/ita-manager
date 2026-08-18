@@ -2742,9 +2742,11 @@ export const creerDemandeRessource = actionProtegee(
       throw new Error("Aucun employé lié à ce profil");
     }
 
+    const employeId = profil.employeId;
+
     // Récupérer le nom de l'employé
     const employe = await prisma.employe.findUnique({
-      where: { id: profil.employeId },
+      where: { id: employeId },
       select: { nom: true, prenom: true },
     });
 
@@ -2754,45 +2756,67 @@ export const creerDemandeRessource = actionProtegee(
 
     const demandeurNom = `${employe.prenom} ${employe.nom}`;
 
-    // Créer la demande avec ses lignes
-    const demande = await prisma.demandeRessource.create({
-      data: {
-        nature: "MATERIELLE",
-        projetId: input.projetId,
-        demandeurId: profil.employeId,
-        demandeurNom,
-        dateDebut: input.dateDebut,
-        dateFin: input.dateFin,
-        motif: input.motif,
-        lieuLivraison: input.lieuLivraison,
-        statut: "BROUILLON",
-        lignes: {
-          create: input.lignes.map((ligne) => ({
-            materielId: ligne.materielId,
-            operateurRequis: ligne.operateurRequis,
-            commentaire: ligne.commentaire,
+    // Filtrer les lignes avec matériel sélectionné
+    const lignesAvecMateriel = input.lignes.filter((l) => l.materielId);
+
+    // Créer la demande avec ses lignes ET les affectations directement
+    const demande = await prisma.$transaction(async (tx) => {
+      // Créer la demande
+      const nouvelleDemande = await tx.demandeRessource.create({
+        data: {
+          nature: "MATERIELLE",
+          projetId: input.projetId,
+          demandeurId: employeId,
+          demandeurNom,
+          dateDebut: input.dateDebut,
+          dateFin: input.dateFin,
+          motif: input.motif,
+          lieuLivraison: input.lieuLivraison,
+          statut: lignesAvecMateriel.length > 0 ? "AFFECTEE" : "BROUILLON",
+          lignes: {
+            create: input.lignes.map((ligne) => ({
+              materielId: ligne.materielId,
+              operateurRequis: ligne.operateurRequis,
+              commentaire: ligne.commentaire,
+            })),
+          },
+          taches: input.tacheIds
+            ? {
+                create: input.tacheIds.map((tacheId) => ({
+                  tacheId,
+                })),
+              }
+            : undefined,
+        },
+        include: {
+          lignes: {
+            include: {
+              materiel: true,
+            },
+          },
+          taches: {
+            include: {
+              tache: true,
+            },
+          },
+        },
+      });
+
+      // Créer les affectations matérielles directement
+      if (lignesAvecMateriel.length > 0) {
+        await tx.affectationMateriel.createMany({
+          data: lignesAvecMateriel.map((ligne) => ({
+            materielId: ligne.materielId!,
+            projetId: input.projetId,
+            dateDebut: input.dateDebut,
+            dateFin: input.dateFin,
+            commentaire: ligne.commentaire || null,
+            affecteParId: employeId,
           })),
-        },
-        taches: input.tacheIds
-          ? {
-              create: input.tacheIds.map((tacheId) => ({
-                tacheId,
-              })),
-            }
-          : undefined,
-      },
-      include: {
-        lignes: {
-          include: {
-            materiel: true,
-          },
-        },
-        taches: {
-          include: {
-            tache: true,
-          },
-        },
-      },
+        });
+      }
+
+      return nouvelleDemande;
     });
 
     revalidatePath(`/projets/${input.projetId}`);
