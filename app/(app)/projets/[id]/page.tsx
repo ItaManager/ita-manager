@@ -128,6 +128,19 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
     ? differenceInDays(new Date(projet.dateFin), new Date())
     : null;
 
+  // Calculs pour l'onglet Équipes
+  const affectationsActives = projet.affectations?.filter(
+    (a: any) => !a.dateFin || new Date(a.dateFin) >= new Date()
+  ) || [];
+
+  const journaliersAffectes = new Set(
+    projet.taches?.flatMap((t: any) =>
+      t.affectations?.map((a: any) => a.employe?.id).filter(Boolean)
+    ) || []
+  ).size;
+
+  const totalAgentsITA = affectationsActives.length + journaliersAffectes;
+
   return (
     <div className="space-y-6 px-[60px] max-w-[1200px] mx-auto py-6">
       {/* Bouton retour */}
@@ -859,40 +872,40 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
               Effectif sur le chantier
             </h2>
 
-            <div className="grid grid-cols-3 gap-6">
-              {/* Agents ITA */}
+            <div className="grid grid-cols-2 gap-6">
+              {/* Encadrants */}
               <Card>
                 <CardContent className="p-6">
                   <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
-                    Agents ITA
+                    Encadrants affectés
                   </p>
-                  <p className="text-4xl font-bold text-green-600">0</p>
+                  <p className="text-4xl font-bold text-[#13850b]">
+                    {affectationsActives.length}
+                  </p>
                   <p className="text-sm text-muted-foreground mt-2">
-                    dont 0 journaliers
+                    {affectationsActives.length === 0
+                      ? "Aucun encadrant"
+                      : affectationsActives.length === 1
+                      ? "Chef de chantier, conducteur..."
+                      : "Chefs de chantier, conducteurs..."}
                   </p>
                 </CardContent>
               </Card>
 
-              {/* Agents prestataires */}
+              {/* Journaliers */}
               <Card>
                 <CardContent className="p-6">
                   <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
-                    Agents prestataires
+                    Journaliers sur tâches
                   </p>
-                  <p className="text-4xl font-bold text-purple-600">0</p>
+                  <p className="text-4xl font-bold text-blue-600">
+                    {journaliersAffectes}
+                  </p>
                   <p className="text-sm text-muted-foreground mt-2">
-                    non suivis nominativement
+                    {journaliersAffectes === 0
+                      ? "Aucun journalier affecté"
+                      : `Affecté${journaliersAffectes > 1 ? 's' : ''} à des tâches actives`}
                   </p>
-                </CardContent>
-              </Card>
-
-              {/* Total */}
-              <Card>
-                <CardContent className="p-6">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
-                    Total sur site
-                  </p>
-                  <p className="text-4xl font-bold">0</p>
                 </CardContent>
               </Card>
             </div>
@@ -901,11 +914,109 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
       )}
 
       {ongletActif === "budget" && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">Suivi budgétaire à venir</p>
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          {/* Vue d'ensemble financière */}
+          <div className="grid grid-cols-3 gap-6">
+            <Card>
+              <CardContent className="p-6">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
+                  Montant du marché
+                </p>
+                <p className="text-3xl font-bold text-[#13850b]">
+                  {projet.montantMarche
+                    ? new Intl.NumberFormat("fr-FR", {
+                        style: "currency",
+                        currency: "XOF",
+                        minimumFractionDigits: 0,
+                      }).format(projet.montantMarche)
+                    : "Non défini"}
+                </p>
+                <div className="mt-4 flex items-center gap-2">
+                  <ModaleEditionChamp
+                    projetId={projet.id}
+                    champ="montantMarche"
+                    label="Montant du marché"
+                    valeurActuelle={projet.montantMarche}
+                    type="number"
+                    onSuccess={chargerProjet}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    Modifier
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
+                  Budget prévisionnel
+                </p>
+                <p className="text-3xl font-bold text-blue-600">
+                  {projet.budgetPrevisionnel
+                    ? new Intl.NumberFormat("fr-FR", {
+                        style: "currency",
+                        currency: "XOF",
+                        minimumFractionDigits: 0,
+                      }).format(projet.budgetPrevisionnel)
+                    : "—"}
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Estimation interne
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
+                  Marge prévisionnelle
+                </p>
+                <p className="text-3xl font-bold">
+                  {projet.montantMarche && projet.budgetPrevisionnel
+                    ? new Intl.NumberFormat("fr-FR", {
+                        style: "currency",
+                        currency: "XOF",
+                        minimumFractionDigits: 0,
+                      }).format(projet.montantMarche - projet.budgetPrevisionnel)
+                    : "—"}
+                </p>
+                {projet.montantMarche && projet.budgetPrevisionnel && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {(
+                      ((projet.montantMarche - projet.budgetPrevisionnel) /
+                        projet.montantMarche) *
+                      100
+                    ).toFixed(1)}{" "}
+                    % du marché
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Section Suivi budgétaire */}
+          <Card>
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold mb-4">
+                Suivi budgétaire détaillé
+              </h3>
+              <div className="rounded-lg bg-muted/30 p-8 text-center">
+                <Building2 className="size-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                <p className="text-sm text-muted-foreground mb-2">
+                  Le suivi des dépenses réelles sera disponible avec
+                  l'intégration des modules suivants :
+                </p>
+                <ul className="text-sm text-muted-foreground space-y-1 max-w-md mx-auto">
+                  <li>• M8 - Achats (matériaux, fournitures)</li>
+                  <li>• M9 - Transports (location véhicules)</li>
+                  <li>• M19 - Relevés d'activité (main d'œuvre)</li>
+                  <li>• M21 - Paie (charges salariales)</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {ongletActif === "jalons" && (
