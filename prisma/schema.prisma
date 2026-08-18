@@ -1326,7 +1326,8 @@ model Jalon {
   statut StatutJalon @default(ATTENTE)
 
   /// Pièce justificative obligatoire pour validation externe
-  pieceId String? @db.Uuid
+  pieceId  String?         @unique @db.Uuid
+  document DocumentJalon?
 
   valideLe  DateTime?
   /// Auteur de la saisie (distinct du validateur externe)
@@ -1335,6 +1336,31 @@ model Jalon {
   creeLe DateTime @default(now())
 
   @@map("jalons")
+}
+
+/// Document justificatif attaché à un jalon (PV de réception, rapport de validation, etc.)
+/// Stocké dans Supabase Storage (bucket privé). Accès par URL signée courte.
+model DocumentJalon {
+  id String @id @db.Uuid @default(dbgenerated("gen_random_uuid()"))
+
+  jalonId String @unique @db.Uuid
+  jalon   Jalon  @relation(fields: [jalonId], references: [pieceId], onDelete: Cascade)
+
+  /// Nom original du fichier
+  nomFichier    String
+  /// Chemin dans le bucket Supabase Storage
+  cheminStorage String
+
+  /// Taille en octets
+  taille Int
+
+  /// Type MIME (application/pdf, image/jpeg, etc.)
+  typeMime String
+
+  deposeParId String   @db.Uuid
+  deposeLe    DateTime @default(now())
+
+  @@map("documents_jalons")
 }
 
 /// Assignation d'un employé à une tâche (Many-to-Many)

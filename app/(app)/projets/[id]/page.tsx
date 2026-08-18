@@ -22,6 +22,7 @@ import {
   CheckCircle2,
   Clock,
   XCircle,
+  Paperclip,
 } from "lucide-react";
 import { StatutProjet } from "@prisma/client";
 import { format, differenceInDays } from "date-fns";
@@ -1113,7 +1114,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                           {/* Contenu du jalon */}
                           <div
                             onClick={() => ouvrirModalEditionJalon(jalon)}
-                            className="group border rounded-lg p-4 hover:bg-muted/50 cursor-pointer transition-colors"
+                            className="group rounded-lg p-4 hover:bg-muted/50 cursor-pointer transition-colors"
                           >
                             <div className="flex items-start justify-between gap-4">
                               <div className="flex-1">
@@ -1174,6 +1175,13 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                                         ` · ${jalon.validateurExterne}`}
                                     </span>
                                   </div>
+
+                                  {(jalon as any).document && (
+                                    <div className="flex items-center gap-1.5 text-[#13850b]">
+                                      <Paperclip className="size-4" />
+                                      <span className="font-medium">Pièce jointe</span>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
 

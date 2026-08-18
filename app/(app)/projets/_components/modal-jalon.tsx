@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import {
   Dialog,
@@ -13,9 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Combobox } from "@/components/ui/combobox";
-import { creerJalon, modifierJalon, supprimerJalon } from "@/lib/actions/projets";
+import { creerJalon, modifierJalon, supprimerJalon, ajouterDocumentJalon, telechargerDocumentJalon, supprimerDocumentJalon } from "@/lib/actions/projets";
 import { toast } from "sonner";
-import { Loader2, Trash2, Flag } from "lucide-react";
+import { Loader2, Trash2, Flag, Paperclip, Download, X } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 interface ModalJalonProps {
   projetId: string;
@@ -29,6 +30,12 @@ interface ModalJalonProps {
     typeValidateur: string;
     validateurExterne?: string | null;
     statut: string;
+    document?: {
+      id: string;
+      nomFichier: string;
+      taille: number;
+      typeMime: string;
+    } | null;
   };
   ouvert: boolean;
   onFermer: () => void;
@@ -57,6 +64,12 @@ export function ModalJalon({
     jalon?.typeValidateur || "INTERNE"
   );
   const [statut, setStatut] = useState<string>(jalon?.statut || "ATTENTE");
+
+  // Upload de fichier
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [fichierSelectionne, setFichierSelectionne] = useState<File | null>(null);
+  const [uploadEnCours, setUploadEnCours] = useState(false);
+  const [suppressionDoc, setSuppressionDoc] = useState(false);
 
   const {
     register,
@@ -105,6 +118,82 @@ export function ModalJalon({
       }
     }
   }, [ouvert, jalon, reset]);
+
+  async function handleUploadDocument() {
+    if (!fichierSelectionne || !jalon) return;
+
+    setUploadEnCours(true);
+    try {
+      const supabase = createClient();
+
+      // Générer un nom unique
+      const timestamp = Date.now();
+      const extension = fichierSelectionne.name.split('.').pop();
+      const cheminStorage = `jalons/${jalon.id}/${timestamp}.${extension}`;
+
+      // Upload vers Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from("jalons-documents")
+        .upload(cheminStorage, fichierSelectionne, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw new Error(`Erreur d'upload : ${uploadError.message}`);
+      }
+
+      // Enregistrer la référence en base
+      await ajouterDocumentJalon({
+        jalonId: jalon.id,
+        nomFichier: fichierSelectionne.name,
+        cheminStorage,
+        taille: fichierSelectionne.size,
+        typeMime: fichierSelectionne.type,
+      });
+
+      toast.success("Document ajouté avec succès");
+      setFichierSelectionne(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      onSuccess();
+    } catch (error: any) {
+      toast.error(error.message || "Erreur lors de l'upload");
+    } finally {
+      setUploadEnCours(false);
+    }
+  }
+
+  async function handleTelechargerDocument() {
+    if (!jalon?.document) return;
+
+    try {
+      const url = await telechargerDocumentJalon(jalon.document.id);
+      window.open(url, "_blank");
+    } catch (error: any) {
+      toast.error(error.message || "Erreur lors du téléchargement");
+    }
+  }
+
+  async function handleSupprimerDocument() {
+    if (!jalon?.document) return;
+
+    if (!confirm("Êtes-vous sûr de vouloir supprimer ce document ?")) {
+      return;
+    }
+
+    setSuppressionDoc(true);
+    try {
+      await supprimerDocumentJalon(jalon.document.id);
+      toast.success("Document supprimé avec succès");
+      onSuccess();
+    } catch (error: any) {
+      toast.error(error.message || "Erreur lors de la suppression");
+    } finally {
+      setSuppressionDoc(false);
+    }
+  }
 
   async function onSubmit(data: FormulaireJalon) {
     setChargement(true);
@@ -273,6 +362,83 @@ export function ModalJalon({
                 placeholder="Sélectionner"
                 searchPlaceholder="Rechercher..."
               />
+            </div>
+          )}
+
+          {/* Pièce jointe (uniquement en modification) */}
+          {jalon && (
+            <div className="space-y-3">
+              <Label>Pièce justificative</Label>
+
+              {jalon.document ? (
+                <div className="border rounded-lg p-4 bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Paperclip className="size-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium">{jalon.document.nomFichier}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {(jalon.document.taille / 1024).toFixed(1)} KB
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleTelechargerDocument}
+                        className="h-8 w-8 p-0"
+                        title="Télécharger"
+                      >
+                        <Download className="size-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleSupprimerDocument}
+                        disabled={suppressionDoc}
+                        className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                        title="Supprimer"
+                      >
+                        {suppressionDoc ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          <X className="size-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      ref={fileInputRef}
+                      type="file"
+                      onChange={(e) => setFichierSelectionne(e.target.files?.[0] || null)}
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      className="h-11"
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleUploadDocument}
+                      disabled={!fichierSelectionne || uploadEnCours}
+                      className="h-11 px-4 bg-[#13850b] hover:bg-[#0f6909] text-white whitespace-nowrap"
+                    >
+                      {uploadEnCours ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        "Ajouter"
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Formats acceptés : PDF, Word, Images (max 10 MB)
+                  </p>
+                </div>
+              )}
             </div>
           )}
 

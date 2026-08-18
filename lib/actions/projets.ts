@@ -1068,6 +1068,189 @@ export const supprimerJalon = actionProtegee(
 );
 
 // =====================================================================
+// DOCUMENTS DE JALONS
+// =====================================================================
+
+/**
+ * Enregistrer un document uploadé pour un jalon.
+ *
+ * Règles :
+ * - Fichier déjà uploadé dans Supabase Storage (bucket jalons-documents)
+ * - Enregistrer seulement la référence en base
+ * - Un seul document par jalon
+ */
+export const ajouterDocumentJalon = actionProtegee(
+  "projet:modifier",
+  async (
+    session,
+    input: {
+      jalonId: string;
+      nomFichier: string;
+      cheminStorage: string;
+      taille: number;
+      typeMime: string;
+    }
+  ) => {
+    const jalon = await prisma.jalon.findUnique({
+      where: { id: input.jalonId },
+      include: { document: true, projet: true },
+    });
+
+    if (!jalon) {
+      throw new Error("Jalon introuvable");
+    }
+
+    // Un seul document par jalon
+    if (jalon.document) {
+      throw new Error("Ce jalon a déjà un document attaché. Supprimez-le d'abord.");
+    }
+
+    // Générer un UUID pour pieceId
+    const pieceId = crypto.randomUUID();
+
+    const document = await prisma.$transaction(async (tx) => {
+      // Mettre à jour le jalon avec le pieceId
+      await tx.jalon.update({
+        where: { id: input.jalonId },
+        data: { pieceId },
+      });
+
+      // Créer le document
+      const nouveauDoc = await tx.documentJalon.create({
+        data: {
+          id: pieceId,
+          jalonId: pieceId,
+          nomFichier: input.nomFichier,
+          cheminStorage: input.cheminStorage,
+          taille: input.taille,
+          typeMime: input.typeMime,
+          deposeParId: session.userId,
+        },
+      });
+
+      // Journaliser
+      await tx.journalEvenement.create({
+        data: {
+          entite: "DocumentJalon",
+          entiteId: nouveauDoc.id,
+          action: "CREATION",
+          auteurId: session.userId,
+          auteurNom: session.email,
+          commentaire: `Document ajouté au jalon : ${jalon.libelle}`,
+        },
+      });
+
+      return nouveauDoc;
+    });
+
+    revalidatePath(`/projets/${jalon.projetId}`);
+    return document;
+  }
+);
+
+/**
+ * Télécharger un document de jalon (génère URL signée temporaire)
+ */
+export const telechargerDocumentJalon = actionProtegee(
+  "projet:modifier",
+  async (session, documentId: string) => {
+    const document = await prisma.documentJalon.findUnique({
+      where: { id: documentId },
+      include: { jalon: { include: { projet: true } } },
+    });
+
+    if (!document) {
+      throw new Error("Document introuvable");
+    }
+
+    // Générer URL signée (60 secondes)
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+
+    const { data, error } = await supabase.storage
+      .from("jalons-documents")
+      .createSignedUrl(document.cheminStorage, 60);
+
+    if (error || !data?.signedUrl) {
+      throw new Error("Impossible de générer le lien de téléchargement.");
+    }
+
+    // Journaliser la consultation
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "DocumentJalon",
+        entiteId: documentId,
+        action: "CONSULTATION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        commentaire: `Document téléchargé — Jalon : ${document.jalon.libelle}`,
+      },
+    });
+
+    return data.signedUrl;
+  }
+);
+
+/**
+ * Supprimer un document de jalon
+ */
+export const supprimerDocumentJalon = actionProtegee(
+  "projet:modifier",
+  async (session, documentId: string) => {
+    const document = await prisma.documentJalon.findUnique({
+      where: { id: documentId },
+      include: { jalon: { include: { projet: true } } },
+    });
+
+    if (!document) {
+      throw new Error("Document introuvable");
+    }
+
+    const projetId = document.jalon.projetId;
+    const jalonLibelle = document.jalon.libelle;
+
+    // 1. Supprimer le fichier de Supabase Storage
+    try {
+      const { createClient } = await import("@/lib/supabase/server");
+      const supabase = await createClient();
+
+      await supabase.storage.from("jalons-documents").remove([document.cheminStorage]);
+    } catch (error) {
+      console.error("Erreur suppression Storage:", error);
+      // Ne pas bloquer la suppression si le fichier n'existe plus
+    }
+
+    // 2. Supprimer la référence en base dans une transaction
+    await prisma.$transaction(async (tx) => {
+      // Supprimer le document
+      await tx.documentJalon.delete({
+        where: { id: documentId },
+      });
+
+      // Mettre à jour le jalon (enlever pieceId)
+      await tx.jalon.update({
+        where: { id: document.jalon.id },
+        data: { pieceId: null },
+      });
+
+      // Journaliser
+      await tx.journalEvenement.create({
+        data: {
+          entite: "DocumentJalon",
+          entiteId: documentId,
+          action: "SUPPRESSION",
+          auteurId: session.userId,
+          auteurNom: session.email,
+          commentaire: `Document supprimé — Jalon : ${jalonLibelle}`,
+        },
+      });
+    });
+
+    revalidatePath(`/projets/${projetId}`);
+  }
+);
+
+// =====================================================================
 // AFFECTATIONS CHANTIER
 // =====================================================================
 
@@ -1414,6 +1597,9 @@ export const obtenirProjet = actionProtegee(
         lieuLivraison: true,
         jalons: {
           orderBy: { datePrevisionnelle: "asc" },
+          include: {
+            document: true,
+          },
         },
         taches: {
           orderBy: { dateDebut: "asc" },
