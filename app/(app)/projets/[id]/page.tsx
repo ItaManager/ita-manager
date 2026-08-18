@@ -324,7 +324,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
               {/* Titre */}
               <div className="flex items-center gap-2">
-                <h1 className="text-3xl font-bold">{projet.nom}</h1>
+                <h1 className="text-xl font-bold">{projet.nom}</h1>
                 <ModaleEditionChamp
                   projetId={projet.id}
                   champ="nom"
@@ -382,14 +382,14 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                   confirmationMessage="Modifier le montant du marché peut impacter les budgets et états financiers. Confirmer ?"
                 />
               </div>
-              <p className="text-3xl font-bold text-green-600">
+              <p className="text-xl font-bold text-green-600">
                 {projet.montantMarche
                   ? projet.montantMarche.toLocaleString("fr-FR").replace(/,/g, " ")
                   : "Non défini"}
               </p>
-              <p className="text-sm text-muted-foreground">FCFA</p>
+              <p className="text-xs text-muted-foreground">FCFA</p>
               {projet.montantAvenant && (
-                <p className="text-sm text-primary mt-2">
+                <p className="text-xs text-primary mt-2">
                   dont {projet.montantAvenant.toLocaleString("fr-FR").replace(/,/g, " ")} F d'avenant
                 </p>
               )}
@@ -400,10 +400,10 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
       {/* Barre d'avancement */}
       <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-muted-foreground">Avancement</span>
-            <span className="text-2xl font-bold">{avancementAffiche} % constaté</span>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-muted-foreground">Avancement</span>
+            <span className="text-lg font-bold">{avancementAffiche} % constaté</span>
           </div>
 
           {/* Barre de progression */}
@@ -440,7 +440,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
       </Card>
 
       {/* Informations complémentaires */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-2 gap-4">
         {/* Période */}
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -711,12 +711,12 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Avancement global */}
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm text-muted-foreground">Avancement</p>
+                  <p className="text-xs text-muted-foreground">Avancement</p>
                   <TrendingUp className="size-4 text-muted-foreground" />
                 </div>
-                <p className="text-3xl font-bold tabular-nums">
+                <p className="text-xl font-bold tabular-nums">
                   {avancementAffiche} %
                 </p>
                 <div className="mt-3 h-1.5 bg-muted rounded-full overflow-hidden">
@@ -735,14 +735,14 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
             {/* Tâches */}
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm text-muted-foreground">Tâches</p>
+                  <p className="text-xs text-muted-foreground">Tâches</p>
                   <CheckCircle2 className="size-4 text-muted-foreground" />
                 </div>
-                <p className="text-3xl font-bold tabular-nums">
+                <p className="text-xl font-bold tabular-nums">
                   {projet.taches?.filter((t: any) => t.avancement === 100).length || 0}
-                  <span className="text-lg text-muted-foreground">
+                  <span className="text-base text-muted-foreground">
                     /{projet.taches?.length || 0}
                   </span>
                 </p>
@@ -754,14 +754,14 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
             {/* Jalons */}
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm text-muted-foreground">Jalons</p>
+                  <p className="text-xs text-muted-foreground">Jalons</p>
                   <Flag className="size-4 text-muted-foreground" />
                 </div>
-                <p className="text-3xl font-bold tabular-nums">
+                <p className="text-xl font-bold tabular-nums">
                   {projet.jalons?.filter((j: any) => j.valide).length || 0}
-                  <span className="text-lg text-muted-foreground">
+                  <span className="text-base text-muted-foreground">
                     /{projet.jalons?.length || 0}
                   </span>
                 </p>
@@ -773,12 +773,12 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
             {/* Risques */}
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm text-muted-foreground">Risques</p>
+                  <p className="text-xs text-muted-foreground">Risques</p>
                   <AlertTriangle className="size-4 text-muted-foreground" />
                 </div>
-                <p className="text-3xl font-bold tabular-nums">
+                <p className="text-xl font-bold tabular-nums">
                   {projet.risquesIncidents?.filter((r: any) =>
                     r.statut === "OUVERT" || r.statut === "EN_TRAITEMENT"
                   ).length || 0}
@@ -804,12 +804,12 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
               !j.valide && j.dateEcheance && new Date(j.dateEcheance) < new Date()
             )) && (
             <Card className="border-orange-200 bg-orange-50/50">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <AlertTriangle className="size-5 text-orange-600" />
-                  <h3 className="font-semibold text-orange-900">Points d'attention</h3>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertTriangle className="size-4 text-orange-600" />
+                  <h3 className="font-semibold text-sm text-orange-900">Points d'attention</h3>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {/* Tâches en retard */}
                   {projet.taches?.filter((t: any) =>
                     t.dateFin && new Date(t.dateFin) < new Date() && t.avancement < 100
@@ -863,14 +863,14 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
           )}
 
           {/* Informations rapides */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Notes épinglées */}
             {projet.notes?.filter((n: any) => n.epinglee).length > 0 && (
               <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <FileText className="size-5 text-muted-foreground" />
-                    <h3 className="font-semibold">Notes épinglées</h3>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileText className="size-4 text-muted-foreground" />
+                    <h3 className="font-semibold text-sm">Notes épinglées</h3>
                   </div>
                   <div className="space-y-3">
                     {projet.notes
@@ -893,10 +893,10 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
             {/* Équipe */}
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <User className="size-5 text-muted-foreground" />
-                  <h3 className="font-semibold">Équipe</h3>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <User className="size-4 text-muted-foreground" />
+                  <h3 className="font-semibold text-sm">Équipe</h3>
                 </div>
                 <div className="space-y-3">
                   {projet.chefProjetId && (
@@ -928,10 +928,10 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             {/* Ressources matérielles */}
             {projet.affectationsMateriel?.length > 0 && (
               <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Truck className="size-5 text-muted-foreground" />
-                    <h3 className="font-semibold">Ressources matérielles</h3>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Truck className="size-4 text-muted-foreground" />
+                    <h3 className="font-semibold text-sm">Ressources matérielles</h3>
                   </div>
                   <div className="space-y-3">
                     {projet.affectationsMateriel
@@ -983,11 +983,11 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
           {/* Documents récents */}
           {projet.documents?.length > 0 && (
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <Paperclip className="size-5 text-muted-foreground" />
-                    <h3 className="font-semibold">Documents récents</h3>
+                    <Paperclip className="size-4 text-muted-foreground" />
+                    <h3 className="font-semibold text-sm">Documents récents</h3>
                   </div>
                   <Button
                     variant="ghost"
@@ -1025,10 +1025,10 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
       {/* Contenu de l'onglet Avancement */}
       {ongletActif === "avancement" && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* En-tête Tâches */}
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Tâches</h2>
+            <h2 className="text-base font-semibold">Tâches</h2>
             <Button
               onClick={ouvrirModalCreationTache}
               className="gap-2 h-10 px-4 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground transition-all"
@@ -1152,7 +1152,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                   <tr>
                     <td
                       colSpan={6}
-                      className="py-12 text-center text-sm text-muted-foreground"
+                      className="py-6 text-center text-sm text-muted-foreground"
                     >
                       Aucune tâche créée
                     </td>
@@ -1166,9 +1166,9 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
       {/* Onglet Équipes */}
       {ongletActif === "equipes" && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Encadré Chaîne fonctionnelle */}
-          <div className="rounded-lg bg-gray-200 p-6">
+          <div className="rounded-lg bg-gray-200 p-4">
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0 mt-1">
                 <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted">
@@ -1177,25 +1177,25 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                   </svg>
                 </div>
               </div>
-              <div className="flex-1 space-y-3">
-                <h3 className="text-lg font-bold text-foreground">
+              <div className="flex-1 space-y-2">
+                <h3 className="text-sm font-bold text-foreground">
                   Chaîne fonctionnelle
                 </h3>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
                     Les affectations de chantier portent la chaîne{" "}
                     <span className="font-semibold text-foreground">fonctionnelle</span>{" "}
                     : qui vise les relevés d'activité, qui organise le planning.
                   </p>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
                     Elles ne portent{" "}
                     <span className="font-semibold text-foreground">pas</span>{" "}
                     la chaîne hiérarchique. Un chef de chantier relève du
                     Directeur Technique pour ses congés, et du Conducteur de
                     Travaux pour ses relevés.
                   </p>
-                  <div className="mt-4 pt-3 border-t border-border">
-                    <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <div className="mt-3 pt-2 border-t border-border">
+                    <p className="text-xs font-semibold text-foreground flex items-center gap-2">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                       </svg>
@@ -1209,8 +1209,8 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
           {/* Section Affectations */}
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Affectations</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold">Affectations</h2>
               <ModalAffecterEmploye
                 projetId={projet.id}
                 projetCode={projet.code}
@@ -1224,7 +1224,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             </div>
 
             {/* Barre de recherche */}
-            <div className="mb-4">
+            <div className="mb-3">
               <div className="relative max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <Input
@@ -1333,7 +1333,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                     <tr>
                       <td
                         colSpan={6}
-                        className="py-12 text-center text-sm text-muted-foreground"
+                        className="py-6 text-center text-sm text-muted-foreground"
                       >
                         {rechercheAffectation
                           ? "Aucun employé trouvé"
@@ -1432,8 +1432,8 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
           {/* Section Équipes sur site */}
           <div>
             <div className="mb-2">
-              <h2 className="text-xl font-semibold">Équipes sur site</h2>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h2 className="text-base font-semibold">Équipes sur site</h2>
+              <p className="text-xs text-muted-foreground mt-1">
                 Encadrants affectés au projet. Pour affecter des journaliers
                 à une tâche, utilisez le badge{" "}
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-[#13850b] text-white">
@@ -1446,18 +1446,18 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
           {/* Section Effectif */}
           <div>
-            <h2 className="text-xl font-semibold mb-4">
+            <h2 className="text-base font-semibold mb-3">
               Effectif sur le chantier
             </h2>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-2 gap-4">
               {/* Encadrants */}
               <Card>
-                <CardContent className="p-6">
+                <CardContent className="p-4">
                   <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
                     Encadrants affectés
                   </p>
-                  <p className="text-4xl font-bold text-[#13850b]">
+                  <p className="text-2xl font-bold text-[#13850b]">
                     {affectationsActives.length}
                   </p>
                   <p className="text-sm text-muted-foreground mt-2">
@@ -1472,11 +1472,11 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
               {/* Journaliers */}
               <Card>
-                <CardContent className="p-6">
+                <CardContent className="p-4">
                   <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
                     Journaliers sur tâches
                   </p>
-                  <p className="text-4xl font-bold text-blue-600">
+                  <p className="text-2xl font-bold text-blue-600">
                     {journaliersAffectes}
                   </p>
                   <p className="text-sm text-muted-foreground mt-2">
@@ -1492,28 +1492,28 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
       )}
 
       {ongletActif === "budget" && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* En-tête */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-semibold">Budget projet</h2>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h2 className="text-lg font-semibold">Budget projet</h2>
+              <p className="text-xs text-muted-foreground mt-1">
                 Suivi financier et postes de dépenses
               </p>
             </div>
           </div>
 
           {/* Vue d'ensemble financière */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm text-muted-foreground uppercase tracking-wide">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
                     Montant du marché
                   </p>
-                  <DollarSign className="size-5 text-muted-foreground" />
+                  <DollarSign className="size-4 text-muted-foreground" />
                 </div>
-                <p className="text-3xl font-bold tabular-nums text-[#13850b]">
+                <p className="text-xl font-bold tabular-nums text-[#13850b]">
                   {projet.montantMarche
                     ? new Intl.NumberFormat("fr-FR", {
                         minimumFractionDigits: 0,
@@ -1536,14 +1536,14 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             </Card>
 
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm text-muted-foreground uppercase tracking-wide">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
                     Avancement projet
                   </p>
-                  <TrendingUp className="size-5 text-muted-foreground" />
+                  <TrendingUp className="size-4 text-muted-foreground" />
                 </div>
-                <p className="text-3xl font-bold tabular-nums">
+                <p className="text-xl font-bold tabular-nums">
                   {avancementAffiche} %
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">Avancement constaté</p>
@@ -1566,8 +1566,8 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
           {/* Répartition par poste */}
           <Card>
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Répartition budgétaire indicative</h3>
+            <CardContent className="p-4">
+              <h3 className="text-sm font-semibold mb-3">Répartition budgétaire indicative</h3>
 
               <div className="space-y-4">
                 {/* Main d'œuvre */}
@@ -1679,12 +1679,12 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
       )}
 
       {ongletActif === "jalons" && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* En-tête */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-semibold">Jalons du projet</h2>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h2 className="text-lg font-semibold">Jalons du projet</h2>
+              <p className="text-xs text-muted-foreground mt-1">
                 Étapes clés et points de validation
               </p>
             </div>
@@ -1699,14 +1699,14 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
           {/* Timeline verticale */}
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               {!projet.jalons || projet.jalons.length === 0 ? (
-                <div className="py-12 text-center">
-                  <Flag className="size-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-                  <p className="text-muted-foreground mb-2">
+                <div className="py-6 text-center">
+                  <Flag className="size-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                  <p className="text-sm text-muted-foreground mb-1">
                     Aucun jalon défini
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     Ajoutez des jalons pour marquer les étapes importantes du projet
                   </p>
                 </div>
@@ -1865,25 +1865,25 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
       {/* Onglet Planning */}
       {ongletActif === "planning" && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* En-tête */}
           <div>
-            <h2 className="text-2xl font-semibold">Planning Gantt</h2>
-            <p className="text-sm text-muted-foreground mt-1">
+            <h2 className="text-lg font-semibold">Planning Gantt</h2>
+            <p className="text-xs text-muted-foreground mt-1">
               Vue chronologique des tâches et jalons du projet
             </p>
           </div>
 
           {/* Chart Gantt */}
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               {(!projet.taches || projet.taches.length === 0) && (!projet.jalons || projet.jalons.length === 0) ? (
-                <div className="py-12 text-center">
-                  <BarChart3 className="size-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-                  <p className="text-muted-foreground mb-2">
+                <div className="py-6 text-center">
+                  <BarChart3 className="size-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                  <p className="text-sm text-muted-foreground mb-1">
                     Aucune tâche ou jalon défini
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     Ajoutez des tâches dans l'onglet Avancement et des jalons dans l'onglet Jalons pour visualiser le planning
                   </p>
                 </div>
@@ -1931,12 +1931,12 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
       {/* Onglet Notes */}
       {ongletActif === "notes" && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* En-tête */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-semibold">Notes et observations</h2>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h2 className="text-lg font-semibold">Notes et observations</h2>
+              <p className="text-xs text-muted-foreground mt-1">
                 Journal de bord du projet
               </p>
             </div>
@@ -1951,14 +1951,14 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
           {/* Liste des notes */}
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               {!projet.notes || projet.notes.length === 0 ? (
-                <div className="py-12 text-center">
-                  <FileText className="size-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-                  <p className="text-muted-foreground mb-2">
+                <div className="py-6 text-center">
+                  <FileText className="size-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                  <p className="text-sm text-muted-foreground mb-1">
                     Aucune note enregistrée
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     Ajoutez des observations, comptes-rendus ou notes techniques
                   </p>
                 </div>
@@ -2051,12 +2051,12 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
       {/* Onglet Documents */}
       {ongletActif === "documents" && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* En-tête */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-semibold">Documents du projet</h2>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h2 className="text-lg font-semibold">Documents du projet</h2>
+              <p className="text-xs text-muted-foreground mt-1">
                 Plans, contrats, rapports et autres documents
               </p>
             </div>
@@ -2070,14 +2070,14 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
           {/* Liste des documents */}
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               {!projet.documents || projet.documents.length === 0 ? (
-                <div className="py-12 text-center">
-                  <Paperclip className="size-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-                  <p className="text-muted-foreground mb-2">
+                <div className="py-6 text-center">
+                  <Paperclip className="size-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                  <p className="text-sm text-muted-foreground mb-1">
                     Aucun document enregistré
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     Ajoutez des plans, contrats, rapports ou autres documents liés au projet
                   </p>
                 </div>
@@ -2172,12 +2172,12 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
       {/* Onglet Risques et Incidents */}
       {ongletActif === "risques" && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* En-tête */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-semibold">Risques et incidents</h2>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h2 className="text-lg font-semibold">Risques et incidents</h2>
+              <p className="text-xs text-muted-foreground mt-1">
                 Suivi des risques identifiés et incidents survenus
               </p>
             </div>
@@ -2192,14 +2192,14 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
           {/* Liste des risques */}
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               {!projet.risquesIncidents || projet.risquesIncidents.length === 0 ? (
-                <div className="py-12 text-center">
-                  <AlertTriangle className="size-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-                  <p className="text-muted-foreground mb-2">
+                <div className="py-6 text-center">
+                  <AlertTriangle className="size-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                  <p className="text-sm text-muted-foreground mb-1">
                     Aucun risque ou incident enregistré
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     Identifiez les risques potentiels et suivez les incidents survenus
                   </p>
                 </div>
@@ -2318,12 +2318,12 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
       {/* Contenu de l'onglet Photos */}
       {ongletActif === "photos" && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* En-tête */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-semibold">Photos du projet</h2>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h2 className="text-lg font-semibold">Photos du projet</h2>
+              <p className="text-xs text-muted-foreground mt-1">
                 Galerie photos de suivi du chantier
               </p>
             </div>
@@ -2344,13 +2344,13 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             if (photos.length === 0) {
               return (
                 <Card>
-                  <CardContent className="p-12">
+                  <CardContent className="p-6">
                     <div className="text-center">
-                      <Camera className="size-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-                      <p className="text-muted-foreground mb-2">
+                      <Camera className="size-8 mx-auto mb-3 text-muted-foreground opacity-50" />
+                      <p className="text-sm text-muted-foreground mb-1">
                         Aucune photo disponible
                       </p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-xs text-muted-foreground">
                         Les photos de suivi du chantier apparaîtront ici
                       </p>
                     </div>
@@ -2408,12 +2408,12 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
       {/* Contenu de l'onglet Ressources */}
       {ongletActif === "ressources" && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* En-tête */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-semibold">Ressources matérielles</h2>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h2 className="text-lg font-semibold">Ressources matérielles</h2>
+              <p className="text-xs text-muted-foreground mt-1">
                 Matériel et engins affectés au projet
               </p>
             </div>
@@ -2431,7 +2431,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             ["BROUILLON", "SOUMISE", "VALIDEE_N1"].includes(d.statut)
           ).length > 0 && (
             <div className="space-y-3">
-              <h3 className="text-lg font-semibold">Demandes en cours</h3>
+              <h3 className="text-sm font-semibold">Demandes en cours</h3>
               {projet.demandesRessource
                 .filter((d: any) => ["BROUILLON", "SOUMISE", "VALIDEE_N1"].includes(d.statut))
                 .map((demande: any) => (
@@ -2494,7 +2494,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
                   return (
                     <Card key={affectation.id}>
-                      <CardContent className="p-6">
+                      <CardContent className="p-4">
                         <div className="flex items-start justify-between gap-4">
                           {/* Informations principales */}
                           <div className="flex-1 space-y-3">
@@ -2597,12 +2597,12 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             </div>
           ) : (
             <Card>
-              <CardContent className="p-12 text-center">
-                <Truck className="size-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-semibold mb-2">
+              <CardContent className="p-6 text-center">
+                <Truck className="size-8 text-muted-foreground mx-auto mb-3 opacity-50" />
+                <h3 className="text-sm font-semibold mb-2">
                   Aucune ressource affectée
                 </h3>
-                <p className="text-sm text-muted-foreground mb-4">
+                <p className="text-xs text-muted-foreground mb-3">
                   Ce projet n'a pas encore de matériel ou d'engins affectés.
                 </p>
                 <p className="text-xs text-muted-foreground">
