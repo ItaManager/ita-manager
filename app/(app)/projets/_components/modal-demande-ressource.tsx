@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { creerDemandeRessource } from "@/lib/actions/projets";
 import { toast } from "sonner";
 
@@ -128,6 +129,13 @@ export function ModalDemandeRessource({
       setLoading(false);
     }
   };
+
+  // Transform materiels data into ComboboxOption[]
+  const materielOptions: ComboboxOption[] = materiels.map((mat) => ({
+    value: mat.id,
+    label: `${mat.codeIta} — ${mat.designation}`,
+    description: mat.type,
+  }));
 
   return (
     <Dialog open={ouvert} onOpenChange={onClose}>
@@ -254,20 +262,18 @@ export function ModalDemandeRessource({
                   <div className="flex items-start gap-3">
                     {/* Sélecteur de matériel */}
                     <div className="flex-1 space-y-2">
-                      <Label htmlFor={`materiel-${index}`}>Matériel</Label>
-                      <select
-                        id={`materiel-${index}`}
+                      <Label htmlFor={`materiel-${index}`}>
+                        Matériel <span className="text-destructive">*</span>
+                      </Label>
+                      <Combobox
+                        variant="search"
+                        options={materielOptions}
                         value={ligne.materielId}
-                        onChange={(e) => modifierLigne(index, "materielId", e.target.value)}
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                      >
-                        <option value="">-- Sélectionner un matériel --</option>
-                        {materiels.map((mat) => (
-                          <option key={mat.id} value={mat.id}>
-                            {mat.codeIta} — {mat.designation} ({mat.type})
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(value) => modifierLigne(index, "materielId", value)}
+                        placeholder="Rechercher un matériel ou engin"
+                        searchPlaceholder="Rechercher..."
+                        emptyText="Aucun matériel trouvé"
+                      />
                     </div>
 
                     {/* Bouton supprimer */}
@@ -277,7 +283,7 @@ export function ModalDemandeRessource({
                         variant="ghost"
                         size="sm"
                         onClick={() => supprimerLigne(index)}
-                        className="mt-7 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="mt-7 text-destructive hover:text-destructive hover:bg-red-50"
                       >
                         <Trash2 className="size-4" />
                       </Button>
