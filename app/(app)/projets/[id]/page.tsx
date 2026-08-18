@@ -280,6 +280,19 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
   const totalAgentsITA = affectationsActives.length + journaliersAffectes;
 
+  // Calculs pour les tâches en attente
+  const tachesEnRetard = projet.taches?.filter((t: any) =>
+    t.dateFin && new Date(t.dateFin) < new Date() && (t.avancementConstate ?? t.avancementPlanifie ?? 0) < 100
+  ) || [];
+
+  const tachesNonDemarrees = projet.taches?.filter((t: any) =>
+    t.dateDebut && new Date(t.dateDebut) <= new Date() &&
+    (t.avancementConstate ?? t.avancementPlanifie ?? 0) === 0 &&
+    !(t.dateFin && new Date(t.dateFin) < new Date())
+  ) || [];
+
+  const alertesTaches = [...tachesEnRetard, ...tachesNonDemarrees];
+
   return (
     <div className="space-y-6 px-[60px] max-w-[1200px] mx-auto py-6">
       {/* Bouton retour */}
@@ -533,6 +546,70 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
         </Card>
       </div>
 
+      {/* Tâches en attente - Alertes */}
+      {alertesTaches.length > 0 && (
+        <Card className="border-orange-200 bg-orange-50/50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="size-4 text-orange-600" />
+                <h3 className="font-semibold text-sm text-orange-900">
+                  Tâches en attente
+                  <span className="ml-2 text-xs font-normal text-orange-700">
+                    ({alertesTaches.length})
+                  </span>
+                </h3>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setOngletActif("avancement")}
+                className="h-7 text-xs text-orange-700 hover:text-orange-900 hover:bg-orange-100"
+              >
+                Voir détails
+                <ChevronRight className="size-3 ml-1" />
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {/* Tâches en retard */}
+              {tachesEnRetard.slice(0, 3).map((tache: any) => (
+                <div key={tache.id} className="flex items-start gap-2 text-sm">
+                  <XCircle className="size-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <span className="font-medium">En retard :</span>{" "}
+                    {tache.libelle}
+                    <span className="text-xs text-muted-foreground ml-2">
+                      échéance {format(new Date(tache.dateFin), "dd/MM/yyyy")}
+                    </span>
+                  </div>
+                </div>
+              ))}
+
+              {/* Tâches non démarrées */}
+              {tachesNonDemarrees.slice(0, 3 - tachesEnRetard.length).map((tache: any) => (
+                <div key={tache.id} className="flex items-start gap-2 text-sm">
+                  <Clock className="size-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <span className="font-medium">Non démarrée :</span>{" "}
+                    {tache.libelle}
+                    <span className="text-xs text-muted-foreground ml-2">
+                      démarrage prévu {format(new Date(tache.dateDebut), "dd/MM/yyyy")}
+                    </span>
+                  </div>
+                </div>
+              ))}
+
+              {/* Message si plus de 3 alertes */}
+              {alertesTaches.length > 3 && (
+                <div className="text-xs text-orange-700 mt-2 pt-2 border-t border-orange-200">
+                  + {alertesTaches.length - 3} autre{alertesTaches.length - 3 > 1 ? "s" : ""} tâche{alertesTaches.length - 3 > 1 ? "s" : ""} à traiter
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Onglets */}
       <Card>
         <CardContent className="p-0">
@@ -546,7 +623,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            Tableau de bord
+            Tableau
             {ongletActif === "tableau-bord" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
