@@ -96,45 +96,51 @@ export function ModalTache({
 
   // Charger la liste des employés et réinitialiser le formulaire
   useEffect(() => {
-    if (ouvert) {
-      chargerEmployes();
-      // Réinitialiser les affectations
-      setResponsableId(tache?.responsableId || "");
-      setEmployeIds(
-        tache?.affectations
-          ?.map((a) => a.employe?.id || a.employeId)
-          .filter((id): id is string => !!id) || []
-      );
-
-      // Réinitialiser le formulaire avec les valeurs de la tâche
-      if (tache) {
-        reset({
-          libelle: tache.libelle,
-          description: tache.description || "",
-          dateDebut: new Date(tache.dateDebut).toISOString().split("T")[0],
-          dateFin: new Date(tache.dateFin).toISOString().split("T")[0],
-          avancementPlanifie: tache.avancementPlanifie,
-        });
-      } else {
-        reset({
-          libelle: "",
-          description: "",
-          dateDebut: "",
-          dateFin: "",
-          avancementPlanifie: 0,
-        });
+    async function chargerEmployes() {
+      try {
+        const data = await listerEmployes();
+        setEmployes(data.items || []);
+      } catch (error) {
+        toast.error("Erreur lors du chargement des employés");
       }
     }
-  }, [ouvert, tache, reset]);
 
-  async function chargerEmployes() {
-    try {
-      const data = await listerEmployes();
-      setEmployes(data.items || []);
-    } catch (error) {
-      toast.error("Erreur lors du chargement des employés");
+    async function initialiser() {
+      if (ouvert) {
+        // Charger les employés d'abord
+        await chargerEmployes();
+
+        // Réinitialiser les affectations après que les employés soient chargés
+        setResponsableId(tache?.responsableId || "");
+        setEmployeIds(
+          tache?.affectations
+            ?.map((a) => a.employe?.id || a.employeId)
+            .filter((id): id is string => !!id) || []
+        );
+
+        // Réinitialiser le formulaire avec les valeurs de la tâche
+        if (tache) {
+          reset({
+            libelle: tache.libelle,
+            description: tache.description || "",
+            dateDebut: new Date(tache.dateDebut).toISOString().split("T")[0],
+            dateFin: new Date(tache.dateFin).toISOString().split("T")[0],
+            avancementPlanifie: tache.avancementPlanifie,
+          });
+        } else {
+          reset({
+            libelle: "",
+            description: "",
+            dateDebut: "",
+            dateFin: "",
+            avancementPlanifie: 0,
+          });
+        }
+      }
     }
-  }
+
+    initialiser();
+  }, [ouvert, tache, reset]);
 
   // Filtrer les journaliers pour les affectations
   const journaliers = employes.filter(
