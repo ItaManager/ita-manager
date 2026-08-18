@@ -479,6 +479,9 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground uppercase">
                     Écart
                   </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground uppercase">
+                    Équipe
+                  </th>
                   <th className="text-center py-3 px-4 text-sm font-medium text-muted-foreground uppercase w-[120px]">
                     Actions
                   </th>
@@ -536,6 +539,27 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                             "—"
                           )}
                         </td>
+                        <td className="py-3 px-4 text-sm">
+                          {tache.affectations && tache.affectations.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {tache.affectations.slice(0, 3).map((affectation: any) => (
+                                <span
+                                  key={affectation.employe.id}
+                                  className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-primary/10 text-primary"
+                                >
+                                  {affectation.employe.prenom} {affectation.employe.nom}
+                                </span>
+                              ))}
+                              {tache.affectations.length > 3 && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-muted text-muted-foreground">
+                                  +{tache.affectations.length - 3}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
                         <td
                           className="py-3 px-4 text-center"
                           onClick={(e) => e.stopPropagation()}
@@ -547,7 +571,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                             projetCode={projet.code}
                             projetNom={projet.nom}
                             employeIdsActuels={
-                              tache.affectations?.map((a: any) => a.employeId) || []
+                              tache.affectations?.map((a: any) => a.employe.id) || []
                             }
                           >
                             <Button
@@ -566,7 +590,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                 ) : (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={8}
                       className="py-12 text-center text-sm text-muted-foreground"
                     >
                       Aucune tâche créée

@@ -1378,8 +1378,14 @@ export const obtenirProjet = actionProtegee(
               },
             },
             affectations: {
-              select: {
-                employeId: true,
+              include: {
+                employe: {
+                  select: {
+                    id: true,
+                    nom: true,
+                    prenom: true,
+                  },
+                },
               },
             },
           },
