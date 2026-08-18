@@ -1666,3 +1666,64 @@ export const obtenirTachesProjets = actionProtegee(
     };
   }
 );
+
+/**
+ * Récupère la liste des journaliers avec leur compétence et disponibilité
+ */
+export const obtenirJournaliersAvecCompetence = actionProtegee(
+  "planning:modifier",
+  async (session, projetId: string) => {
+    const journaliers = await prisma.employe.findMany({
+      where: {
+        typeMainOeuvre: "JOURNALIER",
+      },
+      include: {
+        competences: {
+          where: {
+            dateFin: null,
+          },
+          include: {
+            competence: {
+              select: {
+                libelle: true,
+              },
+            },
+          },
+          take: 1,
+          orderBy: {
+            dateEffet: "desc",
+          },
+        },
+        affectationsTaches: {
+          where: {
+            tache: {
+              projetId: projetId,
+              // Tâches non terminées
+              dateFin: {
+                gte: new Date(),
+              },
+            },
+          },
+          select: {
+            tacheId: true,
+            tache: {
+              select: {
+                libelle: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return journaliers.map((j) => ({
+      id: j.id,
+      nom: j.nom,
+      prenom: j.prenom,
+      matricule: j.matricule,
+      competence: j.competences[0]?.competence.libelle || null,
+      affectationsActives: j.affectationsTaches.length,
+      disponible: j.affectationsTaches.length === 0,
+    }));
+  }
+);

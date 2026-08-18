@@ -543,6 +543,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                           <ModalAffecterEquipeRapide
                             tacheId={tache.id}
                             tacheLibelle={tache.libelle}
+                            projetId={projet.id}
                             projetCode={projet.code}
                             projetNom={projet.nom}
                             employeIdsActuels={

@@ -11,15 +11,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { listerEmployes } from "@/lib/actions/employes";
-import { modifierTache } from "@/lib/actions/projets";
+import {
+  obtenirJournaliersAvecCompetence,
+  modifierTache,
+} from "@/lib/actions/projets";
 import { toast } from "sonner";
-import { Loader2, Users, Check } from "lucide-react";
+import { Loader2, Users, Check, Circle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface ModalAffecterEquipeRapideProps {
   tacheId: string;
   tacheLibelle: string;
+  projetId: string;
   projetCode: string;
   projetNom: string;
   employeIdsActuels: string[];
@@ -29,6 +32,7 @@ interface ModalAffecterEquipeRapideProps {
 export function ModalAffecterEquipeRapide({
   tacheId,
   tacheLibelle,
+  projetId,
   projetCode,
   projetNom,
   employeIdsActuels,
@@ -53,11 +57,8 @@ export function ModalAffecterEquipeRapide({
   async function chargerJournaliers() {
     setLoadingJournaliers(true);
     try {
-      const data = await listerEmployes();
-      const journaliersFiltrés = (data.items || []).filter(
-        (emp: any) => emp.typeMainOeuvre === "JOURNALIER"
-      );
-      setJournaliers(journaliersFiltrés);
+      const data = await obtenirJournaliersAvecCompetence(projetId);
+      setJournaliers(data);
     } catch (error) {
       toast.error("Erreur lors du chargement des journaliers");
     } finally {
@@ -195,11 +196,28 @@ export function ModalAffecterEquipeRapide({
                               </span>
                             )}
                           </div>
-                          {journalier.matricule && (
-                            <div className="text-sm text-muted-foreground">
-                              Matricule : {journalier.matricule}
-                            </div>
-                          )}
+                          <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+                            {journalier.competence && (
+                              <span className="flex items-center gap-1.5">
+                                <Circle
+                                  className={`size-2 ${
+                                    journalier.disponible
+                                      ? "fill-green-500 text-green-500"
+                                      : "fill-orange-500 text-orange-500"
+                                  }`}
+                                />
+                                {journalier.competence}
+                              </span>
+                            )}
+                            {journalier.matricule && (
+                              <span>Mat. {journalier.matricule}</span>
+                            )}
+                            {!journalier.disponible && (
+                              <span className="text-xs text-orange-600">
+                                ({journalier.affectationsActives} tâche(s) active(s))
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </label>
                     );
