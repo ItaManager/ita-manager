@@ -2329,6 +2329,25 @@ export const obtenirProjet = actionProtegee(
             },
           },
         },
+        affectationsMateriel: {
+          orderBy: {
+            dateDebut: "desc",
+          },
+          include: {
+            materiel: {
+              select: {
+                id: true,
+                codeIta: true,
+                designation: true,
+                type: true,
+                marque: true,
+                modele: true,
+                immatriculation: true,
+                statut: true,
+              },
+            },
+          },
+        },
       },
     });
 

@@ -31,6 +31,7 @@ import {
   Trash2,
   Upload,
   AlertTriangle,
+  Truck,
 } from "lucide-react";
 import { StatutProjet } from "@prisma/client";
 import { format, differenceInDays } from "date-fns";
@@ -875,6 +876,60 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Ressources matérielles */}
+            {projet.affectationsMateriel?.length > 0 && (
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Truck className="size-5 text-muted-foreground" />
+                    <h3 className="font-semibold">Ressources matérielles</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {projet.affectationsMateriel
+                      .filter((a: any) => {
+                        const now = new Date();
+                        return new Date(a.dateDebut) <= now && new Date(a.dateFin) >= now;
+                      })
+                      .slice(0, 5)
+                      .map((affectation: any) => (
+                        <div key={affectation.id} className="flex items-center justify-between text-sm">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{affectation.materiel.designation}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {affectation.materiel.codeIta}
+                              {affectation.materiel.immatriculation && ` • ${affectation.materiel.immatriculation}`}
+                            </p>
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className="text-xs ml-2 flex-shrink-0"
+                          >
+                            {affectation.materiel.type}
+                          </Badge>
+                        </div>
+                      ))}
+                    {projet.affectationsMateriel.filter((a: any) => {
+                      const now = new Date();
+                      return new Date(a.dateDebut) <= now && new Date(a.dateFin) >= now;
+                    }).length === 0 && (
+                      <p className="text-sm text-muted-foreground">Aucun matériel actuellement affecté</p>
+                    )}
+                  </div>
+                  {projet.affectationsMateriel.filter((a: any) => {
+                    const now = new Date();
+                    return new Date(a.dateDebut) <= now && new Date(a.dateFin) >= now;
+                  }).length > 5 && (
+                    <p className="text-xs text-muted-foreground mt-3">
+                      +{projet.affectationsMateriel.filter((a: any) => {
+                        const now = new Date();
+                        return new Date(a.dateDebut) <= now && new Date(a.dateFin) >= now;
+                      }).length - 5} autre(s)
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Documents récents */}
