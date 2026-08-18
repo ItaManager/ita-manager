@@ -18,7 +18,6 @@ import {
   Pencil,
   Search,
   ChevronRight,
-  Users,
 } from "lucide-react";
 import { StatutProjet } from "@prisma/client";
 import { format, differenceInDays } from "date-fns";
@@ -546,12 +545,11 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                               }
                             >
                               <Button
-                                variant="outline"
                                 size="sm"
-                                className="h-8 w-8 p-0"
+                                className="h-7 px-3 text-xs bg-[#13850b] hover:bg-[#0f6909] text-white rounded-full"
                                 title="Composer l'équipe rapidement"
                               >
-                                <Users className="size-4" />
+                                Équipe
                               </Button>
                             </ModalAffecterEquipeRapide>
                           </div>
@@ -846,8 +844,11 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
               <h2 className="text-xl font-semibold">Équipes sur site</h2>
               <p className="text-sm text-muted-foreground mt-1">
                 Encadrants affectés au projet. Pour affecter des journaliers
-                à une tâche, utilisez le bouton{" "}
-                <Users className="inline size-3.5" /> dans l'onglet Avancement.
+                à une tâche, utilisez le badge{" "}
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-[#13850b] text-white">
+                  Équipe
+                </span>{" "}
+                dans l'onglet Avancement.
               </p>
             </div>
           </div>
