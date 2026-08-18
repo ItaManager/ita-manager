@@ -982,6 +982,8 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
       {/* Modal de gestion des tâches */}
       <ModalTache
         projetId={projet.id}
+        projetCode={projet.code}
+        projetNom={projet.nom}
         tache={tacheSelectionnee}
         ouvert={modalTacheOuverte}
         onFermer={fermerModalTache}

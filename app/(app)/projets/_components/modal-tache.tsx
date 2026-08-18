@@ -18,10 +18,12 @@ import { Combobox } from "@/components/ui/combobox";
 import { creerTache, modifierTache, supprimerTache } from "@/lib/actions/projets";
 import { listerEmployes } from "@/lib/actions/employes";
 import { toast } from "sonner";
-import { Loader2, Trash2, X } from "lucide-react";
+import { Loader2, Trash2, X, ClipboardList } from "lucide-react";
 
 interface ModalTacheProps {
   projetId: string;
+  projetCode?: string;
+  projetNom?: string;
   tache?: {
     id: string;
     libelle: string;
@@ -47,6 +49,8 @@ interface FormulaireTache {
 
 export function ModalTache({
   projetId,
+  projetCode,
+  projetNom,
   tache,
   ouvert,
   onFermer,
@@ -170,19 +174,20 @@ export function ModalTache({
 
   return (
     <Dialog open={ouvert} onOpenChange={onFermer}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="max-h-[90vh] overflow-y-auto max-w-2xl p-0">
+        <DialogHeader className="bg-primary-soft p-6 rounded-t-lg">
+          <DialogTitle className="text-xl font-semibold text-primary flex items-center gap-2">
+            <ClipboardList className="size-5" />
             {tache ? "Modifier la tâche" : "Nouvelle tâche"}
           </DialogTitle>
-          <DialogDescription>
-            {tache
-              ? "Modifiez les informations de la tâche"
-              : "Créez une nouvelle tâche pour ce projet"}
-          </DialogDescription>
+          {projetCode && projetNom && (
+            <p className="text-sm text-muted-foreground mt-1">
+              {projetCode} · {projetNom}
+            </p>
+          )}
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 p-6">
           {/* Libellé */}
           <div>
             <Label htmlFor="libelle">
@@ -191,6 +196,7 @@ export function ModalTache({
             <Input
               id="libelle"
               placeholder="Ex: Terrassement zone A"
+              className="h-12"
               {...register("libelle", { required: "Le libellé est requis" })}
             />
             {errors.libelle && (
@@ -218,6 +224,7 @@ export function ModalTache({
               <Input
                 id="dateDebut"
                 type="date"
+                className="h-12"
                 {...register("dateDebut", {
                   required: "La date de début est requise",
                 })}
@@ -236,6 +243,7 @@ export function ModalTache({
               <Input
                 id="dateFin"
                 type="date"
+                className="h-12"
                 {...register("dateFin", { required: "La date de fin est requise" })}
               />
               {errors.dateFin && (
@@ -254,6 +262,7 @@ export function ModalTache({
               type="number"
               min="0"
               max="100"
+              className="h-12"
               {...register("avancementPlanifie", {
                 valueAsNumber: true,
                 min: { value: 0, message: "Minimum 0%" },
@@ -335,31 +344,43 @@ export function ModalTache({
             )}
           </div>
 
-          <DialogFooter className="gap-2">
+          <div className="flex justify-between border-t pt-4">
             {tache && (
               <Button
                 type="button"
                 variant="destructive"
                 onClick={handleSupprimer}
                 disabled={suppression}
-                className="mr-auto"
+                className="rounded-full h-11 px-6"
               >
                 {suppression ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (
-                  <Trash2 className="size-4" />
+                  <Trash2 className="size-4 mr-2" />
                 )}
                 Supprimer
               </Button>
             )}
-            <Button type="button" variant="outline" onClick={onFermer}>
-              Annuler
-            </Button>
-            <Button type="submit" disabled={chargement}>
-              {chargement && <Loader2 className="size-4 mr-2 animate-spin" />}
-              {tache ? "Enregistrer" : "Créer"}
-            </Button>
-          </DialogFooter>
+            <div className={`flex gap-2 ${tache ? "" : "ml-auto"}`}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onFermer}
+                disabled={chargement || suppression}
+                className="rounded-full h-11 px-6"
+              >
+                Annuler
+              </Button>
+              <Button
+                type="submit"
+                disabled={chargement || suppression}
+                className="rounded-full h-11 px-6 bg-primary hover:bg-primary-hover"
+              >
+                {chargement && <Loader2 className="size-4 mr-2 animate-spin" />}
+                {tache ? "Enregistrer" : "Créer"}
+              </Button>
+            </div>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
