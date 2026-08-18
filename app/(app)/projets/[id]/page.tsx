@@ -25,6 +25,7 @@ import {
   XCircle,
   Paperclip,
   Link2,
+  BarChart3,
 } from "lucide-react";
 import { StatutProjet } from "@prisma/client";
 import { format, differenceInDays } from "date-fns";
@@ -36,6 +37,7 @@ import { ModalTache } from "../_components/modal-tache";
 import { ModalAffecterEquipeRapide } from "../_components/modal-affecter-equipe-rapide";
 import { ModalJalon } from "../_components/modal-jalon";
 import { AlertDialogConfirm } from "@/components/ui/alert-dialog-confirm";
+import { GanttChart } from "../_components/gantt-chart";
 
 interface PageDetailProjetProps {
   params: Promise<{ id: string }>;
@@ -58,7 +60,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
   const [projet, setProjet] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [ongletActif, setOngletActif] = useState<
-    "avancement" | "equipes" | "budget" | "jalons"
+    "avancement" | "equipes" | "budget" | "jalons" | "planning"
   >("avancement");
   const [rechercheAffectation, setRechercheAffectation] = useState("");
   const [pageAffectation, setPageAffectation] = useState(1);
@@ -516,6 +518,21 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             <CalendarIcon className="size-4 inline mr-2" />
             Jalons (0)
             {ongletActif === "jalons" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+            )}
+          </button>
+
+          <button
+            onClick={() => setOngletActif("planning")}
+            className={`pb-3 px-2 text-sm font-medium transition-colors relative ${
+              ongletActif === "planning"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <BarChart3 className="size-4 inline mr-2" />
+            Planning
+            {ongletActif === "planning" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
           </button>
@@ -1275,6 +1292,72 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                     })}
                   </div>
                 </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Onglet Planning */}
+      {ongletActif === "planning" && (
+        <div className="space-y-6">
+          {/* En-tête */}
+          <div>
+            <h2 className="text-2xl font-semibold">Planning Gantt</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Vue chronologique des tâches et jalons du projet
+            </p>
+          </div>
+
+          {/* Chart Gantt */}
+          <Card>
+            <CardContent className="p-6">
+              {(!projet.taches || projet.taches.length === 0) && (!projet.jalons || projet.jalons.length === 0) ? (
+                <div className="py-12 text-center">
+                  <BarChart3 className="size-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                  <p className="text-muted-foreground mb-2">
+                    Aucune tâche ou jalon défini
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Ajoutez des tâches dans l'onglet Avancement et des jalons dans l'onglet Jalons pour visualiser le planning
+                  </p>
+                </div>
+              ) : (
+                <GanttChart
+                  taches={[
+                    ...(projet.taches || []).map((t: any) => ({
+                      id: t.id,
+                      libelle: t.libelle,
+                      dateDebut: new Date(t.dateDebut),
+                      dateFin: new Date(t.dateFin),
+                      avancementPlanifie: t.avancementPlanifie,
+                      type: "tache" as const,
+                      statut: t.statut,
+                    })),
+                    ...(projet.jalons || []).map((j: any) => ({
+                      id: j.id,
+                      libelle: j.libelle,
+                      dateDebut: new Date(j.datePrevisionnelle),
+                      dateFin: new Date(j.datePrevisionnelle),
+                      avancementPlanifie: 100,
+                      type: "jalon" as const,
+                      statut: j.statut,
+                    })),
+                  ]}
+                  onClickTache={(tache) => {
+                    if (tache.type === "tache") {
+                      const tacheTrouvee = projet.taches.find((t: any) => t.id === tache.id);
+                      if (tacheTrouvee) {
+                        ouvrirModalEditionTache(tacheTrouvee);
+                      }
+                    } else {
+                      const jalonTrouve = projet.jalons.find((j: any) => j.id === tache.id);
+                      if (jalonTrouve) {
+                        ouvrirModalEditionJalon(jalonTrouve);
+                      }
+                    }
+                  }}
+                />
               )}
             </CardContent>
           </Card>
