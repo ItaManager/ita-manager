@@ -627,7 +627,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             }`}
           >
             <AlertTriangle className="size-4 inline mr-2" />
-            Risques ({projet?.risques?.length || 0})
+            Risques ({projet?.risquesIncidents?.length || 0})
             {ongletActif === "risques" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
@@ -1724,7 +1724,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
           {/* Liste des risques */}
           <Card>
             <CardContent className="p-6">
-              {!projet.risques || projet.risques.length === 0 ? (
+              {!projet.risquesIncidents || projet.risquesIncidents.length === 0 ? (
                 <div className="py-12 text-center">
                   <AlertTriangle className="size-12 mx-auto mb-3 text-muted-foreground opacity-50" />
                   <p className="text-muted-foreground mb-2">
@@ -1736,7 +1736,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {projet.risques.map((risque: any) => {
+                  {projet.risquesIncidents.map((risque: any) => {
                     const typeConfig: Record<string, { label: string; color: string; bg: string }> = {
                       RISQUE: { label: "Risque", color: "#F59E0B", bg: "#F59E0B20" },
                       INCIDENT: { label: "Incident", color: "#EF4444", bg: "#EF444420" },
@@ -1812,7 +1812,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                               <div className="flex items-center gap-1.5">
                                 <Clock className="size-3" />
                                 <span>
-                                  Identifié le {format(new Date(risque.creeLe), "dd MMM yyyy", { locale: fr })}
+                                  Identifié le {format(new Date(risque.dateIdentification), "dd MMM yyyy", { locale: fr })}
                                 </span>
                               </div>
                               {risque.responsable && (
