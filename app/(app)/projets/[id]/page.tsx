@@ -30,6 +30,7 @@ import {
   Download,
   Trash2,
   Upload,
+  AlertTriangle,
 } from "lucide-react";
 import { StatutProjet } from "@prisma/client";
 import { format, differenceInDays } from "date-fns";
@@ -65,7 +66,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
   const [projet, setProjet] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [ongletActif, setOngletActif] = useState<
-    "avancement" | "equipes" | "budget" | "jalons" | "planning" | "notes" | "documents"
+    "avancement" | "equipes" | "budget" | "jalons" | "planning" | "notes" | "documents" | "risques"
   >("avancement");
   const [rechercheAffectation, setRechercheAffectation] = useState("");
   const [pageAffectation, setPageAffectation] = useState(1);
@@ -590,6 +591,21 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
             <Paperclip className="size-4 inline mr-2" />
             Documents ({projet?.documents?.length || 0})
             {ongletActif === "documents" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+            )}
+          </button>
+
+          <button
+            onClick={() => setOngletActif("risques")}
+            className={`pb-3 px-2 text-sm font-medium transition-colors relative ${
+              ongletActif === "risques"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <AlertTriangle className="size-4 inline mr-2" />
+            Risques ({projet?.risques?.length || 0})
+            {ongletActif === "risques" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
           </button>
@@ -1651,6 +1667,150 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                           >
                             <Trash2 className="size-4" />
                           </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Onglet Risques et Incidents */}
+      {ongletActif === "risques" && (
+        <div className="space-y-6">
+          {/* En-tête */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold">Risques et incidents</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Suivi des risques identifiés et incidents survenus
+              </p>
+            </div>
+            <Button
+              className="gap-2 rounded-full bg-[#13850b] hover:bg-[#0f6909] text-white"
+            >
+              <Plus className="size-4" />
+              Nouveau risque/incident
+            </Button>
+          </div>
+
+          {/* Liste des risques */}
+          <Card>
+            <CardContent className="p-6">
+              {!projet.risques || projet.risques.length === 0 ? (
+                <div className="py-12 text-center">
+                  <AlertTriangle className="size-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                  <p className="text-muted-foreground mb-2">
+                    Aucun risque ou incident enregistré
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Identifiez les risques potentiels et suivez les incidents survenus
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {projet.risques.map((risque: any) => {
+                    const typeConfig: Record<string, { label: string; color: string; bg: string }> = {
+                      RISQUE: { label: "Risque", color: "#F59E0B", bg: "#F59E0B20" },
+                      INCIDENT: { label: "Incident", color: "#EF4444", bg: "#EF444420" },
+                    };
+
+                    const graviteConfig: Record<string, { label: string; color: string }> = {
+                      FAIBLE: { label: "Faible", color: "#10B981" },
+                      MOYENNE: { label: "Moyenne", color: "#F59E0B" },
+                      ELEVEE: { label: "Élevée", color: "#EF4444" },
+                      CRITIQUE: { label: "Critique", color: "#DC2626" },
+                    };
+
+                    const statutConfig: Record<string, { label: string; color: string; bg: string }> = {
+                      OUVERT: { label: "Ouvert", color: "#3B82F6", bg: "#3B82F620" },
+                      EN_TRAITEMENT: { label: "En traitement", color: "#F59E0B", bg: "#F59E0B20" },
+                      RESOLU: { label: "Résolu", color: "#10B981", bg: "#10B98120" },
+                      CLOTURE: { label: "Clôturé", color: "#6B7280", bg: "#6B728020" },
+                    };
+
+                    return (
+                      <div
+                        key={risque.id}
+                        className="rounded-lg border p-4 space-y-3"
+                      >
+                        {/* En-tête */}
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-base">{risque.titre}</h3>
+                              <Badge
+                                style={{
+                                  backgroundColor: typeConfig[risque.type].bg,
+                                  color: typeConfig[risque.type].color,
+                                }}
+                                className="text-xs"
+                              >
+                                {typeConfig[risque.type].label}
+                              </Badge>
+                              <Badge
+                                style={{
+                                  backgroundColor: `${graviteConfig[risque.gravite].color}20`,
+                                  color: graviteConfig[risque.gravite].color,
+                                }}
+                                className="text-xs"
+                              >
+                                {graviteConfig[risque.gravite].label}
+                              </Badge>
+                              <Badge
+                                style={{
+                                  backgroundColor: statutConfig[risque.statut].bg,
+                                  color: statutConfig[risque.statut].color,
+                                }}
+                                className="text-xs"
+                              >
+                                {statutConfig[risque.statut].label}
+                              </Badge>
+                            </div>
+
+                            {risque.description && (
+                              <p className="text-sm text-muted-foreground">
+                                {risque.description}
+                              </p>
+                            )}
+
+                            {risque.mesures && (
+                              <div className="bg-muted/50 rounded-md p-3">
+                                <p className="text-xs font-medium mb-1">Mesures prises :</p>
+                                <p className="text-sm">{risque.mesures}</p>
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1.5">
+                                <Clock className="size-3" />
+                                <span>
+                                  Identifié le {format(new Date(risque.creeLe), "dd MMM yyyy", { locale: fr })}
+                                </span>
+                              </div>
+                              {risque.responsable && (
+                                <div className="flex items-center gap-1.5">
+                                  <User className="size-3" />
+                                  <span>
+                                    Responsable : {risque.responsable.prenom} {risque.responsable.nom}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                            >
+                              <Pencil className="size-4" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     );
