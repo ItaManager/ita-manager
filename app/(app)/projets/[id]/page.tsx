@@ -471,13 +471,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                     Fin
                   </th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground uppercase">
-                    Planifié
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground uppercase">
-                    Constaté
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground uppercase">
-                    Écart
+                    Avancement
                   </th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground uppercase">
                     Équipe
@@ -490,17 +484,10 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
               <tbody>
                 {projet.taches && projet.taches.length > 0 ? (
                   projet.taches.map((tache: any) => {
-                    const ecart =
-                      tache.avancementConstate !== null &&
-                      tache.avancementPlanifie !== null
-                        ? tache.avancementConstate - tache.avancementPlanifie
-                        : null;
-
                     return (
                       <tr
                         key={tache.id}
-                        onClick={() => ouvrirModalEditionTache(tache)}
-                        className="border-b hover:bg-muted/30 cursor-pointer"
+                        className="border-b hover:bg-muted/30"
                       >
                         <td className="py-3 px-4 text-sm">{tache.libelle}</td>
                         <td className="py-3 px-4 text-sm text-muted-foreground">
@@ -515,29 +502,6 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                         </td>
                         <td className="py-3 px-4 text-sm">
                           {tache.avancementPlanifie ?? 0} %
-                        </td>
-                        <td className="py-3 px-4 text-sm font-medium">
-                          {tache.avancementConstate !== null
-                            ? `${tache.avancementConstate} %`
-                            : "—"}
-                        </td>
-                        <td className="py-3 px-4 text-sm">
-                          {ecart !== null ? (
-                            <span
-                              className={
-                                ecart > 0
-                                  ? "text-green-600 font-medium"
-                                  : ecart < 0
-                                  ? "text-orange-500 font-medium"
-                                  : "text-muted-foreground"
-                              }
-                            >
-                              {ecart > 0 ? "+" : ""}
-                              {ecart} pts
-                            </span>
-                          ) : (
-                            "—"
-                          )}
                         </td>
                         <td className="py-3 px-4 text-sm">
                           {tache.affectations && tache.affectations.length > 0 ? (
@@ -560,29 +524,37 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                             <span className="text-muted-foreground">—</span>
                           )}
                         </td>
-                        <td
-                          className="py-3 px-4 text-center"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <ModalAffecterEquipeRapide
-                            tacheId={tache.id}
-                            tacheLibelle={tache.libelle}
-                            projetId={projet.id}
-                            projetCode={projet.code}
-                            projetNom={projet.nom}
-                            employeIdsActuels={
-                              tache.affectations?.map((a: any) => a.employe.id) || []
-                            }
-                          >
+                        <td className="py-3 px-4 text-center">
+                          <div className="flex items-center justify-center gap-2">
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
-                              className="h-8 w-8 p-0"
-                              title="Composer l'équipe rapidement"
+                              onClick={() => ouvrirModalEditionTache(tache)}
+                              className="h-8 w-8 p-0 hover:bg-muted"
+                              title="Modifier la tâche"
                             >
-                              <Users className="size-4" />
+                              <Pencil className="size-4 text-muted-foreground" />
                             </Button>
-                          </ModalAffecterEquipeRapide>
+                            <ModalAffecterEquipeRapide
+                              tacheId={tache.id}
+                              tacheLibelle={tache.libelle}
+                              projetId={projet.id}
+                              projetCode={projet.code}
+                              projetNom={projet.nom}
+                              employeIdsActuels={
+                                tache.affectations?.map((a: any) => a.employe.id) || []
+                              }
+                            >
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                title="Composer l'équipe rapidement"
+                              >
+                                <Users className="size-4" />
+                              </Button>
+                            </ModalAffecterEquipeRapide>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -590,7 +562,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                 ) : (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={6}
                       className="py-12 text-center text-sm text-muted-foreground"
                     >
                       Aucune tâche créée
@@ -599,40 +571,6 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                 )}
               </tbody>
             </table>
-          </div>
-
-          {/* Explications pédagogiques */}
-          <div className="mt-8">
-            <h3 className="text-sm font-semibold mb-3">
-              Deux avancements, jamais confondus
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <Card className="bg-background">
-                <CardContent className="p-4">
-                  <h4 className="font-semibold mb-2">Planifié</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Ce que le planning prévoit à cette date. Saisi par le
-                    Conducteur de Travaux ou le Chargé d'études.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-green-50 border-green-200">
-                <CardContent className="p-4">
-                  <h4 className="font-semibold mb-2">Constaté</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Déclaré au relevé d'activité par le chef de chantier, puis
-                    visé. Il ne remplace pas le planifié.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            <p className="text-sm text-muted-foreground mt-4">
-              <span className="font-semibold">L'écart est calculé, jamais stocké.</span>{" "}
-              C'est lui qui appelle une décision : accélérer, replanifier, ou
-              constater un retard.
-            </p>
           </div>
         </div>
       )}
