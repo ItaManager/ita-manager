@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
+import { MultiCombobox, type MultiComboboxOption } from "@/components/ui/multi-combobox";
 import { creerDemandeRessource } from "@/lib/actions/projets";
 import { toast } from "sonner";
 
@@ -137,6 +138,12 @@ export function ModalDemandeRessource({
     description: mat.type,
   }));
 
+  // Transform taches data into MultiComboboxOption[]
+  const tacheOptions: MultiComboboxOption[] = taches.map((tache) => ({
+    value: tache.id,
+    label: tache.libelle,
+  }));
+
   return (
     <Dialog open={ouvert} onOpenChange={onClose}>
       <DialogContent className="max-h-[90vh] overflow-y-auto max-w-4xl p-0">
@@ -211,30 +218,18 @@ export function ModalDemandeRessource({
           {/* Tâches concernées */}
           {taches.length > 0 && (
             <div className="space-y-2">
-              <Label>Tâches concernées (optionnel)</Label>
-              <div className="border rounded-md p-4 max-h-40 overflow-y-auto space-y-2">
-                {taches.map((tache) => (
-                  <div key={tache.id} className="flex items-center gap-2">
-                    <Checkbox
-                      id={`tache-${tache.id}`}
-                      checked={tachesSelectionnees.includes(tache.id)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setTachesSelectionnees([...tachesSelectionnees, tache.id]);
-                        } else {
-                          setTachesSelectionnees(tachesSelectionnees.filter((id) => id !== tache.id));
-                        }
-                      }}
-                    />
-                    <label
-                      htmlFor={`tache-${tache.id}`}
-                      className="text-sm cursor-pointer flex-1"
-                    >
-                      {tache.libelle}
-                    </label>
-                  </div>
-                ))}
-              </div>
+              <Label htmlFor="taches">Tâches concernées</Label>
+              <MultiCombobox
+                options={tacheOptions}
+                value={tachesSelectionnees}
+                onChange={setTachesSelectionnees}
+                placeholder="Sélectionner les tâches..."
+                searchPlaceholder="Rechercher une tâche..."
+                emptyText="Aucune tâche trouvée"
+              />
+              <p className="text-xs text-muted-foreground">
+                Optionnel
+              </p>
             </div>
           )}
 
