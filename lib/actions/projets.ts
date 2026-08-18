@@ -1443,12 +1443,13 @@ export const obtenirProjet = actionProtegee(
           },
         },
         affectations: {
-          where: {
-            dateFin: null,
+          orderBy: {
+            dateDebut: "desc",
           },
           include: {
             employe: {
               select: {
+                id: true,
                 nom: true,
                 prenom: true,
                 matricule: true,
