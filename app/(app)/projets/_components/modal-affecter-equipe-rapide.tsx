@@ -189,6 +189,11 @@ export function ModalAffecterEquipeRapide({
                         <div className="flex-1 min-w-0">
                           <div className="font-medium flex items-center gap-2">
                             {journalier.prenom} {journalier.nom}
+                            {!journalier.competence && (
+                              <span className="inline-flex items-center gap-1 text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full">
+                                Sans compétence
+                              </span>
+                            )}
                             {dejaAffecte && (
                               <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
                                 <Check className="size-3" />
@@ -197,7 +202,7 @@ export function ModalAffecterEquipeRapide({
                             )}
                           </div>
                           <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-                            {journalier.competence && (
+                            {journalier.competence ? (
                               <span className="flex items-center gap-1.5">
                                 <Circle
                                   className={`size-2 ${
@@ -207,6 +212,10 @@ export function ModalAffecterEquipeRapide({
                                   }`}
                                 />
                                 {journalier.competence}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-orange-600">
+                                Aucune compétence assignée
                               </span>
                             )}
                             {journalier.matricule && (

@@ -674,6 +674,32 @@ export const creerTache = actionProtegee(
 
     const { employeIds, ...tacheDonnees } = donnees;
 
+    // Vérifier que tous les journaliers ont une compétence assignée
+    if (employeIds && employeIds.length > 0) {
+      const employes = await prisma.employe.findMany({
+        where: { id: { in: employeIds } },
+        include: {
+          competences: {
+            where: { dateFin: null },
+            take: 1,
+          },
+        },
+      });
+
+      const journaliersSansCompetence = employes.filter(
+        (emp) => emp.typeMainOeuvre === "JOURNALIER" && emp.competences.length === 0
+      );
+
+      if (journaliersSansCompetence.length > 0) {
+        const noms = journaliersSansCompetence
+          .map((emp) => `${emp.prenom} ${emp.nom}`)
+          .join(", ");
+        throw new Error(
+          `Impossible d'affecter des journaliers sans compétence : ${noms}. Veuillez d'abord leur assigner une compétence.`
+        );
+      }
+    }
+
     const tache = await prisma.tache.create({
       data: {
         ...tacheDonnees,
@@ -754,6 +780,32 @@ export const modifierTache = actionProtegee(
 
     // Si employeIds est fourni, mettre à jour les affectations
     if (employeIds !== undefined) {
+      // Vérifier que tous les journaliers ont une compétence assignée
+      if (employeIds.length > 0) {
+        const employes = await prisma.employe.findMany({
+          where: { id: { in: employeIds } },
+          include: {
+            competences: {
+              where: { dateFin: null },
+              take: 1,
+            },
+          },
+        });
+
+        const journaliersSansCompetence = employes.filter(
+          (emp) => emp.typeMainOeuvre === "JOURNALIER" && emp.competences.length === 0
+        );
+
+        if (journaliersSansCompetence.length > 0) {
+          const noms = journaliersSansCompetence
+            .map((emp) => `${emp.prenom} ${emp.nom}`)
+            .join(", ");
+          throw new Error(
+            `Impossible d'affecter des journaliers sans compétence : ${noms}. Veuillez d'abord leur assigner une compétence.`
+          );
+        }
+      }
+
       // Supprimer toutes les affectations existantes
       await prisma.affectationTache.deleteMany({
         where: { tacheId },
