@@ -1344,6 +1344,9 @@ model Tache {
   /// Employés assignés à cette tâche (Many-to-Many)
   affectations AffectationTache[]
 
+  /// Demandes de ressources liées à cette tâche
+  demandesRessource TacheDemandeRessource[]
+
   /// M6 — Travaux réalisés
   travauxRealises TravauxRealises[]
 
@@ -2729,6 +2732,9 @@ model DemandeRessource {
   /// Justification
   motif String
 
+  /// Lieu de livraison du matériel
+  lieuLivraison String?
+
   /// Statut
   statut StatutDemandeRessource @default(BROUILLON)
 
@@ -2744,6 +2750,9 @@ model DemandeRessource {
 
   /// Lignes de demande
   lignes LigneDemandeRessource[]
+
+  /// Tâches concernées par cette demande
+  taches TacheDemandeRessource[]
 
   creeLe    DateTime @default(now())
   modifieLe DateTime @updatedAt
@@ -2773,6 +2782,9 @@ model LigneDemandeRessource {
   materielId String?
   materiel   Materiel? @relation(fields: [materielId], references: [id])
 
+  /// Opérateur requis pour ce matériel
+  operateurRequis Boolean @default(false)
+
   /// Observations
   commentaire String?
 
@@ -2781,6 +2793,21 @@ model LigneDemandeRessource {
   @@index([demandeId])
   @@index([materielId])
   @@map("lignes_demande_ressource")
+}
+
+/**
+ * Table de liaison entre DemandeRessource et Tache
+ * Une demande peut concerner plusieurs tâches
+ */
+model TacheDemandeRessource {
+  tacheId   String
+  tache     Tache            @relation(fields: [tacheId], references: [id], onDelete: Cascade)
+  demandeId String
+  demande   DemandeRessource @relation(fields: [demandeId], references: [id], onDelete: Cascade)
+
+  @@id([tacheId, demandeId])
+  @@index([demandeId])
+  @@map("taches_demandes_ressource")
 }
 
 // =====================================================================

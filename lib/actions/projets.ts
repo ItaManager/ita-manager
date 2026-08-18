@@ -2348,6 +2348,35 @@ export const obtenirProjet = actionProtegee(
             },
           },
         },
+        demandesRessource: {
+          orderBy: {
+            creeLe: "desc",
+          },
+          include: {
+            lignes: {
+              include: {
+                materiel: {
+                  select: {
+                    id: true,
+                    codeIta: true,
+                    designation: true,
+                    type: true,
+                  },
+                },
+              },
+            },
+            taches: {
+              include: {
+                tache: {
+                  select: {
+                    id: true,
+                    libelle: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
@@ -2675,5 +2704,182 @@ export const obtenirJournaliersAvecCompetence = actionProtegee(
       affectationsActives: j.affectationsTaches.length,
       disponible: j.affectationsTaches.length === 0,
     }));
+  }
+);
+
+// =====================================================================
+// DEMANDES DE RESSOURCES
+// =====================================================================
+
+/**
+ * Créer une demande de ressource matérielle
+ */
+export const creerDemandeRessource = actionProtegee(
+  "projet:creer",
+  async (
+    session,
+    input: {
+      projetId: string;
+      dateDebut: Date;
+      dateFin: Date;
+      motif: string;
+      lieuLivraison?: string;
+      tacheIds?: string[];
+      lignes: Array<{
+        materielId?: string;
+        operateurRequis: boolean;
+        commentaire?: string;
+      }>;
+    }
+  ) => {
+    // Récupérer l'employé lié au profil
+    const profil = await prisma.profil.findUnique({
+      where: { id: session.userId },
+      select: { employeId: true },
+    });
+
+    if (!profil?.employeId) {
+      throw new Error("Aucun employé lié à ce profil");
+    }
+
+    // Récupérer le nom de l'employé
+    const employe = await prisma.employe.findUnique({
+      where: { id: profil.employeId },
+      select: { nom: true, prenom: true },
+    });
+
+    if (!employe) {
+      throw new Error("Employé introuvable");
+    }
+
+    const demandeurNom = `${employe.prenom} ${employe.nom}`;
+
+    // Créer la demande avec ses lignes
+    const demande = await prisma.demandeRessource.create({
+      data: {
+        nature: "MATERIELLE",
+        projetId: input.projetId,
+        demandeurId: profil.employeId,
+        demandeurNom,
+        dateDebut: input.dateDebut,
+        dateFin: input.dateFin,
+        motif: input.motif,
+        lieuLivraison: input.lieuLivraison,
+        statut: "BROUILLON",
+        lignes: {
+          create: input.lignes.map((ligne) => ({
+            materielId: ligne.materielId,
+            operateurRequis: ligne.operateurRequis,
+            commentaire: ligne.commentaire,
+          })),
+        },
+        taches: input.tacheIds
+          ? {
+              create: input.tacheIds.map((tacheId) => ({
+                tacheId,
+              })),
+            }
+          : undefined,
+      },
+      include: {
+        lignes: {
+          include: {
+            materiel: true,
+          },
+        },
+        taches: {
+          include: {
+            tache: true,
+          },
+        },
+      },
+    });
+
+    revalidatePath(`/projets/${input.projetId}`);
+
+    return demande;
+  }
+);
+
+/**
+ * Soumettre une demande de ressource (passe de BROUILLON à SOUMISE)
+ */
+export const soumettreDemandeRessource = actionProtegee(
+  "projet:creer",
+  async (session, demandeId: string) => {
+    const demande = await prisma.demandeRessource.findUnique({
+      where: { id: demandeId },
+      select: { statut: true, projetId: true },
+    });
+
+    if (!demande) {
+      throw new Error("Demande introuvable");
+    }
+
+    if (demande.statut !== "BROUILLON") {
+      throw new Error("Seules les demandes en brouillon peuvent être soumises");
+    }
+
+    await prisma.demandeRessource.update({
+      where: { id: demandeId },
+      data: { statut: "SOUMISE" },
+    });
+
+    revalidatePath(`/projets/${demande.projetId}`);
+  }
+);
+
+/**
+ * Annuler une demande de ressource
+ */
+export const annulerDemandeRessource = actionProtegee(
+  "projet:creer",
+  async (session, demandeId: string) => {
+    const demande = await prisma.demandeRessource.findUnique({
+      where: { id: demandeId },
+      select: { statut: true, projetId: true },
+    });
+
+    if (!demande) {
+      throw new Error("Demande introuvable");
+    }
+
+    if (demande.statut === "VALIDEE_SERVICE" || demande.statut === "AFFECTEE") {
+      throw new Error("Cette demande ne peut plus être annulée");
+    }
+
+    await prisma.demandeRessource.update({
+      where: { id: demandeId },
+      data: { statut: "ANNULEE" },
+    });
+
+    revalidatePath(`/projets/${demande.projetId}`);
+  }
+);
+
+/**
+ * Obtenir la liste des matériels disponibles pour une demande
+ */
+export const obtenirMaterielsDisponibles = actionProtegee(
+  "materiel:lire",
+  async () => {
+    const materiels = await prisma.materiel.findMany({
+      where: {
+        statut: {
+          in: ["DISPONIBLE", "EN_MISSION", "DEMOBILISE"],
+        },
+      },
+      select: {
+        id: true,
+        codeIta: true,
+        designation: true,
+        type: true,
+      },
+      orderBy: {
+        codeIta: "asc",
+      },
+    });
+
+    return materiels;
   }
 );

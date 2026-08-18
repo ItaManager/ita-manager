@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { obtenirProjet, validerJalonRapide } from "@/lib/actions/projets";
+import { obtenirProjet, validerJalonRapide, obtenirMaterielsDisponibles } from "@/lib/actions/projets";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +46,7 @@ import { ModalAffecterEquipeRapide } from "../_components/modal-affecter-equipe-
 import { ModalJalon } from "../_components/modal-jalon";
 import { ModalNote } from "../_components/modal-note";
 import { ModalRisque } from "../_components/modal-risque";
+import { ModalDemandeRessource } from "../_components/modal-demande-ressource";
 import { AlertDialogConfirm } from "@/components/ui/alert-dialog-confirm";
 import { GanttChart } from "../_components/gantt-chart";
 import { MeteoChantier } from "../_components/meteo-chantier";
@@ -87,9 +88,12 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
   const [noteSelectionnee, setNoteSelectionnee] = useState<any>(null);
   const [modalRisqueOuverte, setModalRisqueOuverte] = useState(false);
   const [risqueSelectionne, setRisqueSelectionne] = useState<any>(null);
+  const [modalDemandeRessourceOuverte, setModalDemandeRessourceOuverte] = useState(false);
+  const [materielsDisponibles, setMaterielsDisponibles] = useState<any[]>([]);
 
   useEffect(() => {
     chargerProjet();
+    chargerMateriels();
   }, [resolvedParams.id]);
 
   // Réinitialiser la page lors du changement de recherche
@@ -106,6 +110,15 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
       console.error("Erreur:", error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function chargerMateriels() {
+    try {
+      const data = await obtenirMaterielsDisponibles();
+      setMaterielsDisponibles(data);
+    } catch (error) {
+      console.error("Erreur chargement matériels:", error);
     }
   }
 
@@ -2404,7 +2417,63 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                 Matériel et engins affectés au projet
               </p>
             </div>
+            <Button
+              onClick={() => setModalDemandeRessourceOuverte(true)}
+              className="rounded-full bg-[#13850b] hover:bg-[#0f6909] text-white"
+            >
+              <Plus className="size-4 mr-2" />
+              Demander une ressource
+            </Button>
           </div>
+
+          {/* Demandes en attente/soumises */}
+          {projet?.demandesRessource && projet.demandesRessource.filter((d: any) =>
+            ["BROUILLON", "SOUMISE", "VALIDEE_N1"].includes(d.statut)
+          ).length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold">Demandes en cours</h3>
+              {projet.demandesRessource
+                .filter((d: any) => ["BROUILLON", "SOUMISE", "VALIDEE_N1"].includes(d.statut))
+                .map((demande: any) => (
+                  <Card key={demande.id} className="border-blue-200 bg-blue-50/30">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant="outline"
+                              className={
+                                demande.statut === "BROUILLON"
+                                  ? "border-gray-300 text-gray-700"
+                                  : demande.statut === "SOUMISE"
+                                  ? "border-blue-300 text-blue-700"
+                                  : "border-green-300 text-green-700"
+                              }
+                            >
+                              {demande.statut === "BROUILLON" && "Brouillon"}
+                              {demande.statut === "SOUMISE" && "Soumise"}
+                              {demande.statut === "VALIDEE_N1" && "Validée N+1"}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                              {format(new Date(demande.creeLe), "d MMM yyyy", { locale: fr })}
+                            </span>
+                          </div>
+                          <p className="text-sm font-medium">{demande.motif}</p>
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                            <span>
+                              Du {format(new Date(demande.dateDebut), "d MMM", { locale: fr })} au{" "}
+                              {format(new Date(demande.dateFin), "d MMM yyyy", { locale: fr })}
+                            </span>
+                            <span>• {demande.lignes.length} matériel(s) demandé(s)</span>
+                            {demande.lieuLivraison && <span>• {demande.lieuLivraison}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+            </div>
+          )}
 
           {/* Liste des affectations */}
           {projet?.affectationsMateriel && projet.affectationsMateriel.length > 0 ? (
@@ -2617,6 +2686,19 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
           onSuccess={handleSuccesRisque}
         />
       )}
+
+      {/* Modal de demande de ressource */}
+      <ModalDemandeRessource
+        projetId={projet.id}
+        ouvert={modalDemandeRessourceOuverte}
+        taches={projet?.taches || []}
+        materiels={materielsDisponibles}
+        onClose={() => setModalDemandeRessourceOuverte(false)}
+        onSuccess={() => {
+          chargerProjet();
+          setModalDemandeRessourceOuverte(false);
+        }}
+      />
     </div>
   );
 }
