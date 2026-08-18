@@ -2248,6 +2248,7 @@ export const obtenirProjet = actionProtegee(
       where: { id: projetId },
       include: {
         lieuLivraison: true,
+        client: true,
         jalons: {
           orderBy: { datePrevisionnelle: "asc" },
           include: {

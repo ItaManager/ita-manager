@@ -1264,8 +1264,13 @@ model Projet {
   /// BROUILLON, OUVERT, EN_COURS, SUSPENDU, CLOTURE
   statut StatutProjet @default(BROUILLON)
 
-  /// Maitre d'ouvrage
+  /// Maître d'ouvrage (ancien champ texte - deprecated)
+  /// @deprecated Utiliser la relation client à la place
   maitreOuvrage String?
+
+  /// Maître d'ouvrage / Client
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id])
 
   /// Montant du marché en FCFA
   montantMarche Decimal? @db.Decimal(15, 2)
@@ -1485,6 +1490,41 @@ model NoteProjet {
 
   @@map("notes_projets")
   @@index([projetId, creeLe])
+}
+
+/// Client / Maître d'ouvrage
+model Client {
+  id String @id @default(cuid())
+
+  /// Nom du client (entreprise ou particulier)
+  nom String
+
+  /// Type de client
+  type String? // "PUBLIC", "PRIVE", "PARTICULIER"
+
+  /// Contacts
+  telephone       String?
+  email           String?
+  contactPrincipal String? // Nom du contact principal
+  fonctionContact  String? // Fonction du contact
+
+  /// Adresse
+  adresse     String?
+  ville       String?
+  pays        String? @default("Côte d'Ivoire")
+
+  /// Informations complémentaires
+  numeroContribuable String? // Numéro fiscal
+  notes              String? @db.Text
+
+  /// Relations
+  projets Projet[]
+
+  creeLe  DateTime @default(now())
+  creePar String   @db.Uuid
+
+  @@map("clients")
+  @@index([nom])
 }
 
 /// Assignation d'un employé à une tâche (Many-to-Many)
