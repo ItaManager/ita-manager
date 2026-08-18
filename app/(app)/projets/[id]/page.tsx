@@ -18,6 +18,10 @@ import {
   Pencil,
   Search,
   ChevronRight,
+  Flag,
+  CheckCircle2,
+  Clock,
+  XCircle,
 } from "lucide-react";
 import { StatutProjet } from "@prisma/client";
 import { format, differenceInDays } from "date-fns";
@@ -27,6 +31,7 @@ import { ModaleEditionChamp } from "../_components/modale-edition-champ";
 import { ModaleAssignerConducteur } from "../_components/modale-assigner-conducteur";
 import { ModalTache } from "../_components/modal-tache";
 import { ModalAffecterEquipeRapide } from "../_components/modal-affecter-equipe-rapide";
+import { ModalJalon } from "../_components/modal-jalon";
 
 interface PageDetailProjetProps {
   params: Promise<{ id: string }>;
@@ -56,6 +61,8 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
   const ITEMS_PAR_PAGE = 10;
   const [modalTacheOuverte, setModalTacheOuverte] = useState(false);
   const [tacheSelectionnee, setTacheSelectionnee] = useState<any>(null);
+  const [modalJalonOuverte, setModalJalonOuverte] = useState(false);
+  const [jalonSelectionne, setJalonSelectionne] = useState<any>(null);
 
   useEffect(() => {
     chargerProjet();
@@ -96,6 +103,26 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
   function handleSuccesTache() {
     chargerProjet();
     fermerModalTache();
+  }
+
+  function ouvrirModalCreationJalon() {
+    setJalonSelectionne(null);
+    setModalJalonOuverte(true);
+  }
+
+  function ouvrirModalEditionJalon(jalon: any) {
+    setJalonSelectionne(jalon);
+    setModalJalonOuverte(true);
+  }
+
+  function fermerModalJalon() {
+    setModalJalonOuverte(false);
+    setJalonSelectionne(null);
+  }
+
+  function handleSuccesJalon() {
+    chargerProjet();
+    fermerModalJalon();
   }
 
   if (loading) {
@@ -1020,13 +1047,158 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
       )}
 
       {ongletActif === "jalons" && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">
-              Gestion des jalons à venir
-            </p>
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          {/* En-tête */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold">Jalons du projet</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Étapes clés et points de validation
+              </p>
+            </div>
+            <Button
+              onClick={ouvrirModalCreationJalon}
+              className="gap-2 rounded-full bg-[#13850b] hover:bg-[#0f6909] text-white"
+            >
+              <Plus className="size-4" />
+              Nouveau jalon
+            </Button>
+          </div>
+
+          {/* Timeline verticale */}
+          <Card>
+            <CardContent className="p-6">
+              {!projet.jalons || projet.jalons.length === 0 ? (
+                <div className="py-12 text-center">
+                  <Flag className="size-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                  <p className="text-muted-foreground mb-2">
+                    Aucun jalon défini
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Ajoutez des jalons pour marquer les étapes importantes du projet
+                  </p>
+                </div>
+              ) : (
+                <div className="relative">
+                  {/* Ligne verticale */}
+                  <div className="absolute left-[17px] top-0 bottom-0 w-0.5 bg-border" />
+
+                  {/* Liste des jalons */}
+                  <div className="space-y-6">
+                    {projet.jalons.map((jalon: any, index: number) => {
+                      const estPasse = new Date(jalon.datePrevisionnelle) < new Date();
+                      const estValide = jalon.statut === "VALIDE";
+                      const estAbandonne = jalon.statut === "ABANDONNE";
+                      const estEnAttente = jalon.statut === "ATTENTE";
+
+                      return (
+                        <div key={jalon.id} className="relative pl-12">
+                          {/* Indicateur de statut */}
+                          <div className="absolute left-0 top-1">
+                            {estValide ? (
+                              <div className="size-[35px] rounded-full bg-[#13850b] flex items-center justify-center ring-4 ring-background">
+                                <CheckCircle2 className="size-5 text-white" />
+                              </div>
+                            ) : estAbandonne ? (
+                              <div className="size-[35px] rounded-full bg-red-500 flex items-center justify-center ring-4 ring-background">
+                                <XCircle className="size-5 text-white" />
+                              </div>
+                            ) : (
+                              <div className="size-[35px] rounded-full bg-orange-500 flex items-center justify-center ring-4 ring-background">
+                                <Clock className="size-5 text-white" />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Contenu du jalon */}
+                          <div
+                            onClick={() => ouvrirModalEditionJalon(jalon)}
+                            className="group border rounded-lg p-4 hover:bg-muted/50 cursor-pointer transition-colors"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3 className="font-semibold text-base">
+                                    {jalon.libelle}
+                                  </h3>
+                                  <Badge
+                                    style={{
+                                      backgroundColor: estValide
+                                        ? "#13850b20"
+                                        : estAbandonne
+                                        ? "#ef444420"
+                                        : "#f9731620",
+                                      color: estValide
+                                        ? "#13850b"
+                                        : estAbandonne
+                                        ? "#ef4444"
+                                        : "#f97316",
+                                    }}
+                                    className="text-xs"
+                                  >
+                                    {estValide
+                                      ? "Validé"
+                                      : estAbandonne
+                                      ? "Abandonné"
+                                      : "En attente"}
+                                  </Badge>
+                                </div>
+
+                                {jalon.description && (
+                                  <p className="text-sm text-muted-foreground mb-2">
+                                    {jalon.description}
+                                  </p>
+                                )}
+
+                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                  <div className="flex items-center gap-1.5">
+                                    <CalendarIcon className="size-4" />
+                                    <span>
+                                      {format(
+                                        new Date(jalon.datePrevisionnelle),
+                                        "dd MMM yyyy",
+                                        { locale: fr }
+                                      )}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex items-center gap-1.5">
+                                    <User className="size-4" />
+                                    <span>
+                                      {jalon.typeValidateur === "INTERNE"
+                                        ? "Validation interne"
+                                        : jalon.typeValidateur === "MAITRE_OEUVRE"
+                                        ? "Maître d'œuvre"
+                                        : "Maître d'ouvrage"}
+                                      {jalon.validateurExterne &&
+                                        ` · ${jalon.validateurExterne}`}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  ouvrirModalEditionJalon(jalon);
+                                }}
+                              >
+                                <Pencil className="size-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Modal de gestion des tâches */}
@@ -1038,6 +1210,17 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
         ouvert={modalTacheOuverte}
         onFermer={fermerModalTache}
         onSuccess={handleSuccesTache}
+      />
+
+      {/* Modal de gestion des jalons */}
+      <ModalJalon
+        projetId={projet.id}
+        projetCode={projet.code}
+        projetNom={projet.nom}
+        jalon={jalonSelectionne}
+        ouvert={modalJalonOuverte}
+        onFermer={fermerModalJalon}
+        onSuccess={handleSuccesJalon}
       />
     </div>
   );

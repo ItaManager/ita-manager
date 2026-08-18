@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/db/prisma";
 import { actionProtegee } from "@/lib/auth/guard";
 import { revalidatePath } from "next/cache";
-import { StatutProjet, CyclePaie, Projet, TypeValidateur, RoleFonctionnel } from "@prisma/client";
+import { StatutProjet, CyclePaie, Projet, TypeValidateur, RoleFonctionnel, StatutJalon } from "@prisma/client";
 
 // =====================================================================
 // M5 — PROJETS ET PLANNING
@@ -993,6 +993,7 @@ export const modifierJalon = actionProtegee(
       datePrevisionnelle?: Date;
       typeValidateur?: TypeValidateur;
       validateurExterne?: string;
+      statut?: StatutJalon;
     }
   ) => {
     const jalonExistant = await prisma.jalon.findUnique({
@@ -1002,11 +1003,6 @@ export const modifierJalon = actionProtegee(
 
     if (!jalonExistant) {
       throw new Error("Jalon introuvable");
-    }
-
-    // Empêcher la modification d'un jalon déjà validé
-    if (jalonExistant.statut === "VALIDE") {
-      throw new Error("Impossible de modifier un jalon déjà validé");
     }
 
     const jalon = await prisma.jalon.update({
