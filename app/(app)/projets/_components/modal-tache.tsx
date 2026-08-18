@@ -374,7 +374,7 @@ export function ModalTache({
               <Button
                 type="submit"
                 disabled={chargement || suppression}
-                className="rounded-full h-11 px-6 bg-primary hover:bg-primary-hover"
+                className="rounded-full h-11 px-6 bg-[#13850b] hover:bg-[#0f6909] text-white"
               >
                 {chargement && <Loader2 className="size-4 mr-2 animate-spin" />}
                 {tache ? "Enregistrer" : "Créer"}
