@@ -45,6 +45,7 @@ import { ModalNote } from "../_components/modal-note";
 import { ModalRisque } from "../_components/modal-risque";
 import { AlertDialogConfirm } from "@/components/ui/alert-dialog-confirm";
 import { GanttChart } from "../_components/gantt-chart";
+import { MeteoChantier } from "../_components/meteo-chantier";
 
 interface PageDetailProjetProps {
   params: Promise<{ id: string }>;
@@ -294,6 +295,7 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                 >
                   {statutConfig.label}
                 </Badge>
+                <MeteoChantier projet={projet} variant="badge" showDetails />
                 <ModaleEditionChamp
                   projetId={projet.id}
                   champ="statut"
@@ -653,6 +655,9 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
       {/* Contenu de l'onglet Tableau de bord */}
       {ongletActif === "tableau-bord" && (
         <div className="space-y-6">
+          {/* Météo du chantier */}
+          <MeteoChantier projet={projet} variant="card" showDetails />
+
           {/* KPIs principaux */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Avancement global */}
