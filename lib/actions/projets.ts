@@ -735,6 +735,25 @@ export const creerTache = actionProtegee(
 );
 
 /**
+ * Lister les tâches d'un projet (pour sélection de prédécesseur)
+ */
+export const listerTachesProjet = actionProtegee(
+  "planning:modifier",
+  async (session, projetId: string) => {
+    const taches = await prisma.tache.findMany({
+      where: { projetId },
+      select: {
+        id: true,
+        libelle: true,
+      },
+      orderBy: { dateDebut: "asc" },
+    });
+
+    return taches;
+  }
+);
+
+/**
  * Modifier une tâche existante
  */
 export const modifierTache = actionProtegee(
@@ -1604,6 +1623,12 @@ export const obtenirProjet = actionProtegee(
         taches: {
           orderBy: { dateDebut: "asc" },
           include: {
+            predecesseur: {
+              select: {
+                id: true,
+                libelle: true,
+              },
+            },
             responsable: {
               select: {
                 id: true,

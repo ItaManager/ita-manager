@@ -23,6 +23,7 @@ import {
   Clock,
   XCircle,
   Paperclip,
+  Link2,
 } from "lucide-react";
 import { StatutProjet } from "@prisma/client";
 import { format, differenceInDays } from "date-fns";
@@ -529,7 +530,15 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                         key={tache.id}
                         className="border-b hover:bg-muted/30"
                       >
-                        <td className="py-3 px-4 text-sm">{tache.libelle}</td>
+                        <td className="py-3 px-4 text-sm">
+                          <div>{tache.libelle}</div>
+                          {tache.predecesseur && (
+                            <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
+                              <Link2 className="size-3" />
+                              <span>Dépend de : {tache.predecesseur.libelle}</span>
+                            </div>
+                          )}
+                        </td>
                         <td className="py-3 px-4 text-sm text-muted-foreground">
                           {tache.dateDebut
                             ? format(new Date(tache.dateDebut), "dd/MM/yyyy")

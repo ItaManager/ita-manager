@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Combobox } from "@/components/ui/combobox";
-import { creerTache, modifierTache, supprimerTache } from "@/lib/actions/projets";
+import { creerTache, modifierTache, supprimerTache, listerTachesProjet } from "@/lib/actions/projets";
 import { listerEmployes } from "@/lib/actions/employes";
 import { toast } from "sonner";
 import { Loader2, Trash2, X, ClipboardList } from "lucide-react";
@@ -31,6 +31,7 @@ interface ModalTacheProps {
     dateDebut: Date;
     dateFin: Date;
     avancementPlanifie: number;
+    predecesseurId?: string | null;
     responsableId?: string | null;
     affectations?: Array<{
       employeId?: string;
@@ -70,6 +71,10 @@ export function ModalTache({
       ?.map((a) => a.employe?.id || a.employeId)
       .filter((id): id is string => !!id) || []
   );
+  const [predecesseurId, setPredecesseurId] = useState<string>(
+    (tache as any)?.predecesseurId || ""
+  );
+  const [tachesProjet, setTachesProjet] = useState<any[]>([]);
 
   const {
     register,
@@ -105,10 +110,19 @@ export function ModalTache({
       }
     }
 
+    async function chargerTaches() {
+      try {
+        const taches = await listerTachesProjet(projetId);
+        setTachesProjet(taches);
+      } catch (error) {
+        toast.error("Erreur lors du chargement des tâches");
+      }
+    }
+
     async function initialiser() {
       if (ouvert) {
-        // Charger les employés d'abord
-        await chargerEmployes();
+        // Charger les employés et tâches en parallèle
+        await Promise.all([chargerEmployes(), chargerTaches()]);
 
         // Réinitialiser les affectations après que les employés soient chargés
         setResponsableId(tache?.responsableId || "");
@@ -117,6 +131,7 @@ export function ModalTache({
             ?.map((a) => a.employe?.id || a.employeId)
             .filter((id): id is string => !!id) || []
         );
+        setPredecesseurId((tache as any)?.predecesseurId || "");
 
         // Réinitialiser le formulaire avec les valeurs de la tâche
         if (tache) {
@@ -140,7 +155,7 @@ export function ModalTache({
     }
 
     initialiser();
-  }, [ouvert, tache, reset]);
+  }, [ouvert, tache, reset, projetId]);
 
   // Filtrer les journaliers pour les affectations
   const journaliers = employes.filter(
@@ -158,6 +173,7 @@ export function ModalTache({
           dateDebut: new Date(data.dateDebut),
           dateFin: new Date(data.dateFin),
           avancementPlanifie: data.avancementPlanifie,
+          predecesseurId: predecesseurId || undefined,
           responsableId: responsableId || undefined,
           employeIds,
         });
@@ -171,6 +187,7 @@ export function ModalTache({
           dateDebut: new Date(data.dateDebut),
           dateFin: new Date(data.dateFin),
           avancementPlanifie: data.avancementPlanifie,
+          predecesseurId: predecesseurId || undefined,
           responsableId: responsableId || undefined,
           employeIds,
         });
@@ -308,6 +325,29 @@ export function ModalTache({
                 {errors.avancementPlanifie.message}
               </p>
             )}
+          </div>
+
+          {/* Tâche prédécesseur */}
+          <div>
+            <Label htmlFor="predecesseur">Tâche prédécesseur (dépendance)</Label>
+            <Combobox
+              value={predecesseurId}
+              onChange={setPredecesseurId}
+              options={[
+                { value: "", label: "Aucune dépendance" },
+                ...tachesProjet
+                  .filter((t) => t.id !== tache?.id)
+                  .map((t) => ({
+                    value: t.id,
+                    label: t.libelle,
+                  })),
+              ]}
+              placeholder="Sélectionner une tâche"
+              searchPlaceholder="Rechercher..."
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Cette tâche ne pourra démarrer qu'après la tâche sélectionnée
+            </p>
           </div>
 
           {/* Responsable */}
