@@ -501,7 +501,14 @@ export const ajouterPointage = actionProtegee(
     });
 
     revalidatePath(`/releves/${data.releveId}`);
-    return pointage;
+
+    // Convertir les Decimal en nombres pour le client
+    return {
+      ...pointage,
+      heuresTheoretiques: Number(pointage.heuresTheoretiques),
+      heuresReelles: Number(pointage.heuresReelles),
+      heuresSup: Number(pointage.heuresSup),
+    };
   }
 );
 
@@ -582,7 +589,14 @@ export const modifierPointage = actionProtegee(
     });
 
     revalidatePath(`/releves/${pointage.releveId}`);
-    return updated;
+
+    // Convertir les Decimal en nombres pour le client
+    return {
+      ...updated,
+      heuresTheoretiques: Number(updated.heuresTheoretiques),
+      heuresReelles: Number(updated.heuresReelles),
+      heuresSup: Number(updated.heuresSup),
+    };
   }
 );
 
