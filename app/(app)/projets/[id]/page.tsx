@@ -103,6 +103,20 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
   const [filtreTache, setFiltreTache] = useState<"toutes" | "en-cours" | "terminees" | "en-retard">("toutes");
   const [pageTache, setPageTache] = useState(1);
   const [limitTache, setLimitTache] = useState(20);
+  const [rechercheNote, setRechercheNote] = useState("");
+  const [filtreNote, setFiltreNote] = useState<"toutes" | "generale" | "technique" | "qualite" | "securite" | "administrative" | "reunion">("toutes");
+  const [pageNote, setPageNote] = useState(1);
+  const [limitNote, setLimitNote] = useState(20);
+  const [rechercheDocument, setRechercheDocument] = useState("");
+  const [filtreDocument, setFiltreDocument] = useState<"tous" | "plan" | "contrat" | "rapport" | "devis" | "autorisation" | "autre">("tous");
+  const [pageDocument, setPageDocument] = useState(1);
+  const [limitDocument, setLimitDocument] = useState(20);
+  const [rechercheRisque, setRechercheRisque] = useState("");
+  const [filtreRisque, setFiltreRisque] = useState<"tous" | "risque" | "incident">("tous");
+  const [filtreGravite, setFiltreGravite] = useState<"toutes" | "faible" | "moyenne" | "elevee" | "critique">("toutes");
+  const [filtreStatut, setFiltreStatut] = useState<"tous" | "ouvert" | "en_traitement" | "resolu" | "cloture">("tous");
+  const [pageRisque, setPageRisque] = useState(1);
+  const [limitRisque, setLimitRisque] = useState(20);
   const ITEMS_PAR_PAGE = 10;
   const [modalTacheOuverte, setModalTacheOuverte] = useState(false);
   const [tacheSelectionnee, setTacheSelectionnee] = useState<any>(null);
@@ -1982,60 +1996,192 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
       )}
 
       {/* Onglet Notes */}
-      {ongletActif === "notes" && (
-        <div className="space-y-4">
-          {/* En-tête */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold">Notes et observations</h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Journal de bord du projet
-              </p>
+      {ongletActif === "notes" && (() => {
+        // Filtrage des notes
+        let notesFiltrees = projet.notes || [];
+
+        // Filtre par recherche (titre + contenu)
+        if (rechercheNote) {
+          notesFiltrees = notesFiltrees.filter((n: any) => {
+            const rechercheLower = rechercheNote.toLowerCase();
+            const titre = (n.titre || "").toLowerCase();
+            const contenu = (n.contenu || "").toLowerCase();
+            return titre.includes(rechercheLower) || contenu.includes(rechercheLower);
+          });
+        }
+
+        // Filtre par type
+        if (filtreNote !== "toutes") {
+          notesFiltrees = notesFiltrees.filter((n: any) => n.type.toLowerCase() === filtreNote);
+        }
+
+        // Calculs pour les compteurs de filtres
+        const totalNotes = projet.notes?.length || 0;
+        const countGenerale = projet.notes?.filter((n: any) => n.type === "GENERALE").length || 0;
+        const countTechnique = projet.notes?.filter((n: any) => n.type === "TECHNIQUE").length || 0;
+        const countQualite = projet.notes?.filter((n: any) => n.type === "QUALITE").length || 0;
+        const countSecurite = projet.notes?.filter((n: any) => n.type === "SECURITE").length || 0;
+        const countAdministrative = projet.notes?.filter((n: any) => n.type === "ADMINISTRATIVE").length || 0;
+        const countReunion = projet.notes?.filter((n: any) => n.type === "REUNION").length || 0;
+
+        // Pagination
+        const total = notesFiltrees.length;
+        const totalPages = Math.ceil(total / limitNote);
+        const debut = (pageNote - 1) * limitNote;
+        const fin = debut + limitNote;
+        const notesPaginees = notesFiltrees.slice(debut, fin);
+
+        const typeLabels: Record<string, string> = {
+          GENERALE: "Générale",
+          TECHNIQUE: "Technique",
+          QUALITE: "Qualité",
+          SECURITE: "Sécurité",
+          ADMINISTRATIVE: "Administrative",
+          REUNION: "Réunion",
+        };
+
+        const typeColors: Record<string, string> = {
+          GENERALE: "#6B7280",
+          TECHNIQUE: "#3B82F6",
+          QUALITE: "#10B981",
+          SECURITE: "#EF4444",
+          ADMINISTRATIVE: "#8B5CF6",
+          REUNION: "#F59E0B",
+        };
+
+        return (
+          <div className="space-y-4">
+            {/* En-tête */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Notes et observations</h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Journal de bord du projet
+                </p>
+              </div>
+              <Button
+                onClick={ouvrirModalCreationNote}
+                className="gap-2 rounded-full bg-[#13850b] hover:bg-[#0f6909] text-white"
+              >
+                <Plus className="size-4" />
+                Nouvelle note
+              </Button>
             </div>
-            <Button
-              onClick={ouvrirModalCreationNote}
-              className="gap-2 rounded-full bg-[#13850b] hover:bg-[#0f6909] text-white"
-            >
-              <Plus className="size-4" />
-              Nouvelle note
-            </Button>
-          </div>
 
-          {/* Liste des notes */}
-          <Card>
-            <CardContent className="p-4">
-              {!projet.notes || projet.notes.length === 0 ? (
-                <div className="py-6 text-center">
-                  <FileText className="size-8 mx-auto mb-2 text-muted-foreground opacity-50" />
-                  <p className="text-sm text-muted-foreground mb-1">
-                    Aucune note enregistrée
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Ajoutez des observations, comptes-rendus ou notes techniques
-                  </p>
+            {/* Barre de recherche et filtres */}
+            <div className="bg-white rounded-xl border border-[#0000001a] p-4 space-y-4">
+              {/* Barre de recherche avec X */}
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Rechercher dans les notes..."
+                    value={rechercheNote}
+                    onChange={(e) => {
+                      setRechercheNote(e.target.value);
+                      setPageNote(1);
+                    }}
+                    className="pl-10 pr-10 h-10"
+                  />
+                  {rechercheNote && (
+                    <button
+                      onClick={() => setRechercheNote("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="Effacer la recherche"
+                    >
+                      <X className="size-4" />
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {projet.notes.map((note: any) => {
-                    const typeLabels: Record<string, string> = {
-                      GENERALE: "Générale",
-                      TECHNIQUE: "Technique",
-                      QUALITE: "Qualité",
-                      SECURITE: "Sécurité",
-                      ADMINISTRATIVE: "Administrative",
-                      REUNION: "Réunion",
-                    };
+              </div>
 
-                    const typeColors: Record<string, string> = {
-                      GENERALE: "#6B7280",
-                      TECHNIQUE: "#3B82F6",
-                      QUALITE: "#10B981",
-                      SECURITE: "#EF4444",
-                      ADMINISTRATIVE: "#8B5CF6",
-                      REUNION: "#F59E0B",
-                    };
+              {/* Filtres par type */}
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Par type
+                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button onClick={() => { setFiltreNote("toutes"); setPageNote(1); }}>
+                    <Badge
+                      variant={filtreNote === "toutes" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Toutes <span className="ml-1 opacity-70">({totalNotes})</span>
+                    </Badge>
+                  </button>
+                  <button onClick={() => { setFiltreNote("generale"); setPageNote(1); }}>
+                    <Badge
+                      variant={filtreNote === "generale" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Générale <span className="ml-1 opacity-70">({countGenerale})</span>
+                    </Badge>
+                  </button>
+                  <button onClick={() => { setFiltreNote("technique"); setPageNote(1); }}>
+                    <Badge
+                      variant={filtreNote === "technique" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Technique <span className="ml-1 opacity-70">({countTechnique})</span>
+                    </Badge>
+                  </button>
+                  <button onClick={() => { setFiltreNote("qualite"); setPageNote(1); }}>
+                    <Badge
+                      variant={filtreNote === "qualite" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Qualité <span className="ml-1 opacity-70">({countQualite})</span>
+                    </Badge>
+                  </button>
+                  <button onClick={() => { setFiltreNote("securite"); setPageNote(1); }}>
+                    <Badge
+                      variant={filtreNote === "securite" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Sécurité <span className="ml-1 opacity-70">({countSecurite})</span>
+                    </Badge>
+                  </button>
+                  <button onClick={() => { setFiltreNote("administrative"); setPageNote(1); }}>
+                    <Badge
+                      variant={filtreNote === "administrative" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Administrative <span className="ml-1 opacity-70">({countAdministrative})</span>
+                    </Badge>
+                  </button>
+                  <button onClick={() => { setFiltreNote("reunion"); setPageNote(1); }}>
+                    <Badge
+                      variant={filtreNote === "reunion" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Réunion <span className="ml-1 opacity-70">({countReunion})</span>
+                    </Badge>
+                  </button>
+                </div>
+              </div>
+            </div>
 
-                    return (
+            {/* Liste des notes */}
+            <Card>
+              <CardContent className="p-4">
+                {notesPaginees.length === 0 ? (
+                  <div className="py-6 text-center">
+                    <FileText className="size-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                    <p className="text-sm text-muted-foreground mb-1">
+                      {rechercheNote || filtreNote !== "toutes"
+                        ? "Aucune note ne correspond aux critères"
+                        : "Aucune note enregistrée"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {rechercheNote || filtreNote !== "toutes"
+                        ? "Essayez de modifier les filtres de recherche"
+                        : "Ajoutez des observations, comptes-rendus ou notes techniques"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {notesPaginees.map((note: any) => (
                       <div
                         key={note.id}
                         className="rounded-lg border p-4 hover:bg-muted/30 transition-colors"
@@ -2092,75 +2238,262 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                           </div>
                         </div>
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Pagination */}
+            {total > 0 && (
+              <div className="flex items-center justify-between bg-white rounded-xl border border-[#0000001a] p-4">
+                <div className="flex items-center gap-4">
+                  <div className="text-sm text-muted-foreground">
+                    {debut + 1}–{Math.min(fin, total)} sur {total} note{total > 1 ? "s" : ""}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Afficher</span>
+                    <Select
+                      value={limitNote.toString()}
+                      onValueChange={(value) => {
+                        setLimitNote(parseInt(value));
+                        setPageNote(1);
+                      }}
+                    >
+                      <SelectTrigger className="h-8 w-20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                        <SelectItem value="100">100</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPageNote(pageNote - 1)}
+                    disabled={pageNote <= 1}
+                    className="h-8 gap-1 border-[#13850b] text-[#13850b] hover:bg-[#13850b]/10"
+                  >
+                    <ChevronLeft className="size-4" />
+                    Précédent
+                  </Button>
+                  <div className="text-sm text-muted-foreground px-2">
+                    Page {pageNote} sur {totalPages}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPageNote(pageNote + 1)}
+                    disabled={pageNote >= totalPages}
+                    className="h-8 gap-1 border-[#13850b] text-[#13850b] hover:bg-[#13850b]/10"
+                  >
+                    Suivant
+                    <ChevronRight className="size-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Onglet Documents */}
-      {ongletActif === "documents" && (
-        <div className="space-y-4">
-          {/* En-tête */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold">Documents du projet</h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Plans, contrats, rapports et autres documents
-              </p>
+      {ongletActif === "documents" && (() => {
+        // Filtrage des documents
+        let documentsFiltres = projet.documents || [];
+
+        // Filtre par recherche (nom fichier)
+        if (rechercheDocument) {
+          documentsFiltres = documentsFiltres.filter((d: any) => {
+            const nomFichier = (d.nomFichier || "").toLowerCase();
+            return nomFichier.includes(rechercheDocument.toLowerCase());
+          });
+        }
+
+        // Filtre par catégorie
+        if (filtreDocument !== "tous") {
+          documentsFiltres = documentsFiltres.filter((d: any) => d.categorie.toLowerCase() === filtreDocument);
+        }
+
+        // Calculs pour les compteurs de filtres
+        const totalDocuments = projet.documents?.length || 0;
+        const countPlan = projet.documents?.filter((d: any) => d.categorie === "PLAN").length || 0;
+        const countContrat = projet.documents?.filter((d: any) => d.categorie === "CONTRAT").length || 0;
+        const countRapport = projet.documents?.filter((d: any) => d.categorie === "RAPPORT").length || 0;
+        const countDevis = projet.documents?.filter((d: any) => d.categorie === "DEVIS").length || 0;
+        const countAutorisation = projet.documents?.filter((d: any) => d.categorie === "AUTORISATION").length || 0;
+        const countAutre = projet.documents?.filter((d: any) => d.categorie === "AUTRE").length || 0;
+
+        // Pagination
+        const total = documentsFiltres.length;
+        const totalPages = Math.ceil(total / limitDocument);
+        const debut = (pageDocument - 1) * limitDocument;
+        const fin = debut + limitDocument;
+        const documentsPagines = documentsFiltres.slice(debut, fin);
+
+        const categorieLabels: Record<string, string> = {
+          PLAN: "Plan",
+          CONTRAT: "Contrat",
+          RAPPORT: "Rapport",
+          DEVIS: "Devis",
+          AUTORISATION: "Autorisation",
+          AUTRE: "Autre",
+        };
+
+        const categorieColors: Record<string, string> = {
+          PLAN: "#3B82F6",
+          CONTRAT: "#10B981",
+          RAPPORT: "#8B5CF6",
+          DEVIS: "#F59E0B",
+          AUTORISATION: "#EF4444",
+          AUTRE: "#6B7280",
+        };
+
+        const formatTaille = (bytes: number) => {
+          if (bytes < 1024) return `${bytes} o`;
+          if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
+          return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+        };
+
+        return (
+          <div className="space-y-4">
+            {/* En-tête */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Documents du projet</h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Plans, contrats, rapports et autres documents
+                </p>
+              </div>
+              <Button
+                className="gap-2 rounded-full bg-[#13850b] hover:bg-[#0f6909] text-white"
+              >
+                <Upload className="size-4" />
+                Ajouter un document
+              </Button>
             </div>
-            <Button
-              className="gap-2 rounded-full bg-[#13850b] hover:bg-[#0f6909] text-white"
-            >
-              <Upload className="size-4" />
-              Ajouter un document
-            </Button>
-          </div>
 
-          {/* Liste des documents */}
-          <Card>
-            <CardContent className="p-4">
-              {!projet.documents || projet.documents.length === 0 ? (
-                <div className="py-6 text-center">
-                  <Paperclip className="size-8 mx-auto mb-2 text-muted-foreground opacity-50" />
-                  <p className="text-sm text-muted-foreground mb-1">
-                    Aucun document enregistré
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Ajoutez des plans, contrats, rapports ou autres documents liés au projet
-                  </p>
+            {/* Barre de recherche et filtres */}
+            <div className="bg-white rounded-xl border border-[#0000001a] p-4 space-y-4">
+              {/* Barre de recherche avec X */}
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Rechercher par nom de fichier..."
+                    value={rechercheDocument}
+                    onChange={(e) => {
+                      setRechercheDocument(e.target.value);
+                      setPageDocument(1);
+                    }}
+                    className="pl-10 pr-10 h-10"
+                  />
+                  {rechercheDocument && (
+                    <button
+                      onClick={() => setRechercheDocument("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="Effacer la recherche"
+                    >
+                      <X className="size-4" />
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {projet.documents.map((doc: any) => {
-                    const categorieLabels: Record<string, string> = {
-                      PLAN: "Plan",
-                      CONTRAT: "Contrat",
-                      RAPPORT: "Rapport",
-                      DEVIS: "Devis",
-                      AUTORISATION: "Autorisation",
-                      AUTRE: "Autre",
-                    };
+              </div>
 
-                    const categorieColors: Record<string, string> = {
-                      PLAN: "#3B82F6",
-                      CONTRAT: "#10B981",
-                      RAPPORT: "#8B5CF6",
-                      DEVIS: "#F59E0B",
-                      AUTORISATION: "#EF4444",
-                      AUTRE: "#6B7280",
-                    };
+              {/* Filtres par catégorie */}
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Par catégorie
+                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button onClick={() => { setFiltreDocument("tous"); setPageDocument(1); }}>
+                    <Badge
+                      variant={filtreDocument === "tous" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Tous <span className="ml-1 opacity-70">({totalDocuments})</span>
+                    </Badge>
+                  </button>
+                  <button onClick={() => { setFiltreDocument("plan"); setPageDocument(1); }}>
+                    <Badge
+                      variant={filtreDocument === "plan" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Plan <span className="ml-1 opacity-70">({countPlan})</span>
+                    </Badge>
+                  </button>
+                  <button onClick={() => { setFiltreDocument("contrat"); setPageDocument(1); }}>
+                    <Badge
+                      variant={filtreDocument === "contrat" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Contrat <span className="ml-1 opacity-70">({countContrat})</span>
+                    </Badge>
+                  </button>
+                  <button onClick={() => { setFiltreDocument("rapport"); setPageDocument(1); }}>
+                    <Badge
+                      variant={filtreDocument === "rapport" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Rapport <span className="ml-1 opacity-70">({countRapport})</span>
+                    </Badge>
+                  </button>
+                  <button onClick={() => { setFiltreDocument("devis"); setPageDocument(1); }}>
+                    <Badge
+                      variant={filtreDocument === "devis" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Devis <span className="ml-1 opacity-70">({countDevis})</span>
+                    </Badge>
+                  </button>
+                  <button onClick={() => { setFiltreDocument("autorisation"); setPageDocument(1); }}>
+                    <Badge
+                      variant={filtreDocument === "autorisation" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Autorisation <span className="ml-1 opacity-70">({countAutorisation})</span>
+                    </Badge>
+                  </button>
+                  <button onClick={() => { setFiltreDocument("autre"); setPageDocument(1); }}>
+                    <Badge
+                      variant={filtreDocument === "autre" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Autre <span className="ml-1 opacity-70">({countAutre})</span>
+                    </Badge>
+                  </button>
+                </div>
+              </div>
+            </div>
 
-                    const formatTaille = (bytes: number) => {
-                      if (bytes < 1024) return `${bytes} o`;
-                      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
-                      return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
-                    };
-
-                    return (
+            {/* Liste des documents */}
+            <Card>
+              <CardContent className="p-4">
+                {documentsPagines.length === 0 ? (
+                  <div className="py-6 text-center">
+                    <Paperclip className="size-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                    <p className="text-sm text-muted-foreground mb-1">
+                      {rechercheDocument || filtreDocument !== "tous"
+                        ? "Aucun document ne correspond aux critères"
+                        : "Aucun document enregistré"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {rechercheDocument || filtreDocument !== "tous"
+                        ? "Essayez de modifier les filtres de recherche"
+                        : "Ajoutez des plans, contrats, rapports ou autres documents liés au projet"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {documentsPagines.map((doc: any) => (
                       <div
                         key={doc.id}
                         className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/30 transition-colors"
@@ -2213,71 +2546,340 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                           </Button>
                         </div>
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Pagination */}
+            {total > 0 && (
+              <div className="flex items-center justify-between bg-white rounded-xl border border-[#0000001a] p-4">
+                <div className="flex items-center gap-4">
+                  <div className="text-sm text-muted-foreground">
+                    {debut + 1}–{Math.min(fin, total)} sur {total} document{total > 1 ? "s" : ""}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Afficher</span>
+                    <Select
+                      value={limitDocument.toString()}
+                      onValueChange={(value) => {
+                        setLimitDocument(parseInt(value));
+                        setPageDocument(1);
+                      }}
+                    >
+                      <SelectTrigger className="h-8 w-20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                        <SelectItem value="100">100</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPageDocument(pageDocument - 1)}
+                    disabled={pageDocument <= 1}
+                    className="h-8 gap-1 border-[#13850b] text-[#13850b] hover:bg-[#13850b]/10"
+                  >
+                    <ChevronLeft className="size-4" />
+                    Précédent
+                  </Button>
+                  <div className="text-sm text-muted-foreground px-2">
+                    Page {pageDocument} sur {totalPages}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPageDocument(pageDocument + 1)}
+                    disabled={pageDocument >= totalPages}
+                    className="h-8 gap-1 border-[#13850b] text-[#13850b] hover:bg-[#13850b]/10"
+                  >
+                    Suivant
+                    <ChevronRight className="size-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Onglet Risques et Incidents */}
-      {ongletActif === "risques" && (
-        <div className="space-y-4">
-          {/* En-tête */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold">Risques et incidents</h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Suivi des risques identifiés et incidents survenus
-              </p>
+      {ongletActif === "risques" && (() => {
+        // Filtrage des risques
+        let risquesFiltres = projet.risquesIncidents || [];
+
+        // Filtre par recherche (titre + description)
+        if (rechercheRisque) {
+          risquesFiltres = risquesFiltres.filter((r: any) => {
+            const rechercheLower = rechercheRisque.toLowerCase();
+            const titre = (r.titre || "").toLowerCase();
+            const description = (r.description || "").toLowerCase();
+            return titre.includes(rechercheLower) || description.includes(rechercheLower);
+          });
+        }
+
+        // Filtre par type
+        if (filtreRisque !== "tous") {
+          risquesFiltres = risquesFiltres.filter((r: any) => r.type.toLowerCase() === filtreRisque);
+        }
+
+        // Filtre par gravité
+        if (filtreGravite !== "toutes") {
+          risquesFiltres = risquesFiltres.filter((r: any) => r.gravite.toLowerCase() === filtreGravite);
+        }
+
+        // Filtre par statut
+        if (filtreStatut !== "tous") {
+          risquesFiltres = risquesFiltres.filter((r: any) => r.statut.toLowerCase() === filtreStatut);
+        }
+
+        // Calculs pour les compteurs de filtres
+        const totalRisques = projet.risquesIncidents?.length || 0;
+        const countRisque = projet.risquesIncidents?.filter((r: any) => r.type === "RISQUE").length || 0;
+        const countIncident = projet.risquesIncidents?.filter((r: any) => r.type === "INCIDENT").length || 0;
+        const countFaible = projet.risquesIncidents?.filter((r: any) => r.gravite === "FAIBLE").length || 0;
+        const countMoyenne = projet.risquesIncidents?.filter((r: any) => r.gravite === "MOYENNE").length || 0;
+        const countElevee = projet.risquesIncidents?.filter((r: any) => r.gravite === "ELEVEE").length || 0;
+        const countCritique = projet.risquesIncidents?.filter((r: any) => r.gravite === "CRITIQUE").length || 0;
+        const countOuvert = projet.risquesIncidents?.filter((r: any) => r.statut === "OUVERT").length || 0;
+        const countEnTraitement = projet.risquesIncidents?.filter((r: any) => r.statut === "EN_TRAITEMENT").length || 0;
+        const countResolu = projet.risquesIncidents?.filter((r: any) => r.statut === "RESOLU").length || 0;
+        const countCloture = projet.risquesIncidents?.filter((r: any) => r.statut === "CLOTURE").length || 0;
+
+        // Pagination
+        const total = risquesFiltres.length;
+        const totalPages = Math.ceil(total / limitRisque);
+        const debut = (pageRisque - 1) * limitRisque;
+        const fin = debut + limitRisque;
+        const risquesPagines = risquesFiltres.slice(debut, fin);
+
+        const typeConfig: Record<string, { label: string; color: string; bg: string }> = {
+          RISQUE: { label: "Risque", color: "#F59E0B", bg: "#F59E0B20" },
+          INCIDENT: { label: "Incident", color: "#EF4444", bg: "#EF444420" },
+        };
+
+        const graviteConfig: Record<string, { label: string; color: string }> = {
+          FAIBLE: { label: "Faible", color: "#10B981" },
+          MOYENNE: { label: "Moyenne", color: "#F59E0B" },
+          ELEVEE: { label: "Élevée", color: "#EF4444" },
+          CRITIQUE: { label: "Critique", color: "#DC2626" },
+        };
+
+        const statutConfig: Record<string, { label: string; color: string; bg: string }> = {
+          OUVERT: { label: "Ouvert", color: "#3B82F6", bg: "#3B82F620" },
+          EN_TRAITEMENT: { label: "En traitement", color: "#F59E0B", bg: "#F59E0B20" },
+          RESOLU: { label: "Résolu", color: "#10B981", bg: "#10B98120" },
+          CLOTURE: { label: "Clôturé", color: "#6B7280", bg: "#6B728020" },
+        };
+
+        return (
+          <div className="space-y-4">
+            {/* En-tête */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Risques et incidents</h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Suivi des risques identifiés et incidents survenus
+                </p>
+              </div>
+              <Button
+                onClick={ouvrirModalCreationRisque}
+                className="gap-2 rounded-full bg-[#13850b] hover:bg-[#0f6909] text-white"
+              >
+                <Plus className="size-4" />
+                Nouveau risque/incident
+              </Button>
             </div>
-            <Button
-              onClick={ouvrirModalCreationRisque}
-              className="gap-2 rounded-full bg-[#13850b] hover:bg-[#0f6909] text-white"
-            >
-              <Plus className="size-4" />
-              Nouveau risque/incident
-            </Button>
-          </div>
 
-          {/* Liste des risques */}
-          <Card>
-            <CardContent className="p-4">
-              {!projet.risquesIncidents || projet.risquesIncidents.length === 0 ? (
-                <div className="py-6 text-center">
-                  <AlertTriangle className="size-8 mx-auto mb-2 text-muted-foreground opacity-50" />
-                  <p className="text-sm text-muted-foreground mb-1">
-                    Aucun risque ou incident enregistré
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Identifiez les risques potentiels et suivez les incidents survenus
-                  </p>
+            {/* Barre de recherche et filtres */}
+            <div className="bg-white rounded-xl border border-[#0000001a] p-4 space-y-4">
+              {/* Barre de recherche avec X */}
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Rechercher par titre ou description..."
+                    value={rechercheRisque}
+                    onChange={(e) => {
+                      setRechercheRisque(e.target.value);
+                      setPageRisque(1);
+                    }}
+                    className="pl-10 pr-10 h-10"
+                  />
+                  {rechercheRisque && (
+                    <button
+                      onClick={() => setRechercheRisque("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="Effacer la recherche"
+                    >
+                      <X className="size-4" />
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {projet.risquesIncidents.map((risque: any) => {
-                    const typeConfig: Record<string, { label: string; color: string; bg: string }> = {
-                      RISQUE: { label: "Risque", color: "#F59E0B", bg: "#F59E0B20" },
-                      INCIDENT: { label: "Incident", color: "#EF4444", bg: "#EF444420" },
-                    };
+              </div>
 
-                    const graviteConfig: Record<string, { label: string; color: string }> = {
-                      FAIBLE: { label: "Faible", color: "#10B981" },
-                      MOYENNE: { label: "Moyenne", color: "#F59E0B" },
-                      ELEVEE: { label: "Élevée", color: "#EF4444" },
-                      CRITIQUE: { label: "Critique", color: "#DC2626" },
-                    };
+              {/* Filtres par type */}
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Par type
+                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button onClick={() => { setFiltreRisque("tous"); setPageRisque(1); }}>
+                    <Badge
+                      variant={filtreRisque === "tous" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Tous <span className="ml-1 opacity-70">({totalRisques})</span>
+                    </Badge>
+                  </button>
+                  <button onClick={() => { setFiltreRisque("risque"); setPageRisque(1); }}>
+                    <Badge
+                      variant={filtreRisque === "risque" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Risque <span className="ml-1 opacity-70">({countRisque})</span>
+                    </Badge>
+                  </button>
+                  <button onClick={() => { setFiltreRisque("incident"); setPageRisque(1); }}>
+                    <Badge
+                      variant={filtreRisque === "incident" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Incident <span className="ml-1 opacity-70">({countIncident})</span>
+                    </Badge>
+                  </button>
+                </div>
+              </div>
 
-                    const statutConfig: Record<string, { label: string; color: string; bg: string }> = {
-                      OUVERT: { label: "Ouvert", color: "#3B82F6", bg: "#3B82F620" },
-                      EN_TRAITEMENT: { label: "En traitement", color: "#F59E0B", bg: "#F59E0B20" },
-                      RESOLU: { label: "Résolu", color: "#10B981", bg: "#10B98120" },
-                      CLOTURE: { label: "Clôturé", color: "#6B7280", bg: "#6B728020" },
-                    };
+              {/* Filtres par gravité */}
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Par gravité
+                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button onClick={() => { setFiltreGravite("toutes"); setPageRisque(1); }}>
+                    <Badge
+                      variant={filtreGravite === "toutes" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Toutes <span className="ml-1 opacity-70">({totalRisques})</span>
+                    </Badge>
+                  </button>
+                  <button onClick={() => { setFiltreGravite("faible"); setPageRisque(1); }}>
+                    <Badge
+                      variant={filtreGravite === "faible" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Faible <span className="ml-1 opacity-70">({countFaible})</span>
+                    </Badge>
+                  </button>
+                  <button onClick={() => { setFiltreGravite("moyenne"); setPageRisque(1); }}>
+                    <Badge
+                      variant={filtreGravite === "moyenne" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Moyenne <span className="ml-1 opacity-70">({countMoyenne})</span>
+                    </Badge>
+                  </button>
+                  <button onClick={() => { setFiltreGravite("elevee"); setPageRisque(1); }}>
+                    <Badge
+                      variant={filtreGravite === "elevee" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Élevée <span className="ml-1 opacity-70">({countElevee})</span>
+                    </Badge>
+                  </button>
+                  <button onClick={() => { setFiltreGravite("critique"); setPageRisque(1); }}>
+                    <Badge
+                      variant={filtreGravite === "critique" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Critique <span className="ml-1 opacity-70">({countCritique})</span>
+                    </Badge>
+                  </button>
+                </div>
+              </div>
 
-                    return (
+              {/* Filtres par statut */}
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Par statut
+                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button onClick={() => { setFiltreStatut("tous"); setPageRisque(1); }}>
+                    <Badge
+                      variant={filtreStatut === "tous" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Tous <span className="ml-1 opacity-70">({totalRisques})</span>
+                    </Badge>
+                  </button>
+                  <button onClick={() => { setFiltreStatut("ouvert"); setPageRisque(1); }}>
+                    <Badge
+                      variant={filtreStatut === "ouvert" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Ouvert <span className="ml-1 opacity-70">({countOuvert})</span>
+                    </Badge>
+                  </button>
+                  <button onClick={() => { setFiltreStatut("en_traitement"); setPageRisque(1); }}>
+                    <Badge
+                      variant={filtreStatut === "en_traitement" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      En traitement <span className="ml-1 opacity-70">({countEnTraitement})</span>
+                    </Badge>
+                  </button>
+                  <button onClick={() => { setFiltreStatut("resolu"); setPageRisque(1); }}>
+                    <Badge
+                      variant={filtreStatut === "resolu" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Résolu <span className="ml-1 opacity-70">({countResolu})</span>
+                    </Badge>
+                  </button>
+                  <button onClick={() => { setFiltreStatut("cloture"); setPageRisque(1); }}>
+                    <Badge
+                      variant={filtreStatut === "cloture" ? "default" : "outline"}
+                      className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                    >
+                      Clôturé <span className="ml-1 opacity-70">({countCloture})</span>
+                    </Badge>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Liste des risques */}
+            <Card>
+              <CardContent className="p-4">
+                {risquesPagines.length === 0 ? (
+                  <div className="py-6 text-center">
+                    <AlertTriangle className="size-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                    <p className="text-sm text-muted-foreground mb-1">
+                      {rechercheRisque || filtreRisque !== "tous" || filtreGravite !== "toutes" || filtreStatut !== "tous"
+                        ? "Aucun risque ne correspond aux critères"
+                        : "Aucun risque ou incident enregistré"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {rechercheRisque || filtreRisque !== "tous" || filtreGravite !== "toutes" || filtreStatut !== "tous"
+                        ? "Essayez de modifier les filtres de recherche"
+                        : "Identifiez les risques potentiels et suivez les incidents survenus"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {risquesPagines.map((risque: any) => (
                       <div
                         key={risque.id}
                         className="rounded-lg border p-4 space-y-3"
@@ -2359,14 +2961,71 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                           </div>
                         </div>
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Pagination */}
+            {total > 0 && (
+              <div className="flex items-center justify-between bg-white rounded-xl border border-[#0000001a] p-4">
+                <div className="flex items-center gap-4">
+                  <div className="text-sm text-muted-foreground">
+                    {debut + 1}–{Math.min(fin, total)} sur {total} risque{total > 1 ? "s" : ""}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Afficher</span>
+                    <Select
+                      value={limitRisque.toString()}
+                      onValueChange={(value) => {
+                        setLimitRisque(parseInt(value));
+                        setPageRisque(1);
+                      }}
+                    >
+                      <SelectTrigger className="h-8 w-20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                        <SelectItem value="100">100</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPageRisque(pageRisque - 1)}
+                    disabled={pageRisque <= 1}
+                    className="h-8 gap-1 border-[#13850b] text-[#13850b] hover:bg-[#13850b]/10"
+                  >
+                    <ChevronLeft className="size-4" />
+                    Précédent
+                  </Button>
+                  <div className="text-sm text-muted-foreground px-2">
+                    Page {pageRisque} sur {totalPages}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPageRisque(pageRisque + 1)}
+                    disabled={pageRisque >= totalPages}
+                    className="h-8 gap-1 border-[#13850b] text-[#13850b] hover:bg-[#13850b]/10"
+                  >
+                    Suivant
+                    <ChevronRight className="size-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Contenu de l'onglet Photos */}
       {ongletActif === "photos" && (
