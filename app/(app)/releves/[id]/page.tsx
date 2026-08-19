@@ -17,6 +17,7 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
+import { GestionPointages } from "./_components/gestion-pointages";
 
 interface PageReleveDetailProps {
   params: Promise<{ id: string }>;
@@ -204,42 +205,83 @@ export default async function PageReleveDetail({ params }: PageReleveDetailProps
             <CardTitle className="text-base">Pointages</CardTitle>
           </CardHeader>
           <CardContent>
-            {releve.pointages.length === 0 ? (
-              <div className="text-center py-8">
-                <Users className="size-12 mx-auto mb-3 text-muted-foreground opacity-30" />
-                <p className="text-sm text-muted-foreground">Aucun pointage enregistré</p>
-              </div>
+            {releve.statut === "BROUILLON" ? (
+              // Mode édition : gestion des pointages
+              releve.pointages.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="size-12 mx-auto mb-3 text-muted-foreground opacity-30" />
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Aucun pointage enregistré
+                  </p>
+                  <GestionPointages releveId={releve.id} pointages={releve.pointages} />
+                </div>
+              ) : (
+                <GestionPointages releveId={releve.id} pointages={releve.pointages} />
+              )
             ) : (
-              <div className="space-y-2">
-                {releve.pointages.map((pointage) => (
-                  <div
-                    key={pointage.id}
-                    className="flex items-center justify-between p-3 rounded-lg border"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">
-                        {pointage.employe.prenom} {pointage.employe.nom}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {pointage.employe.matricule}
-                      </p>
-                    </div>
-                    <Badge
-                      variant={pointage.etat === "PRESENT" ? "default" : "secondary"}
-                      className="gap-1"
+              // Mode lecture seule : affichage simple
+              releve.pointages.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="size-12 mx-auto mb-3 text-muted-foreground opacity-30" />
+                  <p className="text-sm text-muted-foreground">Aucun pointage enregistré</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {releve.pointages.map((pointage) => (
+                    <div
+                      key={pointage.id}
+                      className="flex items-center justify-between p-3 rounded-lg border"
                     >
-                      {pointage.etat === "PRESENT" ? (
-                        <>
-                          <CheckCircle2 className="size-3" />
-                          Présent
-                        </>
-                      ) : (
-                        <>Absent</>
-                      )}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
+                      <div>
+                        <p className="text-sm font-medium">
+                          {pointage.employe.prenom} {pointage.employe.nom}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {pointage.employe.matricule}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-xs text-muted-foreground tabular-nums">
+                          {Number(pointage.heuresReelles)}h
+                          {Number(pointage.heuresSup) > 0 && (
+                            <span className="ml-1 text-[#13850b]">
+                              +{Number(pointage.heuresSup)}h
+                            </span>
+                          )}
+                        </div>
+                        <Badge
+                          variant={pointage.etat === "PRESENT" ? "default" : "secondary"}
+                          className="gap-1"
+                        >
+                          {pointage.etat === "PRESENT" ? (
+                            <>
+                              <CheckCircle2 className="size-3" />
+                              Présent
+                            </>
+                          ) : pointage.etat === "ABSENT_JUSTIFIE" ? (
+                            <>
+                              <Clock className="size-3" />
+                              Absent justifié
+                            </>
+                          ) : pointage.etat === "ABSENT_NON_JUSTIFIE" ? (
+                            <>
+                              <XCircle className="size-3" />
+                              Absent non justifié
+                            </>
+                          ) : pointage.etat === "RETARD" ? (
+                            <>
+                              <Clock className="size-3" />
+                              Retard
+                            </>
+                          ) : (
+                            <>Repos</>
+                          )}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
             )}
           </CardContent>
         </Card>
