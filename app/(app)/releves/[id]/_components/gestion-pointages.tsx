@@ -60,9 +60,9 @@ interface Employe {
 interface Pointage {
   id: string;
   etat: string;
-  heuresTheoretiques: any; // Prisma Decimal
-  heuresReelles: any; // Prisma Decimal
-  heuresSup: any; // Prisma Decimal
+  heuresTheoretiques: number;
+  heuresReelles: number;
+  heuresSup: number;
   observation: string | null;
   employe: {
     id: string;
@@ -359,10 +359,10 @@ export function GestionPointages({ releveId, pointages }: GestionPointagesProps)
 
               {/* Heures */}
               <div className="text-xs text-muted-foreground tabular-nums">
-                {Number(pointage.heuresReelles)}h
-                {Number(pointage.heuresSup) > 0 && (
+                {pointage.heuresReelles}h
+                {pointage.heuresSup > 0 && (
                   <span className="ml-1 text-[#13850b]">
-                    +{Number(pointage.heuresSup)}h
+                    +{pointage.heuresSup}h
                   </span>
                 )}
               </div>

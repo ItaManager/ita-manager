@@ -74,6 +74,14 @@ export default async function PageReleveDetail({ params }: PageReleveDetailProps
 
   const nbPresents = releve.pointages.filter((p) => p.etat === "PRESENT").length;
 
+  // Convertir les Decimal en nombres pour le composant client
+  const pointagesSerialises = releve.pointages.map((p) => ({
+    ...p,
+    heuresTheoretiques: Number(p.heuresTheoretiques),
+    heuresReelles: Number(p.heuresReelles),
+    heuresSup: Number(p.heuresSup),
+  }));
+
   return (
     <div className="container mx-auto py-8 max-w-5xl">
       {/* En-tête */}
@@ -207,16 +215,16 @@ export default async function PageReleveDetail({ params }: PageReleveDetailProps
           <CardContent>
             {releve.statut === "BROUILLON" ? (
               // Mode édition : gestion des pointages
-              releve.pointages.length === 0 ? (
+              pointagesSerialises.length === 0 ? (
                 <div className="text-center py-8">
                   <Users className="size-12 mx-auto mb-3 text-muted-foreground opacity-30" />
                   <p className="text-sm text-muted-foreground mb-4">
                     Aucun pointage enregistré
                   </p>
-                  <GestionPointages releveId={releve.id} pointages={releve.pointages} />
+                  <GestionPointages releveId={releve.id} pointages={pointagesSerialises} />
                 </div>
               ) : (
-                <GestionPointages releveId={releve.id} pointages={releve.pointages} />
+                <GestionPointages releveId={releve.id} pointages={pointagesSerialises} />
               )
             ) : (
               // Mode lecture seule : affichage simple
