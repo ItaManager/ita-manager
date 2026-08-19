@@ -9,6 +9,19 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   ChevronLeft,
   Building2,
   MapPin,
@@ -22,6 +35,7 @@ import {
   Flag,
   CheckCircle2,
   Clock,
+  X,
   XCircle,
   Paperclip,
   Link2,
@@ -34,6 +48,7 @@ import {
   Truck,
   Camera,
   DollarSign,
+  Info,
 } from "lucide-react";
 import { StatutProjet } from "@prisma/client";
 import { format, differenceInDays } from "date-fns";
@@ -49,7 +64,13 @@ import { ModalRisque } from "../_components/modal-risque";
 import { ModalDemandeRessource } from "../_components/modal-demande-ressource";
 import { AlertDialogConfirm } from "@/components/ui/alert-dialog-confirm";
 import { GanttChart } from "../_components/gantt-chart";
-import { MeteoChantier } from "../_components/meteo-chantier";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  CardIndicateur,
+  MiniGraphBarres,
+  MiniGraphCirculaire,
+  MiniGraphProgression,
+} from "@/components/indicateurs";
 
 interface PageDetailProjetProps {
   params: Promise<{ id: string }>;
@@ -75,7 +96,13 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
     "tableau-bord" | "avancement" | "equipes" | "budget" | "jalons" | "planning" | "notes" | "documents" | "risques" | "photos" | "ressources"
   >("tableau-bord");
   const [rechercheAffectation, setRechercheAffectation] = useState("");
+  const [filtreAffectation, setFiltreAffectation] = useState<"tous" | "actifs" | "termines">("actifs");
   const [pageAffectation, setPageAffectation] = useState(1);
+  const [limitAffectation, setLimitAffectation] = useState(20);
+  const [rechercheTache, setRechercheTache] = useState("");
+  const [filtreTache, setFiltreTache] = useState<"toutes" | "en-cours" | "terminees" | "en-retard">("toutes");
+  const [pageTache, setPageTache] = useState(1);
+  const [limitTache, setLimitTache] = useState(20);
   const ITEMS_PAR_PAGE = 10;
   const [modalTacheOuverte, setModalTacheOuverte] = useState(false);
   const [tacheSelectionnee, setTacheSelectionnee] = useState<any>(null);
@@ -306,330 +333,335 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
       </Button>
 
       {/* En-tête projet */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between">
-            <div className="flex-1 space-y-3">
-              {/* Code + Statut */}
-              <div className="flex items-center gap-3">
-                <span className="px-3 py-1 text-xs font-semibold bg-muted rounded-full">
-                  {projet.code}
-                </span>
-                <Badge
-                  style={{
-                    backgroundColor: statutConfig.bg,
-                    color: statutConfig.color,
-                    border: `1px solid ${statutConfig.color}30`,
-                  }}
-                >
-                  {statutConfig.label}
-                </Badge>
-                <MeteoChantier projet={projet} variant="badge" showDetails />
-                <ModaleEditionChamp
-                  projetId={projet.id}
-                  champ="statut"
-                  label="Statut du projet"
-                  valeurActuelle={projet.statut}
-                  type="statutProjet"
-                  onSuccess={chargerProjet}
-                />
-              </div>
+      <div className="bg-white rounded-xl border border-[#0000001a]">
+        <Accordion type="single" collapsible defaultValue="infos">
+          <AccordionItem value="infos" className="border-none">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+              <h2 className="text-lg font-semibold text-[#18181a]">
+                {projet.nom}
+              </h2>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-6">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 space-y-3">
+                  {/* Code + Statut */}
+                  <div className="flex items-center gap-3">
+                    <span className="px-3 py-1 text-xs font-semibold bg-muted rounded-full">
+                      {projet.code}
+                    </span>
+                    <Badge
+                      style={{
+                        backgroundColor: statutConfig.bg,
+                        color: statutConfig.color,
+                        border: `1px solid ${statutConfig.color}30`,
+                      }}
+                    >
+                      {statutConfig.label}
+                    </Badge>
+                    <ModaleEditionChamp
+                      projetId={projet.id}
+                      champ="statut"
+                      label="Statut du projet"
+                      valeurActuelle={projet.statut}
+                      type="statutProjet"
+                      onSuccess={chargerProjet}
+                    />
+                  </div>
 
-              {/* Titre */}
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold">{projet.nom}</h1>
-                <ModaleEditionChamp
-                  projetId={projet.id}
-                  champ="nom"
-                  label="Nom du projet"
-                  valeurActuelle={projet.nom}
-                  type="text"
-                  onSuccess={chargerProjet}
-                />
-              </div>
+                  {/* Informations */}
+                  <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Building2 className="size-4" />
+                      <span>{projet.maitreOuvrage || "Non défini"}</span>
+                      <ModaleEditionChamp
+                        projetId={projet.id}
+                        champ="maitreOuvrage"
+                        label="Maître d'ouvrage"
+                        valeurActuelle={projet.maitreOuvrage}
+                        type="text"
+                        onSuccess={chargerProjet}
+                      />
+                    </div>
 
-              {/* Informations */}
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Building2 className="size-4" />
-                  <span>{projet.maitreOuvrage || "Non défini"}</span>
-                  <ModaleEditionChamp
-                    projetId={projet.id}
-                    champ="maitreOuvrage"
-                    label="Maître d'ouvrage"
-                    valeurActuelle={projet.maitreOuvrage}
-                    type="text"
-                    onSuccess={chargerProjet}
-                  />
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <MapPin className="size-4" />
+                      <span>{projet.localisation || "Non défini"}</span>
+                      <ModaleEditionChamp
+                        projetId={projet.id}
+                        champ="localisation"
+                        label="Localisation"
+                        valeurActuelle={projet.localisation}
+                        type="text"
+                        onSuccess={chargerProjet}
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="size-4" />
-                  <span>{projet.localisation || "Non défini"}</span>
-                  <ModaleEditionChamp
-                    projetId={projet.id}
-                    champ="localisation"
-                    label="Localisation"
-                    valeurActuelle={projet.localisation}
-                    type="text"
-                    onSuccess={chargerProjet}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Montant du marché */}
-            <div className="text-right">
-              <div className="flex items-center justify-end gap-2 mb-1">
-                <p className="text-xs text-muted-foreground uppercase">
-                  Montant du marché
-                </p>
-                <ModaleEditionChamp
-                  projetId={projet.id}
-                  champ="montantMarche"
-                  label="Montant du marché (FCFA)"
-                  valeurActuelle={projet.montantMarche}
-                  type="number"
-                  onSuccess={chargerProjet}
-                  requireConfirmation
-                  confirmationMessage="Modifier le montant du marché peut impacter les budgets et états financiers. Confirmer ?"
-                />
-              </div>
-              <p className="text-xl font-bold text-[#111111]">
-                {projet.montantMarche
-                  ? projet.montantMarche.toLocaleString("fr-FR").replace(/,/g, " ")
-                  : "Non défini"}
-              </p>
-              <p className="text-xs text-muted-foreground">FCFA</p>
-              {projet.montantAvenant && (
-                <p className="text-xs text-primary mt-2">
-                  dont {projet.montantAvenant.toLocaleString("fr-FR").replace(/,/g, " ")} F d'avenant
-                </p>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Barre d'avancement */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-muted-foreground">Avancement</span>
-            <span className="text-lg font-bold">{avancementAffiche} % constaté</span>
-          </div>
-
-          {/* Barre de progression */}
-          <div className="relative h-2 bg-muted rounded-full overflow-hidden mb-2">
-            <div
-              className="h-full bg-green-600 rounded-full transition-all"
-              style={{ width: `${avancementAffiche}%` }}
-            />
-          </div>
-
-          {/* Planifié et écart */}
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">
-              planifié {projet.avancementPlanifie ?? 0} %
-            </span>
-            {ecartAvancement !== null && ecartAvancement !== 0 && (
-              <span
-                className={`text-sm font-medium ${
-                  ecartAvancement > 0 ? "text-green-600" : "text-orange-500"
-                }`}
-              >
-                {ecartAvancement > 0 ? "+" : ""}
-                {ecartAvancement} pts{" "}
-                {ecartAvancement > 0 ? "d'avance" : "de retard"}
-              </span>
-            )}
-            {ecartAvancement === 0 && (
-              <span className="text-sm text-green-600 font-medium">
-                conforme
-              </span>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Informations complémentaires */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Période */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                Période
-              </p>
-              <ModaleEditionChamp
-                projetId={projet.id}
-                champ="periode"
-                label="Période"
-                valeurActuelle={{
-                  debut: projet.dateDebut,
-                  fin: projet.dateFin,
-                }}
-                type="periode"
-                onSuccess={chargerProjet}
-                requireConfirmation
-                confirmationMessage="Modifier la période du projet peut impacter le planning et les échéances. Confirmer ?"
-              />
-            </div>
-            {projet.dateDebut || projet.dateFin ? (
-              <>
-                <p className="text-base font-semibold">
-                  {projet.dateDebut
-                    ? format(new Date(projet.dateDebut), "dd/MM/yyyy", {
-                        locale: fr,
-                      })
-                    : "—"}{" "}
-                  →{" "}
-                  {projet.dateFin
-                    ? format(new Date(projet.dateFin), "dd/MM/yyyy", {
-                        locale: fr,
-                      })
-                    : "—"}
-                </p>
-                {joursRestants !== null && (
-                  <p
-                    className={`text-sm mt-1 ${
-                      joursRestants < 0
-                        ? "text-destructive"
-                        : joursRestants <= 30
-                        ? "text-orange-500"
-                        : "text-muted-foreground"
-                    }`}
-                  >
-                    {joursRestants < 0
-                      ? `${Math.abs(joursRestants)} jours dépassés`
-                      : `${joursRestants} jours restants`}
+                {/* Montant du marché */}
+                <div className="text-right">
+                  <div className="flex items-center justify-end gap-2 mb-1">
+                    <p className="text-xs text-muted-foreground uppercase">
+                      Montant du marché
+                    </p>
+                    <ModaleEditionChamp
+                      projetId={projet.id}
+                      champ="montantMarche"
+                      label="Montant du marché (FCFA)"
+                      valeurActuelle={projet.montantMarche}
+                      type="number"
+                      onSuccess={chargerProjet}
+                      requireConfirmation
+                      confirmationMessage="Modifier le montant du marché peut impacter les budgets et états financiers. Confirmer ?"
+                    />
+                  </div>
+                  <p className="text-xl font-bold text-[#111111]">
+                    {projet.montantMarche
+                      ? projet.montantMarche.toLocaleString("fr-FR").replace(/,/g, " ")
+                      : "Non défini"}
                   </p>
-                )}
-              </>
-            ) : (
-              <p className="text-base text-muted-foreground">Non définie</p>
-            )}
-          </CardContent>
-        </Card>
+                  <p className="text-xs text-muted-foreground">FCFA</p>
+                  {projet.montantAvenant && (
+                    <p className="text-xs text-primary mt-2">
+                      dont {projet.montantAvenant.toLocaleString("fr-FR").replace(/,/g, " ")} F d'avenant
+                    </p>
+                  )}
+                </div>
+              </div>
 
-        {/* Conducteur de travaux */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                Conducteur de travaux
-              </p>
-              <ModaleAssignerConducteur
-                projetId={projet.id}
-                conducteurActuelId={projet.conducteur?.id}
-                conducteurActuelNom={
-                  projet.conducteur
-                    ? `${projet.conducteur.prenom} ${projet.conducteur.nom}`
-                    : undefined
-                }
-                onSuccess={chargerProjet}
-              />
-            </div>
-            {projet.conducteur ? (
-              <>
-                <p className="text-base font-semibold">
-                  {projet.conducteur.prenom} {projet.conducteur.nom}
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  référent fonctionnel — vise les relevés
-                </p>
-              </>
-            ) : (
-              <p className="text-base text-muted-foreground">Non assigné</p>
-            )}
-          </CardContent>
-        </Card>
+              {/* Période et Conducteur */}
+              <div className="mt-4 pt-4 border-t border-border grid grid-cols-2 gap-6">
+                {/* Période */}
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                      Période
+                    </p>
+                    <ModaleEditionChamp
+                      projetId={projet.id}
+                      champ="periode"
+                      label="Période"
+                      valeurActuelle={{
+                        debut: projet.dateDebut,
+                        fin: projet.dateFin,
+                      }}
+                      type="periode"
+                      onSuccess={chargerProjet}
+                      requireConfirmation
+                      confirmationMessage="Modifier la période du projet peut impacter le planning et les échéances. Confirmer ?"
+                    />
+                  </div>
+                  {projet.dateDebut || projet.dateFin ? (
+                    <>
+                      <p className="text-sm font-medium">
+                        {projet.dateDebut
+                          ? format(new Date(projet.dateDebut), "dd/MM/yyyy", {
+                              locale: fr,
+                            })
+                          : "—"}{" "}
+                        →{" "}
+                        {projet.dateFin
+                          ? format(new Date(projet.dateFin), "dd/MM/yyyy", {
+                              locale: fr,
+                            })
+                          : "—"}
+                      </p>
+                      {joursRestants !== null && (
+                        <p
+                          className={`text-xs mt-1 ${
+                            joursRestants < 0
+                              ? "text-destructive"
+                              : joursRestants <= 30
+                              ? "text-orange-500"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          {joursRestants < 0
+                            ? `${Math.abs(joursRestants)} jours dépassés`
+                            : `${joursRestants} jours restants`}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Non définie</p>
+                  )}
+                </div>
+
+                {/* Conducteur de travaux */}
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                      Conducteur de travaux
+                    </p>
+                    <ModaleAssignerConducteur
+                      projetId={projet.id}
+                      conducteurActuelId={projet.conducteur?.id}
+                      conducteurActuelNom={
+                        projet.conducteur
+                          ? `${projet.conducteur.prenom} ${projet.conducteur.nom}`
+                          : undefined
+                      }
+                      onSuccess={chargerProjet}
+                    />
+                  </div>
+                  {projet.conducteur ? (
+                    <p className="text-sm font-medium">
+                      {projet.conducteur.prenom} {projet.conducteur.nom}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Non assigné</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Avancement */}
+              <div className="mt-4 pt-4 border-t border-border">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-[#18181a]">
+                    Avancement
+                  </h3>
+                  <span className="text-sm font-medium">{avancementAffiche} % constaté</span>
+                </div>
+
+                {/* Barre de progression */}
+                <div className="relative h-2 bg-muted rounded-full overflow-hidden mb-2">
+                  <div
+                    className="h-full bg-green-600 rounded-full transition-all"
+                    style={{ width: `${avancementAffiche}%` }}
+                  />
+                </div>
+
+                {/* Planifié et écart */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    planifié {projet.avancementPlanifie ?? 0} %
+                  </span>
+                  {ecartAvancement !== null && ecartAvancement !== 0 && (
+                    <span
+                      className={`text-sm font-medium ${
+                        ecartAvancement > 0 ? "text-green-600" : "text-orange-500"
+                      }`}
+                    >
+                      {ecartAvancement > 0 ? "+" : ""}
+                      {ecartAvancement} pts{" "}
+                      {ecartAvancement > 0 ? "d'avance" : "de retard"}
+                    </span>
+                  )}
+                  {ecartAvancement === 0 && (
+                    <span className="text-sm text-green-600 font-medium">
+                      conforme
+                    </span>
+                  )}
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </div>
 
-      {/* Tâches en attente - Alertes */}
-      {alertesTaches.length > 0 && (
-        <Card className="border-orange-200 bg-orange-50/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="size-4 text-orange-600" />
-                <h3 className="font-semibold text-sm text-orange-900">
-                  Tâches en attente
-                  <span className="ml-2 text-xs font-normal text-orange-700">
-                    ({alertesTaches.length})
-                  </span>
-                </h3>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setOngletActif("avancement")}
-                className="h-7 text-xs text-orange-700 hover:text-orange-900 hover:bg-orange-100"
-              >
-                Voir détails
-                <ChevronRight className="size-3 ml-1" />
-              </Button>
-            </div>
-            <div className="space-y-2">
-              {/* Tâches en retard */}
-              {tachesEnRetard.slice(0, 3).map((tache: any) => (
-                <div key={tache.id} className="flex items-start gap-2 text-sm">
-                  <XCircle className="size-4 text-orange-600 mt-0.5 flex-shrink-0" />
-                  <div className="flex-1">
-                    <span className="font-medium">En retard :</span>{" "}
-                    {tache.libelle}
-                    <span className="text-xs text-muted-foreground ml-2">
-                      échéance {format(new Date(tache.dateFin), "dd/MM/yyyy")}
-                    </span>
-                  </div>
-                </div>
-              ))}
+      {/* Tâches en attente */}
+      {(() => {
+        const tachesEnRetard = projet.taches?.filter((t: any) =>
+          t.dateFin && new Date(t.dateFin) < new Date() && t.avancement < 100
+        ) || [];
+        const risquesCritiques = projet.risquesIncidents?.filter((r: any) =>
+          (r.gravite === "CRITIQUE" || r.gravite === "ELEVEE") &&
+          (r.statut === "OUVERT" || r.statut === "EN_TRAITEMENT")
+        ) || [];
+        const jalonsEnRetard = projet.jalons?.filter((j: any) =>
+          !j.valide && j.dateEcheance && new Date(j.dateEcheance) < new Date()
+        ) || [];
+        const totalTaches = tachesEnRetard.length + risquesCritiques.length + jalonsEnRetard.length;
 
-              {/* Tâches non démarrées */}
-              {tachesNonDemarrees.slice(0, 3 - tachesEnRetard.length).map((tache: any) => (
-                <div key={tache.id} className="flex items-start gap-2 text-sm">
-                  <Clock className="size-4 text-orange-600 mt-0.5 flex-shrink-0" />
-                  <div className="flex-1">
-                    <span className="font-medium">Non démarrée :</span>{" "}
-                    {tache.libelle}
-                    <span className="text-xs text-muted-foreground ml-2">
-                      démarrage prévu {format(new Date(tache.dateDebut), "dd/MM/yyyy")}
-                    </span>
-                  </div>
-                </div>
-              ))}
+        return (
+          <div className="bg-white rounded-xl border border-[#0000001a]">
+            <Accordion type="single" collapsible defaultValue="taches">
+              <AccordionItem value="taches" className="border-none">
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                  <h2 className="text-lg font-semibold text-[#18181a]">
+                    Tâches en attente {totalTaches > 0 && `(${totalTaches})`}
+                  </h2>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-6">
+                  {totalTaches === 0 ? (
+                    <div className="text-center py-8">
+                      <Info className="size-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+                      <p className="text-sm text-muted-foreground">
+                        Aucune tâche en attente pour le moment.
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Le projet est à jour.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {/* Tâches en retard */}
+                      {tachesEnRetard.map((tache: any) => (
+                        <div key={tache.id} className="flex items-start gap-3 py-3 border-b border-[#0000000d] hover:bg-[#f9fafb] transition-colors">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-[#18181a]">
+                              Tâche en retard : {tache.libelle}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Échéance {format(new Date(tache.dateFin), "dd/MM/yyyy")}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
 
-              {/* Message si plus de 3 alertes */}
-              {alertesTaches.length > 3 && (
-                <div className="text-xs text-orange-700 mt-2 pt-2 border-t border-orange-200">
-                  + {alertesTaches.length - 3} autre{alertesTaches.length - 3 > 1 ? "s" : ""} tâche{alertesTaches.length - 3 > 1 ? "s" : ""} à traiter
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                      {/* Risques critiques ouverts */}
+                      {risquesCritiques.map((risque: any) => (
+                        <div key={risque.id} className="flex items-start gap-3 py-3 border-b border-[#0000000d] hover:bg-[#f9fafb] transition-colors">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-[#18181a]">
+                              {risque.type === "INCIDENT" ? "Incident" : "Risque"} {risque.gravite.toLowerCase()} : {risque.titre}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Jalons en retard */}
+                      {jalonsEnRetard.map((jalon: any) => (
+                        <div key={jalon.id} className="flex items-start gap-3 py-3 border-b border-[#0000000d] hover:bg-[#f9fafb] transition-colors">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-[#18181a]">
+                              Jalon non validé : {jalon.libelle}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Prévu le {format(new Date(jalon.dateEcheance), "dd/MM/yyyy")}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
+        );
+      })()}
 
       {/* Onglets */}
-      <div className="bg-neutral-100/50 rounded-full p-1">
+      <div className="bg-white rounded-full p-[5px]">
         <div className="flex items-center gap-1">
           <button
             onClick={() => setOngletActif("tableau-bord")}
-            className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-all cursor-pointer ${
               ongletActif === "tableau-bord"
-                ? "bg-white text-primary shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-white"
+                : "text-muted-foreground hover:text-foreground hover:bg-neutral-50"
             }`}
           >
-            Tableau
+            Dashboard
           </button>
 
           <button
             onClick={() => setOngletActif("avancement")}
-            className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-all cursor-pointer ${
               ongletActif === "avancement"
-                ? "bg-white text-primary shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-white"
+                : "text-muted-foreground hover:text-foreground hover:bg-neutral-50"
             }`}
           >
             Avancement
@@ -637,10 +669,10 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
           <button
             onClick={() => setOngletActif("equipes")}
-            className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-all cursor-pointer ${
               ongletActif === "equipes"
-                ? "bg-white text-primary shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-white"
+                : "text-muted-foreground hover:text-foreground hover:bg-neutral-50"
             }`}
           >
             Équipes
@@ -648,10 +680,10 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
           <button
             onClick={() => setOngletActif("budget")}
-            className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-all cursor-pointer ${
               ongletActif === "budget"
-                ? "bg-white text-primary shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-white"
+                : "text-muted-foreground hover:text-foreground hover:bg-neutral-50"
             }`}
           >
             Budget
@@ -659,10 +691,10 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
           <button
             onClick={() => setOngletActif("jalons")}
-            className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-all cursor-pointer ${
               ongletActif === "jalons"
-                ? "bg-white text-primary shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-white"
+                : "text-muted-foreground hover:text-foreground hover:bg-neutral-50"
             }`}
           >
             Jalons
@@ -670,10 +702,10 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
           <button
             onClick={() => setOngletActif("planning")}
-            className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-all cursor-pointer ${
               ongletActif === "planning"
-                ? "bg-white text-primary shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-white"
+                : "text-muted-foreground hover:text-foreground hover:bg-neutral-50"
             }`}
           >
             Planning
@@ -681,10 +713,10 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
           <button
             onClick={() => setOngletActif("notes")}
-            className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-all cursor-pointer ${
               ongletActif === "notes"
-                ? "bg-white text-primary shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-white"
+                : "text-muted-foreground hover:text-foreground hover:bg-neutral-50"
             }`}
           >
             Notes
@@ -692,10 +724,10 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
           <button
             onClick={() => setOngletActif("documents")}
-            className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-all cursor-pointer ${
               ongletActif === "documents"
-                ? "bg-white text-primary shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-white"
+                : "text-muted-foreground hover:text-foreground hover:bg-neutral-50"
             }`}
           >
             Documents
@@ -703,10 +735,10 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
           <button
             onClick={() => setOngletActif("risques")}
-            className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-all cursor-pointer ${
               ongletActif === "risques"
-                ? "bg-white text-primary shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-white"
+                : "text-muted-foreground hover:text-foreground hover:bg-neutral-50"
             }`}
           >
             Risques
@@ -714,10 +746,10 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
           <button
             onClick={() => setOngletActif("photos")}
-            className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-all cursor-pointer ${
               ongletActif === "photos"
-                ? "bg-white text-primary shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-white"
+                : "text-muted-foreground hover:text-foreground hover:bg-neutral-50"
             }`}
           >
             Photos
@@ -725,10 +757,10 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
 
           <button
             onClick={() => setOngletActif("ressources")}
-            className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
+            className={`px-4 py-2 text-sm font-medium rounded-full transition-all cursor-pointer ${
               ongletActif === "ressources"
-                ? "bg-white text-primary shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-white"
+                : "text-muted-foreground hover:text-foreground hover:bg-neutral-50"
             }`}
           >
             Ressources
@@ -739,163 +771,76 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
       {/* Contenu de l'onglet Tableau de bord */}
       {ongletActif === "tableau-bord" && (
         <div className="space-y-6">
-          {/* Météo du chantier */}
-          <MeteoChantier projet={projet} variant="card" showDetails />
-
           {/* KPIs principaux */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Avancement global */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs text-muted-foreground">Avancement</p>
-                  <TrendingUp className="size-4 text-muted-foreground" />
-                </div>
-                <p className="text-xl font-bold tabular-nums">
-                  {avancementAffiche} %
-                </p>
-                <div className="mt-3 h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-[#13850b] rounded-full transition-all"
-                    style={{ width: `${avancementAffiche}%` }}
+          <TooltipProvider>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Avancement global */}
+              <CardIndicateur
+                label="Avancement"
+                helpText="Pourcentage d'avancement constaté du projet par rapport au planifié."
+                value={`${avancementAffiche} %`}
+                chart={
+                  <MiniGraphProgression
+                    percentage={avancementAffiche}
                   />
-                </div>
-                {ecartAvancement !== null && ecartAvancement !== 0 && (
-                  <p className={`text-xs mt-2 ${ecartAvancement > 0 ? "text-green-600" : "text-orange-500"}`}>
-                    {ecartAvancement > 0 ? "+" : ""}{ecartAvancement} pts {ecartAvancement > 0 ? "d'avance" : "de retard"}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+                }
+              />
 
-            {/* Tâches */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs text-muted-foreground">Tâches</p>
-                  <CheckCircle2 className="size-4 text-muted-foreground" />
-                </div>
-                <p className="text-xl font-bold tabular-nums">
-                  {projet.taches?.filter((t: any) => t.avancement === 100).length || 0}
-                  <span className="text-base text-muted-foreground">
-                    /{projet.taches?.length || 0}
-                  </span>
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  terminées
-                </p>
-              </CardContent>
-            </Card>
+              {/* Tâches */}
+              <CardIndicateur
+                label="Tâches terminées"
+                helpText="Nombre de tâches terminées sur le total des tâches du projet."
+                value={`${projet.taches?.filter((t: any) => t.avancement === 100).length || 0}/${projet.taches?.length || 0}`}
+                chart={
+                  <MiniGraphCirculaire
+                    percentage={
+                      projet.taches?.length > 0
+                        ? (projet.taches.filter((t: any) => t.avancement === 100).length / projet.taches.length) * 100
+                        : 0
+                    }
+                  />
+                }
+              />
 
-            {/* Jalons */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs text-muted-foreground">Jalons</p>
-                  <Flag className="size-4 text-muted-foreground" />
-                </div>
-                <p className="text-xl font-bold tabular-nums">
-                  {projet.jalons?.filter((j: any) => j.valide).length || 0}
-                  <span className="text-base text-muted-foreground">
-                    /{projet.jalons?.length || 0}
-                  </span>
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  validés
-                </p>
-              </CardContent>
-            </Card>
+              {/* Jalons */}
+              <CardIndicateur
+                label="Jalons validés"
+                helpText="Nombre de jalons validés sur le total des jalons du projet."
+                value={`${projet.jalons?.filter((j: any) => j.valide).length || 0}/${projet.jalons?.length || 0}`}
+                chart={
+                  <MiniGraphCirculaire
+                    percentage={
+                      projet.jalons?.length > 0
+                        ? (projet.jalons.filter((j: any) => j.valide).length / projet.jalons.length) * 100
+                        : 0
+                    }
+                  />
+                }
+              />
 
-            {/* Risques */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs text-muted-foreground">Risques</p>
-                  <AlertTriangle className="size-4 text-muted-foreground" />
-                </div>
-                <p className="text-xl font-bold tabular-nums">
-                  {projet.risquesIncidents?.filter((r: any) =>
-                    r.statut === "OUVERT" || r.statut === "EN_TRAITEMENT"
-                  ).length || 0}
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  {projet.risquesIncidents?.filter((r: any) =>
-                    r.gravite === "CRITIQUE" || r.gravite === "ELEVEE"
-                  ).length || 0} critiques/élevés
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Alertes et points d'attention */}
-          {(projet.taches?.some((t: any) =>
-              t.dateFin && new Date(t.dateFin) < new Date() && t.avancement < 100
-            ) ||
-            projet.risquesIncidents?.some((r: any) =>
-              (r.gravite === "CRITIQUE" || r.gravite === "ELEVEE") &&
-              (r.statut === "OUVERT" || r.statut === "EN_TRAITEMENT")
-            ) ||
-            projet.jalons?.some((j: any) =>
-              !j.valide && j.dateEcheance && new Date(j.dateEcheance) < new Date()
-            )) && (
-            <Card className="border-orange-200 bg-orange-50/50">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <AlertTriangle className="size-4 text-orange-600" />
-                  <h3 className="font-semibold text-sm text-orange-900">Points d'attention</h3>
-                </div>
-                <div className="space-y-2">
-                  {/* Tâches en retard */}
-                  {projet.taches?.filter((t: any) =>
-                    t.dateFin && new Date(t.dateFin) < new Date() && t.avancement < 100
-                  ).map((tache: any) => (
-                    <div key={tache.id} className="flex items-start gap-2 text-sm">
-                      <XCircle className="size-4 text-orange-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <span className="font-medium">Tâche en retard :</span>{" "}
-                        {tache.libelle}
-                        <span className="text-muted-foreground ml-1">
-                          (échéance {format(new Date(tache.dateFin), "dd/MM/yyyy")})
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Risques critiques ouverts */}
-                  {projet.risquesIncidents?.filter((r: any) =>
+              {/* Risques */}
+              <CardIndicateur
+                label="Risques ouverts"
+                helpText="Nombre de risques actuellement ouverts ou en traitement, avec distinction des risques critiques/élevés."
+                value={projet.risquesIncidents?.filter((r: any) =>
+                  r.statut === "OUVERT" || r.statut === "EN_TRAITEMENT"
+                ).length || 0}
+                valueColor={
+                  (projet.risquesIncidents?.filter((r: any) =>
                     (r.gravite === "CRITIQUE" || r.gravite === "ELEVEE") &&
                     (r.statut === "OUVERT" || r.statut === "EN_TRAITEMENT")
-                  ).map((risque: any) => (
-                    <div key={risque.id} className="flex items-start gap-2 text-sm">
-                      <AlertTriangle className="size-4 text-orange-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <span className="font-medium">
-                          {risque.type === "INCIDENT" ? "Incident" : "Risque"} {risque.gravite.toLowerCase()} :
-                        </span>{" "}
-                        {risque.titre}
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Jalons en retard */}
-                  {projet.jalons?.filter((j: any) =>
-                    !j.valide && j.dateEcheance && new Date(j.dateEcheance) < new Date()
-                  ).map((jalon: any) => (
-                    <div key={jalon.id} className="flex items-start gap-2 text-sm">
-                      <Clock className="size-4 text-orange-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <span className="font-medium">Jalon non validé :</span>{" "}
-                        {jalon.libelle}
-                        <span className="text-muted-foreground ml-1">
-                          (prévu le {format(new Date(jalon.dateEcheance), "dd/MM/yyyy")})
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                  ).length || 0) > 0 ? "#ef4444" : "#18181a"
+                }
+                chart={
+                  <MiniGraphBarres
+                    values={[0, 1, 0, 2, 1, 0, projet.risquesIncidents?.filter((r: any) =>
+                      r.statut === "OUVERT" || r.statut === "EN_TRAITEMENT"
+                    ).length || 0]}
+                  />
+                }
+              />
+            </div>
+          </TooltipProvider>
 
           {/* Informations rapides */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -925,40 +870,6 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
                 </CardContent>
               </Card>
             )}
-
-            {/* Équipe */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <User className="size-4 text-muted-foreground" />
-                  <h3 className="font-semibold text-sm">Équipe</h3>
-                </div>
-                <div className="space-y-3">
-                  {projet.chefProjetId && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Chef de projet</span>
-                      <span className="font-medium">
-                        {projet.chefProjet?.prenom} {projet.chefProjet?.nom}
-                      </span>
-                    </div>
-                  )}
-                  {projet.conducteurId && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Conducteur</span>
-                      <span className="font-medium">
-                        {projet.conducteur?.prenom} {projet.conducteur?.nom}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between text-sm pt-2 border-t">
-                    <span className="text-muted-foreground">Personnel affecté</span>
-                    <span className="font-medium tabular-nums">
-                      {projet.affectations?.filter((a: any) => !a.dateFin).length || 0} personnes
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
             {/* Ressources matérielles */}
             {projet.affectationsMateriel?.length > 0 && (
@@ -1059,472 +970,578 @@ export default function PageDetailProjet({ params }: PageDetailProjetProps) {
       )}
 
       {/* Contenu de l'onglet Avancement */}
-      {ongletActif === "avancement" && (
-        <div className="space-y-4">
-          {/* En-tête Tâches */}
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold">Tâches</h2>
-            <Button
-              onClick={ouvrirModalCreationTache}
-              className="gap-2 h-10 px-4 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground transition-all"
-            >
-              <Plus className="size-4" />
-              Ajouter
-            </Button>
-          </div>
+      {ongletActif === "avancement" && (() => {
+        // Filtrage des tâches
+        let tachesFiltrees = projet.taches || [];
 
-          {/* Tableau des tâches */}
-          <div className="border rounded-lg overflow-hidden shadow-none bg-white">
-            <table className="w-full">
-              <thead className="bg-muted/50">
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground uppercase">
-                    Tâche
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground uppercase">
-                    Début
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground uppercase">
-                    Fin
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground uppercase">
-                    Avancement
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground uppercase">
-                    Équipe
-                  </th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-muted-foreground uppercase w-[120px]">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {projet.taches && projet.taches.length > 0 ? (
-                  projet.taches.map((tache: any) => {
-                    return (
-                      <tr
-                        key={tache.id}
-                        className="border-b hover:bg-muted/30"
-                      >
-                        <td className="py-3 px-4 text-sm">
-                          <div>{tache.libelle}</div>
-                          {tache.predecesseur && (
-                            <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
-                              <Link2 className="size-3" />
-                              <span>Dépend de : {tache.predecesseur.libelle}</span>
-                            </div>
-                          )}
+        // Filtre par recherche
+        if (rechercheTache) {
+          tachesFiltrees = tachesFiltrees.filter((t: any) =>
+            t.libelle.toLowerCase().includes(rechercheTache.toLowerCase())
+          );
+        }
+
+        // Filtre par statut
+        const maintenant = new Date();
+        if (filtreTache === "en-cours") {
+          tachesFiltrees = tachesFiltrees.filter((t: any) => t.avancement > 0 && t.avancement < 100);
+        } else if (filtreTache === "terminees") {
+          tachesFiltrees = tachesFiltrees.filter((t: any) => t.avancement === 100);
+        } else if (filtreTache === "en-retard") {
+          tachesFiltrees = tachesFiltrees.filter((t: any) =>
+            t.dateFin && new Date(t.dateFin) < maintenant && t.avancement < 100
+          );
+        }
+
+        // Calculs pour les compteurs de filtres
+        const totalTaches = projet.taches?.length || 0;
+        const tachesEnCours = projet.taches?.filter((t: any) => t.avancement > 0 && t.avancement < 100).length || 0;
+        const tachesTerminees = projet.taches?.filter((t: any) => t.avancement === 100).length || 0;
+        const tachesEnRetard = projet.taches?.filter((t: any) =>
+          t.dateFin && new Date(t.dateFin) < maintenant && t.avancement < 100
+        ).length || 0;
+
+        // Pagination
+        const total = tachesFiltrees.length;
+        const totalPages = Math.ceil(total / limitTache);
+        const debut = (pageTache - 1) * limitTache;
+        const fin = debut + limitTache;
+        const tachesPaginees = tachesFiltrees.slice(debut, fin);
+
+        return (
+          <div className="bg-white rounded-xl border border-[#0000001a] p-6">
+            {/* Barre de recherche et filtres */}
+            <div className="space-y-3">
+              {/* Barre de recherche avec bouton */}
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Rechercher une tâche..."
+                    value={rechercheTache}
+                    onChange={(e) => {
+                      setRechercheTache(e.target.value);
+                      setPageTache(1);
+                    }}
+                    className="pl-10 pr-10 h-10"
+                  />
+                  {rechercheTache && (
+                    <button
+                      onClick={() => setRechercheTache("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="Effacer la recherche"
+                    >
+                      <X className="size-4" />
+                    </button>
+                  )}
+                </div>
+                <Button
+                  onClick={ouvrirModalCreationTache}
+                  className="gap-2 h-10 px-4 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground transition-all"
+                >
+                  <Plus className="size-4" />
+                  Ajouter
+                </Button>
+              </div>
+
+              {/* Filtres par statut */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <button onClick={() => { setFiltreTache("toutes"); setPageTache(1); }}>
+                  <Badge
+                    variant={filtreTache === "toutes" ? "default" : "outline"}
+                    className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                  >
+                    Toutes <span className="ml-1 opacity-70">({totalTaches})</span>
+                  </Badge>
+                </button>
+                <button onClick={() => { setFiltreTache("en-cours"); setPageTache(1); }}>
+                  <Badge
+                    variant={filtreTache === "en-cours" ? "default" : "outline"}
+                    className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                  >
+                    En cours <span className="ml-1 opacity-70">({tachesEnCours})</span>
+                  </Badge>
+                </button>
+                <button onClick={() => { setFiltreTache("terminees"); setPageTache(1); }}>
+                  <Badge
+                    variant={filtreTache === "terminees" ? "default" : "outline"}
+                    className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                  >
+                    Terminées <span className="ml-1 opacity-70">({tachesTerminees})</span>
+                  </Badge>
+                </button>
+                <button onClick={() => { setFiltreTache("en-retard"); setPageTache(1); }}>
+                  <Badge
+                    variant={filtreTache === "en-retard" ? "default" : "outline"}
+                    className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                  >
+                    En retard <span className="ml-1 opacity-70">({tachesEnRetard})</span>
+                  </Badge>
+                </button>
+              </div>
+            </div>
+
+            {/* Tableau */}
+            <div className="mt-6 rounded-xl border border-border overflow-hidden bg-card">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-muted/50">
+                    <tr className="border-b border-border">
+                      <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Tâche
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Début
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Fin
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Avancement
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Équipe
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tachesPaginees.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={6}
+                          className="py-12 text-center text-sm text-muted-foreground"
+                        >
+                          {rechercheTache
+                            ? "Aucune tâche ne correspond à votre recherche."
+                            : "Aucune tâche trouvée."}
                         </td>
-                        <td className="py-3 px-4 text-sm text-muted-foreground">
-                          {tache.dateDebut
-                            ? format(new Date(tache.dateDebut), "dd/MM/yyyy")
-                            : "—"}
-                        </td>
-                        <td className="py-3 px-4 text-sm text-muted-foreground">
-                          {tache.dateFin
-                            ? format(new Date(tache.dateFin), "dd/MM/yyyy")
-                            : "—"}
-                        </td>
-                        <td className="py-3 px-4 text-sm">
-                          {tache.avancementPlanifie ?? 0} %
-                        </td>
-                        <td className="py-3 px-4 text-sm">
-                          {tache.affectations && tache.affectations.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {tache.affectations.slice(0, 3).map((affectation: any) => (
-                                <span
-                                  key={affectation.employe.id}
-                                  className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-primary/10 text-primary"
+                      </tr>
+                    ) : (
+                      tachesPaginees.map((tache: any) => (
+                        <tr
+                          key={tache.id}
+                          className="border-b border-border hover:bg-muted/30 transition-colors"
+                        >
+                          <td className="py-3 px-4">
+                            <div className="font-medium text-sm text-foreground">{tache.libelle}</div>
+                            {tache.predecesseur && (
+                              <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
+                                <Link2 className="size-3" />
+                                <span>Dépend de : {tache.predecesseur.libelle}</span>
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-sm text-muted-foreground">
+                            {tache.dateDebut
+                              ? format(new Date(tache.dateDebut), "dd/MM/yyyy")
+                              : "—"}
+                          </td>
+                          <td className="py-3 px-4 text-sm text-muted-foreground">
+                            {tache.dateFin
+                              ? format(new Date(tache.dateFin), "dd/MM/yyyy")
+                              : "—"}
+                          </td>
+                          <td className="py-3 px-4 text-sm text-foreground">
+                            {tache.avancement ?? 0} %
+                          </td>
+                          <td className="py-3 px-4 text-sm">
+                            {tache.affectations && tache.affectations.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {tache.affectations.slice(0, 3).map((affectation: any) => (
+                                  <span
+                                    key={affectation.employe.id}
+                                    className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-primary/10 text-primary"
+                                  >
+                                    {affectation.employe.prenom} {affectation.employe.nom}
+                                  </span>
+                                ))}
+                                {tache.affectations.length > 3 && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-muted text-muted-foreground">
+                                    +{tache.affectations.length - 3}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => ouvrirModalEditionTache(tache)}
+                                className="h-8 w-8 p-0 hover:bg-muted"
+                                title="Modifier la tâche"
+                              >
+                                <Pencil className="size-4 text-muted-foreground" />
+                              </Button>
+                              <ModalAffecterEquipeRapide
+                                tacheId={tache.id}
+                                tacheLibelle={tache.libelle}
+                                projetId={projet.id}
+                                projetCode={projet.code}
+                                projetNom={projet.nom}
+                                employeIdsActuels={
+                                  tache.affectations?.map((a: any) => a.employe.id) || []
+                                }
+                              >
+                                <Button
+                                  size="sm"
+                                  className="h-7 px-3 text-xs bg-[#13850b] hover:bg-[#0f6909] text-white rounded-full"
+                                  title="Composer l'équipe rapidement"
                                 >
-                                  {affectation.employe.prenom} {affectation.employe.nom}
-                                </span>
-                              ))}
-                              {tache.affectations.length > 3 && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-muted text-muted-foreground">
-                                  +{tache.affectations.length - 3}
-                                </span>
-                              )}
+                                  Équipe
+                                </Button>
+                              </ModalAffecterEquipeRapide>
                             </div>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {total > 0 && (
+                <div className="flex items-center justify-between px-4 py-4">
+                  {/* Info et sélecteur de limite */}
+                  <div className="flex items-center gap-4">
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-medium text-foreground">
+                        {debut + 1}-{Math.min(fin, total)}
+                      </span>{" "}
+                      sur{" "}
+                      <span className="font-medium text-foreground">{total}</span>{" "}
+                      tâches
+                    </p>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Afficher :</span>
+                      <Select
+                        value={limitTache.toString()}
+                        onValueChange={(value) => {
+                          setLimitTache(parseInt(value));
+                          setPageTache(1);
+                        }}
+                      >
+                        <SelectTrigger className="h-8 w-[80px] text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="10">10</SelectItem>
+                          <SelectItem value="20">20</SelectItem>
+                          <SelectItem value="50">50</SelectItem>
+                          <SelectItem value="100">100</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Navigation simplifiée */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setPageTache(pageTache - 1)}
+                        disabled={pageTache === 1}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm font-bold text-[#13850b] hover:text-[#0f6909] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronLeft className="size-4" />
+                        Précédent
+                      </button>
+
+                      <div className="flex items-center gap-1 px-3 py-1 bg-muted/30 rounded-md">
+                        <span className="text-sm text-muted-foreground">Page</span>
+                        <span className="text-sm font-bold text-[#13850b]">{pageTache}</span>
+                        <span className="text-sm text-muted-foreground">sur</span>
+                        <span className="text-sm font-medium text-foreground">{totalPages}</span>
+                      </div>
+
+                      <button
+                        onClick={() => setPageTache(pageTache + 1)}
+                        disabled={pageTache === totalPages}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm font-bold text-[#13850b] hover:text-[#0f6909] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Suivant
+                        <ChevronRight className="size-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Onglet Équipes */}
+      {ongletActif === "equipes" && (() => {
+        // Filtrage des affectations
+        let affectationsFiltrees = projet.affectations || [];
+
+        // Filtre par recherche
+        if (rechercheAffectation) {
+          affectationsFiltrees = affectationsFiltrees.filter((a: any) => {
+            const nomComplet = `${a.employe.prenom} ${a.employe.nom}`.toLowerCase();
+            return nomComplet.includes(rechercheAffectation.toLowerCase());
+          });
+        }
+
+        // Filtre par statut
+        if (filtreAffectation === "actifs") {
+          affectationsFiltrees = affectationsFiltrees.filter((a: any) => !a.dateFin);
+        } else if (filtreAffectation === "termines") {
+          affectationsFiltrees = affectationsFiltrees.filter((a: any) => a.dateFin);
+        }
+
+        // Calculs pour les compteurs de filtres
+        const totalAffectations = projet.affectations?.length || 0;
+        const affectationsActives = projet.affectations?.filter((a: any) => !a.dateFin).length || 0;
+        const affectationsTerminees = projet.affectations?.filter((a: any) => a.dateFin).length || 0;
+
+        // Pagination
+        const total = affectationsFiltrees.length;
+        const totalPages = Math.ceil(total / limitAffectation);
+        const debut = (pageAffectation - 1) * limitAffectation;
+        const fin = debut + limitAffectation;
+        const affectationsPaginees = affectationsFiltrees.slice(debut, fin);
+
+        return (
+          <div className="bg-white rounded-xl border border-[#0000001a] p-6">
+            {/* Barre de recherche et filtres */}
+            <div className="space-y-3">
+              {/* Barre de recherche avec bouton */}
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Rechercher un employé..."
+                    value={rechercheAffectation}
+                    onChange={(e) => {
+                      setRechercheAffectation(e.target.value);
+                      setPageAffectation(1);
+                    }}
+                    className="pl-10 pr-10 h-10"
+                  />
+                  {rechercheAffectation && (
+                    <button
+                      onClick={() => setRechercheAffectation("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="Effacer la recherche"
+                    >
+                      <X className="size-4" />
+                    </button>
+                  )}
+                </div>
+                <ModalAffecterEmploye
+                  projetId={projet.id}
+                  projetCode={projet.code}
+                  projetNom={projet.nom}
+                >
+                  <Button className="gap-2 h-10 px-4 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground transition-all">
+                    <Plus className="size-4" />
+                    Affecter
+                  </Button>
+                </ModalAffecterEmploye>
+              </div>
+
+              {/* Filtres par statut */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <button onClick={() => { setFiltreAffectation("tous"); setPageAffectation(1); }}>
+                  <Badge
+                    variant={filtreAffectation === "tous" ? "default" : "outline"}
+                    className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                  >
+                    Tous <span className="ml-1 opacity-70">({totalAffectations})</span>
+                  </Badge>
+                </button>
+                <button onClick={() => { setFiltreAffectation("actifs"); setPageAffectation(1); }}>
+                  <Badge
+                    variant={filtreAffectation === "actifs" ? "default" : "outline"}
+                    className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                  >
+                    Actifs <span className="ml-1 opacity-70">({affectationsActives})</span>
+                  </Badge>
+                </button>
+                <button onClick={() => { setFiltreAffectation("termines"); setPageAffectation(1); }}>
+                  <Badge
+                    variant={filtreAffectation === "termines" ? "default" : "outline"}
+                    className="cursor-pointer h-8 px-3 hover:bg-accent transition-colors"
+                  >
+                    Terminés <span className="ml-1 opacity-70">({affectationsTerminees})</span>
+                  </Badge>
+                </button>
+              </div>
+            </div>
+
+            {/* Tableau */}
+            <div className="mt-6 rounded-xl border border-border overflow-hidden bg-card">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-muted/50">
+                    <tr className="border-b border-border">
+                      <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Employé
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Rôle sur le chantier
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Depuis
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Jusqu'au
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {affectationsPaginees.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={5}
+                          className="py-12 text-center text-sm text-muted-foreground"
+                        >
+                          {rechercheAffectation
+                            ? "Aucun employé ne correspond à votre recherche."
+                            : "Aucune affectation trouvée."}
                         </td>
-                        <td className="py-3 px-4 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => ouvrirModalEditionTache(tache)}
-                              className="h-8 w-8 p-0 hover:bg-muted"
-                              title="Modifier la tâche"
-                            >
-                              <Pencil className="size-4 text-muted-foreground" />
-                            </Button>
-                            <ModalAffecterEquipeRapide
-                              tacheId={tache.id}
-                              tacheLibelle={tache.libelle}
+                      </tr>
+                    ) : (
+                      affectationsPaginees.map((affectation: any) => (
+                        <tr
+                          key={affectation.id}
+                          className="border-b border-border hover:bg-muted/30 transition-colors"
+                        >
+                          <td className="py-3 px-4">
+                            <div className="font-medium text-sm text-foreground">
+                              {affectation.employe.prenom} {affectation.employe.nom}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-sm text-foreground">
+                            {affectation.roleFonctionnel}
+                          </td>
+                          <td className="py-3 px-4 text-sm text-muted-foreground">
+                            {affectation.dateDebut
+                              ? format(new Date(affectation.dateDebut), "dd/MM/yyyy")
+                              : "—"}
+                          </td>
+                          <td className="py-3 px-4 text-sm text-muted-foreground">
+                            {affectation.dateFin
+                              ? format(new Date(affectation.dateFin), "dd/MM/yyyy")
+                              : "En cours"}
+                          </td>
+                          <td className="py-3 px-4">
+                            <ModalAffecterEmploye
                               projetId={projet.id}
                               projetCode={projet.code}
                               projetNom={projet.nom}
-                              employeIdsActuels={
-                                tache.affectations?.map((a: any) => a.employe.id) || []
-                              }
+                              affectation={{
+                                id: affectation.id,
+                                employeId: affectation.employe.id,
+                                employeNom: affectation.employe.nom,
+                                employePrenom: affectation.employe.prenom,
+                                roleFonctionnel: affectation.roleFonctionnel,
+                                dateDebut: affectation.dateDebut,
+                                dateFin: affectation.dateFin,
+                              }}
                             >
                               <Button
+                                variant="ghost"
                                 size="sm"
-                                className="h-7 px-3 text-xs bg-[#13850b] hover:bg-[#0f6909] text-white rounded-full"
-                                title="Composer l'équipe rapidement"
+                                className="gap-1.5 h-8 px-3 rounded-full hover:bg-muted transition-colors"
                               >
-                                Équipe
+                                <Pencil className="size-3.5" />
+                                Modifier
                               </Button>
-                            </ModalAffecterEquipeRapide>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="py-6 text-center text-sm text-muted-foreground"
-                    >
-                      Aucune tâche créée
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Onglet Équipes */}
-      {ongletActif === "equipes" && (
-        <div className="space-y-4">
-          {/* Encadré Chaîne fonctionnelle */}
-          <div className="rounded-lg bg-gray-200 p-4">
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 mt-1">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted">
-                  <svg className="w-5 h-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
+                            </ModalAffecterEmploye>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
-              <div className="flex-1 space-y-2">
-                <h3 className="text-sm font-bold text-foreground">
-                  Chaîne fonctionnelle
-                </h3>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Les affectations de chantier portent la chaîne{" "}
-                    <span className="font-semibold text-foreground">fonctionnelle</span>{" "}
-                    : qui vise les relevés d'activité, qui organise le planning.
-                  </p>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Elles ne portent{" "}
-                    <span className="font-semibold text-foreground">pas</span>{" "}
-                    la chaîne hiérarchique. Un chef de chantier relève du
-                    Directeur Technique pour ses congés, et du Conducteur de
-                    Travaux pour ses relevés.
-                  </p>
-                  <div className="mt-3 pt-2 border-t border-border">
-                    <p className="text-xs font-semibold text-foreground flex items-center gap-2">
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
-                      Le code ne doit jamais confondre les deux
+
+              {/* Pagination */}
+              {total > 0 && (
+                <div className="flex items-center justify-between px-4 py-4">
+                  {/* Info et sélecteur de limite */}
+                  <div className="flex items-center gap-4">
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-medium text-foreground">
+                        {debut + 1}-{Math.min(fin, total)}
+                      </span>{" "}
+                      sur{" "}
+                      <span className="font-medium text-foreground">{total}</span>{" "}
+                      affectations
                     </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Section Affectations */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-semibold">Affectations</h2>
-              <ModalAffecterEmploye
-                projetId={projet.id}
-                projetCode={projet.code}
-                projetNom={projet.nom}
-              >
-                <Button className="gap-2 h-10 px-4 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground transition-all">
-                  <Plus className="size-4" />
-                  Affecter
-                </Button>
-              </ModalAffecterEmploye>
-            </div>
-
-            {/* Barre de recherche */}
-            <div className="mb-3">
-              <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Rechercher un employé..."
-                  value={rechercheAffectation}
-                  onChange={(e) => setRechercheAffectation(e.target.value)}
-                  className="pl-9 h-10"
-                />
-              </div>
-            </div>
-
-            <div className="border rounded-lg overflow-hidden bg-white shadow-none">
-              <table className="w-full">
-                <thead className="bg-muted/50">
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase">
-                      Employé
-                    </th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase">
-                      Poste
-                    </th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase">
-                      Rôle sur le chantier
-                    </th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase">
-                      Depuis
-                    </th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase">
-                      Jusqu'au
-                    </th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(() => {
-                    const affectationsFiltrees = projet.affectations?.filter((affectation: any) => {
-                      const nomComplet = `${affectation.employe.prenom} ${affectation.employe.nom}`.toLowerCase();
-                      return nomComplet.includes(rechercheAffectation.toLowerCase());
-                    }) || [];
-
-                    // Pagination
-                    const totalPages = Math.ceil(affectationsFiltrees.length / ITEMS_PAR_PAGE);
-                    const indexDebut = (pageAffectation - 1) * ITEMS_PAR_PAGE;
-                    const indexFin = indexDebut + ITEMS_PAR_PAGE;
-                    const affectationsPaginees = affectationsFiltrees.slice(indexDebut, indexFin);
-
-                    return affectationsPaginees.length > 0 ? (
-                      affectationsPaginees.map((affectation: any) => (
-                      <tr
-                        key={affectation.id}
-                        className="border-b hover:bg-muted/30"
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Afficher :</span>
+                      <Select
+                        value={limitAffectation.toString()}
+                        onValueChange={(value) => {
+                          setLimitAffectation(parseInt(value));
+                          setPageAffectation(1);
+                        }}
                       >
-                        <td className="py-3 px-4 text-sm">
-                          {affectation.employe.prenom} {affectation.employe.nom}
-                        </td>
-                        <td className="py-3 px-4 text-sm text-muted-foreground">
-                          —
-                        </td>
-                        <td className="py-3 px-4 text-sm">
-                          {affectation.roleFonctionnel}
-                        </td>
-                        <td className="py-3 px-4 text-sm text-muted-foreground">
-                          {affectation.dateDebut
-                            ? format(
-                                new Date(affectation.dateDebut),
-                                "dd/MM/yyyy"
-                              )
-                            : "—"}
-                        </td>
-                        <td className="py-3 px-4 text-sm text-muted-foreground">
-                          {affectation.dateFin
-                            ? format(new Date(affectation.dateFin), "dd/MM/yyyy")
-                            : "En cours"}
-                        </td>
-                        <td className="py-3 px-4">
-                          <ModalAffecterEmploye
-                            projetId={projet.id}
-                            projetCode={projet.code}
-                            projetNom={projet.nom}
-                            affectation={{
-                              id: affectation.id,
-                              employeId: affectation.employe.id,
-                              employeNom: affectation.employe.nom,
-                              employePrenom: affectation.employe.prenom,
-                              roleFonctionnel: affectation.roleFonctionnel,
-                              dateDebut: affectation.dateDebut,
-                              dateFin: affectation.dateFin,
-                            }}
-                          >
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="gap-1.5 h-8 px-3 rounded-full hover:bg-muted transition-colors"
-                            >
-                              <Pencil className="size-3.5" />
-                              Modifier
-                            </Button>
-                          </ModalAffecterEmploye>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan={6}
-                        className="py-6 text-center text-sm text-muted-foreground"
-                      >
-                        {rechercheAffectation
-                          ? "Aucun employé trouvé"
-                          : "Aucune affectation"}
-                      </td>
-                    </tr>
-                  );
-                  })()}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            {(() => {
-              const affectationsFiltrees = projet.affectations?.filter((affectation: any) => {
-                const nomComplet = `${affectation.employe.prenom} ${affectation.employe.nom}`.toLowerCase();
-                return nomComplet.includes(rechercheAffectation.toLowerCase());
-              }) || [];
-
-              const totalPages = Math.ceil(affectationsFiltrees.length / ITEMS_PAR_PAGE);
-
-              if (totalPages <= 1) return null;
-
-              return (
-                <div className="flex items-center justify-between mt-4 px-2">
-                  <p className="text-sm text-muted-foreground">
-                    Page {pageAffectation} sur {totalPages} · {affectationsFiltrees.length} résultat{affectationsFiltrees.length > 1 ? 's' : ''}
-                  </p>
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPageAffectation(Math.max(1, pageAffectation - 1))}
-                      disabled={pageAffectation === 1}
-                      className="h-8 px-3 rounded-full"
-                    >
-                      <ChevronLeft className="size-4" />
-                      Précédent
-                    </Button>
-
-                    <div className="flex gap-1">
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                        // Afficher max 5 pages : première, dernière, actuelle et ±1
-                        const shouldShow =
-                          page === 1 ||
-                          page === totalPages ||
-                          Math.abs(page - pageAffectation) <= 1;
-
-                        if (!shouldShow) {
-                          // Afficher "..." une seule fois
-                          if (page === pageAffectation - 2 || page === pageAffectation + 2) {
-                            return (
-                              <span key={page} className="px-2 text-muted-foreground">
-                                ...
-                              </span>
-                            );
-                          }
-                          return null;
-                        }
-
-                        return (
-                          <Button
-                            key={page}
-                            variant={page === pageAffectation ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setPageAffectation(page)}
-                            className={`h-8 w-8 rounded-full ${
-                              page === pageAffectation
-                                ? "bg-primary text-primary-foreground"
-                                : ""
-                            }`}
-                          >
-                            {page}
-                          </Button>
-                        );
-                      })}
+                        <SelectTrigger className="h-8 w-[80px] text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="10">10</SelectItem>
+                          <SelectItem value="20">20</SelectItem>
+                          <SelectItem value="50">50</SelectItem>
+                          <SelectItem value="100">100</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPageAffectation(Math.min(totalPages, pageAffectation + 1))}
-                      disabled={pageAffectation === totalPages}
-                      className="h-8 px-3 rounded-full"
-                    >
-                      Suivant
-                      <ChevronRight className="size-4" />
-                    </Button>
                   </div>
+
+                  {/* Navigation simplifiée */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setPageAffectation(pageAffectation - 1)}
+                        disabled={pageAffectation === 1}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm font-bold text-[#13850b] hover:text-[#0f6909] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronLeft className="size-4" />
+                        Précédent
+                      </button>
+
+                      <div className="flex items-center gap-1 px-3 py-1 bg-muted/30 rounded-md">
+                        <span className="text-sm text-muted-foreground">Page</span>
+                        <span className="text-sm font-bold text-[#13850b]">{pageAffectation}</span>
+                        <span className="text-sm text-muted-foreground">sur</span>
+                        <span className="text-sm font-medium text-foreground">{totalPages}</span>
+                      </div>
+
+                      <button
+                        onClick={() => setPageAffectation(pageAffectation + 1)}
+                        disabled={pageAffectation === totalPages}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm font-bold text-[#13850b] hover:text-[#0f6909] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Suivant
+                        <ChevronRight className="size-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
-              );
-            })()}
-          </div>
-
-          {/* Section Équipes sur site */}
-          <div>
-            <div className="mb-2">
-              <h2 className="text-base font-semibold">Équipes sur site</h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Encadrants affectés au projet. Pour affecter des journaliers
-                à une tâche, utilisez le badge{" "}
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-[#13850b] text-white">
-                  Équipe
-                </span>{" "}
-                dans l'onglet Avancement.
-              </p>
+              )}
             </div>
           </div>
-
-          {/* Section Effectif */}
-          <div>
-            <h2 className="text-base font-semibold mb-3">
-              Effectif sur le chantier
-            </h2>
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* Encadrants */}
-              <Card>
-                <CardContent className="p-4">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
-                    Encadrants affectés
-                  </p>
-                  <p className="text-2xl font-bold text-[#13850b]">
-                    {affectationsActives.length}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {affectationsActives.length === 0
-                      ? "Aucun encadrant"
-                      : affectationsActives.length === 1
-                      ? "Chef de chantier, conducteur..."
-                      : "Chefs de chantier, conducteurs..."}
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Journaliers */}
-              <Card>
-                <CardContent className="p-4">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
-                    Journaliers sur tâches
-                  </p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {journaliersAffectes}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {journaliersAffectes === 0
-                      ? "Aucun journalier affecté"
-                      : `Affecté${journaliersAffectes > 1 ? 's' : ''} à des tâches actives`}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {ongletActif === "budget" && (
         <div className="space-y-4">
