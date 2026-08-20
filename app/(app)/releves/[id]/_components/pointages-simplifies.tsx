@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { modifierPointage } from "@/lib/actions/releves";
+import { modifierPointage, soumettreReleve } from "@/lib/actions/releves";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -65,6 +66,9 @@ export function PointagesSimplifies({
   const [heuresReelles, setHeuresReelles] = useState<number>(8);
   const [heuresSup, setHeuresSup] = useState<number>(0);
   const [loadingHeures, setLoadingHeures] = useState(false);
+
+  const [loadingSoumission, setLoadingSoumission] = useState(false);
+  const router = useRouter();
 
   function ouvrirDialogAbsence(pointage: Pointage) {
     setEmployeSelectionne(pointage);
@@ -134,6 +138,23 @@ export function PointagesSimplifies({
       console.error("Erreur:", error);
     } finally {
       setLoadingHeures(false);
+    }
+  }
+
+  async function handleSoumettre() {
+    if (!confirm("Voulez-vous soumettre ce relevé pour validation ?")) {
+      return;
+    }
+
+    setLoadingSoumission(true);
+    try {
+      await soumettreReleve(releveId);
+      router.push("/releves");
+      router.refresh();
+    } catch (error: any) {
+      alert(error.message || "Erreur lors de la soumission");
+    } finally {
+      setLoadingSoumission(false);
     }
   }
 
@@ -263,9 +284,10 @@ export function PointagesSimplifies({
         <Button
           size="lg"
           className="gap-2 bg-[#13850b] hover:bg-[#0f6909]"
-          disabled
+          onClick={handleSoumettre}
+          disabled={loadingSoumission}
         >
-          Soumettre le relevé
+          {loadingSoumission ? "Soumission..." : "Soumettre le relevé"}
         </Button>
       </div>
       </TabsContent>
