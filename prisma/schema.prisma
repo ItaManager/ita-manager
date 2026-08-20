@@ -1608,6 +1608,14 @@ enum EtatPointage {
   REPOS
 }
 
+enum MotifAbsence {
+  MALADIE
+  PERMISSION
+  INTEMPERIE
+  ABSENT_SANS_MOTIF
+  AUTRE
+}
+
 /// Relevé d'activité quotidien d'un chantier
 /// M6 §8.1 : Un relevé par chantier et par jour (contrainte d'unicité)
 model ReleveActivite {
@@ -1674,6 +1682,9 @@ model Pointage {
 
   /// État : PRESENT par défaut (M6 §3.2)
   etat EtatPointage @default(PRESENT)
+
+  /// Motif d'absence (si non présent)
+  motifAbsence MotifAbsence?
 
   /// Heures préremplies avec les heures théoriques du jour
   heuresTheoretiques Decimal @db.Decimal(5, 2)

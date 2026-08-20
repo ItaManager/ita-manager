@@ -172,18 +172,66 @@ export const creerReleve = actionProtegee(
     throw new Error("Un relevé existe déjà pour ce projet et cette date");
   }
 
+  // Récupérer les employés affectés au projet à cette date
+  const affectations = await prisma.affectationChantier.findMany({
+    where: {
+      projetId: data.projetId,
+      dateDebut: { lte: data.date },
+      OR: [
+        { dateFin: null },
+        { dateFin: { gte: data.date } },
+      ],
+    },
+    include: {
+      employe: {
+        select: {
+          id: true,
+          prenom: true,
+          nom: true,
+          matricule: true,
+          typeMainOeuvre: true,
+        },
+      },
+    },
+  });
+
+  // Créer le relevé avec les pointages pré-remplis
   const releve = await prisma.releveActivite.create({
     data: {
       projetId: data.projetId,
       date: data.date,
       chefChantierId: profil.employe.id,
       statut: "BROUILLON",
+      // Créer un pointage par employé affecté (8h, PRESENT par défaut)
+      pointages: {
+        createMany: {
+          data: affectations.map((aff) => ({
+            employeId: aff.employeId,
+            etat: "PRESENT",
+            heuresTheoretiques: 8.0,
+            heuresReelles: 8.0,
+            heuresSup: 0,
+          })),
+        },
+      },
     },
     include: {
       projet: {
         select: {
           code: true,
           nom: true,
+        },
+      },
+      pointages: {
+        include: {
+          employe: {
+            select: {
+              id: true,
+              prenom: true,
+              nom: true,
+              matricule: true,
+            },
+          },
         },
       },
     },
@@ -522,6 +570,7 @@ export const modifierPointage = actionProtegee(
     data: {
       pointageId: string;
       etat?: "PRESENT" | "ABSENT_JUSTIFIE" | "ABSENT_NON_JUSTIFIE" | "RETARD" | "REPOS";
+      motifAbsence?: "MALADIE" | "PERMISSION" | "INTEMPERIE" | "ABSENT_SANS_MOTIF" | "AUTRE" | null;
       heuresReelles?: number;
       heuresSup?: number;
       observation?: string;
@@ -559,6 +608,10 @@ export const modifierPointage = actionProtegee(
 
     if (data.etat !== undefined) {
       updateData.etat = data.etat;
+    }
+
+    if (data.motifAbsence !== undefined) {
+      updateData.motifAbsence = data.motifAbsence;
     }
 
     if (data.heuresReelles !== undefined) {

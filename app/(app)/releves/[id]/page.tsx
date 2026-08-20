@@ -17,7 +17,7 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { GestionPointages } from "./_components/gestion-pointages";
+import { PointagesSimplifies } from "./_components/pointages-simplifies";
 
 interface PageReleveDetailProps {
   params: Promise<{ id: string }>;
@@ -73,6 +73,10 @@ export default async function PageReleveDetail({ params }: PageReleveDetailProps
   const Icon = config.icon;
 
   const nbPresents = releve.pointages.filter((p) => p.etat === "PRESENT").length;
+  const totalHeures = releve.pointages.reduce(
+    (sum, p) => sum + Number(p.heuresReelles),
+    0
+  );
 
   // Convertir les Decimal en nombres pour le composant client
   const pointagesSerialises = releve.pointages.map((p) => ({
@@ -214,17 +218,21 @@ export default async function PageReleveDetail({ params }: PageReleveDetailProps
           </CardHeader>
           <CardContent>
             {releve.statut === "BROUILLON" ? (
-              // Mode édition : gestion des pointages
+              // Mode édition : interface simplifiée
               pointagesSerialises.length === 0 ? (
                 <div className="text-center py-8">
                   <Users className="size-12 mx-auto mb-3 text-muted-foreground opacity-30" />
                   <p className="text-sm text-muted-foreground mb-4">
-                    Aucun pointage enregistré
+                    Aucun employé affecté à ce chantier
                   </p>
-                  <GestionPointages releveId={releve.id} pointages={pointagesSerialises} />
                 </div>
               ) : (
-                <GestionPointages releveId={releve.id} pointages={pointagesSerialises} />
+                <PointagesSimplifies
+                  releveId={releve.id}
+                  pointages={pointagesSerialises}
+                  nbPresents={nbPresents}
+                  totalHeures={totalHeures}
+                />
               )
             ) : (
               // Mode lecture seule : affichage simple

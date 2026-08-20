@@ -1,0 +1,286 @@
+"use client";
+
+import { useState } from "react";
+import { modifierPointage } from "@/lib/actions/releves";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+
+interface Employe {
+  id: string;
+  prenom: string;
+  nom: string;
+  matricule: string;
+}
+
+interface Pointage {
+  id: string;
+  etat: string;
+  motifAbsence: string | null;
+  heuresTheoretiques: number;
+  heuresReelles: number;
+  heuresSup: number;
+  observation: string | null;
+  employe: Employe;
+}
+
+interface PointagesSimplifiedProps {
+  releveId: string;
+  pointages: Pointage[];
+  nbPresents: number;
+  totalHeures: number;
+}
+
+const motifsAbsence = [
+  { value: "MALADIE", label: "Maladie" },
+  { value: "PERMISSION", label: "Permission" },
+  { value: "INTEMPERIE", label: "Intempérie" },
+  { value: "ABSENT_SANS_MOTIF", label: "Absent sans motif" },
+  { value: "AUTRE", label: "Autre" },
+];
+
+export function PointagesSimplifies({
+  releveId,
+  pointages,
+  nbPresents,
+  totalHeures,
+}: PointagesSimplifiedProps) {
+  const [openAbsentDialog, setOpenAbsentDialog] = useState(false);
+  const [employeSelectionne, setEmployeSelectionne] = useState<Pointage | null>(null);
+  const [motifSelectionne, setMotifSelectionne] = useState<string>("MALADIE");
+  const [loading, setLoading] = useState(false);
+
+  function ouvrirDialogAbsence(pointage: Pointage) {
+    setEmployeSelectionne(pointage);
+    setMotifSelectionne("MALADIE");
+    setOpenAbsentDialog(true);
+  }
+
+  async function confirmerAbsence() {
+    if (!employeSelectionne) return;
+
+    setLoading(true);
+    try {
+      const etat = motifSelectionne === "ABSENT_SANS_MOTIF" ? "ABSENT_NON_JUSTIFIE" : "ABSENT_JUSTIFIE";
+
+      await modifierPointage({
+        pointageId: employeSelectionne.id,
+        etat: etat as any,
+        motifAbsence: motifSelectionne as any,
+        heuresReelles: 0,
+        heuresSup: 0,
+      });
+
+      setOpenAbsentDialog(false);
+      setEmployeSelectionne(null);
+    } catch (error: any) {
+      console.error("Erreur:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function marquerPresent(pointage: Pointage) {
+    try {
+      await modifierPointage({
+        pointageId: pointage.id,
+        etat: "PRESENT",
+        motifAbsence: null,
+        heuresReelles: pointage.heuresTheoretiques,
+        heuresSup: 0,
+      });
+    } catch (error: any) {
+      console.error("Erreur:", error);
+    }
+  }
+
+  // Calculer taux journalier moyen (à améliorer avec vraies données)
+  const tauxMoyenJournalier = 7000; // Exemple
+  const montantEstime = nbPresents * tauxMoyenJournalier;
+
+  return (
+    <div className="space-y-6">
+      {/* Message de guidance */}
+      {nbPresents === pointages.length && (
+        <div className="rounded-lg bg-green-50 border border-green-200 p-4">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="size-5 text-green-600 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-green-900">
+                Les {pointages.length} agents sont présents, {8} heures chacun
+              </p>
+              <p className="text-sm text-green-700 mt-1">
+                Ne touchez à rien si la journée s'est déroulée normalement. Signalez seulement les absences et les écarts d'horaire.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Liste des employés */}
+      <div className="space-y-2">
+        {pointages.map((pointage) => {
+          const estPresent = pointage.etat === "PRESENT";
+
+          return (
+            <div
+              key={pointage.id}
+              className="flex items-center justify-between p-4 rounded-lg border bg-card"
+            >
+              <div className="flex-1">
+                <div className="flex items-center gap-3">
+                  <p className="font-medium">
+                    {pointage.employe.prenom} {pointage.employe.nom}
+                  </p>
+                  <Badge variant="outline" className="text-xs">
+                    {pointage.employe.matricule}
+                  </Badge>
+                </div>
+                {!estPresent && pointage.motifAbsence && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {motifsAbsence.find(m => m.value === pointage.motifAbsence)?.label}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3">
+                {estPresent ? (
+                  <>
+                    <span className="text-sm text-muted-foreground tabular-nums">
+                      {pointage.heuresReelles}h
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => ouvrirDialogAbsence(pointage)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      Absent
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled
+                    >
+                      Autres heures
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => marquerPresent(pointage)}
+                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                  >
+                    <CheckCircle2 className="size-4 mr-2" />
+                    Remettre présent
+                  </Button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Résumé */}
+      <div className="flex items-center justify-between pt-4 border-t">
+        <div>
+          <p className="text-sm text-muted-foreground">
+            {nbPresents} présents · {totalHeures} heures · 0 saisie
+          </p>
+          <p className="text-2xl font-semibold tabular-nums mt-1">
+            {montantEstime.toLocaleString()} F
+            <span className="text-sm font-normal text-muted-foreground ml-2">
+              dû aux journaliers
+            </span>
+          </p>
+        </div>
+
+        <Button
+          size="lg"
+          className="gap-2 bg-[#13850b] hover:bg-[#0f6909]"
+          disabled
+        >
+          Soumettre le relevé
+        </Button>
+      </div>
+
+      {/* Dialog Marquer absent */}
+      <Dialog open={openAbsentDialog} onOpenChange={setOpenAbsentDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Marquer absent</DialogTitle>
+          </DialogHeader>
+
+          {employeSelectionne && (
+            <div className="space-y-6">
+              <p className="font-medium">
+                {employeSelectionne.employe.prenom} {employeSelectionne.employe.nom}
+              </p>
+
+              <div className="space-y-3">
+                <Label>Motif</Label>
+                <RadioGroup value={motifSelectionne} onValueChange={setMotifSelectionne}>
+                  {motifsAbsence.map((motif) => (
+                    <div
+                      key={motif.value}
+                      className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer ${
+                        motifSelectionne === motif.value
+                          ? "border-red-500 bg-red-50"
+                          : "border-border hover:bg-muted/50"
+                      }`}
+                      onClick={() => setMotifSelectionne(motif.value)}
+                    >
+                      <RadioGroupItem value={motif.value} id={motif.value} />
+                      <Label
+                        htmlFor={motif.value}
+                        className="flex-1 cursor-pointer"
+                      >
+                        {motif.label}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+
+              <div className="rounded-lg bg-orange-50 border border-orange-200 p-3">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="size-4 text-orange-600 mt-0.5" />
+                  <p className="text-sm text-orange-800">
+                    <span className="font-medium">Journalier</span> — un jour non pointé est un jour non payé.{" "}
+                    <span className="font-medium">7 500 F</span> ne seront pas dus.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setOpenAbsentDialog(false)}
+                  disabled={loading}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  onClick={confirmerAbsence}
+                  disabled={loading}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  {loading ? "Confirmation..." : "Confirmer l'absence"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
