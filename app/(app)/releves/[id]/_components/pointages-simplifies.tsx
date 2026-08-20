@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CheckCircle2, XCircle, AlertCircle, Users, Wrench, Truck, AlertTriangle } from "lucide-react";
 
 interface Employe {
   id: string;
@@ -107,23 +108,43 @@ export function PointagesSimplifies({
   const montantEstime = nbPresents * tauxMoyenJournalier;
 
   return (
-    <div className="space-y-6">
-      {/* Message de guidance */}
-      {nbPresents === pointages.length && (
-        <div className="rounded-lg bg-green-50 border border-green-200 p-4">
-          <div className="flex items-start gap-3">
-            <CheckCircle2 className="size-5 text-green-600 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-green-900">
-                Les {pointages.length} agents sont présents, {8} heures chacun
-              </p>
-              <p className="text-sm text-green-700 mt-1">
-                Ne touchez à rien si la journée s'est déroulée normalement. Signalez seulement les absences et les écarts d'horaire.
-              </p>
+    <Tabs defaultValue="presences" className="space-y-6">
+      <TabsList className="grid w-full grid-cols-4">
+        <TabsTrigger value="presences" className="gap-2">
+          <Users className="size-4" />
+          Présences
+        </TabsTrigger>
+        <TabsTrigger value="travaux" className="gap-2">
+          <Wrench className="size-4" />
+          Travaux
+        </TabsTrigger>
+        <TabsTrigger value="engins" className="gap-2">
+          <Truck className="size-4" />
+          Engins
+        </TabsTrigger>
+        <TabsTrigger value="incidents" className="gap-2">
+          <AlertTriangle className="size-4" />
+          Incidents
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="presences" className="space-y-6">
+        {/* Message de guidance */}
+        {nbPresents === pointages.length && (
+          <div className="rounded-lg bg-green-50 border border-green-200 p-4">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="size-5 text-green-600 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-green-900">
+                  Les {pointages.length} agents sont présents, {8} heures chacun
+                </p>
+                <p className="text-sm text-green-700 mt-1">
+                  Ne touchez à rien si la journée s'est déroulée normalement. Signalez seulement les absences et les écarts d'horaire.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Liste des employés */}
       <div className="space-y-2">
@@ -212,6 +233,28 @@ export function PointagesSimplifies({
           Soumettre le relevé
         </Button>
       </div>
+      </TabsContent>
+
+      <TabsContent value="travaux" className="space-y-4">
+        <div className="text-center py-12 text-muted-foreground">
+          <Wrench className="size-12 mx-auto mb-3 opacity-30" />
+          <p className="text-sm">Saisie des travaux réalisés — à venir</p>
+        </div>
+      </TabsContent>
+
+      <TabsContent value="engins" className="space-y-4">
+        <div className="text-center py-12 text-muted-foreground">
+          <Truck className="size-12 mx-auto mb-3 opacity-30" />
+          <p className="text-sm">Saisie des engins utilisés — à venir</p>
+        </div>
+      </TabsContent>
+
+      <TabsContent value="incidents" className="space-y-4">
+        <div className="text-center py-12 text-muted-foreground">
+          <AlertTriangle className="size-12 mx-auto mb-3 opacity-30" />
+          <p className="text-sm">Déclaration des incidents — à venir</p>
+        </div>
+      </TabsContent>
 
       {/* Dialog Marquer absent */}
       <Dialog open={openAbsentDialog} onOpenChange={setOpenAbsentDialog}>
@@ -281,6 +324,6 @@ export function PointagesSimplifies({
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </Tabs>
   );
 }
