@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { VerrouillageSession } from "@/components/verrouillage-session";
@@ -35,13 +34,11 @@ export default async function RootLayout({
   } = await supabase.auth.getUser();
 
   return (
-    <html lang="fr" className={`h-full antialiased ${inter.variable} ${mono.variable}`} suppressHydrationWarning>
+    <html lang="fr" className={`light h-full antialiased ${inter.variable} ${mono.variable}`}>
       <body className="min-h-full flex flex-col">
-        <ThemeProvider attribute="class" defaultTheme="light">
-          <TooltipProvider>{children}</TooltipProvider>
-          <Toaster />
-          {user && <VerrouillageSession />}
-        </ThemeProvider>
+        <TooltipProvider>{children}</TooltipProvider>
+        <Toaster />
+        {user && <VerrouillageSession />}
       </body>
     </html>
   );
