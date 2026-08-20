@@ -13,6 +13,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import { CheckCircle2, XCircle, AlertCircle, Users, Wrench, Truck, AlertTriangle } from "lucide-react";
 
 interface Employe {
@@ -59,6 +60,12 @@ export function PointagesSimplifies({
   const [motifSelectionne, setMotifSelectionne] = useState<string>("MALADIE");
   const [loading, setLoading] = useState(false);
 
+  const [openHeuresDialog, setOpenHeuresDialog] = useState(false);
+  const [employeHeures, setEmployeHeures] = useState<Pointage | null>(null);
+  const [heuresReelles, setHeuresReelles] = useState<number>(8);
+  const [heuresSup, setHeuresSup] = useState<number>(0);
+  const [loadingHeures, setLoadingHeures] = useState(false);
+
   function ouvrirDialogAbsence(pointage: Pointage) {
     setEmployeSelectionne(pointage);
     setMotifSelectionne("MALADIE");
@@ -100,6 +107,33 @@ export function PointagesSimplifies({
       });
     } catch (error: any) {
       console.error("Erreur:", error);
+    }
+  }
+
+  function ouvrirDialogHeures(pointage: Pointage) {
+    setEmployeHeures(pointage);
+    setHeuresReelles(pointage.heuresReelles);
+    setHeuresSup(pointage.heuresSup);
+    setOpenHeuresDialog(true);
+  }
+
+  async function confirmerHeures() {
+    if (!employeHeures) return;
+
+    setLoadingHeures(true);
+    try {
+      await modifierPointage({
+        pointageId: employeHeures.id,
+        heuresReelles: heuresReelles,
+        heuresSup: heuresSup,
+      });
+
+      setOpenHeuresDialog(false);
+      setEmployeHeures(null);
+    } catch (error: any) {
+      console.error("Erreur:", error);
+    } finally {
+      setLoadingHeures(false);
     }
   }
 
@@ -189,7 +223,8 @@ export function PointagesSimplifies({
                     <Button
                       variant="outline"
                       size="sm"
-                      disabled
+                      onClick={() => ouvrirDialogHeures(pointage)}
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                     >
                       Autres heures
                     </Button>
@@ -318,6 +353,87 @@ export function PointagesSimplifies({
                   className="bg-red-600 hover:bg-red-700"
                 >
                   {loading ? "Confirmation..." : "Confirmer l'absence"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Modifier heures */}
+      <Dialog open={openHeuresDialog} onOpenChange={setOpenHeuresDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifier les heures</DialogTitle>
+          </DialogHeader>
+
+          {employeHeures && (
+            <div className="space-y-6">
+              <p className="font-medium">
+                {employeHeures.employe.prenom} {employeHeures.employe.nom}
+              </p>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="heuresReelles">Heures réelles</Label>
+                  <Input
+                    id="heuresReelles"
+                    type="number"
+                    min="0"
+                    max="24"
+                    step="0.5"
+                    value={heuresReelles}
+                    onChange={(e) => setHeuresReelles(parseFloat(e.target.value) || 0)}
+                    className="rounded-md"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Heures normales travaillées (0 à 24h)
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="heuresSup">Heures supplémentaires</Label>
+                  <Input
+                    id="heuresSup"
+                    type="number"
+                    min="0"
+                    max="12"
+                    step="0.5"
+                    value={heuresSup}
+                    onChange={(e) => setHeuresSup(parseFloat(e.target.value) || 0)}
+                    className="rounded-md"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Heures supplémentaires (majorées)
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-blue-50 border border-blue-200 p-3">
+                <p className="text-sm text-blue-800">
+                  Total : <span className="font-medium tabular-nums">{heuresReelles + heuresSup}h</span>
+                  {heuresSup > 0 && (
+                    <span className="ml-2 text-xs">
+                      ({heuresReelles}h + {heuresSup}h sup)
+                    </span>
+                  )}
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setOpenHeuresDialog(false)}
+                  disabled={loadingHeures}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  onClick={confirmerHeures}
+                  disabled={loadingHeures}
+                  className="bg-[#13850b] hover:bg-[#0f6909]"
+                >
+                  {loadingHeures ? "Enregistrement..." : "Enregistrer"}
                 </Button>
               </div>
             </div>
