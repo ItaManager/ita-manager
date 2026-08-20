@@ -22,6 +22,12 @@ interface Employe {
   prenom: string;
   nom: string;
   matricule: string;
+  typeMainOeuvre?: string;
+}
+
+interface Competence {
+  id: string;
+  libelle: string;
 }
 
 interface Pointage {
@@ -33,6 +39,8 @@ interface Pointage {
   heuresSup: number;
   observation: string | null;
   employe: Employe;
+  competence?: Competence | null;
+  tauxJournalier?: number | null;
 }
 
 interface PointagesSimplifiedProps {
@@ -158,9 +166,13 @@ export function PointagesSimplifies({
     }
   }
 
-  // Calculer taux journalier moyen (à améliorer avec vraies données)
-  const tauxMoyenJournalier = 7000; // Exemple
-  const montantEstime = nbPresents * tauxMoyenJournalier;
+  // Calculer montant total basé sur les taux réels
+  const montantEstime = pointages.reduce((total, pointage) => {
+    if (pointage.etat === "PRESENT" && pointage.tauxJournalier) {
+      return total + pointage.tauxJournalier;
+    }
+    return total;
+  }, 0);
 
   return (
     <Tabs defaultValue="presences" className="space-y-6">
@@ -219,6 +231,21 @@ export function PointagesSimplifies({
                   <Badge variant="outline" className="text-xs">
                     {pointage.employe.matricule}
                   </Badge>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  {pointage.competence && (
+                    <p className="text-xs text-muted-foreground">
+                      {pointage.competence.libelle}
+                    </p>
+                  )}
+                  {pointage.tauxJournalier && (
+                    <>
+                      {pointage.competence && <span className="text-xs text-muted-foreground">•</span>}
+                      <p className="text-xs font-medium tabular-nums" style={{ color: "#13850b" }}>
+                        {pointage.tauxJournalier.toLocaleString()} F / jour
+                      </p>
+                    </>
+                  )}
                 </div>
                 {!estPresent && pointage.motifAbsence && (
                   <p className="text-xs text-muted-foreground mt-1">

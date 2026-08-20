@@ -121,6 +121,7 @@ export const obtenirReleve = actionProtegee(
               prenom: true,
               nom: true,
               matricule: true,
+              typeMainOeuvre: true,
             },
           },
         },
@@ -136,7 +137,53 @@ export const obtenirReleve = actionProtegee(
     throw new Error("Relevé non trouvé");
   }
 
-  return releve;
+  // Enrichir avec compétences et taux pour chaque pointage
+  const pointagesEnrichis = await Promise.all(
+    releve.pointages.map(async (pointage) => {
+      // Trouver la compétence en vigueur à la date du relevé
+      const affectationCompetence = await prisma.affectationCompetence.findFirst({
+        where: {
+          employeId: pointage.employeId,
+          dateEffet: { lte: releve.date },
+          OR: [
+            { dateFin: null },
+            { dateFin: { gte: releve.date } }
+          ]
+        },
+        include: {
+          competence: true
+        },
+        orderBy: { dateEffet: 'desc' }
+      });
+
+      // Si une compétence est trouvée, trouver le taux en vigueur
+      let tauxJournalier = null;
+      if (affectationCompetence) {
+        const taux = await prisma.tauxJournalier.findFirst({
+          where: {
+            competenceId: affectationCompetence.competenceId,
+            dateEffet: { lte: releve.date }
+          },
+          orderBy: { dateEffet: 'desc' }
+        });
+
+        if (taux) {
+          tauxJournalier = Number(taux.montant);
+        }
+      }
+
+      return {
+        ...pointage,
+        competence: affectationCompetence?.competence || null,
+        tauxJournalier
+      };
+    })
+  );
+
+  return {
+    ...releve,
+    pointages: pointagesEnrichis
+  };
   }
 );
 
