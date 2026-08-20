@@ -137,7 +137,7 @@ export const obtenirReleve = actionProtegee(
     throw new Error("Relevé non trouvé");
   }
 
-  // Enrichir avec compétences et taux pour chaque pointage
+  // Enrichir avec compétences, taux et chef d'équipe pour chaque pointage
   const pointagesEnrichis = await Promise.all(
     releve.pointages.map(async (pointage) => {
       // Trouver la compétence en vigueur à la date du relevé
@@ -172,10 +172,76 @@ export const obtenirReleve = actionProtegee(
         }
       }
 
+      // Trouver l'affectation chantier de l'employé pour déterminer son rôle
+      const affectationChantier = await prisma.affectationChantier.findFirst({
+        where: {
+          employeId: pointage.employeId,
+          projetId: releve.projetId,
+          dateDebut: { lte: releve.date },
+          OR: [
+            { dateFin: null },
+            { dateFin: { gte: releve.date } }
+          ]
+        },
+        include: {
+          employe: {
+            select: {
+              id: true,
+              prenom: true,
+              nom: true,
+            }
+          }
+        }
+      });
+
+      // Déterminer le chef d'équipe
+      let chefEquipe = null;
+      if (affectationChantier) {
+        if (affectationChantier.roleFonctionnel === 'CHEF_EQUIPE') {
+          // L'employé est son propre chef
+          chefEquipe = {
+            id: affectationChantier.employe.id,
+            prenom: affectationChantier.employe.prenom,
+            nom: affectationChantier.employe.nom,
+          };
+        } else {
+          // Trouver le CHEF_EQUIPE du même projet à la même date
+          const affectationChef = await prisma.affectationChantier.findFirst({
+            where: {
+              projetId: releve.projetId,
+              roleFonctionnel: 'CHEF_EQUIPE',
+              dateDebut: { lte: releve.date },
+              OR: [
+                { dateFin: null },
+                { dateFin: { gte: releve.date } }
+              ]
+            },
+            include: {
+              employe: {
+                select: {
+                  id: true,
+                  prenom: true,
+                  nom: true,
+                }
+              }
+            }
+          });
+
+          if (affectationChef) {
+            chefEquipe = {
+              id: affectationChef.employe.id,
+              prenom: affectationChef.employe.prenom,
+              nom: affectationChef.employe.nom,
+            };
+          }
+        }
+      }
+
       return {
         ...pointage,
         competence: affectationCompetence?.competence || null,
-        tauxJournalier
+        tauxJournalier,
+        chefEquipe
       };
     })
   );

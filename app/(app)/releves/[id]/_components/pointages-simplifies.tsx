@@ -30,6 +30,12 @@ interface Competence {
   libelle: string;
 }
 
+interface ChefEquipe {
+  id: string;
+  prenom: string;
+  nom: string;
+}
+
 interface Pointage {
   id: string;
   etat: string;
@@ -41,6 +47,7 @@ interface Pointage {
   employe: Employe;
   competence?: Competence | null;
   tauxJournalier?: number | null;
+  chefEquipe?: ChefEquipe | null;
 }
 
 interface PointagesSimplifiedProps {
@@ -174,6 +181,27 @@ export function PointagesSimplifies({
     return total;
   }, 0);
 
+  // Grouper les pointages par chef d'équipe
+  const equipes = pointages.reduce((acc, pointage) => {
+    const chefId = pointage.chefEquipe?.id || "sans_equipe";
+    if (!acc[chefId]) {
+      acc[chefId] = {
+        chef: pointage.chefEquipe,
+        membres: [],
+      };
+    }
+    acc[chefId].membres.push(pointage);
+    return acc;
+  }, {} as Record<string, { chef: ChefEquipe | null | undefined; membres: Pointage[] }>);
+
+  const equipesOrdonnees = Object.values(equipes).sort((a, b) => {
+    // Les équipes avec chef en premier, puis alphabétique par nom du chef
+    if (!a.chef && b.chef) return 1;
+    if (a.chef && !b.chef) return -1;
+    if (!a.chef || !b.chef) return 0;
+    return `${a.chef.nom} ${a.chef.prenom}`.localeCompare(`${b.chef.nom} ${b.chef.prenom}`);
+  });
+
   return (
     <Tabs defaultValue="presences" className="space-y-6">
       <TabsList className="grid w-full grid-cols-4">
@@ -213,85 +241,114 @@ export function PointagesSimplifies({
           </div>
         )}
 
-      {/* Liste des employés */}
-      <div className="space-y-2">
-        {pointages.map((pointage) => {
-          const estPresent = pointage.etat === "PRESENT";
+      {/* Liste des employés par équipe */}
+      <div className="space-y-6">
+        {equipesOrdonnees.map((equipe, index) => (
+          <div key={equipe.chef?.id || `sans_equipe_${index}`} className="space-y-2">
+            {/* Header de l'équipe */}
+            {equipe.chef && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg">
+                <Users className="size-4 text-muted-foreground" />
+                <p className="text-sm font-medium">
+                  Équipe - {equipe.chef.nom.toUpperCase()} {equipe.chef.prenom}
+                </p>
+                <Badge variant="outline" className="text-xs ml-auto">
+                  {equipe.membres.length} agent{equipe.membres.length > 1 ? "s" : ""}
+                </Badge>
+              </div>
+            )}
+            {!equipe.chef && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg">
+                <Users className="size-4 text-muted-foreground" />
+                <p className="text-sm font-medium text-muted-foreground">
+                  Sans équipe
+                </p>
+                <Badge variant="outline" className="text-xs ml-auto">
+                  {equipe.membres.length} agent{equipe.membres.length > 1 ? "s" : ""}
+                </Badge>
+              </div>
+            )}
 
-          return (
-            <div
-              key={pointage.id}
-              className="flex items-center justify-between p-4 rounded-lg border bg-card"
-            >
-              <div className="flex-1">
-                <div className="flex items-center gap-3">
-                  <p className="font-medium">
-                    {pointage.employe.prenom} {pointage.employe.nom}
-                  </p>
-                  <Badge variant="outline" className="text-xs">
-                    {pointage.employe.matricule}
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-2 mt-1">
-                  {pointage.competence && (
-                    <p className="text-xs text-muted-foreground">
-                      {pointage.competence.libelle}
-                    </p>
-                  )}
-                  {pointage.tauxJournalier && (
-                    <>
-                      {pointage.competence && <span className="text-xs text-muted-foreground">•</span>}
-                      <p className="text-xs font-medium tabular-nums" style={{ color: "#13850b" }}>
-                        {pointage.tauxJournalier.toLocaleString()} F / jour
+            {/* Membres de l'équipe */}
+            {equipe.membres.map((pointage) => {
+              const estPresent = pointage.etat === "PRESENT";
+
+              return (
+                <div
+                  key={pointage.id}
+                  className="flex items-center justify-between p-4 rounded-lg border bg-card"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <p className="font-medium">
+                        {pointage.employe.prenom} {pointage.employe.nom}
                       </p>
-                    </>
-                  )}
-                </div>
-                {!estPresent && pointage.motifAbsence && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {motifsAbsence.find(m => m.value === pointage.motifAbsence)?.label}
-                  </p>
-                )}
-              </div>
+                      <Badge variant="outline" className="text-xs">
+                        {pointage.employe.matricule}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      {pointage.competence && (
+                        <p className="text-xs text-muted-foreground">
+                          {pointage.competence.libelle}
+                        </p>
+                      )}
+                      {pointage.tauxJournalier && (
+                        <>
+                          {pointage.competence && <span className="text-xs text-muted-foreground">•</span>}
+                          <p className="text-xs font-medium tabular-nums" style={{ color: "#13850b" }}>
+                            {pointage.tauxJournalier.toLocaleString()} F / jour
+                          </p>
+                        </>
+                      )}
+                    </div>
+                    {!estPresent && pointage.motifAbsence && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {motifsAbsence.find(m => m.value === pointage.motifAbsence)?.label}
+                      </p>
+                    )}
+                  </div>
 
-              <div className="flex items-center gap-3">
-                {estPresent ? (
-                  <>
-                    <span className="text-sm text-muted-foreground tabular-nums">
-                      {pointage.heuresReelles}h
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => ouvrirDialogAbsence(pointage)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      Absent
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => ouvrirDialogHeures(pointage)}
-                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                    >
-                      Autres heures
-                    </Button>
-                  </>
-                ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => marquerPresent(pointage)}
-                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                  >
-                    <CheckCircle2 className="size-4 mr-2" />
-                    Remettre présent
-                  </Button>
-                )}
-              </div>
-            </div>
-          );
-        })}
+                  <div className="flex items-center gap-3">
+                    {estPresent ? (
+                      <>
+                        <span className="text-sm text-muted-foreground tabular-nums">
+                          {pointage.heuresReelles}h
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => ouvrirDialogAbsence(pointage)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          Absent
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => ouvrirDialogHeures(pointage)}
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        >
+                          Autres heures
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => marquerPresent(pointage)}
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                      >
+                        <CheckCircle2 className="size-4 mr-2" />
+                        Remettre présent
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
       </div>
 
       {/* Résumé */}
