@@ -297,7 +297,7 @@ export function PointagesSimplifies({
                         <>
                           {pointage.competence && <span className="text-xs text-muted-foreground">•</span>}
                           <p className="text-xs font-medium tabular-nums" style={{ color: "#13850b" }}>
-                            {pointage.tauxJournalier.toLocaleString()} F / jour
+                            {pointage.tauxJournalier.toLocaleString('fr-FR')} F / jour
                           </p>
                         </>
                       )}
@@ -358,7 +358,7 @@ export function PointagesSimplifies({
             {nbPresents} présents · {totalHeures} heures · 0 saisie
           </p>
           <p className="text-2xl font-semibold tabular-nums mt-1">
-            {montantEstime.toLocaleString()} F
+            {montantEstime.toLocaleString('fr-FR')} F
             <span className="text-sm font-normal text-muted-foreground ml-2">
               dû aux journaliers
             </span>
