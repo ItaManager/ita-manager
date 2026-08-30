@@ -71,6 +71,17 @@ export function ModaleNouveauReleve({
       return;
     }
 
+    // Validation : empêcher les dates passées
+    const dateSelectionnee = new Date(dateString);
+    const aujourdhui = new Date();
+    aujourdhui.setHours(0, 0, 0, 0);
+    dateSelectionnee.setHours(0, 0, 0, 0);
+
+    if (dateSelectionnee < aujourdhui) {
+      toast.error("Impossible de créer un relevé avec une date passée");
+      return;
+    }
+
     startTransition(async () => {
       try {
         const releve = await creerReleve({
@@ -190,12 +201,13 @@ export function ModaleNouveauReleve({
               type="date"
               value={dateString}
               onChange={(e) => setDateString(e.target.value)}
+              min={new Date().toISOString().split("T")[0]}
               disabled={isPending}
               className="h-11"
               required
             />
             <p className="text-xs text-muted-foreground">
-              Date du relevé journalier
+              Date du relevé journalier (aujourd'hui ou future uniquement)
             </p>
           </div>
 

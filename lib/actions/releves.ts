@@ -408,6 +408,16 @@ export const creerReleve = actionProtegee(
     throw new Error("Aucun employé associé à ce compte");
   }
 
+  // Validation : empêcher la création de relevés avec une date passée
+  const dateReleve = new Date(data.date);
+  const aujourdhui = new Date();
+  aujourdhui.setHours(0, 0, 0, 0);
+  dateReleve.setHours(0, 0, 0, 0);
+
+  if (dateReleve < aujourdhui) {
+    throw new Error("Impossible de créer un relevé avec une date passée");
+  }
+
   // Vérifier qu'il n'existe pas déjà un relevé pour ce projet et cette date
   const existant = await prisma.releveActivite.findUnique({
     where: {
