@@ -1,8 +1,145 @@
 "use server";
 
 import { prisma } from "@/lib/db/prisma";
-import { actionProtegee } from "@/lib/auth/guard";
+import { actionProtegee, verifierPermission } from "@/lib/auth/guard";
 import { revalidatePath } from "next/cache";
+
+/**
+ * Statistiques des relevés d'activité
+ */
+export const statistiquesReleves = actionProtegee(
+  "releve:saisir",
+  async (session) => {
+    // Total de relevés
+    const total = await prisma.releveActivite.count();
+
+    // Relevés par statut
+    const [brouillons, soumis, vises, refuses] = await Promise.all([
+      prisma.releveActivite.count({ where: { statut: "BROUILLON" } }),
+      prisma.releveActivite.count({ where: { statut: "SOUMIS" } }),
+      prisma.releveActivite.count({ where: { statut: "VISE" } }),
+      prisma.releveActivite.count({ where: { statut: "REFUSE" } }),
+    ]);
+
+    // Total des pointages visés ce mois
+    const debutMois = new Date();
+    debutMois.setDate(1);
+    debutMois.setHours(0, 0, 0, 0);
+
+    const pointagesCeMois = await prisma.pointage.count({
+      where: {
+        releve: {
+          statut: "VISE",
+          viseLe: { gte: debutMois },
+        },
+      },
+    });
+
+    // Projets actifs avec relevés
+    const projetsActifs = await prisma.releveActivite.findMany({
+      where: {
+        date: {
+          gte: new Date(new Date().setDate(new Date().getDate() - 30)),
+        },
+      },
+      select: { projetId: true },
+      distinct: ["projetId"],
+    });
+
+    return {
+      total,
+      brouillons,
+      soumis,
+      vises,
+      refuses,
+      pointagesCeMois,
+      projetsActifs: projetsActifs.length,
+    };
+  }
+);
+
+/**
+ * Obtenir les tâches en attente pour l'utilisateur
+ */
+export const obtenirTachesReleves = actionProtegee(
+  "releve:saisir",
+  async (session) => {
+    const profil = await prisma.profil.findUnique({
+      where: { id: session.userId },
+      include: { employe: true },
+    });
+
+    if (!profil?.employe) {
+      return [];
+    }
+
+    const taches: Array<{
+      id: string;
+      titre: string;
+      description: string;
+      count?: number;
+      lien?: string;
+    }> = [];
+
+    // Vérifier si l'utilisateur a la permission de viser
+    const peutViser = await verifierPermission(session.userId, "releve:viser");
+
+    // Si l'utilisateur peut viser, compter les relevés soumis
+    if (peutViser) {
+      const soumis = await prisma.releveActivite.count({
+        where: { statut: "SOUMIS" },
+      });
+
+      if (soumis > 0) {
+        taches.push({
+          id: "viser-releves",
+          titre: "Viser les relevés d'activité",
+          description: `${soumis} relevé${soumis > 1 ? 's' : ''} soumis en attente de votre visa.`,
+          count: soumis,
+          lien: "/releves?statut=SOUMIS",
+        });
+      }
+    }
+
+    // Compter les brouillons de l'utilisateur
+    const brouillons = await prisma.releveActivite.count({
+      where: {
+        chefChantierId: profil.employe.id,
+        statut: "BROUILLON",
+      },
+    });
+
+    if (brouillons > 0) {
+      taches.push({
+        id: "finaliser-brouillons",
+        titre: "Finaliser vos brouillons",
+        description: `${brouillons} relevé${brouillons > 1 ? 's' : ''} en cours de saisie à soumettre.`,
+        count: brouillons,
+        lien: "/releves?statut=BROUILLON",
+      });
+    }
+
+    // Compter les relevés refusés de l'utilisateur
+    const refuses = await prisma.releveActivite.count({
+      where: {
+        chefChantierId: profil.employe.id,
+        statut: "REFUSE",
+      },
+    });
+
+    if (refuses > 0) {
+      taches.push({
+        id: "corriger-refuses",
+        titre: "Corriger les relevés refusés",
+        description: `${refuses} relevé${refuses > 1 ? 's refusés' : ' refusé'} à corriger et soumettre à nouveau.`,
+        count: refuses,
+        lien: "/releves?statut=REFUSE",
+      });
+    }
+
+    return taches;
+  }
+);
 
 /**
  * Lister les relevés d'activité avec filtres

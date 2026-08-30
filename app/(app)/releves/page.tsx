@@ -1,7 +1,10 @@
 import { Suspense } from "react";
 import { verifierAccesPage } from "@/lib/auth/page-access";
+import { ModuleLayout } from "@/components/layouts/module-layout";
 import { ListeReleves } from "./_components/liste-releves";
-import { ClipboardCheck } from "lucide-react";
+import { IndicateursReleves } from "./_components/indicateurs-releves";
+import { ListeTaches } from "./_components/liste-taches";
+import { TitreTaches } from "./_components/titre-taches";
 
 export const metadata = {
   title: "Relevés d'activité — ITA Manager",
@@ -24,20 +27,29 @@ export default async function PageReleves({ searchParams }: PageRelevesProps) {
   const limit = params.limit ? parseInt(params.limit) : 20;
 
   return (
-    <div className="container mx-auto py-8 max-w-7xl">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">
-            <ClipboardCheck className="size-6" />
-            Relevés d'activité
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Saisie et validation des relevés journaliers par chantier
-          </p>
-        </div>
-      </div>
-
-      <Suspense fallback={<div className="text-center py-8">Chargement...</div>}>
+    <ModuleLayout
+      titre="Relevés d'activité"
+      description="Saisie et validation des relevés journaliers par chantier"
+      helpText="Circuit de validation en 2 étapes : Le chef de chantier saisit le relevé d'activité avec les pointages quotidiens et le soumet. Le conducteur de travaux (N+1) vise le relevé pour validation finale. Les pointages visés alimentent ensuite le calcul de paie chantier."
+      indicateurs={
+        <Suspense fallback={<div>Chargement...</div>}>
+          <IndicateursReleves />
+        </Suspense>
+      }
+      taches={{
+        titre: (
+          <Suspense fallback={<h2 className="text-lg font-semibold text-[#18181a]">Vos tâches</h2>}>
+            <TitreTaches />
+          </Suspense>
+        ),
+        contenu: (
+          <Suspense fallback={<div className="text-sm text-muted-foreground">Chargement...</div>}>
+            <ListeTaches />
+          </Suspense>
+        ),
+      }}
+    >
+      <Suspense fallback={<div>Chargement...</div>}>
         <ListeReleves
           page={page}
           limit={limit}
@@ -45,6 +57,6 @@ export default async function PageReleves({ searchParams }: PageRelevesProps) {
           statut={params.statut}
         />
       </Suspense>
-    </div>
+    </ModuleLayout>
   );
 }
