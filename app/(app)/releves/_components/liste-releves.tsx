@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { listerReleves } from "@/lib/actions/releves";
+import { listerProjets } from "@/lib/actions/projets";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ import {
   Plus,
 } from "lucide-react";
 import Link from "next/link";
+import { ModaleNouveauReleve } from "./modale-nouveau-releve";
 
 interface ListeRelevesProps {
   page: number;
@@ -57,9 +59,12 @@ export function ListeReleves({ page, limit, projetId, statut }: ListeRelevesProp
   });
 
   const [filtreStatut, setFiltreStatut] = useState<string>(statut || "tous");
+  const [modaleOuverte, setModaleOuverte] = useState(false);
+  const [projets, setProjets] = useState<Array<{ id: string; code: string; nom: string }>>([]);
 
   useEffect(() => {
     chargerReleves();
+    chargerProjets();
   }, [page, limit, projetId, statut]);
 
   async function chargerReleves() {
@@ -78,6 +83,19 @@ export function ListeReleves({ page, limit, projetId, statut }: ListeRelevesProp
       console.error("Erreur chargement relevés:", error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function chargerProjets() {
+    try {
+      const result = await listerProjets();
+      setProjets(result.map((p) => ({
+        id: p.id,
+        code: p.code,
+        nom: p.nom,
+      })));
+    } catch (error) {
+      console.error("Erreur chargement projets:", error);
     }
   }
 
@@ -198,12 +216,13 @@ export function ListeReleves({ page, limit, projetId, statut }: ListeRelevesProp
 
         {/* Bouton nouveau relevé */}
         <div className="flex items-center justify-end">
-          <Link href="/releves/nouveau">
-            <Button className="gap-2 rounded-full bg-[#13850b] hover:bg-[#0f6909] text-white">
-              <Plus className="size-4" />
-              Nouveau relevé
-            </Button>
-          </Link>
+          <Button
+            onClick={() => setModaleOuverte(true)}
+            className="gap-2 rounded-full bg-[#13850b] hover:bg-[#0f6909] text-white"
+          >
+            <Plus className="size-4" />
+            Nouveau relevé
+          </Button>
         </div>
       </div>
 
@@ -357,6 +376,16 @@ export function ListeReleves({ page, limit, projetId, statut }: ListeRelevesProp
           </div>
         </div>
       )}
+
+      {/* Modale nouveau relevé */}
+      <ModaleNouveauReleve
+        ouvert={modaleOuverte}
+        onClose={() => {
+          setModaleOuverte(false);
+          chargerReleves(); // Rafraîchir la liste après création
+        }}
+        projets={projets}
+      />
     </div>
   );
 }

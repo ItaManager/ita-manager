@@ -1,11 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   Command,
   CommandEmpty,
@@ -19,9 +27,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { creerReleve } from "@/lib/actions/releves";
+import { toast } from "sonner";
 
 interface Projet {
   id: string;
@@ -29,14 +36,19 @@ interface Projet {
   nom: string;
 }
 
-interface FormulaireNouveauReleveProps {
+interface ModaleNouveauReleveProps {
+  ouvert: boolean;
+  onClose: () => void;
   projets: Projet[];
 }
 
-export function FormulaireNouveauReleve({ projets }: FormulaireNouveauReleveProps) {
+export function ModaleNouveauReleve({
+  ouvert,
+  onClose,
+  projets,
+}: ModaleNouveauReleveProps) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const [projetId, setProjetId] = useState<string>("");
   const [dateString, setDateString] = useState<string>(
@@ -46,46 +58,62 @@ export function FormulaireNouveauReleve({ projets }: FormulaireNouveauReleveProp
 
   const projetSelectionne = projets.find((p) => p.id === projetId);
 
-  async function handleSubmit(e: React.FormEvent) {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!projetId) {
-      setError("Veuillez sélectionner un chantier");
+      toast.error("Veuillez sélectionner un chantier");
       return;
     }
 
     if (!dateString) {
-      setError("Veuillez sélectionner une date");
+      toast.error("Veuillez sélectionner une date");
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    startTransition(async () => {
+      try {
+        const releve = await creerReleve({
+          projetId,
+          date: new Date(dateString),
+        });
 
-    try {
-      const releve = await creerReleve({
-        projetId,
-        date: new Date(dateString),
-      });
+        toast.success("Relevé créé avec succès");
 
-      // Rediriger vers la page de détail
-      router.push(`/releves/${releve.id}`);
-    } catch (err: any) {
-      setError(err.message || "Une erreur est survenue");
-      setLoading(false);
-    }
-  }
+        // Réinitialiser le formulaire
+        setProjetId("");
+        setDateString(new Date().toISOString().split("T")[0]);
+
+        // Fermer la modale
+        onClose();
+
+        // Rediriger vers la page de détail
+        router.push(`/releves/${releve.id}`);
+      } catch (err: any) {
+        toast.error(err.message || "Une erreur est survenue");
+      }
+    });
+  };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <Card>
-        <CardHeader>
-          <CardTitle>Informations du relevé</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
+    <Dialog open={ouvert} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl p-0">
+        <DialogHeader
+          className="border-b border-border px-6 py-4"
+          style={{ backgroundColor: "var(--primary-soft)" }}
+        >
+          <DialogTitle className="text-xl font-semibold text-[#1D186C]">
+            Nouveau relevé d'activité
+          </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground mt-1">
+            Créer un relevé journalier de chantier
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-5 px-6 py-4">
           {/* Sélecteur de chantier */}
           <div className="space-y-2">
-            <Label htmlFor="projet">
+            <Label htmlFor="projet" className="text-sm font-medium">
               Chantier <span className="text-destructive">*</span>
             </Label>
             <Popover open={openProjet} onOpenChange={setOpenProjet}>
@@ -94,17 +122,21 @@ export function FormulaireNouveauReleve({ projets }: FormulaireNouveauReleveProp
                   variant="outline"
                   role="combobox"
                   aria-expanded={openProjet}
-                  className="w-full justify-between rounded-md"
-                  disabled={loading}
+                  className="w-full justify-between h-11"
+                  disabled={isPending}
                 >
                   {projetSelectionne ? (
                     <span>
                       <span className="font-medium">{projetSelectionne.code}</span>
                       {" — "}
-                      <span className="text-muted-foreground">{projetSelectionne.nom}</span>
+                      <span className="text-muted-foreground">
+                        {projetSelectionne.nom}
+                      </span>
                     </span>
                   ) : (
-                    <span className="text-muted-foreground">Sélectionner un chantier...</span>
+                    <span className="text-muted-foreground">
+                      Sélectionner un chantier...
+                    </span>
                   )}
                   <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
                 </Button>
@@ -132,7 +164,9 @@ export function FormulaireNouveauReleve({ projets }: FormulaireNouveauReleveProp
                           />
                           <div>
                             <div className="font-medium">{projet.code}</div>
-                            <div className="text-xs text-muted-foreground">{projet.nom}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {projet.nom}
+                            </div>
                           </div>
                         </CommandItem>
                       ))}
@@ -148,7 +182,7 @@ export function FormulaireNouveauReleve({ projets }: FormulaireNouveauReleveProp
 
           {/* Sélecteur de date */}
           <div className="space-y-2">
-            <Label htmlFor="date">
+            <Label htmlFor="date" className="text-sm font-medium">
               Date <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -156,8 +190,8 @@ export function FormulaireNouveauReleve({ projets }: FormulaireNouveauReleveProp
               type="date"
               value={dateString}
               onChange={(e) => setDateString(e.target.value)}
-              disabled={loading}
-              className="rounded-md"
+              disabled={isPending}
+              className="h-11"
               required
             />
             <p className="text-xs text-muted-foreground">
@@ -165,33 +199,33 @@ export function FormulaireNouveauReleve({ projets }: FormulaireNouveauReleveProp
             </p>
           </div>
 
-          {/* Message d'erreur */}
-          {error && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-              {error}
-            </div>
-          )}
-
           {/* Boutons d'action */}
-          <div className="flex items-center justify-end gap-3 pt-4">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.back()}
-              disabled={loading}
+              onClick={onClose}
+              disabled={isPending}
             >
               Annuler
             </Button>
             <Button
               type="submit"
-              disabled={loading || !projetId || !dateString}
+              disabled={isPending || !projetId || !dateString}
               className="gap-2 bg-[#13850b] hover:bg-[#0f6909]"
             >
-              {loading ? "Création..." : "Créer le relevé"}
+              {isPending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Création...
+                </>
+              ) : (
+                "Créer le relevé"
+              )}
             </Button>
           </div>
-        </CardContent>
-      </Card>
-    </form>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
