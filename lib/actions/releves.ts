@@ -498,7 +498,17 @@ export const creerReleve = actionProtegee(
   });
 
   revalidatePath("/releves");
-  return releve;
+
+  // Convertir les Decimal en nombres pour le client
+  return {
+    ...releve,
+    pointages: releve.pointages.map((p) => ({
+      ...p,
+      heuresTheoretiques: Number(p.heuresTheoretiques),
+      heuresReelles: Number(p.heuresReelles),
+      heuresSup: Number(p.heuresSup),
+    })),
+  };
   }
 );
 
