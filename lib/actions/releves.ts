@@ -771,6 +771,16 @@ export const ajouterPointage = actionProtegee(
       throw new Error("Seul un relevé en brouillon peut être modifié");
     }
 
+    // Validation : empêcher l'ajout de pointage sur un relevé dont la date est passée
+    const dateReleve = new Date(releve.date);
+    const aujourdhui = new Date();
+    aujourdhui.setHours(0, 0, 0, 0);
+    dateReleve.setHours(0, 0, 0, 0);
+
+    if (dateReleve < aujourdhui) {
+      throw new Error("Impossible de modifier un relevé dont la date est passée");
+    }
+
     // Vérifier que l'employé existe
     const employe = await prisma.employe.findUnique({
       where: { id: data.employeId },
@@ -874,6 +884,16 @@ export const modifierPointage = actionProtegee(
       throw new Error("Seul un relevé en brouillon peut être modifié");
     }
 
+    // Validation : empêcher la modification d'un relevé dont la date est passée
+    const dateReleve = new Date(pointage.releve.date);
+    const aujourdhui = new Date();
+    aujourdhui.setHours(0, 0, 0, 0);
+    dateReleve.setHours(0, 0, 0, 0);
+
+    if (dateReleve < aujourdhui) {
+      throw new Error("Impossible de modifier un relevé dont la date est passée");
+    }
+
     const updateData: any = {};
 
     if (data.etat !== undefined) {
@@ -955,6 +975,16 @@ export const retirerPointage = actionProtegee(
 
     if (pointage.releve.statut !== "BROUILLON") {
       throw new Error("Seul un relevé en brouillon peut être modifié");
+    }
+
+    // Validation : empêcher la suppression de pointage sur un relevé dont la date est passée
+    const dateReleve = new Date(pointage.releve.date);
+    const aujourdhui = new Date();
+    aujourdhui.setHours(0, 0, 0, 0);
+    dateReleve.setHours(0, 0, 0, 0);
+
+    if (dateReleve < aujourdhui) {
+      throw new Error("Impossible de modifier un relevé dont la date est passée");
     }
 
     await prisma.pointage.delete({
