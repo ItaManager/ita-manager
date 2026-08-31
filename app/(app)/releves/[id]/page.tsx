@@ -6,16 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import {
-  ChevronLeft,
-  FileText,
-  CheckCircle2,
-  Clock,
-  XCircle,
-  MapPin,
-  User,
-  Users,
-} from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { PointagesSimplifies } from "./_components/pointages-simplifies";
 
@@ -42,35 +33,30 @@ export default async function PageReleveDetail({ params }: PageReleveDetailProps
     notFound();
   }
 
-  const statutConfig: Record<string, { label: string; icon: any; color: string; bg: string }> = {
+  const statutConfig: Record<string, { label: string; color: string; bg: string }> = {
     BROUILLON: {
       label: "Brouillon",
-      icon: FileText,
       color: "#6B7280",
       bg: "#6B728020",
     },
     SOUMIS: {
       label: "Soumis",
-      icon: Clock,
       color: "#F59E0B",
       bg: "#F59E0B20",
     },
     VISE: {
       label: "Visé",
-      icon: CheckCircle2,
       color: "#10B981",
       bg: "#10B98120",
     },
     REFUSE: {
       label: "Refusé",
-      icon: XCircle,
       color: "#EF4444",
       bg: "#EF444420",
     },
   };
 
   const config = statutConfig[releve.statut];
-  const Icon = config.icon;
 
   const nbPresents = releve.pointages.filter((p) => p.etat === "PRESENT").length;
   const totalHeures = releve.pointages.reduce(
@@ -106,9 +92,7 @@ export default async function PageReleveDetail({ params }: PageReleveDetailProps
                   backgroundColor: config.bg,
                   color: config.color,
                 }}
-                className="gap-1"
               >
-                <Icon className="size-3" />
                 {config.label}
               </Badge>
             </h1>
@@ -125,65 +109,41 @@ export default async function PageReleveDetail({ params }: PageReleveDetailProps
           <CardHeader>
             <CardTitle className="text-base">Informations générales</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Chantier */}
-              <div className="flex items-start gap-3">
-                <div
-                  className="flex size-10 shrink-0 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: "#13850b20" }}
-                >
-                  <MapPin className="size-5" style={{ color: "#13850b" }} />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Chantier
-                  </p>
-                  <p className="text-sm font-medium mt-1">{releve.projet.code}</p>
-                  <p className="text-xs text-muted-foreground">{releve.projet.nom}</p>
-                </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                  Chantier
+                </p>
+                <p className="text-sm font-medium">{releve.projet.code}</p>
+                <p className="text-xs text-muted-foreground">{releve.projet.nom}</p>
               </div>
 
               {/* Chef de chantier */}
-              <div className="flex items-start gap-3">
-                <div
-                  className="flex size-10 shrink-0 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: "#13850b20" }}
-                >
-                  <User className="size-5" style={{ color: "#13850b" }} />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Chef de chantier
-                  </p>
-                  <p className="text-sm font-medium mt-1">
-                    {releve.chefChantier.prenom} {releve.chefChantier.nom}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {releve.chefChantier.matricule}
-                  </p>
-                </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                  Chef de chantier
+                </p>
+                <p className="text-sm font-medium">
+                  {releve.chefChantier.prenom} {releve.chefChantier.nom}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {releve.chefChantier.matricule}
+                </p>
               </div>
 
               {/* Effectif */}
-              <div className="flex items-start gap-3">
-                <div
-                  className="flex size-10 shrink-0 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: "#13850b20" }}
-                >
-                  <Users className="size-5" style={{ color: "#13850b" }} />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Effectif présent
-                  </p>
-                  <p className="text-sm font-medium mt-1 tabular-nums">
-                    {nbPresents} personne{nbPresents > 1 ? "s" : ""}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {releve.pointages.length} pointage{releve.pointages.length > 1 ? "s" : ""} total
-                  </p>
-                </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                  Effectif présent
+                </p>
+                <p className="text-sm font-medium tabular-nums">
+                  {nbPresents} personne{nbPresents > 1 ? "s" : ""}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {releve.pointages.length} pointage{releve.pointages.length > 1 ? "s" : ""} total
+                </p>
               </div>
             </div>
           </CardContent>
@@ -221,7 +181,6 @@ export default async function PageReleveDetail({ params }: PageReleveDetailProps
               // Mode édition : interface simplifiée
               pointagesSerialises.length === 0 ? (
                 <div className="text-center py-8">
-                  <Users className="size-12 mx-auto mb-3 text-muted-foreground opacity-30" />
                   <p className="text-sm text-muted-foreground mb-4">
                     Aucun employé affecté à ce chantier
                   </p>
@@ -238,7 +197,6 @@ export default async function PageReleveDetail({ params }: PageReleveDetailProps
               // Mode lecture seule : affichage simple
               releve.pointages.length === 0 ? (
                 <div className="text-center py-8">
-                  <Users className="size-12 mx-auto mb-3 text-muted-foreground opacity-30" />
                   <p className="text-sm text-muted-foreground">Aucun pointage enregistré</p>
                 </div>
               ) : (
@@ -267,31 +225,16 @@ export default async function PageReleveDetail({ params }: PageReleveDetailProps
                         </div>
                         <Badge
                           variant={pointage.etat === "PRESENT" ? "default" : "secondary"}
-                          className="gap-1"
                         >
-                          {pointage.etat === "PRESENT" ? (
-                            <>
-                              <CheckCircle2 className="size-3" />
-                              Présent
-                            </>
-                          ) : pointage.etat === "ABSENT_JUSTIFIE" ? (
-                            <>
-                              <Clock className="size-3" />
-                              Absent justifié
-                            </>
-                          ) : pointage.etat === "ABSENT_NON_JUSTIFIE" ? (
-                            <>
-                              <XCircle className="size-3" />
-                              Absent non justifié
-                            </>
-                          ) : pointage.etat === "RETARD" ? (
-                            <>
-                              <Clock className="size-3" />
-                              Retard
-                            </>
-                          ) : (
-                            <>Repos</>
-                          )}
+                          {pointage.etat === "PRESENT"
+                            ? "Présent"
+                            : pointage.etat === "ABSENT_JUSTIFIE"
+                              ? "Absent justifié"
+                              : pointage.etat === "ABSENT_NON_JUSTIFIE"
+                                ? "Absent non justifié"
+                                : pointage.etat === "RETARD"
+                                  ? "Retard"
+                                  : "Repos"}
                         </Badge>
                       </div>
                     </div>
