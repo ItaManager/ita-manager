@@ -1033,3 +1033,102 @@ export const saisirFacture = actionProtegee(
     });
   }
 );
+
+// ============================================================================
+// STATISTIQUES POUR INDICATEURS
+// ============================================================================
+
+/**
+ * Statistiques pour les indicateurs du module Achats
+ */
+export const statistiquesAchats = actionProtegee(
+  "achat:demander",
+  async (session) => {
+    const profil = await prisma.profil.findUnique({
+      where: { id: session.userId },
+      include: {
+        roles: {
+          include: {
+            role: { include: { permissions: { include: { permission: true } } } },
+          },
+        },
+        employe: true,
+      },
+    });
+
+    const permissions =
+      profil?.roles.flatMap((pr) =>
+        pr.role.permissions.map((rp) => rp.permission.code)
+      ) ?? [];
+
+    // Charger toutes les demandes pour analyse
+    const demandes = await prisma.demandeAchat.findMany({
+      include: {
+        lignes: true,
+        evenements: {
+          orderBy: { timestamp: "desc" },
+          take: 1,
+        },
+      },
+    });
+
+    // Compter demandes en attente de validation
+    let aValider = 0;
+    if (permissions.includes("achat:demander") && profil?.employe) {
+      const affectationsSubordonnes = await prisma.affectation.findMany({
+        where: {
+          superieurId: profil.employe.id,
+          dateFin: null,
+        },
+        select: { employeId: true },
+      });
+
+      const subordinesIds = affectationsSubordonnes.map((a) => a.employeId);
+
+      if (subordinesIds.length > 0) {
+        const demandesSubordonnes = demandes.filter(
+          (d) =>
+            subordinesIds.includes(d.demandeurId) &&
+            d.evenements[0]?.type === "SOUMISSION"
+        );
+        aValider = demandesSubordonnes.length;
+      }
+    }
+
+    // Compter demandes à instruire
+    const aInstruire = demandes.filter(
+      (d) => d.evenements[0]?.type === "VALIDATION_N1"
+    ).length;
+
+    // Compter bons de commande à émettre
+    const bonsCommande = demandes.filter((d) => {
+      const dernier = d.evenements[0]?.type;
+      return (
+        dernier === "INSTRUCTION" ||
+        dernier === "AVIS_COMITE" ||
+        dernier === "TRANSMISSION_COMITE"
+      );
+    }).length;
+
+    // Calculer montant total en cours (demandes non facturées)
+    const montantEnCours = demandes
+      .filter((d) => !d.refFacture)
+      .reduce((sum, d) => {
+        const montantDemande = d.lignes.reduce((s, l) => {
+          const prix = Number(l.prixUnitaire ?? 0);
+          const qte = Number(l.quantite);
+          const tva = Number(l.tauxTva ?? 0);
+          return s + prix * qte * (1 + tva / 100);
+        }, 0);
+        return sum + montantDemande;
+      }, 0);
+
+    return {
+      aValider,
+      aInstruire,
+      bonsCommande,
+      montantEnCours: Math.round(montantEnCours),
+      totalDemandes: demandes.length,
+    };
+  }
+);
