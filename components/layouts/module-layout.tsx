@@ -76,26 +76,10 @@ export function ModuleLayout({
             <Accordion type="single" collapsible defaultValue="taches">
               <AccordionItem value="taches" className="border-none">
                 <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                  <Suspense
-                    fallback={
-                      <h2 className="text-lg font-semibold text-[#18181a]">
-                        Vos tâches
-                      </h2>
-                    }
-                  >
-                    {taches.titre}
-                  </Suspense>
+                  {taches.titre}
                 </AccordionTrigger>
                 <AccordionContent className="px-6 pb-6">
-                  <Suspense
-                    fallback={
-                      <div className="text-sm text-muted-foreground">
-                        Chargement...
-                      </div>
-                    }
-                  >
-                    {taches.contenu}
-                  </Suspense>
+                  {taches.contenu}
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
