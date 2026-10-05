@@ -100,13 +100,19 @@ export function ModaleInstruireLigne({
 
     setEnCours(true);
     try {
-      // Upload de tous les fichiers
-      await instruireLigneAchat({
-        ligneId: ligne.id,
-        prixUnitaireTTC: parseFloat(prixTTC),
-        fournisseurId,
-        fichiers: fichiers.length > 0 ? fichiers : undefined,
+      // Créer un FormData pour envoyer les fichiers
+      const formData = new FormData();
+      formData.append("ligneId", ligne.id);
+      formData.append("prixUnitaireTTC", prixTTC);
+      formData.append("fournisseurId", fournisseurId);
+
+      // Ajouter tous les fichiers
+      fichiers.forEach((fichier, index) => {
+        formData.append(`fichier_${index}`, fichier);
       });
+
+      // Appeler la Server Action avec FormData
+      await instruireLigneAchat(formData);
 
       const message =
         fichiers.length > 0

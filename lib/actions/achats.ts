@@ -1427,16 +1427,19 @@ async function uploadDocumentVersSupabase(
  */
 export const instruireLigneAchat = actionProtegee(
   "achat:instruire",
-  async (
-    session,
-    input: {
-      ligneId: string;
-      prixUnitaireTTC: number;
-      fournisseurId: string;
-      fichiers?: File[];
-    }
-  ) => {
-    const { ligneId, prixUnitaireTTC, fournisseurId, fichiers } = input;
+  async (session, formData: FormData) => {
+    // Extraire les données du FormData
+    const ligneId = formData.get("ligneId") as string;
+    const prixUnitaireTTC = parseFloat(formData.get("prixUnitaireTTC") as string);
+    const fournisseurId = formData.get("fournisseurId") as string;
+
+    // Récupérer tous les fichiers
+    const fichiers: File[] = [];
+    formData.forEach((value, key) => {
+      if (key.startsWith("fichier_") && value instanceof File) {
+        fichiers.push(value);
+      }
+    });
 
     // Vérifications
     if (prixUnitaireTTC <= 0) {
