@@ -26,7 +26,7 @@ interface ModaleInstruireLigneProps {
     unite: string;
     fournisseurId?: string | null;
     prixUnitaire?: number | null;
-    urlDevisPDF?: string | null;
+    documentsDevis?: any;
   };
   refDemande: string;
   onSuccess: () => void;
@@ -100,16 +100,20 @@ export function ModaleInstruireLigne({
 
     setEnCours(true);
     try {
-      // Pour l'instant, on prend le premier fichier comme fichier principal
-      // TODO: Gérer l'upload de plusieurs fichiers
+      // Upload de tous les fichiers
       await instruireLigneAchat({
         ligneId: ligne.id,
         prixUnitaireTTC: parseFloat(prixTTC),
         fournisseurId,
-        fichierPDF: fichiers[0] || undefined,
+        fichiers: fichiers.length > 0 ? fichiers : undefined,
       });
 
-      toast.success("Article instruit avec succès");
+      const message =
+        fichiers.length > 0
+          ? `Article instruit avec ${fichiers.length} document(s)`
+          : "Article instruit avec succès";
+
+      toast.success(message);
       onSuccess();
       onClose();
     } catch (error: any) {
@@ -193,7 +197,7 @@ export function ModaleInstruireLigne({
           {/* Upload fichiers */}
           <div className="space-y-2">
             <Label htmlFor="devisFichiers">
-              Documents {!ligne.urlDevisPDF && <span className="text-destructive">*</span>}
+              Documents {!ligne.documentsDevis && <span className="text-destructive">*</span>}
             </Label>
             <div className="flex items-center gap-3">
               <Input
@@ -237,14 +241,14 @@ export function ModaleInstruireLigne({
               </div>
             )}
 
-            {ligne.urlDevisPDF && fichiers.length === 0 && (
+            {ligne.documentsDevis && fichiers.length === 0 && (
               <p className="text-xs text-muted-foreground">
-                ✓ Document déjà uploadé pour ce fournisseur
+                ✓ {Array.isArray(ligne.documentsDevis) ? ligne.documentsDevis.length : 1} document(s) déjà uploadé(s) pour ce fournisseur
               </p>
             )}
             <p className="text-xs text-muted-foreground">
               Formats acceptés : PDF, Images (JPG, PNG, WebP), Word (DOC, DOCX) — Max 10 MB par fichier
-              {ligne.urlDevisPDF && " — Optionnel si même fournisseur"}
+              {ligne.documentsDevis && " — Optionnel si même fournisseur"}
             </p>
           </div>
 

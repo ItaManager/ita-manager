@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db/prisma";
+import { Prisma } from "@prisma/client";
 import { actionProtegee } from "@/lib/auth/guard";
 
 // ============================================================================
@@ -1406,8 +1407,8 @@ async function uploadPDFVersR2(
 }
 
 /**
- * Instruire une ligne d'achat : prix TTC, fournisseur, devis PDF
- * Règle : un seul PDF par fournisseur (réutilisé pour plusieurs articles du même fournisseur)
+ * Instruire une ligne d'achat : prix TTC, fournisseur, documents
+ * Règle : documents réutilisés si même fournisseur pour plusieurs articles
  */
 export const instruireLigneAchat = actionProtegee(
   "achat:instruire",
@@ -1417,10 +1418,10 @@ export const instruireLigneAchat = actionProtegee(
       ligneId: string;
       prixUnitaireTTC: number;
       fournisseurId: string;
-      fichierPDF?: File;
+      fichiers?: File[];
     }
   ) => {
-    const { ligneId, prixUnitaireTTC, fournisseurId, fichierPDF } = input;
+    const { ligneId, prixUnitaireTTC, fournisseurId, fichiers } = input;
 
     // Vérifications
     if (prixUnitaireTTC <= 0) {
@@ -1450,31 +1451,49 @@ export const instruireLigneAchat = actionProtegee(
       throw new Error("Fournisseur introuvable");
     }
 
-    // Gérer l'upload du PDF
-    let urlDevisPDF = ligne.urlDevisPDF; // Conserver l'existant par défaut
+    // Gérer l'upload des documents
+    let documentsDevis: any = undefined;
 
-    // Si un fichier est fourni, uploader
-    if (fichierPDF) {
-      urlDevisPDF = await uploadPDFVersR2(fichierPDF, session.userId, session.email);
+    // Si des fichiers sont fournis, uploader tous
+    if (fichiers && fichiers.length > 0) {
+      const documentsUploades = [];
+
+      for (const fichier of fichiers) {
+        const url = await uploadPDFVersR2(
+          fichier,
+          session.userId,
+          session.email
+        );
+
+        documentsUploades.push({
+          url,
+          nom: fichier.name,
+          taille: fichier.size,
+          type: fichier.type,
+          uploadeLe: new Date().toISOString(),
+        });
+      }
+
+      documentsDevis = documentsUploades;
     } else {
-      // Si pas de fichier fourni, vérifier si ce fournisseur a déjà un devis uploadé
+      // Si pas de fichier fourni, vérifier si ce fournisseur a déjà des documents uploadés
       // pour d'autres lignes de la même demande
-      const ligneAvecDevis = await prisma.ligneAchat.findFirst({
+      const ligneAvecDocuments = await prisma.ligneAchat.findFirst({
         where: {
           demandeId: ligne.demandeId,
           fournisseurId,
-          urlDevisPDF: { not: null },
+          documentsDevis: { not: Prisma.DbNull },
         },
-        select: { urlDevisPDF: true },
+        select: { documentsDevis: true },
       });
 
-      if (ligneAvecDevis?.urlDevisPDF) {
-        // Réutiliser le PDF du même fournisseur
-        urlDevisPDF = ligneAvecDevis.urlDevisPDF;
+      if (ligneAvecDocuments?.documentsDevis) {
+        // Réutiliser les documents du même fournisseur
+        documentsDevis = ligneAvecDocuments.documentsDevis;
       } else {
-        // Pas de PDF fourni et pas de PDF existant pour ce fournisseur
+        // Pas de fichier fourni et pas de documents existants pour ce fournisseur
         throw new Error(
-          "Veuillez uploader le devis PDF du fournisseur (premier article de ce fournisseur)"
+          "Veuillez uploader au moins un document du fournisseur (premier article de ce fournisseur)"
         );
       }
     }
@@ -1485,7 +1504,7 @@ export const instruireLigneAchat = actionProtegee(
       data: {
         prixUnitaire: prixUnitaireTTC,
         fournisseurId,
-        urlDevisPDF,
+        documentsDevis,
       },
     });
 
@@ -1502,7 +1521,7 @@ export const instruireLigneAchat = actionProtegee(
           designation: ligne.designation,
           prixUnitaireTTC,
           fournisseurNom: fournisseur.nom,
-          urlDevisPDF,
+          nbDocuments: documentsDevis?.length || 0,
         },
       },
     });
@@ -1528,7 +1547,7 @@ export const validerInstructionDemande = actionProtegee(
             designation: true,
             prixUnitaire: true,
             fournisseurId: true,
-            urlDevisPDF: true,
+            documentsDevis: true,
           },
         },
       },
@@ -1541,7 +1560,7 @@ export const validerInstructionDemande = actionProtegee(
     // Vérifier que toutes les lignes sont instruites
     const lignesNonInstruites = demande.lignes.filter(
       (ligne) =>
-        !ligne.prixUnitaire || !ligne.fournisseurId || !ligne.urlDevisPDF
+        !ligne.prixUnitaire || !ligne.fournisseurId || !ligne.documentsDevis
     );
 
     if (lignesNonInstruites.length > 0) {

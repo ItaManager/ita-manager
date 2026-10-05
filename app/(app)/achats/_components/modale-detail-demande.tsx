@@ -410,7 +410,7 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
               {/* Bouton de validation de l'instruction - TODO: remettre condition demande?.statut === "ATTENTE_ACHATS" */}
               {demande && (() => {
                 const toutesLignesInstruites = demande.lignes.every(
-                  (l: any) => l.prixUnitaire && l.fournisseurId && l.urlDevisPDF
+                  (l: any) => l.prixUnitaire && l.fournisseurId && l.documentsDevis
                 );
                 const aucuneLigneInstruite = demande.lignes.every(
                   (l: any) => !l.prixUnitaire && !l.fournisseurId
@@ -500,7 +500,7 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
             unite: ligneAInstruire.unite,
             fournisseurId: ligneAInstruire.fournisseurId,
             prixUnitaire: ligneAInstruire.prixUnitaire ? Number(ligneAInstruire.prixUnitaire) : null,
-            urlDevisPDF: ligneAInstruire.urlDevisPDF,
+            documentsDevis: ligneAInstruire.documentsDevis,
           }}
           refDemande={refDemande}
           onSuccess={() => {
