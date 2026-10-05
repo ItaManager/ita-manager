@@ -1364,28 +1364,48 @@ async function uploadPDFVersR2(
   const extension = file.name.split(".").pop() || "pdf";
   const fileName = `devis/${timestamp}-${randomStr}.${extension}`;
 
-  // Convertir File en ArrayBuffer pour fetch
-  const arrayBuffer = await file.arrayBuffer();
+  // Vérifier si Cloudflare R2 est configuré
+  const r2Configured =
+    process.env.CLOUDFLARE_ACCOUNT_ID &&
+    process.env.CLOUDFLARE_R2_BUCKET &&
+    process.env.CLOUDFLARE_R2_TOKEN &&
+    process.env.CLOUDFLARE_R2_PUBLIC_URL;
 
-  // Upload vers Cloudflare R2
-  const r2Response = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/r2/buckets/${process.env.CLOUDFLARE_R2_BUCKET}/objects/${fileName}`,
-    {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${process.env.CLOUDFLARE_R2_TOKEN}`,
-        "Content-Type": file.type,
-      },
-      body: arrayBuffer,
+  let publicUrl: string;
+
+  if (r2Configured) {
+    // Upload vers Cloudflare R2
+    const arrayBuffer = await file.arrayBuffer();
+
+    const r2Response = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/r2/buckets/${process.env.CLOUDFLARE_R2_BUCKET}/objects/${fileName}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${process.env.CLOUDFLARE_R2_TOKEN}`,
+          "Content-Type": file.type,
+        },
+        body: arrayBuffer,
+      }
+    );
+
+    if (!r2Response.ok) {
+      const errorText = await r2Response.text();
+      throw new Error(
+        `Erreur lors de l'upload du fichier vers R2: ${errorText}`
+      );
     }
-  );
 
-  if (!r2Response.ok) {
-    throw new Error("Erreur lors de l'upload du fichier");
+    publicUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${fileName}`;
+  } else {
+    // Mode local : stockage simulé (URL fictive pour développement)
+    // TODO: En production, configurer Cloudflare R2
+    publicUrl = `/uploads/${fileName}`;
+    console.warn(
+      "⚠️  Cloudflare R2 non configuré - URL locale utilisée:",
+      publicUrl
+    );
   }
-
-  // Construire l'URL publique
-  const publicUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${fileName}`;
 
   // Logger l'upload
   await prisma.journalEvenement.create({
@@ -1399,6 +1419,7 @@ async function uploadPDFVersR2(
         fileName,
         fileSize: file.size,
         url: publicUrl,
+        mode: r2Configured ? "cloudflare-r2" : "local-dev",
       },
     },
   });
