@@ -264,14 +264,16 @@ export function TableauSuivi({ demandes }: TableauSuiviProps) {
                     </td>
 
                     {/* Colonnes 2-8 */}
-                    <td className="px-4 py-3 text-sm">{demande.demandeur}</td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                    <td className="px-4 py-3 text-sm whitespace-nowrap">{demande.demandeur}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
                       {demande.beneficiaire}
                     </td>
-                    <td className="px-4 py-3 text-sm">{demande.destination}</td>
-                    <td className="px-4 py-3 text-sm">{demande.motif}</td>
-                    <td className="max-w-xs px-4 py-3 text-sm text-muted-foreground">
-                      <div className="truncate">{demande.lignes}</div>
+                    <td className="px-4 py-3 text-sm whitespace-nowrap">{demande.destination}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <div className="max-w-[200px] truncate">{demande.motif}</div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      <div className="max-w-[300px] truncate">{demande.lignes}</div>
                     </td>
                     <td className="px-4 py-3 text-sm">
                       {demande.type === "Régularisation" && (
@@ -289,48 +291,48 @@ export function TableauSuivi({ demandes }: TableauSuiviProps) {
                     {/* Colonnes 9-12 : Prix masqués (C-05) */}
                     <td className="px-4 py-3 text-sm">
                       {demande.fournisseurs !== null ? (
-                        demande.fournisseurs
+                        <div className="max-w-[200px] truncate">{demande.fournisseurs}</div>
                       ) : (
-                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
                           <Lock className="h-3 w-3" aria-label="Masqué" /> masqué
                         </span>
                       )}
                     </td>
-                    <td className="montant px-4 py-3 text-right text-sm">
+                    <td className="montant px-4 py-3 text-right text-sm whitespace-nowrap">
                       {demande.montantHT !== null ? (
                         demande.montantHT.toLocaleString("fr-FR")
                       ) : (
-                        <span className="flex items-center justify-end gap-1 text-xs text-muted-foreground">
+                        <span className="flex items-center justify-end gap-1 text-xs text-muted-foreground whitespace-nowrap">
                           <Lock className="h-3 w-3" aria-label="Masqué" /> masqué
                         </span>
                       )}
                     </td>
-                    <td className="montant px-4 py-3 text-right text-sm">
+                    <td className="montant px-4 py-3 text-right text-sm whitespace-nowrap">
                       {demande.montantTVA !== null ? (
                         demande.montantTVA.toLocaleString("fr-FR")
                       ) : (
-                        <span className="flex items-center justify-end gap-1 text-xs text-muted-foreground">
+                        <span className="flex items-center justify-end gap-1 text-xs text-muted-foreground whitespace-nowrap">
                           <Lock className="h-3 w-3" aria-label="Masqué" /> masqué
                         </span>
                       )}
                     </td>
-                    <td className="montant px-4 py-3 text-right text-sm font-medium">
+                    <td className="montant px-4 py-3 text-right text-sm font-medium whitespace-nowrap">
                       {demande.montantTTC !== null ? (
                         demande.montantTTC.toLocaleString("fr-FR")
                       ) : (
-                        <span className="flex items-center justify-end gap-1 text-xs text-muted-foreground">
+                        <span className="flex items-center justify-end gap-1 text-xs text-muted-foreground whitespace-nowrap">
                           <Lock className="h-3 w-3" aria-label="Masqué" /> masqué
                         </span>
                       )}
                     </td>
 
                     {/* Colonnes 13-14 : Dates */}
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-3 text-sm whitespace-nowrap">
                       {demande.dateBC
                         ? format(demande.dateBC, "dd/MM/yyyy", { locale: fr })
                         : "—"}
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-3 text-sm whitespace-nowrap">
                       {demande.dateReception
                         ? format(demande.dateReception, "dd/MM/yyyy", {
                             locale: fr,
