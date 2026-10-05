@@ -607,7 +607,7 @@ export const obtenirDemande = actionProtegee(
           },
         },
         evenements: {
-          orderBy: { timestamp: "desc" },
+          orderBy: { timestamp: "asc" },
           select: {
             id: true,
             type: true,
@@ -1834,6 +1834,13 @@ export const validerInstructionAvecCriteres = actionProtegee(
       libelle: c.libelle,
     }));
 
+    // Récupérer les lignes pour avoir leurs désignations
+    const lignesIds = selections.map((s) => s.ligneId);
+    const lignesData = await prisma.ligneAchat.findMany({
+      where: { id: { in: lignesIds } },
+      select: { id: true, designation: true },
+    });
+
     // Mettre à jour chaque ligne avec le fournisseur retenu et les critères
     const updates = selections.map((sel) => {
       return prisma.ligneAchat.update({
@@ -1858,7 +1865,7 @@ export const validerInstructionAvecCriteres = actionProtegee(
         auteurId: session.userId,
         auteurNom: session.email,
         details: {
-          nombreLignes: selections.length,
+          articles: lignesData.map((l) => l.designation),
           criteres: criteresData.map((c) => c.libelle),
           commentaire: commentaire || null,
         },

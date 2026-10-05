@@ -484,13 +484,18 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
                   <div className="space-y-6">
                     {demande.evenements.map((evt: any, index: number) => {
                       // Déterminer la couleur du point selon le type d'événement
+                      const estDernier = index === demande.evenements.length - 1;
                       let pointColor = "bg-[#22c55e]"; // Vert par défaut (validé)
 
-                      if (evt.type === "CREATION") pointColor = "bg-[#22c55e]";
-                      else if (evt.type === "VALIDATION_N1" || evt.type === "VALIDATION_RH") pointColor = "bg-[#22c55e]";
-                      else if (evt.type === "INSTRUCTION") pointColor = "bg-[#22c55e]";
-                      else if (evt.type === "REFUS") pointColor = "bg-destructive";
-                      else if (index === demande.evenements.length - 1) pointColor = "bg-[#f97316]"; // Orange pour le dernier (en cours)
+                      if (evt.type === "REFUS") {
+                        pointColor = "bg-destructive";
+                      } else if (estDernier) {
+                        // Le dernier événement (le plus récent) est en orange (en cours)
+                        pointColor = "bg-[#f97316]";
+                      } else {
+                        // Tous les événements précédents validés sont verts
+                        pointColor = "bg-[#22c55e]";
+                      }
 
                       return (
                         <div key={evt.id} className="relative flex items-start gap-4 pl-10">
@@ -527,9 +532,17 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
                             {/* Détails supplémentaires si disponibles */}
                             {evt.details && Object.keys(evt.details).length > 0 && (
                               <div className="text-xs text-muted-foreground mt-2 pt-2 border-t border-border space-y-1">
-                                {evt.commentaire && (
+                                {evt.details.commentaire && (
                                   <div className="text-foreground font-medium">
-                                    {evt.commentaire}
+                                    {evt.details.commentaire}
+                                  </div>
+                                )}
+
+                                {/* Articles instruits */}
+                                {evt.details.articles && Array.isArray(evt.details.articles) && evt.details.articles.length > 0 && (
+                                  <div>
+                                    <span className="font-medium text-foreground">Articles :</span>{" "}
+                                    {evt.details.articles.join(", ")}
                                   </div>
                                 )}
 
@@ -538,14 +551,6 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
                                   <div>
                                     <span className="font-medium text-foreground">Critères :</span>{" "}
                                     {evt.details.criteres.join(", ")}
-                                  </div>
-                                )}
-
-                                {/* Nombre de lignes */}
-                                {evt.details.nombreLignes && (
-                                  <div>
-                                    <span className="font-medium text-foreground">Articles concernés :</span>{" "}
-                                    {evt.details.nombreLignes}
                                   </div>
                                 )}
 
@@ -558,7 +563,7 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
                                 )}
 
                                 {/* Autres détails non structurés */}
-                                {!evt.commentaire && !evt.details.criteres && !evt.details.nombreLignes && !evt.details.montant && (
+                                {!evt.details.commentaire && !evt.details.criteres && !evt.details.articles && !evt.details.montant && (
                                   <div>{JSON.stringify(evt.details)}</div>
                                 )}
                               </div>
