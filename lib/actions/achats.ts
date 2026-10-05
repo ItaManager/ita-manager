@@ -1565,6 +1565,161 @@ export const instruireLigneAchat = actionProtegee(
 );
 
 /**
+ * Instruire plusieurs lignes d'achat en une seule fois
+ * Un seul fournisseur, un seul upload de documents, prix différents par ligne
+ */
+export const instruireLotLignes = actionProtegee(
+  "achat:instruire",
+  async (
+    session,
+    input: {
+      ligneIds: string[];
+      fournisseurId: string;
+      prix: Array<{ ligneId: string; prixUnitaireTTC: number }>;
+      fichiers?: Array<{
+        name: string;
+        type: string;
+        size: number;
+        base64: string;
+      }>;
+    }
+  ) => {
+    const { ligneIds, fournisseurId, prix, fichiers: fichiersBase64 } = input;
+
+    // Vérifications
+    if (ligneIds.length === 0) {
+      throw new Error("Aucune ligne sélectionnée");
+    }
+
+    if (!fournisseurId) {
+      throw new Error("Veuillez sélectionner un fournisseur");
+    }
+
+    // Vérifier que toutes les lignes ont un prix
+    if (prix.length !== ligneIds.length) {
+      throw new Error("Tous les articles doivent avoir un prix");
+    }
+
+    for (const p of prix) {
+      if (p.prixUnitaireTTC <= 0) {
+        throw new Error("Tous les prix doivent être supérieurs à zéro");
+      }
+    }
+
+    // Vérifier le fournisseur
+    const fournisseur = await prisma.fournisseur.findUnique({
+      where: { id: fournisseurId },
+    });
+
+    if (!fournisseur) {
+      throw new Error("Fournisseur introuvable");
+    }
+
+    // Vérifier que toutes les lignes existent et appartiennent à la même demande
+    const lignes = await prisma.ligneAchat.findMany({
+      where: { id: { in: ligneIds } },
+      include: {
+        demande: {
+          select: { id: true, ref: true },
+        },
+      },
+    });
+
+    if (lignes.length !== ligneIds.length) {
+      throw new Error("Certaines lignes sont introuvables");
+    }
+
+    const demandeIds = [...new Set(lignes.map((l) => l.demandeId))];
+    if (demandeIds.length > 1) {
+      throw new Error("Toutes les lignes doivent appartenir à la même demande");
+    }
+
+    // Upload des documents (une seule fois pour tout le lot)
+    let documentsDevis: any = undefined;
+
+    if (fichiersBase64 && fichiersBase64.length > 0) {
+      const documentsUploades = [];
+
+      // Convertir base64 en File
+      for (const f of fichiersBase64) {
+        const base64Data = f.base64.split(",")[1];
+        const buffer = Buffer.from(base64Data, "base64");
+        const blob = new Blob([buffer], { type: f.type });
+        const file = new File([blob], f.name, { type: f.type });
+
+        // Upload vers Supabase
+        const url = await uploadDocumentVersSupabase(
+          file,
+          session.userId,
+          session.email
+        );
+
+        documentsUploades.push({
+          url,
+          nom: f.name,
+          taille: f.size,
+          type: f.type,
+          uploadeLe: new Date().toISOString(),
+        });
+      }
+
+      documentsDevis = documentsUploades;
+    } else {
+      throw new Error("Veuillez uploader au moins un document");
+    }
+
+    // Mettre à jour toutes les lignes en une transaction
+    const updates = ligneIds.map((ligneId) => {
+      const prixLigne = prix.find((p) => p.ligneId === ligneId);
+      if (!prixLigne) {
+        throw new Error(`Prix manquant pour la ligne ${ligneId}`);
+      }
+
+      return prisma.ligneAchat.update({
+        where: { id: ligneId },
+        data: {
+          prixUnitaire: prixLigne.prixUnitaireTTC,
+          fournisseurId,
+          documentsDevis,
+        },
+      });
+    });
+
+    await prisma.$transaction(updates);
+
+    // Créer un événement journal pour chaque ligne
+    const journalPromises = lignes.map((ligne) => {
+      const prixLigne = prix.find((p) => p.ligneId === ligne.id);
+      return prisma.journalEvenement.create({
+        data: {
+          entite: "LigneAchat",
+          entiteId: ligne.id,
+          action: "INSTRUCTION",
+          auteurId: session.userId,
+          auteurNom: session.email,
+          commentaire: `Instruction : ${ligne.designation} - ${prixLigne?.prixUnitaireTTC} FCFA (${fournisseur.nom})`,
+          details: {
+            fournisseur: fournisseur.nom,
+            prixUnitaire: prixLigne?.prixUnitaireTTC,
+            documentsCount: documentsDevis?.length || 0,
+            instructionLot: true,
+            nombreArticles: ligneIds.length,
+          },
+        },
+      });
+    });
+
+    await Promise.all(journalPromises);
+
+    return {
+      success: true,
+      nombreLignes: ligneIds.length,
+      fournisseur: fournisseur.nom,
+    };
+  }
+);
+
+/**
  * Valider l'instruction complète d'une demande d'achat
  * Crée un événement INSTRUCTION et passe la demande au statut suivant
  */

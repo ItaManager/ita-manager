@@ -17,6 +17,7 @@ import { obtenirDemande, obtenirDonneesDevis, validerInstructionDemande } from "
 import { genererPDFDevis } from "@/lib/pdf/generer-devis";
 import { toast } from "sonner";
 import { ModaleInstruireLigne } from "./modale-instruire-ligne";
+import { ModaleInstruireLot } from "./modale-instruire-lot";
 
 interface ModaleDetailDemandeProps {
   ouvert: boolean;
@@ -41,6 +42,7 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
   const [generationEnCours, setGenerationEnCours] = useState(false);
   const [ligneAInstruire, setLigneAInstruire] = useState<any>(null);
   const [validationEnCours, setValidationEnCours] = useState(false);
+  const [modaleInstruireLotOuverte, setModaleInstruireLotOuverte] = useState(false);
 
   useEffect(() => {
     if (ouvert && refDemande) {
@@ -270,15 +272,39 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
                       Générer devis pour tout
                     </Button>
                     {articlesSelectionnes.length > 0 && (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => genererDevis(articlesSelectionnes)}
-                        disabled={generationEnCours}
-                      >
-                        <FileDown className="size-4 mr-2" />
-                        Générer devis ({articlesSelectionnes.length})
-                      </Button>
+                      <>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => genererDevis(articlesSelectionnes)}
+                          disabled={generationEnCours}
+                        >
+                          <FileDown className="size-4 mr-2" />
+                          Générer devis ({articlesSelectionnes.length})
+                        </Button>
+                        {demande?.statut === "ATTENTE_ACHATS" && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => {
+                              // Filtrer uniquement les lignes "En attente" (sans prix ni fournisseur)
+                              const lignesAInstruire = demande?.lignes.filter(
+                                (l: any) => articlesSelectionnes.includes(l.id) && !l.prixUnitaire && !l.fournisseurId
+                              ) || [];
+
+                              if (lignesAInstruire.length === 0) {
+                                toast.error("Aucun article sélectionné n'est en attente d'instruction");
+                                return;
+                              }
+
+                              setModaleInstruireLotOuverte(true);
+                            }}
+                          >
+                            <Package className="size-4 mr-2" />
+                            Instruire la sélection ({articlesSelectionnes.length})
+                          </Button>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
@@ -506,6 +532,35 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
           onSuccess={() => {
             chargerDemande(); // Recharger la demande
             setLigneAInstruire(null);
+          }}
+        />
+      )}
+
+      {/* Modale d'instruction par lot */}
+      {modaleInstruireLotOuverte && demande && (
+        <ModaleInstruireLot
+          ouvert={modaleInstruireLotOuverte}
+          onClose={() => setModaleInstruireLotOuverte(false)}
+          lignes={
+            demande.lignes
+              .filter(
+                (l: any) =>
+                  articlesSelectionnes.includes(l.id) &&
+                  !l.prixUnitaire &&
+                  !l.fournisseurId
+              )
+              .map((l: any) => ({
+                id: l.id,
+                designation: l.designation,
+                quantite: Number(l.quantite),
+                unite: l.unite,
+              }))
+          }
+          refDemande={refDemande}
+          onSuccess={() => {
+            chargerDemande(); // Recharger la demande
+            setModaleInstruireLotOuverte(false);
+            setArticlesSelectionnes([]); // Réinitialiser la sélection
           }}
         />
       )}
