@@ -3,12 +3,14 @@
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { ModaleNouvelleDemande } from "./modale-nouvelle-demande";
 import { listerEmployes } from "@/lib/actions/employes";
 import { listerProjets } from "@/lib/actions/projets";
 import { toast } from "sonner";
 
 export function BoutonNouvelleDemande() {
+  const router = useRouter();
   const [ouvert, setOuvert] = useState(false);
   const [employes, setEmployes] = useState<Array<{ id: string; nom: string; prenom: string; matricule: string }>>([]);
   const [projets, setProjets] = useState<Array<{ id: string; nom: string }>>([]);
@@ -50,6 +52,11 @@ export function BoutonNouvelleDemande() {
     chargerDonnees();
   };
 
+  const handleSuccess = () => {
+    setOuvert(false);
+    router.refresh(); // Recharge les Server Components
+  };
+
   return (
     <>
       <Button
@@ -64,6 +71,7 @@ export function BoutonNouvelleDemande() {
       <ModaleNouvelleDemande
         ouvert={ouvert}
         onClose={() => setOuvert(false)}
+        onSuccess={handleSuccess}
         employes={employes}
         projets={projets}
         services={services}

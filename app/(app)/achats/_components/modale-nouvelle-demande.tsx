@@ -37,6 +37,7 @@ import { ModaleNouvelArticle } from "./modale-nouvel-article";
 interface ModaleNouvelleDemandeProps {
   ouvert: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
   employes: Array<{ id: string; nom: string; prenom: string; matricule: string }>;
   projets: Array<{ id: string; nom: string }>;
   services: Array<{ id: string; libelle: string }>;
@@ -53,6 +54,7 @@ interface LigneArticle {
 export function ModaleNouvelleDemande({
   ouvert,
   onClose,
+  onSuccess,
   employes,
   projets,
   services,
@@ -186,8 +188,12 @@ export function ModaleNouvelleDemande({
         toast.success("Demande d'achat créée en brouillon");
         // Réinitialiser
         reinitialiserFormulaire();
-        onClose();
-        router.refresh();
+        if (onSuccess) {
+          onSuccess(); // Ferme la modale et rafraîchit la liste
+        } else {
+          onClose();
+          router.refresh();
+        }
       } else {
         toast.error("Erreur lors de la création de la demande");
       }
