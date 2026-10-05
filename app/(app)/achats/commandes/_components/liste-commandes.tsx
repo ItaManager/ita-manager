@@ -61,7 +61,7 @@ export function ListeCommandes({ demandes }: ListeCommandesProps) {
   });
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col overflow-x-hidden">
       <header className="bandeau sticky top-0 z-10 border-b px-6 py-4">
         <h1 className="text-2xl font-semibold text-[#1D186C]">Suivi de commande</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -69,7 +69,7 @@ export function ListeCommandes({ demandes }: ListeCommandesProps) {
         </p>
       </header>
 
-      <main className="flex-1 px-6 py-6 space-y-6">
+      <main className="flex-1 px-6 py-6 space-y-6 max-w-full">
         {/* Barre de recherche et filtres */}
         <div className="flex items-center gap-4">
           <div className="relative flex-1 max-w-md">
@@ -177,11 +177,11 @@ export function ListeCommandes({ demandes }: ListeCommandesProps) {
 
                     <div className="flex items-start gap-3">
                       <Building2 className="size-4 text-muted-foreground mt-0.5 shrink-0" />
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-0.5">
                           Fournisseurs
                         </div>
-                        <div className="text-sm font-medium text-foreground">
+                        <div className="text-sm font-medium text-foreground truncate">
                           {fournisseurs.length > 0
                             ? fournisseurs.join(", ")
                             : "—"}
