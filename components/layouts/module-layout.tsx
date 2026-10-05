@@ -1,4 +1,6 @@
-import { ReactNode, Suspense } from "react";
+"use client";
+
+import { ReactNode } from "react";
 import { HelpCircle } from "lucide-react";
 import {
   Tooltip,
@@ -6,12 +8,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 
 interface ModuleLayoutProps {
   // En-tête
@@ -64,30 +60,22 @@ export function ModuleLayout({
         </div>
 
         {/* Indicateurs */}
-        {indicateurs && (
-          <Suspense fallback={<div>Chargement...</div>}>
-            {indicateurs}
-          </Suspense>
-        )}
+        {indicateurs}
 
         {/* Vos tâches */}
         {taches && (
           <div className="bg-white rounded-xl border border-[#0000001a]">
-            <Accordion type="single" collapsible defaultValue="taches">
-              <AccordionItem value="taches" className="border-none">
-                <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                  {taches.titre}
-                </AccordionTrigger>
-                <AccordionContent className="px-6 pb-6">
-                  {taches.contenu}
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+            <div className="px-6 py-4 border-b border-[#0000001a]">
+              {taches.titre}
+            </div>
+            <div className="px-6 py-6">
+              {taches.contenu}
+            </div>
           </div>
         )}
 
         {/* Contenu principal */}
-        <Suspense fallback={<div>Chargement...</div>}>{children}</Suspense>
+        {children}
       </div>
     </TooltipProvider>
   );

@@ -1,10 +1,9 @@
 import { verifierAccesPage } from "@/lib/auth/page-access";
-import { Suspense } from "react";
-import { ModuleLayout } from "@/components/layouts/module-layout";
 import { IndicateursAchats } from "./_components/indicateurs-achats";
 import { ListeDemandes } from "./_components/liste-demandes";
 import { TitreTaches } from "./_components/titre-taches";
 import { ListeTaches } from "./_components/liste-taches";
+import { WrapperPageAchats } from "./_components/wrapper-page-achats";
 
 interface PageAchatsProps {
   searchParams: Promise<{
@@ -27,28 +26,27 @@ export default async function PageAchats({
   const params = await searchParams;
 
   return (
-    <ModuleLayout
-      titre="Achats"
-      description="Gérez vos demandes d'achat et suivez leur circuit de validation"
-      helpText="Le circuit d'achat commence par la création d'une demande. Après soumission, elle passe par votre N+1, puis le Service Achats pour instruction (consultation fournisseurs, prix), et enfin l'émission du bon de commande."
-      indicateurs={
-        <Suspense fallback={<div>Chargement...</div>}>
-          <IndicateursAchats />
-        </Suspense>
-      }
-      taches={{
-        titre: <TitreTaches />,
-        contenu: <ListeTaches />,
-      }}
-    >
-      <Suspense fallback={<div>Chargement...</div>}>
-        <ListeDemandes
-          recherche={params.recherche}
-          filtre={params.filtre}
-          page={params.page ? parseInt(params.page) : 1}
-          limit={params.limit ? parseInt(params.limit) : 20}
-        />
-      </Suspense>
-    </ModuleLayout>
+    <WrapperPageAchats>
+      {/* Indicateurs */}
+      <IndicateursAchats />
+
+      {/* Vos tâches */}
+      <div className="bg-white rounded-xl border border-[#0000001a]">
+        <div className="px-6 py-4 border-b border-[#0000001a]">
+          <TitreTaches />
+        </div>
+        <div className="px-6 py-6">
+          <ListeTaches />
+        </div>
+      </div>
+
+      {/* Contenu principal */}
+      <ListeDemandes
+        recherche={params.recherche}
+        filtre={params.filtre}
+        page={params.page ? parseInt(params.page) : 1}
+        limit={params.limit ? parseInt(params.limit) : 20}
+      />
+    </WrapperPageAchats>
   );
 }
