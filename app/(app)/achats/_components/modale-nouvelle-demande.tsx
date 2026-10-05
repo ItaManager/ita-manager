@@ -32,6 +32,7 @@ import {
 import { creerDemande } from "@/lib/actions/achats";
 import { listerArticles } from "@/lib/actions/achats";
 import { toast } from "sonner";
+import { ModaleNouvelArticle } from "./modale-nouvel-article";
 
 interface ModaleNouvelleDemandeProps {
   ouvert: boolean;
@@ -76,6 +77,8 @@ export function ModaleNouvelleDemande({
   const [openBeneficiaire, setOpenBeneficiaire] = useState(false);
   const [openDestination, setOpenDestination] = useState(false);
   const [openArticles, setOpenArticles] = useState<Record<string, boolean>>({});
+  const [openNouvelArticle, setOpenNouvelArticle] = useState(false);
+  const [ligneEnCoursCreation, setLigneEnCoursCreation] = useState<string | null>(null);
 
   // Champs de l'étape 2 : Lignes d'articles
   const [lignes, setLignes] = useState<LigneArticle[]>([
@@ -506,7 +509,26 @@ export function ModaleNouvelleDemande({
                             <Command>
                               <CommandInput placeholder="Rechercher un article..." />
                               <CommandList>
-                                <CommandEmpty>Aucun article trouvé.</CommandEmpty>
+                                <CommandEmpty>
+                                  <div className="py-6 text-center">
+                                    <p className="text-sm text-muted-foreground mb-3">
+                                      Aucun article trouvé.
+                                    </p>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setLigneEnCoursCreation(ligne.id);
+                                        setOpenArticles({ ...openArticles, [ligne.id]: false });
+                                        setOpenNouvelArticle(true);
+                                      }}
+                                    >
+                                      <Plus className="size-4 mr-2" />
+                                      Créer un article
+                                    </Button>
+                                  </div>
+                                </CommandEmpty>
                                 <CommandGroup>
                                   {articles.map((art) => (
                                     <CommandItem
@@ -530,6 +552,22 @@ export function ModaleNouvelleDemande({
                                     </CommandItem>
                                   ))}
                                 </CommandGroup>
+                                <div className="border-t border-border p-2">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="w-full justify-start"
+                                    onClick={() => {
+                                      setLigneEnCoursCreation(ligne.id);
+                                      setOpenArticles({ ...openArticles, [ligne.id]: false });
+                                      setOpenNouvelArticle(true);
+                                    }}
+                                  >
+                                    <Plus className="size-4 mr-2" />
+                                    Créer un nouvel article
+                                  </Button>
+                                </div>
                               </CommandList>
                             </Command>
                           </PopoverContent>
@@ -631,6 +669,23 @@ export function ModaleNouvelleDemande({
           )}
         </DialogFooter>
       </DialogContent>
+
+      {/* Modale pour créer un article */}
+      <ModaleNouvelArticle
+        ouvert={openNouvelArticle}
+        onClose={() => {
+          setOpenNouvelArticle(false);
+          setLigneEnCoursCreation(null);
+        }}
+        onArticleCree={(article) => {
+          // Ajouter le nouvel article à la liste
+          setArticles([...articles, article]);
+          // Si on était en train de créer pour une ligne spécifique, l'assigner
+          if (ligneEnCoursCreation) {
+            modifierLigne(ligneEnCoursCreation, "articleId", article.id);
+          }
+        }}
+      />
     </Dialog>
   );
 }
