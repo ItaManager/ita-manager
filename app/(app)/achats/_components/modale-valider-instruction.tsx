@@ -233,7 +233,7 @@ export function ModaleValiderInstruction({
                       className={`flex items-start gap-3 p-3 rounded-md cursor-pointer transition-colors ${
                         criteresSelectionnes.includes(critere.id)
                           ? "bg-primary/5 border-2 border-primary"
-                          : "border-2 border-transparent hover:bg-muted/30"
+                          : "border-2 border-border hover:bg-muted/30"
                       }`}
                     >
                       <Checkbox
@@ -307,7 +307,7 @@ export function ModaleValiderInstruction({
               placeholder="Justification de la sélection des fournisseurs et critères..."
               value={commentaire}
               onChange={(e) => setCommentaire(e.target.value)}
-              className="rounded-md resize-none min-h-[100px]"
+              className="rounded-md resize-none min-h-[100px] border-2 border-border"
               rows={4}
             />
             <p className="text-xs text-muted-foreground">
@@ -316,10 +316,20 @@ export function ModaleValiderInstruction({
           </div>
 
           <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={enCours}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={enCours}
+              className="rounded-full"
+            >
               Annuler
             </Button>
-            <Button type="submit" disabled={enCours}>
+            <Button
+              type="submit"
+              disabled={enCours}
+              className="rounded-full bg-[#22c55e] hover:bg-[#16a34a] text-white"
+            >
               {enCours ? (
                 <>
                   <Loader2 className="size-4 mr-2 animate-spin" />
