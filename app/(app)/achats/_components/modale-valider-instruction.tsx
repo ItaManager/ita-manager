@@ -139,8 +139,11 @@ export function ModaleValiderInstruction({
 
   return (
     <Dialog open={ouvert} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+        <DialogHeader
+          className="border-b border-border px-6 py-4 sticky top-0 bg-white z-10"
+          style={{ backgroundColor: "var(--primary-soft)" }}
+        >
           <DialogTitle className="text-xl font-semibold text-[#1D186C]">
             Valider l'instruction — {demande.ref}
           </DialogTitle>
@@ -149,20 +152,45 @@ export function ModaleValiderInstruction({
           </p>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 px-6 py-6">
           {/* Sélection des fournisseurs par article */}
           <div className="space-y-4">
-            <Label className="text-base font-medium">Fournisseurs retenus</Label>
+            <Label className="text-base font-medium">
+              Fournisseurs retenus <span className="text-destructive">*</span>
+            </Label>
             {demande.lignes.map((ligne) => (
-              <div key={ligne.id} className="border rounded-md p-4 space-y-3">
-                <div className="font-medium text-foreground">
-                  {ligne.designation} ({ligne.quantite} {ligne.unite})
+              <div key={ligne.id} className="bg-white rounded-xl border border-[#0000001a] p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div className="font-medium text-foreground">
+                    {ligne.designation} ({ligne.quantite} {ligne.unite})
+                  </div>
+                  {selectionsLignes[ligne.id] && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectionsLignes((prev) => {
+                          const newSelections = { ...prev };
+                          delete newSelections[ligne.id];
+                          return newSelections;
+                        });
+                      }}
+                      className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                    >
+                      Retirer sélection
+                    </Button>
+                  )}
                 </div>
                 <div className="space-y-2">
                   {ligne.fournisseurs.map((f) => (
                     <label
                       key={f.id}
-                      className="flex items-center gap-3 p-2 hover:bg-muted/30 rounded-md cursor-pointer"
+                      className={`flex items-center gap-3 p-3 rounded-md cursor-pointer transition-colors ${
+                        selectionsLignes[ligne.id] === f.id
+                          ? "bg-primary/5 border-2 border-primary"
+                          : "border-2 border-transparent hover:bg-muted/30"
+                      }`}
                     >
                       <input
                         type="radio"
@@ -175,8 +203,8 @@ export function ModaleValiderInstruction({
                         className="size-4"
                       />
                       <div className="flex-1 flex items-center justify-between">
-                        <span className="text-sm">{f.nom}</span>
-                        <span className="text-sm font-medium tabular-nums">
+                        <span className="text-sm font-medium">{f.nom}</span>
+                        <span className="text-sm font-medium tabular-nums text-[#1D186C]">
                           {f.prixUnitaire.toLocaleString("fr-FR")} FCFA
                         </span>
                       </div>
@@ -193,83 +221,101 @@ export function ModaleValiderInstruction({
               Critères de sélection <span className="text-destructive">*</span>
             </Label>
             {chargement ? (
-              <div className="text-sm text-muted-foreground">Chargement...</div>
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="size-6 animate-spin text-primary" />
+              </div>
             ) : (
-              <div className="space-y-2">
-                {criteres.map((critere) => (
-                  <label
-                    key={critere.id}
-                    className="flex items-center gap-3 p-2 hover:bg-muted/30 rounded-md cursor-pointer"
+              <div className="bg-white rounded-xl border border-[#0000001a] p-4">
+                <div className="space-y-2">
+                  {criteres.map((critere) => (
+                    <label
+                      key={critere.id}
+                      className={`flex items-start gap-3 p-3 rounded-md cursor-pointer transition-colors ${
+                        criteresSelectionnes.includes(critere.id)
+                          ? "bg-primary/5 border-2 border-primary"
+                          : "border-2 border-transparent hover:bg-muted/30"
+                      }`}
+                    >
+                      <Checkbox
+                        checked={criteresSelectionnes.includes(critere.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setCriteresSelectionnes((prev) => [...prev, critere.id]);
+                          } else {
+                            setCriteresSelectionnes((prev) =>
+                              prev.filter((id) => id !== critere.id)
+                            );
+                          }
+                        }}
+                        className="mt-0.5"
+                      />
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-foreground">{critere.libelle}</div>
+                        {critere.description && (
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {critere.description}
+                          </div>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+
+                {/* Ajouter un critère personnalisé */}
+                <div className="flex items-center gap-2 pt-4 mt-4 border-t border-border">
+                  <Input
+                    placeholder="Ajouter un critère personnalisé..."
+                    value={nouveauCritere}
+                    onChange={(e) => setNouveauCritere(e.target.value)}
+                    className="rounded-md"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        ajouterCritere();
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={ajouterCritere}
+                    disabled={ajoutEnCours || !nouveauCritere.trim()}
+                    className="shrink-0"
                   >
-                    <Checkbox
-                      checked={criteresSelectionnes.includes(critere.id)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setCriteresSelectionnes((prev) => [...prev, critere.id]);
-                        } else {
-                          setCriteresSelectionnes((prev) =>
-                            prev.filter((id) => id !== critere.id)
-                          );
-                        }
-                      }}
-                    />
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{critere.libelle}</div>
-                      {critere.description && (
-                        <div className="text-xs text-muted-foreground">
-                          {critere.description}
-                        </div>
-                      )}
-                    </div>
-                  </label>
-                ))}
+                    {ajoutEnCours ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Plus className="size-4 mr-1" />
+                        Ajouter
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             )}
-
-            {/* Ajouter un critère personnalisé */}
-            <div className="flex items-center gap-2 pt-2">
-              <Input
-                placeholder="Nouveau critère..."
-                value={nouveauCritere}
-                onChange={(e) => setNouveauCritere(e.target.value)}
-                className="rounded-md"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    ajouterCritere();
-                  }
-                }}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={ajouterCritere}
-                disabled={ajoutEnCours || !nouveauCritere.trim()}
-              >
-                {ajoutEnCours ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <><Plus className="size-4 mr-1" /> Ajouter</>
-                )}
-              </Button>
-            </div>
           </div>
 
           {/* Commentaire optionnel */}
           <div className="space-y-2">
-            <Label htmlFor="commentaire">Commentaire (optionnel)</Label>
+            <Label htmlFor="commentaire" className="text-base font-medium">
+              Commentaire (optionnel)
+            </Label>
             <Textarea
               id="commentaire"
-              placeholder="Justification de la sélection..."
+              placeholder="Justification de la sélection des fournisseurs et critères..."
               value={commentaire}
               onChange={(e) => setCommentaire(e.target.value)}
-              className="rounded-md resize-none"
-              rows={3}
+              className="rounded-md resize-none min-h-[100px]"
+              rows={4}
             />
+            <p className="text-xs text-muted-foreground">
+              Ce commentaire sera enregistré dans l'historique de la demande
+            </p>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={enCours}>
               Annuler
             </Button>
