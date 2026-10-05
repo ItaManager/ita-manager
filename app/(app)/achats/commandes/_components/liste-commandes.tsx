@@ -69,7 +69,7 @@ export function ListeCommandes({ demandes }: ListeCommandesProps) {
         </p>
       </header>
 
-      <main className="flex-1 px-6 py-6 space-y-6 max-w-full">
+      <main className="flex-1 px-6 py-6 space-y-6 max-w-7xl mx-auto w-full">
         {/* Barre de recherche et filtres */}
         <div className="flex items-center gap-4">
           <div className="relative flex-1 max-w-md">
