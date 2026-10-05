@@ -282,28 +282,26 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
                           <FileDown className="size-4 mr-2" />
                           Générer devis ({articlesSelectionnes.length})
                         </Button>
-                        {demande?.statut === "ATTENTE_ACHATS" && (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => {
-                              // Filtrer uniquement les lignes "En attente" (sans prix ni fournisseur)
-                              const lignesAInstruire = demande?.lignes.filter(
-                                (l: any) => articlesSelectionnes.includes(l.id) && !l.prixUnitaire && !l.fournisseurId
-                              ) || [];
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => {
+                            // Filtrer uniquement les lignes "En attente" (sans prix ni fournisseur)
+                            const lignesAInstruire = demande?.lignes.filter(
+                              (l: any) => articlesSelectionnes.includes(l.id) && !l.prixUnitaire && !l.fournisseurId
+                            ) || [];
 
-                              if (lignesAInstruire.length === 0) {
-                                toast.error("Aucun article sélectionné n'est en attente d'instruction");
-                                return;
-                              }
+                            if (lignesAInstruire.length === 0) {
+                              toast.error("Aucun article sélectionné n'est en attente d'instruction");
+                              return;
+                            }
 
-                              setModaleInstruireLotOuverte(true);
-                            }}
-                          >
-                            <Package className="size-4 mr-2" />
-                            Instruire la sélection ({articlesSelectionnes.length})
-                          </Button>
-                        )}
+                            setModaleInstruireLotOuverte(true);
+                          }}
+                        >
+                          <Package className="size-4 mr-2" />
+                          Instruire la sélection ({articlesSelectionnes.length})
+                        </Button>
                       </>
                     )}
                   </div>
