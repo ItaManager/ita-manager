@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { ComboboxFournisseurs } from "./combobox-fournisseurs";
 import { Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { instruireLigneAchat } from "@/lib/actions/achats";
 
 interface ModaleInstruireLigneProps {
   ouvert: boolean;
@@ -25,6 +26,7 @@ interface ModaleInstruireLigneProps {
     unite: string;
     fournisseurId?: string | null;
     prixUnitaire?: number | null;
+    urlDevisPDF?: string | null;
   };
   refDemande: string;
   onSuccess: () => void;
@@ -75,19 +77,17 @@ export function ModaleInstruireLigne({
       return;
     }
 
-    if (!fichierPDF) {
-      toast.error("Veuillez uploader le devis PDF du fournisseur");
-      return;
-    }
+    // Le PDF n'est obligatoire que si c'est le premier article de ce fournisseur
+    // La Server Action gérera la réutilisation du PDF existant
 
     setEnCours(true);
     try {
-      // TODO: Appeler la Server Action pour instruire la ligne
-      // await instruireLigneAchat(ligne.id, {
-      //   prixUnitaireTTC: parseFloat(prixTTC),
-      //   fournisseurId,
-      //   fichierPDF,
-      // });
+      await instruireLigneAchat({
+        ligneId: ligne.id,
+        prixUnitaireTTC: parseFloat(prixTTC),
+        fournisseurId,
+        fichierPDF: fichierPDF || undefined,
+      });
 
       toast.success("Article instruit avec succès");
       onSuccess();
@@ -173,7 +173,7 @@ export function ModaleInstruireLigne({
           {/* Upload PDF */}
           <div className="space-y-2">
             <Label htmlFor="devisPDF">
-              Devis PDF <span className="text-destructive">*</span>
+              Devis PDF {!ligne.urlDevisPDF && <span className="text-destructive">*</span>}
             </Label>
             <div className="flex items-center gap-3">
               <Input
@@ -182,7 +182,6 @@ export function ModaleInstruireLigne({
                 accept="application/pdf"
                 onChange={handleFileChange}
                 className="rounded-md"
-                required
               />
               <Upload className="size-5 text-muted-foreground shrink-0" />
             </div>
@@ -191,8 +190,14 @@ export function ModaleInstruireLigne({
                 ✓ {fichierPDF.name} ({(fichierPDF.size / 1024).toFixed(0)} KB)
               </p>
             )}
+            {ligne.urlDevisPDF && !fichierPDF && (
+              <p className="text-xs text-muted-foreground">
+                ✓ Devis déjà uploadé pour ce fournisseur
+              </p>
+            )}
             <p className="text-xs text-muted-foreground">
               PDF du devis reçu du fournisseur (max 10 MB)
+              {ligne.urlDevisPDF && " — Optionnel si même fournisseur"}
             </p>
           </div>
 

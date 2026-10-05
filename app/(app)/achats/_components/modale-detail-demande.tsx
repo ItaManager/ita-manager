@@ -13,9 +13,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, User, MapPin, FileText, Package, Loader2, FileDown } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { obtenirDemande, obtenirDonneesDevis } from "@/lib/actions/achats";
+import { obtenirDemande, obtenirDonneesDevis, validerInstructionDemande } from "@/lib/actions/achats";
 import { genererPDFDevis } from "@/lib/pdf/generer-devis";
 import { toast } from "sonner";
+import { ModaleInstruireLigne } from "./modale-instruire-ligne";
 
 interface ModaleDetailDemandeProps {
   ouvert: boolean;
@@ -38,6 +39,8 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
   const [chargement, setChargement] = useState(false);
   const [articlesSelectionnes, setArticlesSelectionnes] = useState<string[]>([]);
   const [generationEnCours, setGenerationEnCours] = useState(false);
+  const [ligneAInstruire, setLigneAInstruire] = useState<any>(null);
+  const [validationEnCours, setValidationEnCours] = useState(false);
 
   useEffect(() => {
     if (ouvert && refDemande) {
@@ -72,6 +75,19 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
       setArticlesSelectionnes([]);
     } else {
       setArticlesSelectionnes(demande?.lignes.map((l: any) => l.id) || []);
+    }
+  };
+
+  const validerInstruction = async () => {
+    setValidationEnCours(true);
+    try {
+      await validerInstructionDemande(refDemande);
+      toast.success("Instruction validée avec succès");
+      await chargerDemande(); // Recharger la demande
+    } catch (error: any) {
+      toast.error(error.message || "Erreur lors de la validation");
+    } finally {
+      setValidationEnCours(false);
     }
   };
 
@@ -355,17 +371,16 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
                           <td className="py-3 px-4 text-sm text-muted-foreground">
                             {ligne.fournisseur?.nom || "—"}
                           </td>
-                          {/* Bouton générer devis pour cette ligne - TODO: remettre condition demande?.statut === "ATTENTE_ACHATS" */}
+                          {/* Bouton instruire ligne - TODO: remettre condition demande?.statut === "ATTENTE_ACHATS" */}
                           {demande && (
                             <td className="py-3 px-4">
                               <Button
-                                variant="ghost"
+                                variant={ligne.prixUnitaire && ligne.fournisseurId ? "outline" : "default"}
                                 size="sm"
-                                onClick={() => genererDevis([ligne.id])}
-                                disabled={generationEnCours}
-                                className="h-8"
+                                onClick={() => setLigneAInstruire(ligne)}
+                                className="h-8 text-xs"
                               >
-                                <FileDown className="size-4" />
+                                {ligne.prixUnitaire && ligne.fournisseurId ? "Modifier" : "Instruire"}
                               </Button>
                             </td>
                           )}
@@ -391,6 +406,49 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
                   </tfoot>
                 </table>
               </div>
+
+              {/* Bouton de validation de l'instruction - TODO: remettre condition demande?.statut === "ATTENTE_ACHATS" */}
+              {demande && (() => {
+                const toutesLignesInstruites = demande.lignes.every(
+                  (l: any) => l.prixUnitaire && l.fournisseurId && l.urlDevisPDF
+                );
+                const aucuneLigneInstruite = demande.lignes.every(
+                  (l: any) => !l.prixUnitaire && !l.fournisseurId
+                );
+
+                return !aucuneLigneInstruite && (
+                  <div className="bg-white rounded-xl border border-[#0000001a] p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-base font-semibold text-foreground">
+                          {toutesLignesInstruites
+                            ? "Instruction complète"
+                            : "Instruction en cours"}
+                        </h4>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {toutesLignesInstruites
+                            ? "Tous les articles sont instruits. Vous pouvez valider l'instruction."
+                            : `${demande.lignes.filter((l: any) => l.prixUnitaire && l.fournisseurId).length}/${demande.lignes.length} articles instruits.`}
+                        </p>
+                      </div>
+                      <Button
+                        variant="default"
+                        onClick={validerInstruction}
+                        disabled={!toutesLignesInstruites || validationEnCours}
+                      >
+                        {validationEnCours ? (
+                          <>
+                            <Loader2 className="size-4 mr-2 animate-spin" />
+                            Validation...
+                          </>
+                        ) : (
+                          "Valider l'instruction"
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Historique des événements */}
@@ -429,6 +487,28 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
           </div>
         ) : null}
       </DialogContent>
+
+      {/* Modale d'instruction de ligne */}
+      {ligneAInstruire && (
+        <ModaleInstruireLigne
+          ouvert={!!ligneAInstruire}
+          onClose={() => setLigneAInstruire(null)}
+          ligne={{
+            id: ligneAInstruire.id,
+            designation: ligneAInstruire.designation,
+            quantite: Number(ligneAInstruire.quantite),
+            unite: ligneAInstruire.unite,
+            fournisseurId: ligneAInstruire.fournisseurId,
+            prixUnitaire: ligneAInstruire.prixUnitaire ? Number(ligneAInstruire.prixUnitaire) : null,
+            urlDevisPDF: ligneAInstruire.urlDevisPDF,
+          }}
+          refDemande={refDemande}
+          onSuccess={() => {
+            chargerDemande(); // Recharger la demande
+            setLigneAInstruire(null);
+          }}
+        />
+      )}
     </Dialog>
   );
 }

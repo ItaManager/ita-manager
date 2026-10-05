@@ -1321,3 +1321,254 @@ export const obtenirDonneesDevis = actionProtegee(
     };
   }
 );
+
+// ============================================================================
+// INSTRUCTION DES LIGNES D'ACHAT
+// ============================================================================
+
+/**
+ * Fonction interne pour uploader un fichier vers Cloudflare R2
+ * Utilisée uniquement par instruireLigneAchat
+ */
+async function uploadPDFVersR2(
+  file: File,
+  userId: string,
+  userEmail: string
+): Promise<string> {
+  // Vérifications de base
+  if (file.type !== "application/pdf") {
+    throw new Error("Seuls les fichiers PDF sont acceptés");
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    throw new Error("Le fichier ne doit pas dépasser 10 MB");
+  }
+
+  // Générer un nom unique pour le fichier
+  const timestamp = Date.now();
+  const randomStr = Math.random().toString(36).substring(2, 15);
+  const fileName = `devis/${timestamp}-${randomStr}.pdf`;
+
+  // Convertir File en ArrayBuffer pour fetch
+  const arrayBuffer = await file.arrayBuffer();
+
+  // Upload vers Cloudflare R2
+  const r2Response = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/r2/buckets/${process.env.CLOUDFLARE_R2_BUCKET}/objects/${fileName}`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${process.env.CLOUDFLARE_R2_TOKEN}`,
+        "Content-Type": "application/pdf",
+      },
+      body: arrayBuffer,
+    }
+  );
+
+  if (!r2Response.ok) {
+    throw new Error("Erreur lors de l'upload du fichier");
+  }
+
+  // Construire l'URL publique
+  const publicUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${fileName}`;
+
+  // Logger l'upload
+  await prisma.journalEvenement.create({
+    data: {
+      entite: "DevisPDF",
+      entiteId: fileName,
+      action: "UPLOAD",
+      auteurId: userId,
+      auteurNom: userEmail,
+      details: {
+        fileName,
+        fileSize: file.size,
+        url: publicUrl,
+      },
+    },
+  });
+
+  return publicUrl;
+}
+
+/**
+ * Instruire une ligne d'achat : prix TTC, fournisseur, devis PDF
+ * Règle : un seul PDF par fournisseur (réutilisé pour plusieurs articles du même fournisseur)
+ */
+export const instruireLigneAchat = actionProtegee(
+  "achat:instruire",
+  async (
+    session,
+    input: {
+      ligneId: string;
+      prixUnitaireTTC: number;
+      fournisseurId: string;
+      fichierPDF?: File;
+    }
+  ) => {
+    const { ligneId, prixUnitaireTTC, fournisseurId, fichierPDF } = input;
+
+    // Vérifications
+    if (prixUnitaireTTC <= 0) {
+      throw new Error("Le prix doit être supérieur à zéro");
+    }
+
+    // Récupérer la ligne et vérifier qu'elle existe
+    const ligne = await prisma.ligneAchat.findUnique({
+      where: { id: ligneId },
+      include: {
+        demande: {
+          select: { id: true, ref: true },
+        },
+      },
+    });
+
+    if (!ligne) {
+      throw new Error("Ligne d'achat introuvable");
+    }
+
+    // Vérifier le fournisseur
+    const fournisseur = await prisma.fournisseur.findUnique({
+      where: { id: fournisseurId },
+    });
+
+    if (!fournisseur) {
+      throw new Error("Fournisseur introuvable");
+    }
+
+    // Gérer l'upload du PDF
+    let urlDevisPDF = ligne.urlDevisPDF; // Conserver l'existant par défaut
+
+    // Si un fichier est fourni, uploader
+    if (fichierPDF) {
+      urlDevisPDF = await uploadPDFVersR2(fichierPDF, session.userId, session.email);
+    } else {
+      // Si pas de fichier fourni, vérifier si ce fournisseur a déjà un devis uploadé
+      // pour d'autres lignes de la même demande
+      const ligneAvecDevis = await prisma.ligneAchat.findFirst({
+        where: {
+          demandeId: ligne.demandeId,
+          fournisseurId,
+          urlDevisPDF: { not: null },
+        },
+        select: { urlDevisPDF: true },
+      });
+
+      if (ligneAvecDevis?.urlDevisPDF) {
+        // Réutiliser le PDF du même fournisseur
+        urlDevisPDF = ligneAvecDevis.urlDevisPDF;
+      } else {
+        // Pas de PDF fourni et pas de PDF existant pour ce fournisseur
+        throw new Error(
+          "Veuillez uploader le devis PDF du fournisseur (premier article de ce fournisseur)"
+        );
+      }
+    }
+
+    // Mettre à jour la ligne
+    const ligneMAJ = await prisma.ligneAchat.update({
+      where: { id: ligneId },
+      data: {
+        prixUnitaire: prixUnitaireTTC,
+        fournisseurId,
+        urlDevisPDF,
+      },
+    });
+
+    // Logger l'instruction
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "LigneAchat",
+        entiteId: ligneId,
+        action: "INSTRUCTION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        details: {
+          demandeRef: ligne.demande.ref,
+          designation: ligne.designation,
+          prixUnitaireTTC,
+          fournisseurNom: fournisseur.nom,
+          urlDevisPDF,
+        },
+      },
+    });
+
+    return ligneMAJ;
+  }
+);
+
+/**
+ * Valider l'instruction complète d'une demande d'achat
+ * Crée un événement INSTRUCTION et passe la demande au statut suivant
+ */
+export const validerInstructionDemande = actionProtegee(
+  "achat:instruire",
+  async (session, refDemande: string) => {
+    // Récupérer la demande avec ses lignes
+    const demande = await prisma.demandeAchat.findUnique({
+      where: { ref: refDemande },
+      include: {
+        lignes: {
+          select: {
+            id: true,
+            designation: true,
+            prixUnitaire: true,
+            fournisseurId: true,
+            urlDevisPDF: true,
+          },
+        },
+      },
+    });
+
+    if (!demande) {
+      throw new Error("Demande introuvable");
+    }
+
+    // Vérifier que toutes les lignes sont instruites
+    const lignesNonInstruites = demande.lignes.filter(
+      (ligne) =>
+        !ligne.prixUnitaire || !ligne.fournisseurId || !ligne.urlDevisPDF
+    );
+
+    if (lignesNonInstruites.length > 0) {
+      throw new Error(
+        `${lignesNonInstruites.length} article(s) ne sont pas encore instruits. Tous les articles doivent avoir un prix, un fournisseur et un devis PDF.`
+      );
+    }
+
+    // Créer l'événement INSTRUCTION
+    const evenement = await prisma.evenementAchat.create({
+      data: {
+        demandeId: demande.id,
+        type: "INSTRUCTION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        details: {
+          nbLignesInstruites: demande.lignes.length,
+          montantTotal: demande.lignes.reduce(
+            (sum, ligne) => sum + Number(ligne.prixUnitaire || 0),
+            0
+          ),
+        },
+      },
+    });
+
+    // Logger la validation
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "DemandeAchat",
+        entiteId: demande.id,
+        action: "VALIDATION_INSTRUCTION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        details: {
+          demandeRef: demande.ref,
+          nbLignes: demande.lignes.length,
+          evenementId: evenement.id,
+        },
+      },
+    });
+
+    return evenement;
+  }
+);
