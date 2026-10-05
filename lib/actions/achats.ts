@@ -1729,12 +1729,17 @@ export const instruireLotLignes = actionProtegee(
 export const listerCriteres = actionProtegee(
   "achat:instruire",
   async (session) => {
-    const criteres = await prisma.critereSelection.findMany({
-      where: { actif: true },
-      orderBy: { libelle: "asc" },
-    });
+    try {
+      const criteres = await prisma.critereSelection.findMany({
+        where: { actif: true },
+        orderBy: { libelle: "asc" },
+      });
 
-    return criteres;
+      return criteres;
+    } catch (error: any) {
+      console.error("[listerCriteres] Erreur:", error);
+      throw new Error(`Impossible de lister les critères: ${error.message}`);
+    }
   }
 );
 
