@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db/prisma";
 import { Prisma } from "@prisma/client";
 import { actionProtegee } from "@/lib/auth/guard";
+import { createClient } from "@supabase/supabase-js";
 
 // ============================================================================
 // M14 — Achats — Server Actions
@@ -1328,10 +1329,10 @@ export const obtenirDonneesDevis = actionProtegee(
 // ============================================================================
 
 /**
- * Fonction interne pour uploader un fichier vers Cloudflare R2
+ * Fonction interne pour uploader un fichier vers Supabase Storage
  * Utilisée uniquement par instruireLigneAchat
  */
-async function uploadPDFVersR2(
+async function uploadDocumentVersSupabase(
   file: File,
   userId: string,
   userEmail: string
@@ -1358,59 +1359,51 @@ async function uploadPDFVersR2(
     throw new Error("Le fichier ne doit pas dépasser 10 MB");
   }
 
+  // Créer client Supabase avec service role key
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  );
+
   // Générer un nom unique pour le fichier avec extension appropriée
   const timestamp = Date.now();
   const randomStr = Math.random().toString(36).substring(2, 15);
   const extension = file.name.split(".").pop() || "pdf";
   const fileName = `devis/${timestamp}-${randomStr}.${extension}`;
 
-  // Vérifier si Cloudflare R2 est configuré
-  const r2Configured =
-    process.env.CLOUDFLARE_ACCOUNT_ID &&
-    process.env.CLOUDFLARE_R2_BUCKET &&
-    process.env.CLOUDFLARE_R2_TOKEN &&
-    process.env.CLOUDFLARE_R2_PUBLIC_URL;
+  // Convertir File en ArrayBuffer puis Buffer
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
 
-  let publicUrl: string;
+  // Upload vers Supabase Storage
+  const { data, error } = await supabase.storage
+    .from("documents-achats")
+    .upload(fileName, buffer, {
+      contentType: file.type,
+      upsert: false,
+    });
 
-  if (r2Configured) {
-    // Upload vers Cloudflare R2
-    const arrayBuffer = await file.arrayBuffer();
-
-    const r2Response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/r2/buckets/${process.env.CLOUDFLARE_R2_BUCKET}/objects/${fileName}`,
-      {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${process.env.CLOUDFLARE_R2_TOKEN}`,
-          "Content-Type": file.type,
-        },
-        body: arrayBuffer,
-      }
-    );
-
-    if (!r2Response.ok) {
-      const errorText = await r2Response.text();
-      throw new Error(
-        `Erreur lors de l'upload du fichier vers R2: ${errorText}`
-      );
-    }
-
-    publicUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${fileName}`;
-  } else {
-    // Mode local : stockage simulé (URL fictive pour développement)
-    // TODO: En production, configurer Cloudflare R2
-    publicUrl = `/uploads/${fileName}`;
-    console.warn(
-      "⚠️  Cloudflare R2 non configuré - URL locale utilisée:",
-      publicUrl
+  if (error) {
+    throw new Error(
+      `Erreur lors de l'upload vers Supabase Storage: ${error.message}`
     );
   }
+
+  // Obtenir l'URL publique
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("documents-achats").getPublicUrl(fileName);
 
   // Logger l'upload
   await prisma.journalEvenement.create({
     data: {
-      entite: "DevisPDF",
+      entite: "DocumentAchat",
       entiteId: fileName,
       action: "UPLOAD",
       auteurId: userId,
@@ -1419,7 +1412,8 @@ async function uploadPDFVersR2(
         fileName,
         fileSize: file.size,
         url: publicUrl,
-        mode: r2Configured ? "cloudflare-r2" : "local-dev",
+        bucket: "documents-achats",
+        storage: "supabase",
       },
     },
   });
@@ -1480,7 +1474,7 @@ export const instruireLigneAchat = actionProtegee(
       const documentsUploades = [];
 
       for (const fichier of fichiers) {
-        const url = await uploadPDFVersR2(
+        const url = await uploadDocumentVersSupabase(
           fichier,
           session.userId,
           session.email
