@@ -6,10 +6,10 @@ import { Eye } from "lucide-react";
 import { ModaleDetailDemande } from "./modale-detail-demande";
 
 interface BoutonVoirDemandeProps {
-  ref: string;
+  refDemande: string;
 }
 
-export function BoutonVoirDemande({ ref }: BoutonVoirDemandeProps) {
+export function BoutonVoirDemande({ refDemande }: BoutonVoirDemandeProps) {
   const [ouvert, setOuvert] = useState(false);
 
   return (
@@ -27,7 +27,7 @@ export function BoutonVoirDemande({ ref }: BoutonVoirDemandeProps) {
       <ModaleDetailDemande
         ouvert={ouvert}
         onClose={() => setOuvert(false)}
-        ref={ref}
+        refDemande={refDemande}
       />
     </>
   );

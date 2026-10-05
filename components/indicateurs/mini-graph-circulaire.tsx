@@ -1,3 +1,5 @@
+"use client";
+
 interface MiniGraphCirculaireProps {
   percentage: number; // 0-1
   color?: string;

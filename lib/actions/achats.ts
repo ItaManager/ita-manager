@@ -1253,3 +1253,71 @@ export const statistiquesAchats = actionProtegee(
     };
   }
 );
+
+// ============================================================================
+// GÉNÉRATION DE DEMANDE DE DEVIS
+// ============================================================================
+
+/**
+ * Récupère les données nécessaires pour générer un PDF de demande de devis
+ * Retourne les informations d'ITA et les articles sélectionnés
+ */
+export const obtenirDonneesDevis = actionProtegee(
+  "achat:instruire",
+  async (session, refDemande: string, ligneIds: string[]) => {
+    // Récupérer la demande
+    const demande = await prisma.demandeAchat.findUnique({
+      where: { ref: refDemande },
+      include: {
+        lignes: {
+          where: {
+            id: { in: ligneIds },
+          },
+          include: {
+            article: {
+              select: {
+                designation: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!demande) {
+      throw new Error("Demande introuvable");
+    }
+
+    // TODO: Réactiver cette vérification en production
+    // Vérifier que la demande est au bon statut
+    // const evenements = await prisma.evenementAchat.findMany({
+    //   where: { demandeId: demande.id },
+    //   orderBy: { timestamp: "desc" },
+    //   take: 1,
+    // });
+
+    // const statut = calculerStatut(evenements);
+    // if (statut !== "ATTENTE_ACHATS") {
+    //   throw new Error("Cette demande ne peut pas générer de devis (statut incorrect)");
+    // }
+
+    // Retourner les données pour le PDF
+    return {
+      entreprise: {
+        nom: "ITA SARL",
+        adresse: "Abidjan, Côte d'Ivoire",
+        // TODO: Ajouter logo en base64 si nécessaire
+      },
+      demande: {
+        ref: demande.ref,
+        description: demande.description,
+        dateBesoin: demande.dateBesoin,
+      },
+      articles: demande.lignes.map((ligne) => ({
+        designation: ligne.designation,
+        quantite: Number(ligne.quantite),
+        unite: ligne.unite,
+      })),
+    };
+  }
+);

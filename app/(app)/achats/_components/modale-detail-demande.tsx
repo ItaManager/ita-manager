@@ -9,16 +9,18 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, User, MapPin, FileText, Package, Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar, User, MapPin, FileText, Package, Loader2, FileDown } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { obtenirDemande } from "@/lib/actions/achats";
+import { obtenirDemande, obtenirDonneesDevis } from "@/lib/actions/achats";
+import { genererPDFDevis } from "@/lib/pdf/generer-devis";
 import { toast } from "sonner";
 
 interface ModaleDetailDemandeProps {
   ouvert: boolean;
   onClose: () => void;
-  ref: string;
+  refDemande: string;
 }
 
 const STATUT_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
@@ -31,26 +33,67 @@ const STATUT_LABELS: Record<string, { label: string; variant: "default" | "secon
   REFUSEE: { label: "Refusée", variant: "destructive" },
 };
 
-export function ModaleDetailDemande({ ouvert, onClose, ref }: ModaleDetailDemandeProps) {
+export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetailDemandeProps) {
   const [demande, setDemande] = useState<any>(null);
   const [chargement, setChargement] = useState(false);
+  const [articlesSelectionnes, setArticlesSelectionnes] = useState<string[]>([]);
+  const [generationEnCours, setGenerationEnCours] = useState(false);
 
   useEffect(() => {
-    if (ouvert && ref) {
+    if (ouvert && refDemande) {
       chargerDemande();
+      setArticlesSelectionnes([]); // Reset sélection
     }
-  }, [ouvert, ref]);
+  }, [ouvert, refDemande]);
 
   const chargerDemande = async () => {
     setChargement(true);
     try {
-      const data = await obtenirDemande(ref);
+      const data = await obtenirDemande(refDemande);
       setDemande(data);
     } catch (error: any) {
       toast.error(error.message || "Erreur lors du chargement de la demande");
       onClose();
     } finally {
       setChargement(false);
+    }
+  };
+
+  const toggleSelection = (ligneId: string) => {
+    setArticlesSelectionnes(prev =>
+      prev.includes(ligneId)
+        ? prev.filter(id => id !== ligneId)
+        : [...prev, ligneId]
+    );
+  };
+
+  const toggleTout = () => {
+    if (articlesSelectionnes.length === demande?.lignes.length) {
+      setArticlesSelectionnes([]);
+    } else {
+      setArticlesSelectionnes(demande?.lignes.map((l: any) => l.id) || []);
+    }
+  };
+
+  const genererDevis = async (ligneIds: string[]) => {
+    if (ligneIds.length === 0) {
+      toast.error("Aucun article sélectionné");
+      return;
+    }
+
+    setGenerationEnCours(true);
+    try {
+      // Récupérer les données pour le PDF depuis le serveur
+      const donnees = await obtenirDonneesDevis(refDemande, ligneIds);
+
+      // Générer et télécharger le PDF côté client
+      genererPDFDevis(donnees);
+
+      toast.success(`Devis généré pour ${ligneIds.length} article(s)`);
+    } catch (error: any) {
+      toast.error(error.message || "Erreur lors de la génération du devis");
+    } finally {
+      setGenerationEnCours(false);
     }
   };
 
@@ -75,7 +118,7 @@ export function ModaleDetailDemande({ ouvert, onClose, ref }: ModaleDetailDemand
           style={{ backgroundColor: "var(--primary-soft)" }}
         >
           <DialogTitle className="text-xl font-semibold text-[#1D186C]">
-            {chargement ? "Chargement..." : `Demande ${ref}`}
+            {chargement ? "Chargement..." : `Demande ${refDemande}`}
           </DialogTitle>
         </DialogHeader>
 
@@ -90,7 +133,7 @@ export function ModaleDetailDemande({ ouvert, onClose, ref }: ModaleDetailDemand
               <div className="flex items-start justify-between">
                 <div>
                   <h2 className="text-2xl font-semibold text-[#1D186C] mb-2">
-                    Demande {ref}
+                    Demande {refDemande}
                   </h2>
                   <Badge variant={statutInfo.variant} className="text-sm">
                     {statutInfo.label}
@@ -190,17 +233,55 @@ export function ModaleDetailDemande({ ouvert, onClose, ref }: ModaleDetailDemand
 
             {/* Articles demandés */}
             <div className="bg-white rounded-xl border border-[#0000001a] p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Package className="size-5 text-[#1D186C]" />
-                <h3 className="text-lg font-semibold text-foreground">
-                  Articles demandés
-                </h3>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Package className="size-5 text-[#1D186C]" />
+                  <h3 className="text-lg font-semibold text-foreground">
+                    Articles demandés
+                  </h3>
+                </div>
+
+                {/* Boutons d'action - TODO: remettre condition demande?.statut === "ATTENTE_ACHATS" */}
+                {demande && (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => genererDevis(demande.lignes.map((l: any) => l.id))}
+                      disabled={generationEnCours}
+                    >
+                      <FileDown className="size-4 mr-2" />
+                      Générer devis pour tout
+                    </Button>
+                    {articlesSelectionnes.length > 0 && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => genererDevis(articlesSelectionnes)}
+                        disabled={generationEnCours}
+                      >
+                        <FileDown className="size-4 mr-2" />
+                        Générer devis ({articlesSelectionnes.length})
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="rounded-xl border border-border overflow-hidden">
                 <table className="w-full">
                   <thead className="bg-muted/50">
                     <tr className="border-b border-border">
+                      {/* Colonne checkbox - TODO: remettre condition demande?.statut === "ATTENTE_ACHATS" */}
+                      {demande && (
+                        <th className="w-12 py-3 px-4">
+                          <Checkbox
+                            checked={articlesSelectionnes.length === demande?.lignes.length && demande?.lignes.length > 0}
+                            onCheckedChange={toggleTout}
+                            aria-label="Tout sélectionner"
+                          />
+                        </th>
+                      )}
                       <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                         #
                       </th>
@@ -222,6 +303,12 @@ export function ModaleDetailDemande({ ouvert, onClose, ref }: ModaleDetailDemand
                       <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                         Fournisseur
                       </th>
+                      {/* Colonne action - TODO: remettre condition demande?.statut === "ATTENTE_ACHATS" */}
+                      {demande && (
+                        <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                          Action
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -233,6 +320,16 @@ export function ModaleDetailDemande({ ouvert, onClose, ref }: ModaleDetailDemand
                           key={ligne.id}
                           className="border-b border-border hover:bg-muted/30 transition-colors"
                         >
+                          {/* Checkbox - TODO: remettre condition demande?.statut === "ATTENTE_ACHATS" */}
+                          {demande && (
+                            <td className="py-3 px-4">
+                              <Checkbox
+                                checked={articlesSelectionnes.includes(ligne.id)}
+                                onCheckedChange={() => toggleSelection(ligne.id)}
+                                aria-label={`Sélectionner ${ligne.designation}`}
+                              />
+                            </td>
+                          )}
                           <td className="py-3 px-4 text-sm text-muted-foreground">
                             {index + 1}
                           </td>
@@ -258,6 +355,20 @@ export function ModaleDetailDemande({ ouvert, onClose, ref }: ModaleDetailDemand
                           <td className="py-3 px-4 text-sm text-muted-foreground">
                             {ligne.fournisseur?.nom || "—"}
                           </td>
+                          {/* Bouton générer devis pour cette ligne - TODO: remettre condition demande?.statut === "ATTENTE_ACHATS" */}
+                          {demande && (
+                            <td className="py-3 px-4">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => genererDevis([ligne.id])}
+                                disabled={generationEnCours}
+                                className="h-8"
+                              >
+                                <FileDown className="size-4" />
+                              </Button>
+                            </td>
+                          )}
                         </tr>
                       );
                     })}

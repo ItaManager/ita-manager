@@ -192,7 +192,7 @@ export async function ListeDemandes({
                       {/* Actions */}
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          <BoutonVoirDemande ref={demande.ref} />
+                          <BoutonVoirDemande refDemande={demande.ref} />
                         </div>
                       </td>
                     </tr>

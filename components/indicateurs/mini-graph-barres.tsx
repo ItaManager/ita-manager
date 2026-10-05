@@ -1,3 +1,5 @@
+"use client";
+
 interface MiniGraphBarresProps {
   values: number[];
   color?: string;
