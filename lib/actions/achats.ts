@@ -562,6 +562,78 @@ export const listerDemandesAvecCalculs = actionProtegee(
   },
 );
 
+/**
+ * Récupère une demande d'achat par sa référence avec tous ses détails
+ */
+export const obtenirDemande = actionProtegee(
+  "achat:demander",
+  async (session, ref: string) => {
+    const demande = await prisma.demandeAchat.findUnique({
+      where: { ref },
+      include: {
+        demandeur: {
+          select: {
+            id: true,
+            matricule: true,
+            nom: true,
+            prenom: true,
+          },
+        },
+        beneficiaire: {
+          select: {
+            id: true,
+            matricule: true,
+            nom: true,
+            prenom: true,
+          },
+        },
+        destination: {
+          select: {
+            id: true,
+            nom: true,
+          },
+        },
+        lignes: {
+          orderBy: { ordre: "asc" },
+          include: {
+            article: {
+              select: {
+                id: true,
+                designation: true,
+                unite: { select: { libelle: true } },
+              },
+            },
+            fournisseur: {
+              select: {
+                id: true,
+                nom: true,
+              },
+            },
+          },
+        },
+        evenements: {
+          orderBy: { timestamp: "desc" },
+          include: {
+            auteur: {
+              select: {
+                matricule: true,
+                nom: true,
+                prenom: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!demande) {
+      throw new Error("Demande d'achat introuvable");
+    }
+
+    return demande;
+  },
+);
+
 // ============================================================================
 // CIRCUIT DE VALIDATION DES DEMANDES D'ACHAT
 // ============================================================================
