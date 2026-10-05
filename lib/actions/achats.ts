@@ -1427,19 +1427,35 @@ async function uploadDocumentVersSupabase(
  */
 export const instruireLigneAchat = actionProtegee(
   "achat:instruire",
-  async (session, formData: FormData) => {
-    // Extraire les données du FormData
-    const ligneId = formData.get("ligneId") as string;
-    const prixUnitaireTTC = parseFloat(formData.get("prixUnitaireTTC") as string);
-    const fournisseurId = formData.get("fournisseurId") as string;
+  async (
+    session,
+    input: {
+      ligneId: string;
+      prixUnitaireTTC: number;
+      fournisseurId: string;
+      fichiers?: Array<{
+        name: string;
+        type: string;
+        size: number;
+        base64: string;
+      }>;
+    }
+  ) => {
+    const { ligneId, prixUnitaireTTC, fournisseurId, fichiers: fichiersBase64 } = input;
 
-    // Récupérer tous les fichiers
+    // Convertir les fichiers base64 en File objects
     const fichiers: File[] = [];
-    formData.forEach((value, key) => {
-      if (key.startsWith("fichier_") && value instanceof File) {
-        fichiers.push(value);
+    if (fichiersBase64 && fichiersBase64.length > 0) {
+      for (const f of fichiersBase64) {
+        // Décoder le base64
+        const base64Data = f.base64.split(',')[1]; // Enlever le préfixe data:...;base64,
+        const buffer = Buffer.from(base64Data, 'base64');
+        // Créer un File-like object (Blob avec name)
+        const blob = new Blob([buffer], { type: f.type });
+        const file = new File([blob], f.name, { type: f.type });
+        fichiers.push(file);
       }
-    });
+    }
 
     // Vérifications
     if (prixUnitaireTTC <= 0) {

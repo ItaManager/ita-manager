@@ -100,19 +100,37 @@ export function ModaleInstruireLigne({
 
     setEnCours(true);
     try {
-      // Créer un FormData pour envoyer les fichiers
-      const formData = new FormData();
-      formData.append("ligneId", ligne.id);
-      formData.append("prixUnitaireTTC", prixTTC);
-      formData.append("fournisseurId", fournisseurId);
+      // Convertir les fichiers en base64
+      const fichiersBase64 = await Promise.all(
+        fichiers.map(async (fichier) => {
+          return new Promise<{
+            name: string;
+            type: string;
+            size: number;
+            base64: string;
+          }>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              resolve({
+                name: fichier.name,
+                type: fichier.type,
+                size: fichier.size,
+                base64: reader.result as string,
+              });
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(fichier);
+          });
+        })
+      );
 
-      // Ajouter tous les fichiers
-      fichiers.forEach((fichier, index) => {
-        formData.append(`fichier_${index}`, fichier);
+      // Appeler la Server Action avec les fichiers en base64
+      await instruireLigneAchat({
+        ligneId: ligne.id,
+        prixUnitaireTTC: parseFloat(prixTTC),
+        fournisseurId,
+        fichiers: fichiersBase64.length > 0 ? fichiersBase64 : undefined,
       });
-
-      // Appeler la Server Action avec FormData
-      await instruireLigneAchat(formData);
 
       const message =
         fichiers.length > 0
