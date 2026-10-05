@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { obtenirDemande } from "@/lib/actions/achats";
 import { verifierAccesPage } from "@/lib/auth/guard";
-import { ModuleLayout } from "@/components/module-layout";
+import { ModuleLayout } from "@/components/layouts/module-layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar, User, MapPin, FileText, Package } from "lucide-react";
