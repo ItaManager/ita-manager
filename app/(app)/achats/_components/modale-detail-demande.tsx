@@ -470,36 +470,71 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
               })()}
             </div>
 
-            {/* Historique des événements */}
+            {/* Timeline des événements */}
             {demande.evenements.length > 0 && (
               <div className="bg-white rounded-xl border border-[#0000001a] p-6">
-                <h3 className="text-lg font-semibold text-foreground mb-4">
+                <h3 className="text-lg font-semibold text-foreground mb-6">
                   Historique
                 </h3>
-                <div className="space-y-3">
-                  {demande.evenements.map((evt: any) => (
-                    <div
-                      key={evt.id}
-                      className="flex items-start gap-3 text-sm pb-3 border-b border-border last:border-0"
-                    >
-                      <div className="w-32 text-muted-foreground tabular-nums">
-                        {format(new Date(evt.timestamp), "dd/MM/yyyy HH:mm", {
-                          locale: fr,
-                        })}
-                      </div>
-                      <div className="flex-1">
-                        <span className="font-medium text-foreground">
-                          {evt.type}
-                        </span>
-                        {evt.auteurNom && (
-                          <span className="text-muted-foreground">
-                            {" "}
-                            — {evt.auteurNom}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                <div className="relative">
+                  {/* Ligne verticale */}
+                  <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-border" />
+
+                  {/* Événements */}
+                  <div className="space-y-6">
+                    {demande.evenements.map((evt: any, index: number) => {
+                      // Déterminer la couleur du point selon le type d'événement
+                      let pointColor = "bg-[#22c55e]"; // Vert par défaut (validé)
+
+                      if (evt.type === "CREATION") pointColor = "bg-[#22c55e]";
+                      else if (evt.type === "VALIDATION_N1" || evt.type === "VALIDATION_RH") pointColor = "bg-[#22c55e]";
+                      else if (evt.type === "INSTRUCTION") pointColor = "bg-[#22c55e]";
+                      else if (evt.type === "REFUS") pointColor = "bg-destructive";
+                      else if (index === demande.evenements.length - 1) pointColor = "bg-[#f97316]"; // Orange pour le dernier (en cours)
+
+                      return (
+                        <div key={evt.id} className="relative flex items-start gap-4 pl-10">
+                          {/* Point de la timeline */}
+                          <div
+                            className={`absolute left-0 size-8 rounded-full border-4 border-white ${pointColor} shadow-md z-10`}
+                          />
+
+                          {/* Contenu de l'événement */}
+                          <div className="flex-1 bg-muted/30 rounded-lg p-4">
+                            <div className="flex items-start justify-between gap-4 mb-2">
+                              <div className="flex-1">
+                                <div className="font-semibold text-foreground text-base">
+                                  {evt.type.replace(/_/g, " ")}
+                                </div>
+                                {evt.auteurNom && (
+                                  <div className="text-sm text-muted-foreground mt-1">
+                                    Par {evt.auteurNom}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-sm text-muted-foreground tabular-nums shrink-0">
+                                {format(new Date(evt.timestamp), "dd/MM/yyyy", {
+                                  locale: fr,
+                                })}
+                                <div className="text-xs">
+                                  {format(new Date(evt.timestamp), "HH:mm", {
+                                    locale: fr,
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Détails supplémentaires si disponibles */}
+                            {evt.details && Object.keys(evt.details).length > 0 && (
+                              <div className="text-xs text-muted-foreground mt-2 pt-2 border-t border-border">
+                                {evt.commentaire || JSON.stringify(evt.details)}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             )}
