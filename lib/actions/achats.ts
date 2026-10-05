@@ -587,14 +587,7 @@ export const obtenirDemande = actionProtegee(
             prenom: true,
           },
         },
-        destination: {
-          select: {
-            id: true,
-            nom: true,
-          },
-        },
         lignes: {
-          orderBy: { ordre: "asc" },
           include: {
             article: {
               select: {
@@ -613,14 +606,12 @@ export const obtenirDemande = actionProtegee(
         },
         evenements: {
           orderBy: { timestamp: "desc" },
-          include: {
-            auteur: {
-              select: {
-                matricule: true,
-                nom: true,
-                prenom: true,
-              },
-            },
+          select: {
+            id: true,
+            type: true,
+            auteurNom: true,
+            timestamp: true,
+            details: true,
           },
         },
       },
@@ -630,7 +621,41 @@ export const obtenirDemande = actionProtegee(
       throw new Error("Demande d'achat introuvable");
     }
 
-    return demande;
+    // Résoudre la destination (projet ou service)
+    const [projet, service] = await Promise.all([
+      prisma.projet.findUnique({
+        where: { id: demande.destinationId },
+        select: { id: true, nom: true },
+      }),
+      prisma.service.findUnique({
+        where: { id: demande.destinationId },
+        select: { id: true, libelle: true },
+      }),
+    ]);
+
+    const destination = projet
+      ? { id: projet.id, nom: `Chantier ${projet.nom}` }
+      : service
+        ? { id: service.id, nom: `Service ${service.libelle}` }
+        : null;
+
+    // Calculer le statut
+    const statut = calculerStatut(demande.evenements);
+
+    // Calculer prixUnitaireTTC pour chaque ligne
+    const lignesAvecTTC = demande.lignes.map((ligne) => ({
+      ...ligne,
+      prixUnitaireTTC: ligne.prixUnitaire
+        ? Number(ligne.prixUnitaire) * (1 + Number(ligne.tauxTva ?? 0) / 100)
+        : null,
+    }));
+
+    return {
+      ...demande,
+      destination,
+      statut,
+      lignes: lignesAvecTTC,
+    };
   },
 );
 

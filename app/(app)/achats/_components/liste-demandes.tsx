@@ -1,10 +1,8 @@
 import { listerDemandesAvecCalculs } from "@/lib/actions/achats";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Eye, FileText } from "lucide-react";
-import Link from "next/link";
 import { BarreRechercheAchats } from "./barre-recherche-achats";
 import { PaginationDemandes } from "./pagination-demandes";
+import { BoutonVoirDemande } from "./bouton-voir-demande";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -194,17 +192,7 @@ export async function ListeDemandes({
                       {/* Actions */}
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            asChild
-                          >
-                            <Link href={`/achats/${demande.ref}`}>
-                              <Eye className="size-4" />
-                              <span className="sr-only">Voir détails</span>
-                            </Link>
-                          </Button>
+                          <BoutonVoirDemande ref={demande.ref} />
                         </div>
                       </td>
                     </tr>
