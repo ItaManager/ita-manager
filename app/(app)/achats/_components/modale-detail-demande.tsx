@@ -526,8 +526,41 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
 
                             {/* Détails supplémentaires si disponibles */}
                             {evt.details && Object.keys(evt.details).length > 0 && (
-                              <div className="text-xs text-muted-foreground mt-2 pt-2 border-t border-border">
-                                {evt.commentaire || JSON.stringify(evt.details)}
+                              <div className="text-xs text-muted-foreground mt-2 pt-2 border-t border-border space-y-1">
+                                {evt.commentaire && (
+                                  <div className="text-foreground font-medium">
+                                    {evt.commentaire}
+                                  </div>
+                                )}
+
+                                {/* Critères de sélection */}
+                                {evt.details.criteres && Array.isArray(evt.details.criteres) && evt.details.criteres.length > 0 && (
+                                  <div>
+                                    <span className="font-medium text-foreground">Critères :</span>{" "}
+                                    {evt.details.criteres.join(", ")}
+                                  </div>
+                                )}
+
+                                {/* Nombre de lignes */}
+                                {evt.details.nombreLignes && (
+                                  <div>
+                                    <span className="font-medium text-foreground">Articles concernés :</span>{" "}
+                                    {evt.details.nombreLignes}
+                                  </div>
+                                )}
+
+                                {/* Montant si disponible */}
+                                {evt.details.montant && (
+                                  <div>
+                                    <span className="font-medium text-foreground">Montant :</span>{" "}
+                                    {Number(evt.details.montant).toLocaleString("fr-FR")} FCFA
+                                  </div>
+                                )}
+
+                                {/* Autres détails non structurés */}
+                                {!evt.commentaire && !evt.details.criteres && !evt.details.nombreLignes && !evt.details.montant && (
+                                  <div>{JSON.stringify(evt.details)}</div>
+                                )}
                               </div>
                             )}
                           </div>
