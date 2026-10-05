@@ -754,14 +754,34 @@ export const creerDemande = actionProtegee(
       },
     });
 
+    // Résoudre la destination pour l'événement
+    const [projet, service] = await Promise.all([
+      prisma.projet.findUnique({
+        where: { id: data.destinationId },
+        select: { nom: true },
+      }),
+      prisma.service.findUnique({
+        where: { id: data.destinationId },
+        select: { libelle: true },
+      }),
+    ]);
+
+    const destinationNom = projet
+      ? `Chantier ${projet.nom}`
+      : service
+        ? `Service ${service.libelle}`
+        : "Destination inconnue";
+
     // Créer l'événement CREATION
     await prisma.evenementAchat.create({
       data: {
         demandeId: demande.id,
         type: "CREATION",
         auteurId: session.userId,
-        auteurNom: session.email,
+        auteurNom: `${profil.employe.prenom} ${profil.employe.nom}`,
         details: {
+          demandeur: `${profil.employe.prenom} ${profil.employe.nom}`,
+          destination: destinationNom,
           description: data.description,
           nombreLignes: data.lignes.length,
           urgent: data.urgent,

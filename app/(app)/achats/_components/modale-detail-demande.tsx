@@ -549,6 +549,22 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
                                   </div>
                                 )}
 
+                                {/* Demandeur */}
+                                {evt.details.demandeur && (
+                                  <div>
+                                    <span className="font-medium text-foreground">Émetteur :</span>{" "}
+                                    {evt.details.demandeur}
+                                  </div>
+                                )}
+
+                                {/* Destination (Service/Projet) */}
+                                {evt.details.destination && (
+                                  <div>
+                                    <span className="font-medium text-foreground">Destination :</span>{" "}
+                                    {evt.details.destination}
+                                  </div>
+                                )}
+
                                 {/* Articles instruits */}
                                 {evt.details.articles && Array.isArray(evt.details.articles) && evt.details.articles.length > 0 && (
                                   <div>
@@ -574,7 +590,12 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
                                 )}
 
                                 {/* Autres détails non structurés */}
-                                {!evt.details.commentaire && !evt.details.criteres && !evt.details.articles && !evt.details.montant && (
+                                {!evt.details.commentaire &&
+                                 !evt.details.criteres &&
+                                 !evt.details.articles &&
+                                 !evt.details.montant &&
+                                 !evt.details.demandeur &&
+                                 !evt.details.destination && (
                                   <div>{JSON.stringify(evt.details)}</div>
                                 )}
                               </div>
