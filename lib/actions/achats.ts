@@ -1719,6 +1719,168 @@ export const instruireLotLignes = actionProtegee(
   }
 );
 
+// ============================================================================
+// CRITÈRES DE SÉLECTION FOURNISSEUR
+// ============================================================================
+
+/**
+ * Lister tous les critères de sélection actifs
+ */
+export const listerCriteres = actionProtegee(
+  "achat:instruire",
+  async (session) => {
+    const criteres = await prisma.critereSelection.findMany({
+      where: { actif: true },
+      orderBy: { libelle: "asc" },
+    });
+
+    return criteres;
+  }
+);
+
+/**
+ * Créer un nouveau critère de sélection personnalisé
+ */
+export const creerCritere = actionProtegee(
+  "achat:instruire",
+  async (session, input: { libelle: string; description?: string }) => {
+    const { libelle, description } = input;
+
+    // Vérifier que le libellé n'existe pas déjà
+    const existant = await prisma.critereSelection.findUnique({
+      where: { libelle },
+    });
+
+    if (existant) {
+      throw new Error("Un critère avec ce libellé existe déjà");
+    }
+
+    const critere = await prisma.critereSelection.create({
+      data: {
+        libelle,
+        description: description || null,
+        creePar: session.email,
+      },
+    });
+
+    // Journaliser
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "CritereSelection",
+        entiteId: critere.id,
+        action: "CREATION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        commentaire: `Nouveau critère : ${libelle}`,
+      },
+    });
+
+    return critere;
+  }
+);
+
+/**
+ * Valider l'instruction avec sélection des fournisseurs et critères
+ */
+export const validerInstructionAvecCriteres = actionProtegee(
+  "achat:instruire",
+  async (
+    session,
+    input: {
+      demandeId: string;
+      selections: Array<{
+        ligneId: string;
+        fournisseurRetenu: string; // fournisseurId
+      }>;
+      criteresIds: string[]; // IDs des critères sélectionnés
+      commentaire?: string;
+    }
+  ) => {
+    const { demandeId, selections, criteresIds, commentaire } = input;
+
+    // Validations
+    if (selections.length === 0) {
+      throw new Error("Aucun fournisseur sélectionné");
+    }
+
+    if (criteresIds.length === 0) {
+      throw new Error("Veuillez sélectionner au moins un critère de sélection");
+    }
+
+    // Récupérer la demande
+    const demande = await prisma.demandeAchat.findUnique({
+      where: { id: demandeId },
+      include: {
+        lignes: true,
+      },
+    });
+
+    if (!demande) {
+      throw new Error("Demande introuvable");
+    }
+
+    // Récupérer les critères pour avoir leurs libellés
+    const criteres = await prisma.critereSelection.findMany({
+      where: { id: { in: criteresIds } },
+    });
+
+    const criteresData = criteres.map((c) => ({
+      id: c.id,
+      libelle: c.libelle,
+    }));
+
+    // Mettre à jour chaque ligne avec le fournisseur retenu et les critères
+    const updates = selections.map((sel) => {
+      return prisma.ligneAchat.update({
+        where: { id: sel.ligneId },
+        data: {
+          fournisseurId: sel.fournisseurRetenu,
+          criteres: {
+            criteres: criteresData,
+            commentaire: commentaire || null,
+          },
+        },
+      });
+    });
+
+    await prisma.$transaction(updates);
+
+    // Créer l'événement INSTRUCTION
+    await prisma.evenementAchat.create({
+      data: {
+        demandeId,
+        type: "INSTRUCTION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        details: {
+          nombreLignes: selections.length,
+          criteres: criteresData.map((c) => c.libelle),
+          commentaire: commentaire || null,
+        },
+      },
+    });
+
+    // Journaliser
+    await prisma.journalEvenement.create({
+      data: {
+        entite: "DemandeAchat",
+        entiteId: demandeId,
+        action: "VALIDATION_INSTRUCTION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        commentaire: `Validation instruction : ${selections.length} article(s), ${criteresData.length} critère(s)`,
+        details: {
+          refDemande: demande.ref,
+          criteres: criteresData,
+          commentaire,
+        },
+      },
+    });
+
+    return { success: true, refDemande: demande.ref };
+  }
+);
+
 /**
  * Valider l'instruction complète d'une demande d'achat
  * Crée un événement INSTRUCTION et passe la demande au statut suivant

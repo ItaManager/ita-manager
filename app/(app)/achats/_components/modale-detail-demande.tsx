@@ -18,6 +18,7 @@ import { genererPDFDevis } from "@/lib/pdf/generer-devis";
 import { toast } from "sonner";
 import { ModaleInstruireLigne } from "./modale-instruire-ligne";
 import { ModaleInstruireLot } from "./modale-instruire-lot";
+import { ModaleValiderInstruction } from "./modale-valider-instruction";
 
 interface ModaleDetailDemandeProps {
   ouvert: boolean;
@@ -43,6 +44,7 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
   const [ligneAInstruire, setLigneAInstruire] = useState<any>(null);
   const [validationEnCours, setValidationEnCours] = useState(false);
   const [modaleInstruireLotOuverte, setModaleInstruireLotOuverte] = useState(false);
+  const [modaleValidationOuverte, setModaleValidationOuverte] = useState(false);
 
   useEffect(() => {
     if (ouvert && refDemande) {
@@ -457,17 +459,10 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
                       </div>
                       <Button
                         variant="default"
-                        onClick={validerInstruction}
-                        disabled={!toutesLignesInstruites || validationEnCours}
+                        onClick={() => setModaleValidationOuverte(true)}
+                        disabled={!toutesLignesInstruites}
                       >
-                        {validationEnCours ? (
-                          <>
-                            <Loader2 className="size-4 mr-2 animate-spin" />
-                            Validation...
-                          </>
-                        ) : (
-                          "Valider l'instruction"
-                        )}
+                        Valider l'instruction
                       </Button>
                     </div>
                   </div>
@@ -562,6 +557,48 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
           }}
         />
       )}
+
+      {/* Modale de validation avec critères */}
+      {modaleValidationOuverte && demande && (() => {
+        // Regrouper les fournisseurs par article
+        // Chaque article peut avoir plusieurs fournisseurs qui ont soumis des devis
+        const lignesAvecFournisseurs = demande.lignes.map((ligne: any) => {
+          // Pour l'instant, on n'a qu'un seul fournisseur par ligne (celui qui a été instruit)
+          // Dans une future version, on pourrait avoir plusieurs devis par ligne
+          const fournisseurs = [];
+          if (ligne.fournisseur && ligne.prixUnitaire) {
+            fournisseurs.push({
+              id: ligne.fournisseur.id,
+              nom: ligne.fournisseur.nom,
+              prixUnitaire: ligne.prixUnitaire,
+            });
+          }
+
+          return {
+            id: ligne.id,
+            designation: ligne.designation,
+            quantite: Number(ligne.quantite),
+            unite: ligne.unite,
+            fournisseurs,
+          };
+        });
+
+        return (
+          <ModaleValiderInstruction
+            ouvert={modaleValidationOuverte}
+            onClose={() => setModaleValidationOuverte(false)}
+            demande={{
+              id: demande.id,
+              ref: demande.ref,
+              lignes: lignesAvecFournisseurs,
+            }}
+            onSuccess={() => {
+              chargerDemande();
+              setModaleValidationOuverte(false);
+            }}
+          />
+        );
+      })()}
     </Dialog>
   );
 }
