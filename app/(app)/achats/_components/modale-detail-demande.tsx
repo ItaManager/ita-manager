@@ -36,6 +36,22 @@ const STATUT_LABELS: Record<string, { label: string; variant: "default" | "secon
   REFUSEE: { label: "Refusée", variant: "destructive" },
 };
 
+const EVENEMENT_LABELS: Record<string, string> = {
+  CREATION: "Création de la demande",
+  SOUMISSION: "Soumission au N+1",
+  VALIDATION_N1: "Validation N+1",
+  REFUS_N1: "Refus N+1",
+  INSTRUCTION: "Instruction des achats",
+  TRANSMISSION_COMITE: "Transmission au comité",
+  AVIS_COMITE: "Avis du comité",
+  EMISSION_BC: "Émission du bon de commande",
+  TRANSMISSION_LOG: "Transmission à la logistique",
+  RECEPTION: "Réception des articles",
+  VALIDATION_CONFORMITE: "Validation de conformité",
+  FACTURATION: "Facturation",
+  REFUS: "Refus de la demande",
+};
+
 export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetailDemandeProps) {
   const [demande, setDemande] = useState<any>(null);
   const [chargement, setChargement] = useState(false);
@@ -509,7 +525,7 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
                             <div className="flex items-start justify-between gap-4 mb-2">
                               <div className="flex-1">
                                 <div className="font-semibold text-foreground text-base">
-                                  {evt.type.replace(/_/g, " ")}
+                                  {EVENEMENT_LABELS[evt.type] || evt.type.replace(/_/g, " ")}
                                 </div>
                                 {evt.auteurNom && (
                                   <div className="text-sm text-muted-foreground mt-1">
@@ -518,14 +534,9 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
                                 )}
                               </div>
                               <div className="text-sm text-muted-foreground tabular-nums shrink-0">
-                                {format(new Date(evt.timestamp), "dd/MM/yyyy", {
+                                {format(new Date(evt.timestamp), "dd/MM/yyyy · HH:mm", {
                                   locale: fr,
                                 })}
-                                <div className="text-xs">
-                                  {format(new Date(evt.timestamp), "HH:mm", {
-                                    locale: fr,
-                                  })}
-                                </div>
                               </div>
                             </div>
 
