@@ -642,19 +642,43 @@ export const obtenirDemande = actionProtegee(
     // Calculer le statut
     const statut = calculerStatut(demande.evenements);
 
-    // Calculer prixUnitaireTTC pour chaque ligne
+    // Calculer prixUnitaireTTC pour chaque ligne et convertir tous les Decimal en number
     const lignesAvecTTC = demande.lignes.map((ligne) => ({
-      ...ligne,
+      id: ligne.id,
+      demandeId: ligne.demandeId,
+      articleId: ligne.articleId,
+      designation: ligne.designation,
+      quantite: Number(ligne.quantite),
+      unite: ligne.unite,
+      fournisseurId: ligne.fournisseurId,
+      prixUnitaire: ligne.prixUnitaire ? Number(ligne.prixUnitaire) : null,
+      tauxTva: ligne.tauxTva ? Number(ligne.tauxTva) : null,
       prixUnitaireTTC: ligne.prixUnitaire
         ? Number(ligne.prixUnitaire) * (1 + Number(ligne.tauxTva ?? 0) / 100)
         : null,
+      article: ligne.article,
+      fournisseur: ligne.fournisseur,
     }));
 
     return {
-      ...demande,
+      id: demande.id,
+      ref: demande.ref,
+      type: demande.type,
+      demandeurId: demande.demandeurId,
+      beneficiaireId: demande.beneficiaireId,
+      destinationId: demande.destinationId,
+      description: demande.description,
+      dateBesoin: demande.dateBesoin,
+      urgent: demande.urgent,
+      creeLe: demande.creeLe,
+      refBC: demande.refBC,
+      refFacture: demande.refFacture,
+      demandeur: demande.demandeur,
+      beneficiaire: demande.beneficiaire,
       destination,
       statut,
       lignes: lignesAvecTTC,
+      evenements: demande.evenements,
     };
   },
 );
