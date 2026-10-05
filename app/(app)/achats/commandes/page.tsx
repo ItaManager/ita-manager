@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db/prisma";
+import { ModuleLayout } from "@/components/layouts/module-layout";
 import { ListeCommandes } from "./_components/liste-commandes";
 import { verifierAccesPage } from "@/lib/auth/page-access";
+import { Suspense } from "react";
 
 export default async function PageCommandes() {
   await verifierAccesPage("/achats/commandes");
@@ -75,5 +77,15 @@ export default async function PageCommandes() {
     })),
   }));
 
-  return <ListeCommandes demandes={demandesSerializables} />;
+  return (
+    <ModuleLayout
+      titre="Suivi de commande"
+      description="Émettre les bons de commande pour les demandes validées"
+      helpText="Les demandes validées et instruites apparaissent ici pour émission du bon de commande. Vérifiez les fournisseurs et montants avant d'émettre."
+    >
+      <Suspense fallback={<div>Chargement...</div>}>
+        <ListeCommandes demandes={demandesSerializables} />
+      </Suspense>
+    </ModuleLayout>
+  );
 }
