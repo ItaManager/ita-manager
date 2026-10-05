@@ -2971,8 +2971,9 @@ model LigneAchat {
   unite           String // Figé
   fournisseurId   String?
   fournisseur     Fournisseur?     @relation(fields: [fournisseurId], references: [id])
-  prixUnitaire    Decimal?         @db.Decimal(12, 2) // Figé à l'instruction
+  prixUnitaire    Decimal?         @db.Decimal(12, 2) // Prix TTC figé à l'instruction
   tauxTva         Decimal?         @db.Decimal(5, 2) // Figé à l'instruction (ex: 18.00)
+  urlDevisPDF     String? // URL Cloudflare R2 du devis fournisseur (un PDF par fournisseur)
   quantiteRecue   Decimal?         @db.Decimal(10, 3)
   statutReception StatutReception?
   numBC           String?
