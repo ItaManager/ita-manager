@@ -693,6 +693,50 @@ async function seedCompetencesM17() {
 }
 
 /**
+ * Seed — Critères de sélection fournisseur (M14 Achats)
+ */
+async function seedCriteresSelection() {
+  console.log("M14 — Critères de sélection fournisseur");
+
+  const criteresDefaut = [
+    {
+      libelle: "Meilleur prix",
+      description: "Fournisseur proposant le prix le plus compétitif",
+    },
+    {
+      libelle: "Délais de livraison",
+      description: "Fournisseur capable de livrer dans les meilleurs délais",
+    },
+    {
+      libelle: "Qualité des produits",
+      description: "Qualité supérieure des produits ou services proposés",
+    },
+    {
+      libelle: "Fiabilité du fournisseur",
+      description: "Fournisseur habituel ou ayant fait ses preuves",
+    },
+    {
+      libelle: "Conditions de paiement",
+      description: "Facilités de paiement ou crédit proposé",
+    },
+  ];
+
+  for (const critere of criteresDefaut) {
+    await prisma.critereSelection.upsert({
+      where: { libelle: critere.libelle },
+      create: {
+        libelle: critere.libelle,
+        description: critere.description,
+        creePar: "system-seed",
+      },
+      update: {}, // Ne rien modifier si existe déjà
+    });
+  }
+
+  console.log(`  ✅ ${criteresDefaut.length} critères de sélection créés`);
+}
+
+/**
  * Seed — Paramètres système
  */
 async function seedParametres() {
@@ -746,11 +790,15 @@ async function main() {
   console.log("\n=== MODULE M17 ===");
   await seedCompetencesM17();
 
+  // M14
+  console.log("\n=== MODULE M14 ===");
+  await seedCriteresSelection();
+
   // Paramètres système
   console.log("\n=== PARAMÈTRES SYSTÈME ===");
   await seedParametres();
 
-  console.log("\n✅ Seed M0 + M1 + M17 + Paramètres — terminé");
+  console.log("\n✅ Seed M0 + M1 + M14 + M17 + Paramètres — terminé");
 }
 
 main()

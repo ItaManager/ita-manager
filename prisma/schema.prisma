@@ -2979,7 +2979,7 @@ model LigneAchat {
   statutReception StatutReception?
   numBC           String?
   facture         String?
-  criteres        String? // Motif de sélection du fournisseur
+  criteres        Json? // Critères de sélection du fournisseur [{id, libelle}] + commentaire
 
   @@index([demandeId])
   @@map("lignes_achat")
@@ -3014,6 +3014,18 @@ model AvisComite {
   @@unique([demandeId, role])
   @@index([demandeId])
   @@map("avis_comite")
+}
+
+/// Critère de sélection de fournisseur réutilisable
+model CritereSelection {
+  id          String   @id @default(cuid())
+  libelle     String   @unique /// Ex: "Meilleur prix", "Délais de livraison"
+  description String? /// Description détaillée (optionnel)
+  actif       Boolean  @default(true) /// Permet de désactiver sans supprimer
+  creePar     String /// Nom de l'utilisateur qui a créé le critère
+  creeAt      DateTime @default(now())
+
+  @@map("criteres_selection")
 }
 
 // ═══════════════════════════════════════════════════════════════════════
