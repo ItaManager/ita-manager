@@ -1,13 +1,8 @@
 import { ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface CardIndicateurProps {
-  // Texte et tooltip
+  // Texte et aide
   label: string;
   helpText?: string;
 
@@ -28,20 +23,14 @@ export function CardIndicateur({
 }: CardIndicateurProps) {
   return (
     <div className="bg-white rounded-xl p-4 border border-[#0000001a]">
-      {/* Label + tooltip */}
+      {/* Label */}
       <div className="flex items-start justify-between mb-2">
-        {helpText ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <p className="text-xs text-gray-500 cursor-help">{label}</p>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs max-w-xs">{helpText}</p>
-            </TooltipContent>
-          </Tooltip>
-        ) : (
+        <div>
           <p className="text-xs text-gray-500">{label}</p>
-        )}
+          {helpText && (
+            <p className="text-xs text-muted-foreground mt-0.5">{helpText}</p>
+          )}
+        </div>
         <ChevronRight className="size-3 text-gray-400" />
       </div>
 

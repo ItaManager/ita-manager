@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { TooltipProviderClient } from "@/components/providers/tooltip-provider-client";
 import { VerrouillageSession } from "@/components/verrouillage-session";
 import { createClient } from "@/lib/supabase/server";
 import "./globals.css";
@@ -36,7 +36,7 @@ export default async function RootLayout({
   return (
     <html lang="fr" className={`light h-full antialiased ${inter.variable} ${mono.variable}`}>
       <body className="min-h-full flex flex-col">
-        <TooltipProvider>{children}</TooltipProvider>
+        <TooltipProviderClient>{children}</TooltipProviderClient>
         <Toaster />
         {user && <VerrouillageSession />}
       </body>

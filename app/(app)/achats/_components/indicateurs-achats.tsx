@@ -1,5 +1,4 @@
 import { statistiquesAchats } from "@/lib/actions/achats";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   CardIndicateur,
   MiniGraphBarres,
@@ -11,8 +10,7 @@ export async function IndicateursAchats() {
   const stats = await statistiquesAchats();
 
   return (
-    <TooltipProvider>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* À valider */}
         <CardIndicateur
           label="À valider (N+1)"
@@ -71,6 +69,5 @@ export async function IndicateursAchats() {
           }
         />
       </div>
-    </TooltipProvider>
   );
 }
