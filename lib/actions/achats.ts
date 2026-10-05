@@ -754,6 +754,21 @@ export const creerDemande = actionProtegee(
       },
     });
 
+    // Créer l'événement CREATION
+    await prisma.evenementAchat.create({
+      data: {
+        demandeId: demande.id,
+        type: "CREATION",
+        auteurId: session.userId,
+        auteurNom: session.email,
+        details: {
+          description: data.description,
+          nombreLignes: data.lignes.length,
+          urgent: data.urgent,
+        },
+      },
+    });
+
     // Journaliser
     await prisma.journalEvenement.create({
       data: {

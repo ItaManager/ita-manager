@@ -2910,6 +2910,7 @@ enum StatutReception {
 }
 
 enum TypeEvenementAchat {
+  CREATION
   SOUMISSION
   VALIDATION_N1
   REFUS_N1
