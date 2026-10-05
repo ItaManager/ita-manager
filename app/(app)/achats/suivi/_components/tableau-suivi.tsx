@@ -259,7 +259,7 @@ export function TableauSuivi({ demandes }: TableauSuiviProps) {
                     className="border-b last:border-0 hover:bg-muted/30"
                   >
                     {/* Colonne 1 : Ref (sticky) */}
-                    <td className="sticky left-0 z-[5] bg-card px-4 py-3 text-sm font-medium">
+                    <td className="sticky left-0 z-[5] bg-card px-4 py-3 text-sm font-medium whitespace-nowrap">
                       {demande.ref}
                     </td>
 
