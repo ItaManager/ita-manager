@@ -225,15 +225,15 @@ export function ModaleValiderInstruction({
                 <Loader2 className="size-6 animate-spin text-primary" />
               </div>
             ) : (
-              <div className="bg-white rounded-xl border border-[#0000001a] p-4">
+              <div className="bg-white rounded-xl border-2 border-border p-4">
                 <div className="space-y-2">
                   {criteres.map((critere) => (
                     <label
                       key={critere.id}
                       className={`flex items-start gap-3 p-3 rounded-md cursor-pointer transition-colors ${
                         criteresSelectionnes.includes(critere.id)
-                          ? "bg-primary/5 border-2 border-primary"
-                          : "border-2 border-border hover:bg-muted/30"
+                          ? "bg-primary/5"
+                          : "hover:bg-muted/30"
                       }`}
                     >
                       <Checkbox
