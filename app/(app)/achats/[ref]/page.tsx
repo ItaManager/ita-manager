@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { obtenirDemande } from "@/lib/actions/achats";
-import { verifierAccesPage } from "@/lib/auth/guard";
+import { verifierAccesPage } from "@/lib/auth/page-access";
 import { ModuleLayout } from "@/components/layouts/module-layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
