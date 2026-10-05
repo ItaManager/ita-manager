@@ -189,7 +189,7 @@ export function ModaleValiderInstruction({
                       className={`flex items-center gap-3 p-3 rounded-md cursor-pointer transition-colors ${
                         selectionsLignes[ligne.id] === f.id
                           ? "bg-primary/5 border-2 border-primary"
-                          : "border-2 border-transparent hover:bg-muted/30"
+                          : "border-2 border-border hover:bg-muted/30"
                       }`}
                     >
                       <input
