@@ -159,7 +159,7 @@ export function ModaleValiderInstruction({
               Fournisseurs retenus <span className="text-destructive">*</span>
             </Label>
             {demande.lignes.map((ligne) => (
-              <div key={ligne.id} className="bg-white rounded-xl border border-[#0000001a] p-4 space-y-3">
+              <div key={ligne.id} className="bg-white rounded-xl p-4 space-y-3">
                 <div className="flex items-start justify-between">
                   <div className="font-medium text-foreground">
                     {ligne.designation} ({ligne.quantite} {ligne.unite})
