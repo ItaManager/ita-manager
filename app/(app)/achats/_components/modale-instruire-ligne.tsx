@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ComboboxFournisseurs } from "./combobox-fournisseurs";
-import { Upload, Loader2 } from "lucide-react";
+import { Upload, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { instruireLigneAchat } from "@/lib/actions/achats";
 
@@ -45,23 +45,41 @@ export function ModaleInstruireLigne({
   const [fournisseurId, setFournisseurId] = useState<string>(
     ligne.fournisseurId || ""
   );
-  const [fichierPDF, setFichierPDF] = useState<File | null>(null);
+  const [fichiers, setFichiers] = useState<File[]>([]);
   const [enCours, setEnCours] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.type !== "application/pdf") {
-        toast.error("Seuls les fichiers PDF sont acceptés");
-        return;
+    const files = Array.from(e.target.files || []);
+
+    // Vérifier les fichiers
+    const fichiersValides: File[] = [];
+    const typesAcceptes = [
+      "application/pdf",
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+
+    for (const file of files) {
+      if (!typesAcceptes.includes(file.type)) {
+        toast.error(`Type de fichier non accepté : ${file.name}`);
+        continue;
       }
       if (file.size > 10 * 1024 * 1024) {
-        // 10MB max
-        toast.error("Le fichier ne doit pas dépasser 10 MB");
-        return;
+        toast.error(`Fichier trop volumineux (max 10 MB) : ${file.name}`);
+        continue;
       }
-      setFichierPDF(file);
+      fichiersValides.push(file);
     }
+
+    setFichiers((prev) => [...prev, ...fichiersValides]);
+  };
+
+  const retirerFichier = (index: number) => {
+    setFichiers((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,11 +100,13 @@ export function ModaleInstruireLigne({
 
     setEnCours(true);
     try {
+      // Pour l'instant, on prend le premier fichier comme fichier principal
+      // TODO: Gérer l'upload de plusieurs fichiers
       await instruireLigneAchat({
         ligneId: ligne.id,
         prixUnitaireTTC: parseFloat(prixTTC),
         fournisseurId,
-        fichierPDF: fichierPDF || undefined,
+        fichierPDF: fichiers[0] || undefined,
       });
 
       toast.success("Article instruit avec succès");
@@ -170,33 +190,60 @@ export function ModaleInstruireLigne({
             </p>
           </div>
 
-          {/* Upload PDF */}
+          {/* Upload fichiers */}
           <div className="space-y-2">
-            <Label htmlFor="devisPDF">
-              Devis PDF {!ligne.urlDevisPDF && <span className="text-destructive">*</span>}
+            <Label htmlFor="devisFichiers">
+              Documents {!ligne.urlDevisPDF && <span className="text-destructive">*</span>}
             </Label>
             <div className="flex items-center gap-3">
               <Input
-                id="devisPDF"
+                id="devisFichiers"
                 type="file"
-                accept="application/pdf"
+                accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
                 onChange={handleFileChange}
                 className="rounded-md"
+                multiple
               />
               <Upload className="size-5 text-muted-foreground shrink-0" />
             </div>
-            {fichierPDF && (
-              <p className="text-xs text-success">
-                ✓ {fichierPDF.name} ({(fichierPDF.size / 1024).toFixed(0)} KB)
-              </p>
+
+            {/* Liste des fichiers sélectionnés */}
+            {fichiers.length > 0 && (
+              <div className="space-y-2 mt-3">
+                {fichiers.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between bg-muted/30 rounded-md p-2"
+                  >
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div className="text-xs font-medium text-foreground truncate">
+                        {file.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground shrink-0">
+                        ({(file.size / 1024).toFixed(0)} KB)
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => retirerFichier(index)}
+                      className="h-6 w-6 p-0 shrink-0"
+                    >
+                      <X className="size-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
             )}
-            {ligne.urlDevisPDF && !fichierPDF && (
+
+            {ligne.urlDevisPDF && fichiers.length === 0 && (
               <p className="text-xs text-muted-foreground">
-                ✓ Devis déjà uploadé pour ce fournisseur
+                ✓ Document déjà uploadé pour ce fournisseur
               </p>
             )}
             <p className="text-xs text-muted-foreground">
-              PDF du devis reçu du fournisseur (max 10 MB)
+              Formats acceptés : PDF, Images (JPG, PNG, WebP), Word (DOC, DOCX) — Max 10 MB par fichier
               {ligne.urlDevisPDF && " — Optionnel si même fournisseur"}
             </p>
           </div>

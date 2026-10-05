@@ -17,7 +17,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { listerFournisseurs } from "@/lib/actions/achats";
+import { listerFournisseurs, creerFournisseur } from "@/lib/actions/achats";
 import { toast } from "sonner";
 
 interface ComboboxFournisseursProps {
@@ -35,6 +35,7 @@ export function ComboboxFournisseurs({
     Array<{ id: string; nom: string }>
   >([]);
   const [chargement, setChargement] = useState(true);
+  const [creation, setCreation] = useState(false);
 
   useEffect(() => {
     chargerFournisseurs();
@@ -65,6 +66,33 @@ export function ComboboxFournisseurs({
   const filteredFournisseurs = fournisseurs.filter((fournisseur) =>
     normalizeString(fournisseur.nom).includes(normalizeString(searchValue)),
   );
+
+  // Vérifier si la recherche correspond à un existant
+  const exactMatch = fournisseurs.find(
+    (f) => normalizeString(f.nom) === normalizeString(searchValue)
+  );
+
+  // Fonction pour créer un nouveau fournisseur
+  const handleCreer = async () => {
+    if (!searchValue.trim()) {
+      toast.error("Veuillez saisir un nom de fournisseur");
+      return;
+    }
+
+    setCreation(true);
+    try {
+      const nouveau = await creerFournisseur(searchValue.trim());
+      setFournisseurs((prev) => [...prev, nouveau]);
+      onChange(nouveau.id);
+      setOpen(false);
+      setSearchValue("");
+      toast.success(`Fournisseur "${nouveau.nom}" créé`);
+    } catch (error: any) {
+      toast.error(error.message || "Erreur lors de la création");
+    } finally {
+      setCreation(false);
+    }
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -101,13 +129,32 @@ export function ComboboxFournisseurs({
             onValueChange={setSearchValue}
           />
           <CommandList>
-            <CommandEmpty>
-              <div className="py-6 text-center text-sm">
-                <p className="text-muted-foreground">
-                  Aucun fournisseur trouvé.
-                </p>
-              </div>
-            </CommandEmpty>
+            {filteredFournisseurs.length === 0 && searchValue && !exactMatch ? (
+              <CommandEmpty>
+                <div className="py-6 text-center text-sm space-y-3">
+                  <p className="text-muted-foreground">
+                    Aucun fournisseur trouvé.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCreer}
+                    disabled={creation}
+                    className="rounded-md"
+                  >
+                    {creation ? "Création..." : `Créer "${searchValue}"`}
+                  </Button>
+                </div>
+              </CommandEmpty>
+            ) : (
+              <CommandEmpty>
+                <div className="py-6 text-center text-sm">
+                  <p className="text-muted-foreground">
+                    Aucun fournisseur trouvé.
+                  </p>
+                </div>
+              </CommandEmpty>
+            )}
             <CommandGroup>
               {filteredFournisseurs.map((fournisseur) => (
                 <CommandItem

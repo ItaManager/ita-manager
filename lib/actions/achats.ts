@@ -1335,19 +1335,33 @@ async function uploadPDFVersR2(
   userId: string,
   userEmail: string
 ): Promise<string> {
+  // Types acceptés
+  const typesAcceptes = [
+    "application/pdf",
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ];
+
   // Vérifications de base
-  if (file.type !== "application/pdf") {
-    throw new Error("Seuls les fichiers PDF sont acceptés");
+  if (!typesAcceptes.includes(file.type)) {
+    throw new Error(
+      "Types acceptés : PDF, Images (JPG, PNG, WebP), Word (DOC, DOCX)"
+    );
   }
 
   if (file.size > 10 * 1024 * 1024) {
     throw new Error("Le fichier ne doit pas dépasser 10 MB");
   }
 
-  // Générer un nom unique pour le fichier
+  // Générer un nom unique pour le fichier avec extension appropriée
   const timestamp = Date.now();
   const randomStr = Math.random().toString(36).substring(2, 15);
-  const fileName = `devis/${timestamp}-${randomStr}.pdf`;
+  const extension = file.name.split(".").pop() || "pdf";
+  const fileName = `devis/${timestamp}-${randomStr}.${extension}`;
 
   // Convertir File en ArrayBuffer pour fetch
   const arrayBuffer = await file.arrayBuffer();
@@ -1359,7 +1373,7 @@ async function uploadPDFVersR2(
       method: "PUT",
       headers: {
         Authorization: `Bearer ${process.env.CLOUDFLARE_R2_TOKEN}`,
-        "Content-Type": "application/pdf",
+        "Content-Type": file.type,
       },
       body: arrayBuffer,
     }
