@@ -225,44 +225,42 @@ export function ModaleValiderInstruction({
                 <Loader2 className="size-6 animate-spin text-primary" />
               </div>
             ) : (
-              <div className="bg-white rounded-xl border-2 border-border p-4">
-                <div className="space-y-2">
-                  {criteres.map((critere) => (
-                    <label
-                      key={critere.id}
-                      className={`flex items-start gap-3 p-3 rounded-md cursor-pointer transition-colors ${
-                        criteresSelectionnes.includes(critere.id)
-                          ? "bg-primary/5"
-                          : "hover:bg-muted/30"
-                      }`}
-                    >
-                      <Checkbox
-                        checked={criteresSelectionnes.includes(critere.id)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setCriteresSelectionnes((prev) => [...prev, critere.id]);
-                          } else {
-                            setCriteresSelectionnes((prev) =>
-                              prev.filter((id) => id !== critere.id)
-                            );
-                          }
-                        }}
-                        className="mt-0.5"
-                      />
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-foreground">{critere.libelle}</div>
-                        {critere.description && (
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            {critere.description}
-                          </div>
-                        )}
-                      </div>
-                    </label>
-                  ))}
-                </div>
+              <div className="space-y-2">
+                {criteres.map((critere) => (
+                  <label
+                    key={critere.id}
+                    className={`flex items-start gap-3 p-3 rounded-md cursor-pointer transition-colors border-2 ${
+                      criteresSelectionnes.includes(critere.id)
+                        ? "bg-primary/5 border-primary"
+                        : "border-border hover:bg-muted/30"
+                    }`}
+                  >
+                    <Checkbox
+                      checked={criteresSelectionnes.includes(critere.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setCriteresSelectionnes((prev) => [...prev, critere.id]);
+                        } else {
+                          setCriteresSelectionnes((prev) =>
+                            prev.filter((id) => id !== critere.id)
+                          );
+                        }
+                      }}
+                      className="mt-0.5"
+                    />
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-foreground">{critere.libelle}</div>
+                      {critere.description && (
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {critere.description}
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                ))}
 
                 {/* Ajouter un critère personnalisé */}
-                <div className="flex items-center gap-2 pt-4 mt-4 border-t border-border">
+                <div className="flex items-center gap-2 pt-2">
                   <Input
                     placeholder="Ajouter un critère personnalisé..."
                     value={nouveauCritere}
