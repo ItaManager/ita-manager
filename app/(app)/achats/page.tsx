@@ -37,16 +37,8 @@ export default async function PageAchats({
         </Suspense>
       }
       taches={{
-        titre: (
-          <Suspense fallback={<h2 className="text-lg font-semibold text-[#18181a]">Vos tâches</h2>}>
-            <TitreTaches />
-          </Suspense>
-        ),
-        contenu: (
-          <Suspense fallback={<div className="text-sm text-muted-foreground">Chargement...</div>}>
-            <ListeTaches />
-          </Suspense>
-        ),
+        titre: <TitreTaches />,
+        contenu: <ListeTaches />,
       }}
     >
       <Suspense fallback={<div>Chargement...</div>}>
