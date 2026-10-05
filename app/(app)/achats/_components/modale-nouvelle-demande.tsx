@@ -14,7 +14,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2, Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { creerDemande } from "@/lib/actions/achats";
 import { listerArticles } from "@/lib/actions/achats";
 import { toast } from "sonner";
@@ -57,6 +71,11 @@ export function ModaleNouvelleDemande({
   const [dateBesoin, setDateBesoin] = useState("");
   const [urgent, setUrgent] = useState(false);
   const [type, setType] = useState<"INITIALE" | "REGULARISATION">("INITIALE");
+
+  // États des popovers
+  const [openBeneficiaire, setOpenBeneficiaire] = useState(false);
+  const [openDestination, setOpenDestination] = useState(false);
+  const [openArticles, setOpenArticles] = useState<Record<string, boolean>>({});
 
   // Champs de l'étape 2 : Lignes d'articles
   const [lignes, setLignes] = useState<LigneArticle[]>([
@@ -202,23 +221,64 @@ export function ModaleNouvelleDemande({
             <form onSubmit={handleSubmitEtape1} className="space-y-5 px-6 py-4">
               {/* Bénéficiaire */}
               <div className="space-y-2">
-                <Label htmlFor="beneficiaire">
+                <Label>
                   Bénéficiaire <span className="text-destructive">*</span>
                 </Label>
-                <select
-                  id="beneficiaire"
-                  value={beneficiaireId}
-                  onChange={(e) => setBeneficiaireId(e.target.value)}
-                  className="w-full h-11 px-3 rounded-md border border-input bg-background"
-                  required
-                >
-                  <option value="">Sélectionner un employé</option>
-                  {employes.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.matricule} — {emp.prenom} {emp.nom}
-                    </option>
-                  ))}
-                </select>
+                <Popover open={openBeneficiaire} onOpenChange={setOpenBeneficiaire}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openBeneficiaire}
+                      className="w-full justify-between h-11"
+                    >
+                      {beneficiaireId ? (
+                        <span>
+                          {(() => {
+                            const emp = employes.find((e) => e.id === beneficiaireId);
+                            return emp ? `${emp.matricule} — ${emp.prenom} ${emp.nom}` : "Sélectionner...";
+                          })()}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">Sélectionner un employé...</span>
+                      )}
+                      <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[500px] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Rechercher un employé..." />
+                      <CommandList>
+                        <CommandEmpty>Aucun employé trouvé.</CommandEmpty>
+                        <CommandGroup>
+                          {employes.map((emp) => (
+                            <CommandItem
+                              key={emp.id}
+                              value={`${emp.matricule} ${emp.prenom} ${emp.nom}`}
+                              onSelect={() => {
+                                setBeneficiaireId(emp.id);
+                                setOpenBeneficiaire(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 size-4",
+                                  beneficiaireId === emp.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <div>
+                                <div className="font-medium">{emp.matricule}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {emp.prenom} {emp.nom}
+                                </div>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <p className="text-xs text-muted-foreground">
                   Employé qui recevra le matériel
                 </p>
@@ -239,6 +299,7 @@ export function ModaleNouvelleDemande({
                       onChange={() => {
                         setDestinationType("projet");
                         setDestinationId("");
+                        setOpenDestination(false);
                       }}
                     />
                     <span>Chantier</span>
@@ -252,6 +313,7 @@ export function ModaleNouvelleDemande({
                       onChange={() => {
                         setDestinationType("service");
                         setDestinationId("");
+                        setOpenDestination(false);
                       }}
                     />
                     <span>Service</span>
@@ -261,29 +323,79 @@ export function ModaleNouvelleDemande({
 
               {/* Sélection destination */}
               <div className="space-y-2">
-                <Label htmlFor="destination">
+                <Label>
                   {destinationType === "projet" ? "Chantier" : "Service"} <span className="text-destructive">*</span>
                 </Label>
-                <select
-                  id="destination"
-                  value={destinationId}
-                  onChange={(e) => setDestinationId(e.target.value)}
-                  className="w-full h-11 px-3 rounded-md border border-input bg-background"
-                  required
-                >
-                  <option value="">Sélectionner...</option>
-                  {destinationType === "projet"
-                    ? projets.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.nom}
-                        </option>
-                      ))
-                    : services.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.libelle}
-                        </option>
-                      ))}
-                </select>
+                <Popover open={openDestination} onOpenChange={setOpenDestination}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openDestination}
+                      className="w-full justify-between h-11"
+                    >
+                      {destinationId ? (
+                        <span>
+                          {destinationType === "projet"
+                            ? projets.find((p) => p.id === destinationId)?.nom || "Sélectionner..."
+                            : services.find((s) => s.id === destinationId)?.libelle || "Sélectionner..."}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">
+                          Sélectionner {destinationType === "projet" ? "un chantier" : "un service"}...
+                        </span>
+                      )}
+                      <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[500px] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder={`Rechercher ${destinationType === "projet" ? "un chantier" : "un service"}...`} />
+                      <CommandList>
+                        <CommandEmpty>Aucun résultat trouvé.</CommandEmpty>
+                        <CommandGroup>
+                          {destinationType === "projet"
+                            ? projets.map((p) => (
+                                <CommandItem
+                                  key={p.id}
+                                  value={p.nom}
+                                  onSelect={() => {
+                                    setDestinationId(p.id);
+                                    setOpenDestination(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 size-4",
+                                      destinationId === p.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {p.nom}
+                                </CommandItem>
+                              ))
+                            : services.map((s) => (
+                                <CommandItem
+                                  key={s.id}
+                                  value={s.libelle}
+                                  onSelect={() => {
+                                    setDestinationId(s.id);
+                                    setOpenDestination(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 size-4",
+                                      destinationId === s.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {s.libelle}
+                                </CommandItem>
+                              ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {/* Description */}
@@ -369,19 +481,59 @@ export function ModaleNouvelleDemande({
                       {/* Article */}
                       <div>
                         <Label className="text-xs">Article *</Label>
-                        <select
-                          value={ligne.articleId}
-                          onChange={(e) => modifierLigne(ligne.id, "articleId", e.target.value)}
-                          className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
-                          required
+                        <Popover
+                          open={openArticles[ligne.id] || false}
+                          onOpenChange={(open) => setOpenArticles({ ...openArticles, [ligne.id]: open })}
                         >
-                          <option value="">Sélectionner...</option>
-                          {articles.map((art) => (
-                            <option key={art.id} value={art.id}>
-                              {art.designation} ({art.unite.libelle})
-                            </option>
-                          ))}
-                        </select>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={openArticles[ligne.id] || false}
+                              className="w-full justify-between h-10 text-sm"
+                            >
+                              {ligne.articleId ? (
+                                <span className="truncate">
+                                  {articles.find((a) => a.id === ligne.articleId)?.designation || "Sélectionner..."}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">Sélectionner un article...</span>
+                              )}
+                              <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[400px] p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Rechercher un article..." />
+                              <CommandList>
+                                <CommandEmpty>Aucun article trouvé.</CommandEmpty>
+                                <CommandGroup>
+                                  {articles.map((art) => (
+                                    <CommandItem
+                                      key={art.id}
+                                      value={`${art.designation} ${art.unite.libelle}`}
+                                      onSelect={() => {
+                                        modifierLigne(ligne.id, "articleId", art.id);
+                                        setOpenArticles({ ...openArticles, [ligne.id]: false });
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 size-4",
+                                          ligne.articleId === art.id ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      <div>
+                                        <div className="font-medium text-sm">{art.designation}</div>
+                                        <div className="text-xs text-muted-foreground">{art.unite.libelle}</div>
+                                      </div>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                       </div>
 
                       {/* Quantité */}
