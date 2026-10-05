@@ -436,7 +436,7 @@ export function ModaleDetailDemande({ ouvert, onClose, refDemande }: ModaleDetai
               {/* Bouton de validation de l'instruction - TODO: remettre condition demande?.statut === "ATTENTE_ACHATS" */}
               {demande && (() => {
                 const toutesLignesInstruites = demande.lignes.every(
-                  (l: any) => l.prixUnitaire && l.fournisseurId && l.documentsDevis
+                  (l: any) => l.prixUnitaire && l.fournisseurId
                 );
                 const aucuneLigneInstruite = demande.lignes.every(
                   (l: any) => !l.prixUnitaire && !l.fournisseurId
