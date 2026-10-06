@@ -24,7 +24,11 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-export function FormulairePrix() {
+interface FormulairePrixProps {
+  onSuccess?: () => void;
+}
+
+export function FormulairePrix({ onSuccess }: FormulairePrixProps = {}) {
   const [articles, setArticles] = useState<
     Array<{ id: string; designation: string; unite: { libelle: string } }>
   >([]);
@@ -77,8 +81,12 @@ export function FormulairePrix() {
       );
       toast.success("Prix fournisseur ajouté");
       reset();
-      // Recharger la page pour afficher le nouveau prix
-      window.location.reload();
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        // Recharger la page pour afficher le nouveau prix (fallback)
+        window.location.reload();
+      }
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Erreur lors de l'ajout",
