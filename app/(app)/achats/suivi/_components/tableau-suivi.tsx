@@ -85,17 +85,6 @@ export function TableauSuivi({ demandes }: TableauSuiviProps) {
 
   return (
     <div className="space-y-4">
-      {/* Bandeau informatif */}
-      <div className="flex items-start gap-2 rounded-lg px-4 py-3 text-sm"
-        style={{ background: "var(--primary-soft)", color: "var(--primary)" }}>
-        <Info size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
-        <div>
-          Les demandes affichées proviennent d'un jeu de démonstration. La
-          création de demande arrivera avec le circuit complet — module M14,
-          livraison 2.
-        </div>
-      </div>
-
       {/* Filtres */}
       <div className="flex gap-2">
         <Button
@@ -201,26 +190,14 @@ export function TableauSuivi({ demandes }: TableauSuiviProps) {
                     tooltip="Date de soumission au N+1"
                   />
 
-                  {/* Colonnes 9-12 : Prix (masqués selon permission) */}
+                  {/* Colonnes 9-10 : Prix (masqués selon permission) */}
                   <ColonneHeader
                     label="Fournisseurs"
                     tooltip="Liste des fournisseurs retenus"
                     masque={!prixVisibles}
                   />
                   <ColonneHeader
-                    label="HT (FCFA)"
-                    tooltip="Montant hors taxe"
-                    masque={!prixVisibles}
-                    align="right"
-                  />
-                  <ColonneHeader
-                    label="TVA (FCFA)"
-                    tooltip="Montant de la TVA"
-                    masque={!prixVisibles}
-                    align="right"
-                  />
-                  <ColonneHeader
-                    label="TTC (FCFA)"
+                    label="Montant (FCFA)"
                     tooltip="Montant toutes taxes comprises"
                     masque={!prixVisibles}
                     align="right"
@@ -288,30 +265,12 @@ export function TableauSuivi({ demandes }: TableauSuiviProps) {
                         : "—"}
                     </td>
 
-                    {/* Colonnes 9-12 : Prix masqués (C-05) */}
+                    {/* Colonnes 9-10 : Prix masqués (C-05) */}
                     <td className="px-4 py-3 text-sm">
                       {demande.fournisseurs !== null ? (
                         <div className="max-w-[200px] truncate">{demande.fournisseurs}</div>
                       ) : (
                         <span className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
-                          <Lock className="h-3 w-3" aria-label="Masqué" /> masqué
-                        </span>
-                      )}
-                    </td>
-                    <td className="montant px-4 py-3 text-right text-sm whitespace-nowrap">
-                      {demande.montantHT !== null ? (
-                        demande.montantHT.toLocaleString("fr-FR")
-                      ) : (
-                        <span className="flex items-center justify-end gap-1 text-xs text-muted-foreground whitespace-nowrap">
-                          <Lock className="h-3 w-3" aria-label="Masqué" /> masqué
-                        </span>
-                      )}
-                    </td>
-                    <td className="montant px-4 py-3 text-right text-sm whitespace-nowrap">
-                      {demande.montantTVA !== null ? (
-                        demande.montantTVA.toLocaleString("fr-FR")
-                      ) : (
-                        <span className="flex items-center justify-end gap-1 text-xs text-muted-foreground whitespace-nowrap">
                           <Lock className="h-3 w-3" aria-label="Masqué" /> masqué
                         </span>
                       )}
