@@ -102,7 +102,6 @@ export function TableauSuivi({ demandes }: TableauSuiviProps) {
     // Créer le classeur Excel
     const ws = XLSX.utils.json_to_sheet(donneesExport);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Demandes d'achat");
 
     // Ajuster la largeur des colonnes
     const colonnes = [
@@ -124,6 +123,56 @@ export function TableauSuivi({ demandes }: TableauSuiviProps) {
       { wch: 15 }, // Ref Facture
     ];
     ws["!cols"] = colonnes;
+
+    // Styliser les en-têtes (ligne 1)
+    const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+      if (!ws[cellAddress]) continue;
+
+      ws[cellAddress].s = {
+        fill: { fgColor: { rgb: "1D186C" } }, // Bleu ITA
+        font: { bold: true, color: { rgb: "FFFFFF" }, sz: 12 },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+        border: {
+          top: { style: "thin", color: { rgb: "000000" } },
+          bottom: { style: "thin", color: { rgb: "000000" } },
+          left: { style: "thin", color: { rgb: "000000" } },
+          right: { style: "thin", color: { rgb: "000000" } },
+        },
+      };
+    }
+
+    // Styliser les lignes de données (alternance de couleurs)
+    for (let row = range.s.r + 1; row <= range.e.r; row++) {
+      const isEven = row % 2 === 0;
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+        if (!ws[cellAddress]) continue;
+
+        ws[cellAddress].s = {
+          fill: { fgColor: { rgb: isEven ? "F3F4F6" : "FFFFFF" } }, // Alternance gris clair / blanc
+          font: { sz: 11 },
+          alignment: {
+            horizontal: col === 9 ? "right" : "left", // Montant aligné à droite
+            vertical: "center",
+            wrapText: true
+          },
+          border: {
+            top: { style: "thin", color: { rgb: "E5E7EB" } },
+            bottom: { style: "thin", color: { rgb: "E5E7EB" } },
+            left: { style: "thin", color: { rgb: "E5E7EB" } },
+            right: { style: "thin", color: { rgb: "E5E7EB" } },
+          },
+        };
+      }
+    }
+
+    // Figer la première ligne (en-têtes)
+    ws["!freeze"] = { xSplit: 0, ySplit: 1 };
+
+    // Ajouter la feuille au classeur
+    XLSX.utils.book_append_sheet(wb, ws, "Demandes d'achat");
 
     // Générer le nom du fichier avec la date
     const dateExport = format(new Date(), "yyyy-MM-dd_HHmm", { locale: fr });
