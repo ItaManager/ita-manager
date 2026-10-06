@@ -1307,6 +1307,9 @@ model Projet {
   /// M19 — Missions rattachées à ce projet
   missions Mission[]
 
+  /// M14 L2 — Bordereau de prix unitaires du projet
+  bordereauPrix BordereauPrixUnitaire[] @relation("BPUProjet")
+
   creeLe  DateTime @default(now())
   creePar String   @db.Uuid
 
@@ -3866,4 +3869,128 @@ enum MoyenApurement {
   WAVE
   ESPECES
   RETENUE_SUR_SALAIRE   /// Reliquat retenu sur la paie du mois
+}
+
+// ============================================================================
+// M14 L2 — BORDEREAU DE PRIX UNITAIRES (BPU)
+// ============================================================================
+
+/// Bordereau de prix unitaires pour un projet
+/// Contient la structure hiérarchique : BPU → Lot → Série → Lignes
+model BordereauPrixUnitaire {
+  id String @id @default(cuid())
+
+  /// Projet auquel ce BPU est rattaché
+  projetId String
+  projet   Projet @relation("BPUProjet", fields: [projetId], references: [id], onDelete: Cascade)
+
+  /// Nom du bordereau (ex: "BPU Travaux et Fournitures")
+  nom String
+
+  /// Description optionnelle
+  description String?
+
+  /// Date d'import du BPU
+  dateImport DateTime @default(now())
+
+  /// Fichier Excel source (nom)
+  fichierSource String?
+
+  /// Relations
+  lots LotBPU[]
+
+  creeLe DateTime @default(now())
+  majLe  DateTime @updatedAt
+
+  @@map("bordereau_prix_unitaire")
+}
+
+/// Lot du BPU (ex: LOT 1 - Bordereau des Prix Unitaires)
+model LotBPU {
+  id String @id @default(cuid())
+
+  /// BPU parent
+  bpuId String
+  bpu   BordereauPrixUnitaire @relation(fields: [bpuId], references: [id], onDelete: Cascade)
+
+  /// Numéro du lot (ex: "LOT 1", "LOT 2")
+  numero String
+
+  /// Titre du lot (ex: "Bordereau des Prix Unitaires (BPU)")
+  titre String
+
+  /// Catégorie (ex: "TRAVAUX ET FOURNITURES")
+  categorie String?
+
+  /// Ordre d'affichage
+  ordre Int @default(0)
+
+  /// Relations
+  series SerieBPU[]
+
+  creeLe DateTime @default(now())
+  majLe  DateTime @updatedAt
+
+  @@map("lot_bpu")
+}
+
+/// Série du BPU (ex: Série A - RESEAUX)
+model SerieBPU {
+  id String @id @default(cuid())
+
+  /// Lot parent
+  lotId String
+  lot   LotBPU @relation(fields: [lotId], references: [id], onDelete: Cascade)
+
+  /// Code de la série (ex: "Série A", "Série B")
+  code String
+
+  /// Titre de la série (ex: "RESEAUX", "GENIE CIVIL")
+  titre String
+
+  /// Sous-titre (ex: "Série A 100 - GENIE CIVIL")
+  sousTitre String?
+
+  /// Ordre d'affichage
+  ordre Int @default(0)
+
+  /// Relations
+  lignes LigneBPU[]
+
+  creeLe DateTime @default(now())
+  majLe  DateTime @updatedAt
+
+  @@map("serie_bpu")
+}
+
+/// Ligne du BPU (article détaillé)
+model LigneBPU {
+  id String @id @default(cuid())
+
+  /// Série parente
+  serieId String
+  serie   SerieBPU @relation(fields: [serieId], references: [id], onDelete: Cascade)
+
+  /// Numéro de la ligne (ex: "A 101", "A 102")
+  numero String
+
+  /// Type de ligne (ex: "Tranchée", "Démolition", "Réfection")
+  type String?
+
+  /// Description complète de l'article
+  description String @db.Text
+
+  /// Unité (ml, m3, m2, U, etc.)
+  unite String
+
+  /// Prix unitaire HT
+  prixUnitaireHT Decimal @db.Decimal(15, 2)
+
+  /// Ordre d'affichage
+  ordre Int @default(0)
+
+  creeLe DateTime @default(now())
+  majLe  DateTime @updatedAt
+
+  @@map("ligne_bpu")
 }
