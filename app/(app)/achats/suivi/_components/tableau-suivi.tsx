@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Lock, Info, Search, X } from "lucide-react";
+import { Lock, Info, Search, X, Download } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import * as XLSX from "xlsx";
 
 interface Demande {
   ref: string;
@@ -69,6 +70,68 @@ export function TableauSuivi({ demandes }: TableauSuiviProps) {
   const [filtre, setFiltre] = useState<Filtre>("tous");
   const [recherche, setRecherche] = useState("");
   const [openSearch, setOpenSearch] = useState(false);
+
+  // Fonction d'export Excel
+  const exporterVersExcel = () => {
+    // Préparer les données pour l'export
+    const donneesExport = demandesFiltrees.map((d) => ({
+      "Référence": d.ref,
+      "Demandeur": d.demandeur,
+      "Bénéficiaire": d.beneficiaire,
+      "Destination": d.destination,
+      "Motif": d.motif,
+      "Articles": d.lignes,
+      "Type": d.type === "Régularisation" ? "Régularisation" : "Standard",
+      "Date soumission": d.dateSoumission
+        ? format(d.dateSoumission, "dd/MM/yyyy", { locale: fr })
+        : "",
+      "Fournisseurs": d.fournisseurs ?? "",
+      "Montant TTC (FCFA)": d.montantTTC ?? "",
+      "Date BC": d.dateBC
+        ? format(d.dateBC, "dd/MM/yyyy", { locale: fr })
+        : "",
+      "Date réception": d.dateReception
+        ? format(d.dateReception, "dd/MM/yyyy", { locale: fr })
+        : "",
+      "Statut": STATUTS[d.statut]?.label ?? d.statut,
+      "Délai (jours)": d.delai ?? "",
+      "Ref BC": d.refBC ?? "",
+      "Ref Facture": d.refFacture ?? "",
+    }));
+
+    // Créer le classeur Excel
+    const ws = XLSX.utils.json_to_sheet(donneesExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Demandes d'achat");
+
+    // Ajuster la largeur des colonnes
+    const colonnes = [
+      { wch: 15 }, // Référence
+      { wch: 20 }, // Demandeur
+      { wch: 20 }, // Bénéficiaire
+      { wch: 25 }, // Destination
+      { wch: 40 }, // Motif
+      { wch: 50 }, // Articles
+      { wch: 15 }, // Type
+      { wch: 15 }, // Date soumission
+      { wch: 30 }, // Fournisseurs
+      { wch: 18 }, // Montant TTC
+      { wch: 12 }, // Date BC
+      { wch: 15 }, // Date réception
+      { wch: 15 }, // Statut
+      { wch: 12 }, // Délai
+      { wch: 15 }, // Ref BC
+      { wch: 15 }, // Ref Facture
+    ];
+    ws["!cols"] = colonnes;
+
+    // Générer le nom du fichier avec la date
+    const dateExport = format(new Date(), "yyyy-MM-dd_HHmm", { locale: fr });
+    const nomFichier = `demandes-achat_${dateExport}.xlsx`;
+
+    // Télécharger le fichier
+    XLSX.writeFile(wb, nomFichier);
+  };
 
   // Extraire toutes les valeurs uniques pour l'autocomplétion
   const suggestions = useMemo(() => {
@@ -303,6 +366,18 @@ export function TableauSuivi({ demandes }: TableauSuiviProps) {
             <span>résultat{demandesFiltrees.length > 1 ? "s" : ""}</span>
           </div>
         )}
+
+        {/* Bouton Export Excel */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={exporterVersExcel}
+          className="ml-auto"
+          disabled={demandesFiltrees.length === 0}
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Exporter Excel
+        </Button>
       </div>
 
       {/* Filtres */}
