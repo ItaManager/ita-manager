@@ -369,10 +369,9 @@ export function TableauSuivi({ demandes }: TableauSuiviProps) {
 
         {/* Bouton Export Excel */}
         <Button
-          variant="outline"
           size="sm"
           onClick={exporterVersExcel}
-          className="ml-auto"
+          className="ml-auto rounded-full bg-[#1d186c] hover:bg-[#1d186c]/90 text-white"
           disabled={demandesFiltrees.length === 0}
         >
           <Download className="h-4 w-4 mr-2" />
