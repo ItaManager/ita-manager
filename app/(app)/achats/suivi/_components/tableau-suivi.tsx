@@ -1,13 +1,26 @@
 "use client";
 
-import { useState } from "react";
-import { Lock, Info } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Lock, Info, Search, X } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -54,14 +67,64 @@ const STATUTS: Record<
 
 export function TableauSuivi({ demandes }: TableauSuiviProps) {
   const [filtre, setFiltre] = useState<Filtre>("tous");
+  const [recherche, setRecherche] = useState("");
+  const [openSearch, setOpenSearch] = useState(false);
+
+  // Extraire toutes les valeurs uniques pour l'autocomplétion
+  const suggestions = useMemo(() => {
+    const refs = new Set<string>();
+    const demandeurs = new Set<string>();
+    const destinations = new Set<string>();
+    const fournisseurs = new Set<string>();
+    const statuts = new Set<string>();
+
+    demandes.forEach((d) => {
+      refs.add(d.ref);
+      demandeurs.add(d.demandeur);
+      destinations.add(d.destination);
+      if (d.fournisseurs) {
+        d.fournisseurs.split(",").forEach((f) => fournisseurs.add(f.trim()));
+      }
+      statuts.add(STATUTS[d.statut]?.label ?? d.statut);
+    });
+
+    return {
+      refs: Array.from(refs).sort(),
+      demandeurs: Array.from(demandeurs).sort(),
+      destinations: Array.from(destinations).sort(),
+      fournisseurs: Array.from(fournisseurs).sort(),
+      statuts: Array.from(statuts).sort(),
+    };
+  }, [demandes]);
 
   // Filtrer les demandes
   const demandesFiltrees = demandes.filter((d) => {
-    if (filtre === "tous") return true;
-    if (filtre === "en_cours")
-      return !["SOLDEE", "REFUSEE"].includes(d.statut);
-    if (filtre === "retards") return d.delai !== null && d.delai > 7; // 7 jours
-    if (filtre === "regularisations") return d.type === "Régularisation";
+    // Filtre par type
+    if (filtre === "en_cours" && ["SOLDEE", "REFUSEE"].includes(d.statut))
+      return false;
+    if (filtre === "retards" && (d.delai === null || d.delai <= 7))
+      return false;
+    if (filtre === "regularisations" && d.type !== "Régularisation")
+      return false;
+
+    // Filtre par recherche
+    if (recherche) {
+      const terme = recherche.toLowerCase();
+      const statutLabel = STATUTS[d.statut]?.label?.toLowerCase() ?? "";
+      return (
+        d.ref.toLowerCase().includes(terme) ||
+        d.demandeur.toLowerCase().includes(terme) ||
+        d.beneficiaire.toLowerCase().includes(terme) ||
+        d.destination.toLowerCase().includes(terme) ||
+        d.motif.toLowerCase().includes(terme) ||
+        d.lignes.toLowerCase().includes(terme) ||
+        d.fournisseurs?.toLowerCase().includes(terme) ||
+        statutLabel.includes(terme) ||
+        d.refBC?.toLowerCase().includes(terme) ||
+        d.refFacture?.toLowerCase().includes(terme)
+      );
+    }
+
     return true;
   });
 
@@ -85,6 +148,163 @@ export function TableauSuivi({ demandes }: TableauSuiviProps) {
 
   return (
     <div className="space-y-4">
+      {/* Barre de recherche avec autocomplétion */}
+      <div className="flex items-center gap-3">
+        <Popover open={openSearch} onOpenChange={setOpenSearch}>
+          <PopoverTrigger asChild>
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Rechercher par référence, demandeur, destination..."
+                value={recherche}
+                onChange={(e) => {
+                  setRecherche(e.target.value);
+                  setOpenSearch(true);
+                }}
+                onFocus={() => setOpenSearch(true)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 pl-9 pr-9 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              />
+              {recherche && (
+                <button
+                  onClick={() => {
+                    setRecherche("");
+                    setOpenSearch(false);
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </PopoverTrigger>
+          <PopoverContent
+            className="w-[400px] p-0"
+            align="start"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+          >
+            <Command>
+              <CommandInput placeholder="Rechercher..." value={recherche} />
+              <CommandList>
+                <CommandEmpty>Aucun résultat trouvé.</CommandEmpty>
+
+                {suggestions.refs.length > 0 && (
+                  <CommandGroup heading="Références">
+                    {suggestions.refs
+                      .filter((ref) =>
+                        ref.toLowerCase().includes(recherche.toLowerCase())
+                      )
+                      .slice(0, 5)
+                      .map((ref) => (
+                        <CommandItem
+                          key={ref}
+                          onSelect={() => {
+                            setRecherche(ref);
+                            setOpenSearch(false);
+                          }}
+                        >
+                          <span className="font-mono text-xs">{ref}</span>
+                        </CommandItem>
+                      ))}
+                  </CommandGroup>
+                )}
+
+                {suggestions.demandeurs.length > 0 && (
+                  <CommandGroup heading="Demandeurs">
+                    {suggestions.demandeurs
+                      .filter((d) =>
+                        d.toLowerCase().includes(recherche.toLowerCase())
+                      )
+                      .slice(0, 5)
+                      .map((demandeur) => (
+                        <CommandItem
+                          key={demandeur}
+                          onSelect={() => {
+                            setRecherche(demandeur);
+                            setOpenSearch(false);
+                          }}
+                        >
+                          {demandeur}
+                        </CommandItem>
+                      ))}
+                  </CommandGroup>
+                )}
+
+                {suggestions.destinations.length > 0 && (
+                  <CommandGroup heading="Destinations">
+                    {suggestions.destinations
+                      .filter((d) =>
+                        d.toLowerCase().includes(recherche.toLowerCase())
+                      )
+                      .slice(0, 5)
+                      .map((destination) => (
+                        <CommandItem
+                          key={destination}
+                          onSelect={() => {
+                            setRecherche(destination);
+                            setOpenSearch(false);
+                          }}
+                        >
+                          {destination}
+                        </CommandItem>
+                      ))}
+                  </CommandGroup>
+                )}
+
+                {suggestions.fournisseurs.length > 0 && (
+                  <CommandGroup heading="Fournisseurs">
+                    {suggestions.fournisseurs
+                      .filter((f) =>
+                        f.toLowerCase().includes(recherche.toLowerCase())
+                      )
+                      .slice(0, 5)
+                      .map((fournisseur) => (
+                        <CommandItem
+                          key={fournisseur}
+                          onSelect={() => {
+                            setRecherche(fournisseur);
+                            setOpenSearch(false);
+                          }}
+                        >
+                          {fournisseur}
+                        </CommandItem>
+                      ))}
+                  </CommandGroup>
+                )}
+
+                {suggestions.statuts.length > 0 && (
+                  <CommandGroup heading="Statuts">
+                    {suggestions.statuts
+                      .filter((s) =>
+                        s.toLowerCase().includes(recherche.toLowerCase())
+                      )
+                      .slice(0, 5)
+                      .map((statut) => (
+                        <CommandItem
+                          key={statut}
+                          onSelect={() => {
+                            setRecherche(statut);
+                            setOpenSearch(false);
+                          }}
+                        >
+                          {statut}
+                        </CommandItem>
+                      ))}
+                  </CommandGroup>
+                )}
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+
+        {recherche && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="font-medium">{demandesFiltrees.length}</span>
+            <span>résultat{demandesFiltrees.length > 1 ? "s" : ""}</span>
+          </div>
+        )}
+      </div>
+
       {/* Filtres */}
       <div className="flex gap-2">
         <Button
