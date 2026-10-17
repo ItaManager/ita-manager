@@ -770,6 +770,110 @@ async function seedParametres() {
   console.log(`  ✅ ${parametres.length} paramètres système créés`);
 }
 
+/**
+ * Seed M2 partiel — Employés de test SANS compte utilisateur
+ * Pour tester le flux d'invitation avec MFA
+ */
+async function seedEmployesTest() {
+  console.log("  🧪 Création d'employés de test sans compte...");
+
+  // Récupérer des postes existants
+  const posteRH = await prisma.poste.findFirst({
+    where: { libelle: { contains: "RH" } },
+  });
+
+  const posteTech = await prisma.poste.findFirst({
+    where: { libelle: { contains: "Ingénieur" } },
+  });
+
+  const posteId = posteRH?.id || posteTech?.id;
+
+  if (!posteId) {
+    console.log("  ⚠️  Aucun poste trouvé, skip employés test");
+    return;
+  }
+
+  const employesTest = [
+    {
+      matricule: "TEST-001",
+      nom: "KOUASSI",
+      prenom: "Marie",
+      dateNaissance: new Date("1990-05-15"),
+      lieuNaissance: "Abidjan",
+      nationalite: "CI",
+      sexe: "F" as const,
+      situationMatrimoniale: "CELIBATAIRE" as const,
+      nombreEnfants: 0,
+      telephone: "+225 07 00 00 01",
+      email: "marie.kouassi.test@example.com",
+      adresse: "Cocody, Abidjan",
+      dateEmbauche: new Date("2024-01-15"),
+      actif: true,
+    },
+    {
+      matricule: "TEST-002",
+      nom: "YAO",
+      prenom: "Arnaud",
+      dateNaissance: new Date("1988-08-22"),
+      lieuNaissance: "Bouaké",
+      nationalite: "CI",
+      sexe: "M" as const,
+      situationMatrimoniale: "MARIE" as const,
+      nombreEnfants: 2,
+      telephone: "+225 07 00 00 02",
+      email: "arnaud.yao.test@example.com",
+      adresse: "Marcory, Abidjan",
+      dateEmbauche: new Date("2024-02-01"),
+      actif: true,
+    },
+    {
+      matricule: "TEST-003",
+      nom: "BAMBA",
+      prenom: "Fatou",
+      dateNaissance: new Date("1992-03-10"),
+      lieuNaissance: "Yamoussoukro",
+      nationalite: "CI",
+      sexe: "F" as const,
+      situationMatrimoniale: "CELIBATAIRE" as const,
+      nombreEnfants: 0,
+      telephone: "+225 07 00 00 03",
+      email: "fatou.bamba.test@example.com",
+      adresse: "Plateau, Abidjan",
+      dateEmbauche: new Date("2024-03-10"),
+      actif: true,
+    },
+  ];
+
+  for (const emp of employesTest) {
+    const employe = await prisma.employe.upsert({
+      where: { matricule: emp.matricule },
+      create: emp,
+      update: emp,
+    });
+
+    // Créer une affectation active au poste
+    await prisma.affectation.upsert({
+      where: {
+        employeId_posteId_dateDebut: {
+          employeId: employe.id,
+          posteId,
+          dateDebut: emp.dateEmbauche,
+        },
+      },
+      create: {
+        employeId: employe.id,
+        posteId,
+        dateDebut: emp.dateEmbauche,
+        dateFin: null,
+        superieurId: null,
+      },
+      update: {},
+    });
+  }
+
+  console.log(`  ✅ ${employesTest.length} employés de test créés (sans compte utilisateur)`);
+}
+
 async function main() {
   console.log("🌱 Seed M0 + M1 + M17 — début\n");
 
@@ -798,7 +902,11 @@ async function main() {
   console.log("\n=== PARAMÈTRES SYSTÈME ===");
   await seedParametres();
 
-  console.log("\n✅ Seed M0 + M1 + M14 + M17 + Paramètres — terminé");
+  // Employés de test
+  console.log("\n=== EMPLOYÉS DE TEST ===");
+  await seedEmployesTest();
+
+  console.log("\n✅ Seed M0 + M1 + M14 + M17 + Paramètres + Employés test — terminé");
 }
 
 main()
