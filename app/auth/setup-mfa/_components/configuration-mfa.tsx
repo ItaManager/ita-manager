@@ -13,7 +13,7 @@ interface ConfigurationMFAProps {
   userId: string;
 }
 
-type Etape = "qr" | "verification" | "succes";
+type Etape = "qr" | "verification" | "codes-secours" | "succes";
 
 export function ConfigurationMFA({ userId }: ConfigurationMFAProps) {
   const router = useRouter();
@@ -23,6 +23,7 @@ export function ConfigurationMFA({ userId }: ConfigurationMFAProps) {
   const [code, setCode] = useState("");
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [codesSecours, setCodesSecours] = useState<string[]>([]);
 
   // Générer le QR code TOTP
   const genererQRCode = async () => {
@@ -41,6 +42,7 @@ export function ConfigurationMFA({ userId }: ConfigurationMFAProps) {
       const data = await response.json();
       setQrCode(data.qrCode);
       setSecret(data.secret);
+      setCodesSecours(data.backupCodes || []);
     } catch (error) {
       setErreur(
         error instanceof Error
@@ -73,13 +75,8 @@ export function ConfigurationMFA({ userId }: ConfigurationMFAProps) {
         throw new Error("Code incorrect. Veuillez réessayer.");
       }
 
-      setEtape("succes");
-
-      // Rediriger vers le tableau de bord après 2 secondes
-      setTimeout(() => {
-        router.push("/");
-        router.refresh();
-      }, 2000);
+      // Passer à l'affichage des codes de secours
+      setEtape("codes-secours");
     } catch (error) {
       setErreur(
         error instanceof Error
@@ -233,7 +230,84 @@ export function ConfigurationMFA({ userId }: ConfigurationMFAProps) {
     );
   }
 
-  // Étape 3 : Succès
+  // Étape 3 : Affichage des codes de secours
+  if (etape === "codes-secours") {
+    const telechargerCodes = () => {
+      const texte = codesSecours.map((code, i) => `${i + 1}. ${code}`).join("\n");
+      const blob = new Blob([`Codes de secours ITA Manager\n\n${texte}\n\n⚠️ Conservez ces codes dans un endroit sûr.\nChaque code ne peut être utilisé qu'une seule fois.`], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "codes-secours-ita-manager.txt";
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    return (
+      <div className="space-y-6">
+        <div className="text-center mb-4">
+          <div className="inline-flex items-center justify-center size-16 rounded-full bg-orange-100 mb-4">
+            <svg className="size-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-foreground mb-2">
+            Sauvegardez vos codes de secours
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Ces codes vous permettront de vous connecter si vous perdez l'accès à votre application d'authentification
+          </p>
+        </div>
+
+        <Alert className="bg-orange-50 border-orange-200">
+          <AlertCircle className="size-4 text-orange-600" />
+          <AlertDescription className="text-orange-900">
+            <strong>Important :</strong> Ces codes ne seront affichés qu'une seule fois. Téléchargez-les ou copiez-les dans un endroit sûr.
+          </AlertDescription>
+        </Alert>
+
+        <div className="bg-muted rounded-lg p-4 space-y-2 max-h-64 overflow-y-auto">
+          {codesSecours.map((code, index) => (
+            <div key={index} className="flex items-center gap-3 p-2 bg-background rounded border border-border">
+              <span className="text-xs font-semibold text-muted-foreground w-6">
+                {(index + 1).toString().padStart(2, "0")}.
+              </span>
+              <code className="flex-1 font-mono text-sm font-semibold text-primary tracking-wider">
+                {code}
+              </code>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={telechargerCodes}
+            className="flex-1"
+          >
+            <svg className="size-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Télécharger
+          </Button>
+          <Button
+            onClick={() => {
+              setEtape("succes");
+              setTimeout(() => {
+                router.push("/");
+                router.refresh();
+              }, 2000);
+            }}
+            className="flex-1"
+          >
+            J'ai sauvegardé mes codes
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Étape 4 : Succès
   return (
     <div className="text-center space-y-4">
       <div className="inline-flex items-center justify-center size-16 rounded-full bg-green-100 mb-2">

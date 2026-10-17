@@ -369,14 +369,13 @@ export const inviterUtilisateur = actionProtegee(
       });
 
       // Envoyer notre propre email d'invitation personnalisé via Resend
-      // (en plus de l'email Supabase) avec les codes de secours MFA
+      // (en plus de l'email Supabase)
       const { envoyerEmailInvitation } = await import("@/lib/email/invitation");
       await envoyerEmailInvitation({
         email: validated.email,
         prenom: employe.prenom,
         nom: employe.nom,
         lienInvitation: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/setup-mfa`,
-        codesSecours, // Envoyer les codes en clair (une seule fois)
       });
     } catch (error) {
       // En cas d'erreur, supprimer le compte Supabase Auth créé

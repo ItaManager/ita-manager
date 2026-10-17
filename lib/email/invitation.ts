@@ -8,7 +8,6 @@ interface EnvoyerEmailInvitationParams {
   prenom: string;
   nom: string;
   lienInvitation: string;
-  codesSecours: string[];
 }
 
 export async function envoyerEmailInvitation({
@@ -16,13 +15,12 @@ export async function envoyerEmailInvitation({
   prenom,
   nom,
   lienInvitation,
-  codesSecours,
 }: EnvoyerEmailInvitationParams) {
   const { data, error } = await resend.emails.send({
     from: process.env.EMAIL_FROM || "notifications@mail.itamanager.cloud",
     to: email,
     subject: "Bienvenue sur ITA Manager - Créez votre compte",
-    html: genererTemplateInvitation({ prenom, nom, lienInvitation, codesSecours }),
+    html: genererTemplateInvitation({ prenom, nom, lienInvitation }),
   });
 
   if (error) {
@@ -37,7 +35,6 @@ function genererTemplateInvitation({
   prenom,
   nom,
   lienInvitation,
-  codesSecours,
 }: Omit<EnvoyerEmailInvitationParams, "email">) {
   return `
     <!DOCTYPE html>
@@ -96,35 +93,20 @@ function genererTemplateInvitation({
                       ${lienInvitation}
                     </p>
 
-                    <!-- Section Codes de secours MFA -->
+                    <!-- Avertissement MFA -->
                     <div style="margin-top: 30px; padding: 20px; background-color: #fff7ed; border-radius: 8px; border: 1px solid #fed7aa;">
                       <h3 style="color: #c2410c; font-size: 16px; margin: 0 0 12px 0; font-weight: 600;">
-                        🔐 Codes de secours — Authentification à deux facteurs
+                        🔐 Authentification à deux facteurs obligatoire
                       </h3>
 
-                      <p style="color: #9a3412; font-size: 14px; line-height: 1.6; margin: 0 0 16px 0;">
-                        <strong>Important :</strong> Vous devrez configurer l'authentification à deux facteurs lors de votre première connexion.
-                        Conservez ces 10 codes de secours dans un endroit sûr. Chacun ne peut être utilisé qu'une seule fois.
+                      <p style="color: #9a3412; font-size: 14px; line-height: 1.6; margin: 0 0 12px 0;">
+                        Pour sécuriser votre compte, vous devrez configurer l'authentification à deux facteurs lors de votre première connexion.
                       </p>
 
-                      <div style="background-color: #ffffff; padding: 16px; border-radius: 6px; border: 1px solid #fed7aa;">
-                        <table width="100%" cellpadding="4" cellspacing="0">
-                          ${codesSecours.map((code, index) => `
-                            <tr>
-                              <td style="width: 30px; color: #9a3412; font-size: 12px; font-weight: 600;">
-                                ${(index + 1).toString().padStart(2, '0')}.
-                              </td>
-                              <td style="font-family: 'Courier New', monospace; font-size: 14px; color: #1D186C; font-weight: 600; letter-spacing: 1px;">
-                                ${code}
-                              </td>
-                            </tr>
-                          `).join('')}
-                        </table>
-                      </div>
-
-                      <p style="color: #9a3412; font-size: 12px; line-height: 1.5; margin: 12px 0 0 0;">
-                        💡 <strong>Quand utiliser ces codes :</strong> Si vous perdez l'accès à votre application d'authentification
-                        (téléphone perdu, application désinstallée), vous pourrez vous connecter avec l'un de ces codes.
+                      <p style="color: #9a3412; font-size: 14px; line-height: 1.6; margin: 0;">
+                        <strong>Vous aurez besoin de :</strong><br>
+                        • Une application d'authentification (Google Authenticator, Microsoft Authenticator, ou Authy)<br>
+                        • Votre téléphone pour scanner un QR code
                       </p>
                     </div>
 
