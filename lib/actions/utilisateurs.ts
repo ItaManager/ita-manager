@@ -289,53 +289,83 @@ export const inviterUtilisateur = actionProtegee(
     }
 
     // Créer le compte utilisateur dans Supabase Auth
-    // NOTE: Pour l'instant, on crée juste le Profil. L'intégration Supabase Auth
-    // sera faite dans une prochaine étape avec l'envoi d'email d'invitation
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const supabaseAdmin = createAdminClient();
 
-    // Générer un UUID pour le profil (qui sera synchronisé avec auth.users)
-    const { randomUUID } = await import("crypto");
-    const profilId = randomUUID();
-
-    // Créer le profil et les rôles en transaction
-    await prisma.$transaction(async (tx) => {
-      // Créer le profil
-      await tx.profil.create({
+    // Inviter l'utilisateur via Supabase Auth
+    // Cela crée le compte ET envoie l'email d'invitation Supabase
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+      validated.email,
+      {
         data: {
-          id: profilId,
-          email: validated.email,
-          actif: true,
           employeId: validated.employeId,
+          nom: employe.nom,
+          prenom: employe.prenom,
         },
-      });
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      }
+    );
 
-      // Assigner les rôles
-      await tx.profilRole.createMany({
-        data: validated.rolesIds.map((roleId) => ({
-          profilId,
-          roleId,
-        })),
-      });
+    if (authError || !authData.user) {
+      throw new Error(`Erreur lors de la création du compte : ${authError?.message || "Utilisateur non créé"}`);
+    }
 
-      // Audit
-      await tx.journalEvenement.create({
-        data: {
-          entite: "Profil",
-          entiteId: profilId,
-          action: "CREATION",
-          auteurId: session.userId,
-          auteurNom: session.email,
-          details: {
-            employeId: validated.employeId,
+    const profilId = authData.user.id;
+
+    try {
+      // Créer le profil et les rôles en transaction
+      await prisma.$transaction(async (tx) => {
+        // Créer le profil avec l'ID de Supabase Auth
+        await tx.profil.create({
+          data: {
+            id: profilId,
             email: validated.email,
-            rolesIds: validated.rolesIds,
+            actif: true,
+            employeId: validated.employeId,
           },
-          commentaire: "Invitation d'un nouvel utilisateur",
-        },
-      });
-    });
+        });
 
-    // TODO: Envoyer l'email d'invitation via Resend
-    // avec un lien pour créer le mot de passe initial
+        // Assigner les rôles
+        await tx.profilRole.createMany({
+          data: validated.rolesIds.map((roleId) => ({
+            profilId,
+            roleId,
+          })),
+        });
+
+        // Audit
+        await tx.journalEvenement.create({
+          data: {
+            entite: "Profil",
+            entiteId: profilId,
+            action: "CREATION",
+            auteurId: session.userId,
+            auteurNom: session.email,
+            details: {
+              employeId: validated.employeId,
+              email: validated.email,
+              rolesIds: validated.rolesIds,
+            },
+            commentaire: "Invitation d'un nouvel utilisateur",
+          },
+        });
+      });
+
+      // Envoyer notre propre email d'invitation personnalisé via Resend
+      // (en plus de l'email Supabase)
+      const { envoyerEmailInvitation } = await import("@/lib/email/invitation");
+      await envoyerEmailInvitation({
+        email: validated.email,
+        prenom: employe.prenom,
+        nom: employe.nom,
+        // Construire le lien d'invitation Supabase
+        lienInvitation: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      });
+    } catch (error) {
+      // En cas d'erreur, supprimer le compte Supabase Auth créé
+      await supabaseAdmin.auth.admin.deleteUser(profilId);
+      throw error;
+    }
 
     return { success: true, profilId };
   }
