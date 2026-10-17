@@ -105,8 +105,7 @@ export const importerBPU = actionProtegee(
 /**
  * Lister tous les BPU
  */
-// @ts-ignore - Permission projet:lire à ajouter
-export const listerBPU = actionProtegee("projet:lire", async (session) => {
+export const listerBPU = actionProtegee("achat:demander", async (session) => {
   return await prisma.bordereauPrixUnitaire.findMany({
     include: {
       projet: {
@@ -129,9 +128,8 @@ export const listerBPU = actionProtegee("projet:lire", async (session) => {
 /**
  * Obtenir un BPU complet avec toute sa hiérarchie
  */
-// @ts-ignore - Permission projet:lire à ajouter
 export const obtenirBPU = actionProtegee(
-  "projet:lire",
+  "achat:demander",
   async (session, bpuId: string) => {
     return await prisma.bordereauPrixUnitaire.findUnique({
       where: { id: bpuId },
@@ -164,9 +162,8 @@ export const obtenirBPU = actionProtegee(
 /**
  * Lister les BPU d'un projet
  */
-// @ts-ignore - Permission projet:lire à ajouter
 export const listerBPUProjet = actionProtegee(
-  "projet:lire",
+  "achat:demander",
   async (session, projetId: string) => {
     return await prisma.bordereauPrixUnitaire.findMany({
       where: { projetId },

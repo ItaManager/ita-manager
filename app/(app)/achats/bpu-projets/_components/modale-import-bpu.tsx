@@ -16,7 +16,6 @@ import { Upload, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { importerBPU } from "@/lib/actions/bpu";
 import { parserBPUExcel } from "@/lib/bpu/parse-excel";
-import { prisma } from "@/lib/db/prisma";
 
 interface ModaleImportBPUProps {
   open: boolean;

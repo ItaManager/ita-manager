@@ -44,6 +44,8 @@ export const NAV_PERMISSIONS: Record<string, string[]> = {
   "/achats/suivi": ["achat:demander", "achat:instruire", "achat:valider"],
   "/achats/articles": ["referentiel:creer"],
   "/achats/fournisseurs": ["referentiel:creer"],
+  "/achats/bordereau-prix-simple": ["achat:demander"],
+  "/achats/bpu-projets": ["achat:demander"],
 
   // ASSISTANAT
   "/assistanat/visiteurs": ["visiteur:enregistrer"],

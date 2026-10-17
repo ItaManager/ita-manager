@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, Eye, Download, Trash2, Plus } from "lucide-react";
+import { Upload, Eye, Download, Trash2, Plus, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -9,6 +9,7 @@ import { fr } from "date-fns/locale";
 import { ModaleImportBPU } from "./modale-import-bpu";
 import { ModaleAffichageBPU } from "./modale-affichage-bpu";
 import { supprimerBPU } from "@/lib/actions/bpu";
+import { telechargerMasqueBPU } from "@/lib/bpu/generer-masque";
 import { toast } from "sonner";
 
 interface BPU {
@@ -56,8 +57,16 @@ export function ListeBPU({ bpus }: ListeBPUProps) {
   return (
     <>
       <div className="space-y-6">
-        {/* Bouton d'import */}
-        <div className="flex justify-end">
+        {/* Boutons d'actions */}
+        <div className="flex justify-end gap-3">
+          <Button
+            onClick={() => telechargerMasqueBPU()}
+            variant="outline"
+            className="rounded-full"
+          >
+            <FileDown className="h-4 w-4 mr-2" />
+            Télécharger le masque Excel
+          </Button>
           <Button
             onClick={() => setModaleImport(true)}
             className="rounded-full bg-[#1d186c] hover:bg-[#1d186c]/90 text-white"

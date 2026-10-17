@@ -3994,3 +3994,40 @@ model LigneBPU {
 
   @@map("ligne_bpu")
 }
+
+// =====================================================================
+// BORDEREAU DE PRIX SIMPLE (tableau plat)
+// =====================================================================
+
+/// Ligne de bordereau de prix simple (tableau comme l'image fournie)
+model LigneBordereauPrix {
+  id String @id @default(cuid())
+
+  /// Numéro du lot (ex: "01", "02")
+  lotNumero String
+
+  /// Numéro de ligne (ex: "I 01", "I 02", "2 01")
+  numero String
+
+  /// Désignation complète de la ligne
+  designation String @db.Text
+
+  /// Unité (M3, M2, ML, U, etc.)
+  unite String
+
+  /// Quantité
+  quantite Decimal @db.Decimal(12, 2)
+
+  /// Prix unitaire
+  prixUnitaire Decimal @db.Decimal(12, 2)
+
+  /// Ordre d'affichage dans le lot
+  ordre Int @default(0)
+
+  creeLe  DateTime @default(now())
+  majLe   DateTime @updatedAt
+  creePar String
+
+  @@index([lotNumero])
+  @@map("ligne_bordereau_prix")
+}
