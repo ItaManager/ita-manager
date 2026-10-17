@@ -441,6 +441,17 @@ export const listerDemandesAvecCalculs = actionProtegee(
             matricule: true,
             nom: true,
             prenom: true,
+            affectations: {
+              where: { dateFin: null },
+              include: {
+                poste: {
+                  include: {
+                    service: { select: { libelle: true } },
+                  },
+                },
+              },
+              take: 1,
+            },
           },
         },
         beneficiaire: {
@@ -524,10 +535,13 @@ export const listerDemandesAvecCalculs = actionProtegee(
         ),
       ];
 
+      const serviceDemandeur = demande.demandeur.affectations[0]?.poste?.service?.libelle || "—";
+
       return {
         // 1-8 : Colonnes de base
         ref: demande.ref,
         demandeur: `${demande.demandeur.prenom} ${demande.demandeur.nom}`,
+        service: serviceDemandeur,
         beneficiaire:
           demande.beneficiaireId === demande.demandeurId
             ? "—"

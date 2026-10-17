@@ -94,6 +94,9 @@ export async function ListeDemandes({
                   Demandeur
                 </th>
                 <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Service
+                </th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Destination
                 </th>
                 <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -117,7 +120,7 @@ export async function ListeDemandes({
               {demandesPaginees.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={9}
                     className="py-12 text-center text-sm text-muted-foreground"
                   >
                     {recherche
@@ -149,6 +152,11 @@ export async function ListeDemandes({
                         {demande.demandeur}
                       </td>
 
+                      {/* Service */}
+                      <td className="py-3 px-4 text-sm text-muted-foreground">
+                        {demande.service}
+                      </td>
+
                       {/* Destination */}
                       <td className="py-3 px-4 text-sm text-muted-foreground">
                         {demande.destination}
@@ -177,7 +185,10 @@ export async function ListeDemandes({
 
                       {/* Statut */}
                       <td className="py-3 px-4">
-                        <Badge variant={statutInfo.variant}>
+                        <Badge variant={statutInfo.variant} className="inline-flex items-center gap-1.5">
+                          {demande.statut === "BROUILLON" && (
+                            <span className="text-[#fb923c]" aria-hidden="true">•</span>
+                          )}
                           {statutInfo.label}
                         </Badge>
                       </td>
