@@ -94,9 +94,6 @@ export async function ListeDemandes({
                   Demandeur
                 </th>
                 <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Service
-                </th>
-                <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Destination
                 </th>
                 <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -120,7 +117,7 @@ export async function ListeDemandes({
               {demandesPaginees.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={9}
+                    colSpan={8}
                     className="py-12 text-center text-sm text-muted-foreground"
                   >
                     {recherche
@@ -148,13 +145,13 @@ export async function ListeDemandes({
                       </td>
 
                       {/* Demandeur */}
-                      <td className="py-3 px-4 text-sm text-foreground">
-                        {demande.demandeur}
-                      </td>
-
-                      {/* Service */}
-                      <td className="py-3 px-4 text-sm text-muted-foreground">
-                        {demande.service}
+                      <td className="py-3 px-4">
+                        <div className="text-sm text-foreground">
+                          {demande.demandeur}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {demande.service}
+                        </div>
                       </td>
 
                       {/* Destination */}
