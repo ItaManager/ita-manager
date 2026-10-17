@@ -83,12 +83,19 @@ async function main() {
   }
 
   try {
+    const bcrypt = await import("bcrypt");
+    const codesHaches = await Promise.all(
+      codesSecours.map(async (code) => ({
+        profilId: userId,
+        codeHache: await bcrypt.hash(code, 10),
+      }))
+    );
+
     await prisma.$transaction(async (tx) => {
-      // Créer profil
-      await tx.profil.create({
+      // Mettre à jour le profil (créé automatiquement par le trigger)
+      await tx.profil.update({
+        where: { id: userId },
         data: {
-          id: userId,
-          email,
           actif: true,
           employeId: employe.id,
         },
@@ -102,16 +109,10 @@ async function main() {
         },
       });
 
-      // Stocker codes de secours
-      const bcrypt = await import("bcrypt");
-      await tx.codeSecoursMfa.createMany({
-        data: await Promise.all(
-          codesSecours.map(async (code) => ({
-            profilId: userId,
-            codeHache: await bcrypt.hash(code, 10),
-          }))
-        ),
-      });
+      // Stocker codes de secours un par un
+      for (const code of codesHaches) {
+        await tx.codeSecoursMfa.create({ data: code });
+      }
     });
 
     console.log("✅ Profil créé avec succès");
