@@ -55,10 +55,30 @@ export async function ListeDemandes({
       where: { demandeurId: user.id },
       include: {
         beneficiaire: { select: { matricule: true, nom: true, prenom: true } },
+        demandeur: {
+          select: {
+            affectations: {
+              where: { dateFin: null },
+              include: {
+                poste: {
+                  include: {
+                    service: { select: { libelle: true } },
+                  },
+                },
+              },
+              take: 1,
+            },
+          },
+        },
         lignes: {
           include: {
             article: { select: { designation: true } },
           },
+        },
+        evenements: {
+          where: { type: "SOUMISSION" },
+          orderBy: { timestamp: "asc" },
+          take: 1,
         },
       },
       orderBy: { creeLe: "desc" },
@@ -73,9 +93,14 @@ export async function ListeDemandes({
         orderBy: { timestamp: "desc" },
       });
 
+      const service = demande.demandeur.affectations[0]?.poste?.service?.libelle || "—";
+      const dateSoumission = demande.evenements[0]?.timestamp || null;
+
       return {
         ...demande,
         statut: dernierEvenement?.type || "BROUILLON",
+        service,
+        dateSoumission,
       };
     })
   );
@@ -125,10 +150,16 @@ export async function ListeDemandes({
                     Bénéficiaire
                   </th>
                   <th className="px-6 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Service
+                  </th>
+                  <th className="px-6 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                     Articles
                   </th>
                   <th className="px-6 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                     Date création
+                  </th>
+                  <th className="px-6 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Date soumission
                   </th>
                   <th className="px-6 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                     Statut
@@ -148,19 +179,31 @@ export async function ListeDemandes({
                       {demande.beneficiaire.prenom} {demande.beneficiaire.nom}
                     </td>
                     <td className="px-6 py-3 text-sm text-muted-foreground">
+                      {demande.service}
+                    </td>
+                    <td className="px-6 py-3 text-sm text-muted-foreground">
                       {demande.lignes.length} article{demande.lignes.length > 1 ? "s" : ""}
                     </td>
                     <td className="px-6 py-3 text-sm tabular-nums">
                       {format(new Date(demande.creeLe), "dd/MM/yyyy", { locale: fr })}
                     </td>
+                    <td className="px-6 py-3 text-sm tabular-nums">
+                      {demande.dateSoumission
+                        ? format(new Date(demande.dateSoumission), "dd/MM/yyyy", { locale: fr })
+                        : "—"
+                      }
+                    </td>
                     <td className="px-6 py-3 text-sm">
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
                         demande.statut === "BROUILLON"
                           ? "bg-[#f3f4f6] text-[#6b7280]"
                           : demande.statut === "SOUMISSION"
                           ? "bg-[#fef3c7] text-[#92400e]"
                           : "bg-[#d1fae5] text-[#065f46]"
                       }`}>
+                        {demande.statut === "BROUILLON" && (
+                          <span className="text-[#fb923c]" aria-hidden="true">•</span>
+                        )}
                         {demande.statut === "BROUILLON" ? "Brouillon" :
                          demande.statut === "SOUMISSION" ? "En attente N+1" :
                          demande.statut}
