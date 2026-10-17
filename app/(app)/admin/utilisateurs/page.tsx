@@ -1,43 +1,43 @@
-import { Suspense } from "react";
-import { ListeUtilisateurs } from "./_components/liste-utilisateurs";
-import { SqueletteUtilisateurs } from "./_components/squelette-utilisateurs";
 import { verifierAccesPage } from "@/lib/auth/page-access";
+import { listerUtilisateurs, listerRolesDisponibles } from "@/lib/actions/utilisateurs";
+import { listerRoles, listerPermissions } from "@/lib/actions/roles";
+import { OngletsAdministration } from "./_components/onglets-administration";
 
 export const metadata = {
-  title: "Utilisateurs — ITA Manager",
+  title: "Administration — ITA Manager",
 };
 
-interface PageProps {
-  searchParams: Promise<{
-    recherche?: string;
-    actifs?: string;
-  }>;
-}
-
-export default async function PageUtilisateurs({ searchParams }: PageProps) {
+export default async function PageUtilisateurs() {
   await verifierAccesPage("/admin/utilisateurs");
-  const params = await searchParams;
+
+  // Charger toutes les données en parallèle
+  const [utilisateurs, rolesDisponibles, rolesResult, permissionsResult] = await Promise.all([
+    listerUtilisateurs({ actifSeulement: false }),
+    listerRolesDisponibles(),
+    listerRoles(),
+    listerPermissions(),
+  ]);
+
+  const roles = rolesResult.success && rolesResult.roles ? rolesResult.roles : [];
+  const permissions = permissionsResult.success && permissionsResult.permissions ? permissionsResult.permissions : [];
 
   return (
     <div className="container mx-auto py-8">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-foreground">
-          Gestion des utilisateurs
+          Administration
         </h1>
         <p className="text-sm text-muted-foreground">
-          Administration des comptes et des rôles
+          Gestion des utilisateurs, rôles et permissions
         </p>
       </div>
 
-      <Suspense
-        key={JSON.stringify(params)}
-        fallback={<SqueletteUtilisateurs />}
-      >
-        <ListeUtilisateurs
-          recherche={params.recherche}
-          actifSeulement={params.actifs !== "false"}
-        />
-      </Suspense>
+      <OngletsAdministration
+        utilisateursInitiaux={utilisateurs}
+        rolesDisponibles={rolesDisponibles}
+        rolesInitiaux={roles}
+        permissionsInitiales={permissions}
+      />
     </div>
   );
 }
