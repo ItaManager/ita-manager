@@ -301,8 +301,9 @@ export const inviterUtilisateur = actionProtegee(
           employeId: validated.employeId,
           nom: employe.nom,
           prenom: employe.prenom,
+          mfaObligatoire: true, // Forcer la configuration MFA à la première connexion
         },
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/setup-mfa`,
       }
     );
 
@@ -312,8 +313,12 @@ export const inviterUtilisateur = actionProtegee(
 
     const profilId = authData.user.id;
 
+    // Générer 10 codes de secours pour la MFA
+    const { genererCodesSecours } = await import("@/lib/auth/mfa");
+    const codesSecours = await genererCodesSecours();
+
     try {
-      // Créer le profil et les rôles en transaction
+      // Créer le profil, les rôles et les codes de secours en transaction
       await prisma.$transaction(async (tx) => {
         // Créer le profil avec l'ID de Supabase Auth
         await tx.profil.create({
@@ -333,6 +338,17 @@ export const inviterUtilisateur = actionProtegee(
           })),
         });
 
+        // Stocker les codes de secours MFA (hachés avec bcrypt)
+        const bcrypt = await import("bcrypt");
+        await tx.codeSecoursMfa.createMany({
+          data: await Promise.all(
+            codesSecours.map(async (code) => ({
+              profilId,
+              codeHache: await bcrypt.hash(code, 10),
+            }))
+          ),
+        });
+
         // Audit
         await tx.journalEvenement.create({
           data: {
@@ -345,21 +361,22 @@ export const inviterUtilisateur = actionProtegee(
               employeId: validated.employeId,
               email: validated.email,
               rolesIds: validated.rolesIds,
+              mfaObligatoire: true,
             },
-            commentaire: "Invitation d'un nouvel utilisateur",
+            commentaire: "Invitation d'un nouvel utilisateur avec MFA obligatoire",
           },
         });
       });
 
       // Envoyer notre propre email d'invitation personnalisé via Resend
-      // (en plus de l'email Supabase)
+      // (en plus de l'email Supabase) avec les codes de secours MFA
       const { envoyerEmailInvitation } = await import("@/lib/email/invitation");
       await envoyerEmailInvitation({
         email: validated.email,
         prenom: employe.prenom,
         nom: employe.nom,
-        // Construire le lien d'invitation Supabase
-        lienInvitation: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+        lienInvitation: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/setup-mfa`,
+        codesSecours, // Envoyer les codes en clair (une seule fois)
       });
     } catch (error) {
       // En cas d'erreur, supprimer le compte Supabase Auth créé
