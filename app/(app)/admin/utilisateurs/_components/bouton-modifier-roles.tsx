@@ -37,6 +37,15 @@ export function BoutonModifierRoles({
   const [isPending, startTransition] = useTransition();
   const [erreur, setErreur] = useState<string | null>(null);
 
+  const handleOpenChange = (open: boolean) => {
+    setOuvert(open);
+    if (open) {
+      // Réinitialiser les rôles sélectionnés à l'ouverture
+      setRolesSelectionnes(utilisateur.roles.map((pr) => pr.roleId));
+      setErreur(null);
+    }
+  };
+
   const handleSubmit = async () => {
     setErreur(null);
 
@@ -64,11 +73,14 @@ export function BoutonModifierRoles({
 
   return (
     <>
-      <Button variant="outline" size="sm" onClick={() => setOuvert(true)}>
+      <button
+        className="w-full text-left px-2 py-1.5 text-sm hover:bg-muted rounded-sm cursor-pointer"
+        onClick={() => setOuvert(true)}
+      >
         Modifier les rôles
-      </Button>
+      </button>
 
-      <Dialog open={ouvert} onOpenChange={setOuvert}>
+      <Dialog open={ouvert} onOpenChange={handleOpenChange}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:!max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Modifier les rôles</DialogTitle>

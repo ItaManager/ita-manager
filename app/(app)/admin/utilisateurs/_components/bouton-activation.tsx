@@ -19,10 +19,12 @@ import { desactiverUtilisateur, reactiverUtilisateur } from "@/lib/actions/utili
 import type { Profil } from "@prisma/client";
 
 interface BoutonActivationProps {
-  utilisateur: Profil;
+  utilisateurId: string;
+  email: string;
+  actif: boolean;
 }
 
-export function BoutonActivation({ utilisateur }: BoutonActivationProps) {
+export function BoutonActivation({ utilisateurId, email, actif }: BoutonActivationProps) {
   const router = useRouter();
   const [ouvert, setOuvert] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -32,10 +34,10 @@ export function BoutonActivation({ utilisateur }: BoutonActivationProps) {
     setErreur(null);
 
     try {
-      if (utilisateur.actif) {
-        await desactiverUtilisateur(utilisateur.id);
+      if (actif) {
+        await desactiverUtilisateur(utilisateurId);
       } else {
-        await reactiverUtilisateur(utilisateur.id);
+        await reactiverUtilisateur(utilisateurId);
       }
 
       setOuvert(false);
@@ -51,13 +53,11 @@ export function BoutonActivation({ utilisateur }: BoutonActivationProps) {
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="sm"
+      <button
+        className="w-full text-left px-2 py-1.5 text-sm hover:bg-muted rounded-sm cursor-pointer flex items-center gap-2"
         onClick={() => setOuvert(true)}
-        className="gap-2"
       >
-        {utilisateur.actif ? (
+        {actif ? (
           <>
             <UserX className="size-4" aria-hidden="true" />
             Désactiver
@@ -68,23 +68,23 @@ export function BoutonActivation({ utilisateur }: BoutonActivationProps) {
             Réactiver
           </>
         )}
-      </Button>
+      </button>
 
       <AlertDialog open={ouvert} onOpenChange={setOuvert}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {utilisateur.actif ? "Désactiver" : "Réactiver"} le compte ?
+              {actif ? "Désactiver" : "Réactiver"} le compte ?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {utilisateur.actif ? (
+              {actif ? (
                 <>
-                  L'utilisateur <strong>{utilisateur.email}</strong> ne pourra
+                  L'utilisateur <strong>{email}</strong> ne pourra
                   plus se connecter jusqu'à ce que son compte soit réactivé.
                 </>
               ) : (
                 <>
-                  L'utilisateur <strong>{utilisateur.email}</strong> pourra à
+                  L'utilisateur <strong>{email}</strong> pourra à
                   nouveau se connecter.
                 </>
               )}
@@ -107,7 +107,7 @@ export function BoutonActivation({ utilisateur }: BoutonActivationProps) {
                   aria-hidden="true"
                 />
               )}
-              {utilisateur.actif ? "Désactiver" : "Réactiver"}
+              {actif ? "Désactiver" : "Réactiver"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
