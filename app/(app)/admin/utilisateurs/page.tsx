@@ -1,43 +1,41 @@
 import { verifierAccesPage } from "@/lib/auth/page-access";
-import { listerUtilisateurs, listerRolesDisponibles } from "@/lib/actions/utilisateurs";
-import { listerRoles, listerPermissions } from "@/lib/actions/roles";
-import { OngletsAdministration } from "./_components/onglets-administration";
+import { Suspense } from "react";
+import { ModuleLayout } from "@/components/layouts/module-layout";
+import { IndicateursUtilisateurs } from "./_components/indicateurs-utilisateurs";
+import { ListeUtilisateurs } from "./_components/liste-utilisateurs";
 
 export const metadata = {
-  title: "Administration — ITA Manager",
+  title: "Utilisateurs — ITA Manager",
 };
 
-export default async function PageUtilisateurs() {
+interface PageProps {
+  searchParams: Promise<{
+    recherche?: string;
+    actifs?: string;
+  }>;
+}
+
+export default async function PageUtilisateurs({ searchParams }: PageProps) {
   await verifierAccesPage("/admin/utilisateurs");
-
-  // Charger toutes les données en parallèle
-  const [utilisateurs, rolesDisponibles, rolesResult, permissionsResult] = await Promise.all([
-    listerUtilisateurs({ actifSeulement: false }),
-    listerRolesDisponibles(),
-    listerRoles(),
-    listerPermissions(),
-  ]);
-
-  const roles = rolesResult.success && rolesResult.roles ? rolesResult.roles : [];
-  const permissions = permissionsResult.success && permissionsResult.permissions ? permissionsResult.permissions : [];
+  const params = await searchParams;
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-foreground">
-          Administration
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Gestion des utilisateurs, rôles et permissions
-        </p>
-      </div>
-
-      <OngletsAdministration
-        utilisateursInitiaux={utilisateurs}
-        rolesDisponibles={rolesDisponibles}
-        rolesInitiaux={roles}
-        permissionsInitiales={permissions}
-      />
-    </div>
+    <ModuleLayout
+      titre="Utilisateurs"
+      description="Gérez les comptes utilisateurs, leurs rôles et permissions"
+      helpText="Administration des accès : créez des utilisateurs, assignez-leur des rôles prédéfinis ou personnalisés, et gérez l'activation des comptes."
+      indicateurs={
+        <Suspense fallback={<div>Chargement...</div>}>
+          <IndicateursUtilisateurs />
+        </Suspense>
+      }
+    >
+      <Suspense fallback={<div>Chargement...</div>}>
+        <ListeUtilisateurs
+          recherche={params.recherche}
+          actifSeulement={params.actifs !== "false"}
+        />
+      </Suspense>
+    </ModuleLayout>
   );
 }
