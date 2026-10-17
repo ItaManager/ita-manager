@@ -1,32 +1,45 @@
 import { listerUtilisateurs, listerRolesDisponibles } from "@/lib/actions/utilisateurs";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, UserPlus, MoreHorizontal } from "lucide-react";
+import { Search, MoreHorizontal } from "lucide-react";
 import { BoutonModifierRoles } from "./bouton-modifier-roles";
 import { BoutonActivation } from "./bouton-activation";
+import { BoutonInviter } from "./bouton-inviter";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import type { Role } from "@prisma/client";
 
 interface ListeUtilisateursProps {
   recherche?: string;
   actifSeulement?: boolean;
+  employesSansCompte: Array<{
+    id: string;
+    matricule: string;
+    nom: string;
+    prenom: string;
+    poste: {
+      libelle: string;
+      service: {
+        libelle: string;
+      };
+    } | null;
+  }>;
+  rolesDisponibles: Role[];
 }
 
 export async function ListeUtilisateurs({
   recherche,
   actifSeulement = true,
+  employesSansCompte,
+  rolesDisponibles,
 }: ListeUtilisateursProps) {
-  const [utilisateurs, rolesDisponibles] = await Promise.all([
-    listerUtilisateurs({ recherche, actifSeulement }),
-    listerRolesDisponibles(),
-  ]);
+  const utilisateurs = await listerUtilisateurs({ recherche, actifSeulement });
 
   return (
     <div className="bg-white rounded-xl border border-[#0000001a] p-6">
@@ -43,10 +56,10 @@ export async function ListeUtilisateurs({
             />
           </div>
         </div>
-        <Button className="gap-2">
-          <UserPlus className="size-4" />
-          Inviter un utilisateur
-        </Button>
+        <BoutonInviter
+          employesSansCompte={employesSansCompte}
+          rolesDisponibles={rolesDisponibles}
+        />
       </div>
 
       {/* Tableau */}

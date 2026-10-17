@@ -204,3 +204,139 @@ export const listerRolesDisponibles = actionProtegee(
     return roles;
   }
 );
+
+export const listerEmployesSansCompte = actionProtegee(
+  "admin:utilisateurs",
+  async (session) => {
+    // Récupérer tous les employés qui n'ont pas de compte utilisateur
+    const employes = await prisma.employe.findMany({
+      where: {
+        profil: null, // Pas de compte utilisateur lié
+      },
+      include: {
+        affectations: {
+          where: { dateFin: null }, // Affectation active
+          include: {
+            poste: {
+              include: {
+                service: {
+                  select: { libelle: true },
+                },
+              },
+            },
+          },
+          take: 1,
+        },
+      },
+      orderBy: [{ nom: "asc" }, { prenom: "asc" }],
+    });
+
+    // Transformer pour retourner seulement les champs nécessaires
+    return employes.map((employe) => {
+      const affectation = employe.affectations[0];
+      const poste = affectation?.poste;
+      return {
+        id: employe.id,
+        matricule: employe.matricule,
+        nom: employe.nom,
+        prenom: employe.prenom,
+        poste: poste?.service
+          ? {
+              libelle: poste.libelle,
+              service: {
+                libelle: poste.service.libelle,
+              },
+            }
+          : null,
+      };
+    });
+  }
+);
+
+const inviterUtilisateurSchema = z.object({
+  employeId: z.string().min(1, "L'employé est requis"),
+  email: z.string().email("Email invalide"),
+  rolesIds: z.array(z.string()).min(1, "Au moins un rôle est requis"),
+});
+
+export const inviterUtilisateur = actionProtegee(
+  "admin:utilisateurs",
+  async (session, input: z.infer<typeof inviterUtilisateurSchema>) => {
+    // Validation
+    const validated = inviterUtilisateurSchema.parse(input);
+
+    // Vérifier que l'employé existe et n'a pas déjà de compte
+    const employe = await prisma.employe.findUnique({
+      where: { id: validated.employeId },
+      include: { profil: true },
+    });
+
+    if (!employe) {
+      throw new Error("Employé introuvable");
+    }
+
+    if (employe.profil) {
+      throw new Error("Cet employé a déjà un compte utilisateur");
+    }
+
+    // Vérifier que l'email n'est pas déjà utilisé
+    const emailExistant = await prisma.profil.findUnique({
+      where: { email: validated.email },
+    });
+
+    if (emailExistant) {
+      throw new Error("Cette adresse email est déjà utilisée");
+    }
+
+    // Créer le compte utilisateur dans Supabase Auth
+    // NOTE: Pour l'instant, on crée juste le Profil. L'intégration Supabase Auth
+    // sera faite dans une prochaine étape avec l'envoi d'email d'invitation
+
+    // Générer un UUID pour le profil (qui sera synchronisé avec auth.users)
+    const { randomUUID } = await import("crypto");
+    const profilId = randomUUID();
+
+    // Créer le profil et les rôles en transaction
+    await prisma.$transaction(async (tx) => {
+      // Créer le profil
+      await tx.profil.create({
+        data: {
+          id: profilId,
+          email: validated.email,
+          actif: true,
+          employeId: validated.employeId,
+        },
+      });
+
+      // Assigner les rôles
+      await tx.profilRole.createMany({
+        data: validated.rolesIds.map((roleId) => ({
+          profilId,
+          roleId,
+        })),
+      });
+
+      // Audit
+      await tx.journalEvenement.create({
+        data: {
+          entite: "Profil",
+          entiteId: profilId,
+          action: "CREATION",
+          auteurId: session.userId,
+          auteurNom: session.email,
+          details: {
+            employeId: validated.employeId,
+            email: validated.email,
+            rolesIds: validated.rolesIds,
+          },
+          commentaire: "Invitation d'un nouvel utilisateur",
+        },
+      });
+    });
+
+    // TODO: Envoyer l'email d'invitation via Resend
+    // avec un lien pour créer le mot de passe initial
+
+    return { success: true, profilId };
+  }
+);

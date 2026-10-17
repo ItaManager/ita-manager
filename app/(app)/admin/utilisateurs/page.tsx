@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { ModuleLayout } from "@/components/layouts/module-layout";
 import { IndicateursUtilisateurs } from "./_components/indicateurs-utilisateurs";
 import { ListeUtilisateurs } from "./_components/liste-utilisateurs";
+import { listerEmployesSansCompte, listerRolesDisponibles } from "@/lib/actions/utilisateurs";
 
 export const metadata = {
   title: "Utilisateurs — ITA Manager",
@@ -19,6 +20,12 @@ export default async function PageUtilisateurs({ searchParams }: PageProps) {
   await verifierAccesPage("/admin/utilisateurs");
   const params = await searchParams;
 
+  // Charger les données nécessaires pour la modale d'invitation
+  const [employesSansCompte, rolesDisponibles] = await Promise.all([
+    listerEmployesSansCompte(),
+    listerRolesDisponibles(),
+  ]);
+
   return (
     <ModuleLayout
       titre="Utilisateurs"
@@ -34,6 +41,8 @@ export default async function PageUtilisateurs({ searchParams }: PageProps) {
         <ListeUtilisateurs
           recherche={params.recherche}
           actifSeulement={params.actifs !== "false"}
+          employesSansCompte={employesSansCompte}
+          rolesDisponibles={rolesDisponibles}
         />
       </Suspense>
     </ModuleLayout>
