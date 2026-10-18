@@ -21,6 +21,7 @@ import {
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { getBadgeClasses, STATUT_LABELS } from '@/lib/ui/badge-styles';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -121,28 +122,11 @@ function formatDate(date: Date | null | undefined): string {
 }
 
 function getBadgeStatutFacture(statut: StatutFacture) {
-  const badges: Record<StatutFacture, { label: string; className: string }> = {
-    BROUILLON: { label: 'Brouillon', className: 'bg-gray-100 text-gray-700' },
-    A_RECEVOIR: {
-      label: 'À recevoir',
-      className: 'bg-blue-100 text-blue-700',
-    },
-    A_VALIDER: {
-      label: 'À valider',
-      className: 'bg-yellow-100 text-yellow-700',
-    },
-    A_VALIDER_DG: {
-      label: 'Validation DG',
-      className: 'bg-orange-100 text-orange-700',
-    },
-    A_PAYER: { label: 'À payer', className: 'bg-green-100 text-green-700' },
-    PARTIELLE: { label: 'Partielle', className: 'bg-cyan-100 text-cyan-700' },
-    SOLDEE: { label: 'Soldée', className: 'bg-emerald-100 text-emerald-700' },
-    REFUSEE: { label: 'Refusée', className: 'bg-red-100 text-red-700' },
-  };
-
-  const badge = badges[statut];
-  return <Badge className={badge.className}>{badge.label}</Badge>;
+  return (
+    <Badge className={getBadgeClasses(statut, 'factures')}>
+      {STATUT_LABELS[statut] || statut}
+    </Badge>
+  );
 }
 
 // D-04 : Détection retard

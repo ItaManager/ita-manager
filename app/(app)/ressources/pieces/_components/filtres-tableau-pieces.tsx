@@ -68,7 +68,7 @@ export function FiltresTableauPieces({
 
   function handleExport() {
     // TODO: Implémenter l'export
-    console.log("Export PDF/CSV");
+    // TODO: Implémenter export PDF/CSV pièces
   }
 
   return (

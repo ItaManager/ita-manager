@@ -114,7 +114,7 @@ export function ModalComposerEquipe({
     setLoading(true);
     try {
       // TODO: Implémenter la création de l'équipe
-      console.log("Créer équipe ITA:", data);
+      // TODO: Implémenter création équipe ITA
       toast.success("Équipe créée avec succès");
       setOuvert(false);
       setEtape("choix");

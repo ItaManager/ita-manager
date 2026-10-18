@@ -99,7 +99,7 @@ export function ModalDetailContrat({
 
   const handleTelecharger = async () => {
     // TODO: Implémenter la génération et téléchargement du PDF
-    console.log("Télécharger contrat", contrat.id);
+    // TODO: Génération PDF contrat
   };
 
   return (

@@ -72,7 +72,7 @@ export function OngletDocuments({
     try {
       // TODO: Implémenter l'upload via Server Action
       // await uploadDocumentEmploye(employeId, typeDocument, file);
-      console.log("Upload:", typeDocument, file.name);
+      // TODO: Implémenter upload Supabase Storage
     } catch (error) {
       console.error("Erreur upload:", error);
     } finally {
@@ -85,7 +85,7 @@ export function OngletDocuments({
       // TODO: Implémenter le download via Server Action
       // const url = await obtenirUrlDownloadDocument(documentId);
       // window.open(url, "_blank");
-      console.log("Download:", documentId, nomFichier);
+      // TODO: Implémenter download depuis Supabase Storage
     } catch (error) {
       console.error("Erreur download:", error);
     }
@@ -97,7 +97,7 @@ export function OngletDocuments({
     try {
       // TODO: Implémenter la suppression via Server Action
       // await supprimerDocumentEmploye(documentId);
-      console.log("Delete:", documentId);
+      // TODO: Implémenter suppression document
     } catch (error) {
       console.error("Erreur suppression:", error);
     }

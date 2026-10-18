@@ -163,7 +163,7 @@ export const calculerPeriode = actionProtegee(
 
     // Placeholder : créer une ligne fictive pour chaque employé pointé
     // La vraie implémentation agrègerait les pointages par employé
-    console.log(`Relevés visés trouvés : ${relevesVises.length}`);
+    // Relevés visés trouvés pour calcul paie
 
     revalidatePath(`/paie/periodes/${periodeId}`);
     return { success: true, nbReleves: relevesVises.length };

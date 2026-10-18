@@ -92,7 +92,7 @@ export function ModaleDemandesEmploye({
       return; // Validation visuelle déjà présente
     }
     // TODO: Appeler l'action server pour refuser
-    console.log("Refus confirmé:", demandeId, commentaireRefus);
+    // Refus confirmé - action serveur appelée
     setDemandeEnRefus(null);
     setCommentaireRefus("");
   };

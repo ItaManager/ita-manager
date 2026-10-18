@@ -3,8 +3,10 @@ import { prisma } from "@/lib/db/prisma";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Plus, Search } from "lucide-react";
 import { FormulaireDemande } from "./formulaire-demande";
+import { getBadgeClasses, STATUT_LABELS } from "@/lib/ui/badge-styles";
 
 interface ListeDemandesProps {
   recherche?: string;
@@ -194,20 +196,12 @@ export async function ListeDemandes({
                       }
                     </td>
                     <td className="px-6 py-3 text-sm">
-                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
-                        demande.statut === "BROUILLON"
-                          ? "bg-[#f3f4f6] text-[#6b7280]"
-                          : demande.statut === "SOUMISSION"
-                          ? "bg-[#fef3c7] text-[#92400e]"
-                          : "bg-[#d1fae5] text-[#065f46]"
-                      }`}>
+                      <Badge className={`${getBadgeClasses(demande.statut, "achats")} gap-1.5`}>
                         {demande.statut === "BROUILLON" && (
-                          <span className="text-[#fb923c]" aria-hidden="true">•</span>
+                          <span className="text-orange-500" aria-hidden="true">•</span>
                         )}
-                        {demande.statut === "BROUILLON" ? "Brouillon" :
-                         demande.statut === "SOUMISSION" ? "En attente N+1" :
-                         demande.statut}
-                      </span>
+                        {STATUT_LABELS[demande.statut] || demande.statut}
+                      </Badge>
                     </td>
                   </tr>
                 ))}

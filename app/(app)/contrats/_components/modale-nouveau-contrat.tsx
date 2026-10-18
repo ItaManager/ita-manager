@@ -137,7 +137,7 @@ export function ModaleNouveauContrat({
   const handleTelechargerPDF = async () => {
     if (!contratCree) return;
     // TODO: Implémenter la génération et téléchargement du PDF
-    console.log("Télécharger contrat PDF", contratCree.id);
+    // TODO: Génération automatique PDF après création
 
     // Fermer après téléchargement
     setContratCree(null);

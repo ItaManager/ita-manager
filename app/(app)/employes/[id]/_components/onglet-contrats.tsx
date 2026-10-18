@@ -56,12 +56,12 @@ export function OngletContrats({
 }: OngletContratsProps) {
   const handleNouveauContrat = () => {
     // TODO: Ouvrir modale création contrat
-    console.log("Nouveau contrat pour", employeId);
+    // TODO: Modale création contrat
   };
 
   const handleNouvelAvenant = (contratId: string) => {
     // TODO: Ouvrir modale création avenant
-    console.log("Nouvel avenant pour contrat", contratId);
+    // TODO: Modale création avenant
   };
 
   const handleVoirDocument = (url: string) => {
@@ -70,7 +70,7 @@ export function OngletContrats({
 
   const handleTelechargerDocument = (url: string, nomFichier: string) => {
     // TODO: Implémenter le téléchargement
-    console.log("Télécharger", nomFichier);
+    // TODO: Téléchargement fichier contrat
   };
 
   return (

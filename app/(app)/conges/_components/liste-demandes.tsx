@@ -10,15 +10,7 @@ import { ModalNouvelleDemande } from "./modal-nouvelle-demande";
 import { StatutAbsence } from "@prisma/client";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-
-const STATUT_LABELS: Record<StatutAbsence, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  BROUILLON: { label: "Brouillon", variant: "secondary" },
-  ATTENTE_N1: { label: "En attente N+1", variant: "default" },
-  ATTENTE_RH: { label: "En attente RH", variant: "default" },
-  VALIDEE: { label: "Validée", variant: "outline" },
-  REFUSEE: { label: "Refusée", variant: "destructive" },
-  ANNULEE: { label: "Annulée", variant: "secondary" },
-};
+import { getBadgeClasses, STATUT_LABELS } from "@/lib/ui/badge-styles";
 
 export function ListeDemandes() {
   const [absences, setAbsences] = useState<AbsenceListItem[]>([]);
@@ -76,8 +68,8 @@ export function ListeDemandes() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
                       <p className="font-medium">{absence.typeAbsence}</p>
-                      <Badge variant={STATUT_LABELS[absence.statut].variant}>
-                        {STATUT_LABELS[absence.statut].label}
+                      <Badge className={getBadgeClasses(absence.statut, "conges")}>
+                        {STATUT_LABELS[absence.statut] || absence.statut}
                       </Badge>
                     </div>
                     <p className="mt-1 text-sm text-muted-foreground">
