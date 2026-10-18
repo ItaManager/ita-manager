@@ -20,6 +20,7 @@ export function ConfigurationMFA({ userId }: ConfigurationMFAProps) {
   const [etape, setEtape] = useState<Etape>("qr");
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [secret, setSecret] = useState<string | null>(null);
+  const [factorId, setFactorId] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -42,6 +43,7 @@ export function ConfigurationMFA({ userId }: ConfigurationMFAProps) {
       const data = await response.json();
       setQrCode(data.qrCode);
       setSecret(data.secret);
+      setFactorId(data.factorId);
       setCodesSecours(data.backupCodes || []);
     } catch (error) {
       setErreur(
@@ -61,6 +63,11 @@ export function ConfigurationMFA({ userId }: ConfigurationMFAProps) {
       return;
     }
 
+    if (!factorId) {
+      setErreur("Erreur de configuration. Veuillez régénérer le QR code.");
+      return;
+    }
+
     setChargement(true);
     setErreur(null);
 
@@ -68,7 +75,7 @@ export function ConfigurationMFA({ userId }: ConfigurationMFAProps) {
       const response = await fetch("/api/auth/mfa/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, factorId: secret }),
+        body: JSON.stringify({ code, factorId }),
       });
 
       if (!response.ok) {
