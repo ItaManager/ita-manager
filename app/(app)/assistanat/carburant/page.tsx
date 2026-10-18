@@ -1,132 +1,22 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Fuel, FileText, Warehouse, TrendingUp, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Fuel, Plus, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
-import {
-  listerDistributions,
-  listerStationsService,
-  listerCuves,
-} from "@/lib/actions/carburant";
-import { toast } from "sonner";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
-import { DistribuerModal } from "./_components/distribuer-modal";
-import type { TypeCarburant, NatureDistribution } from "@prisma/client";
-
-type Distribution = {
-  id: string;
-  reference: string;
-  dateDistribution: Date;
-  typeCarburant: TypeCarburant;
-  quantite: any;
-  montant: any;
-  compteur: any;
-  pleinComplet: boolean;
-  compteurAnomalie: boolean;
-  nature: NatureDistribution;
-  demandeur: { nom: string; prenom: string };
-  materiel: { codeIta: string; designation: string };
-  station: { libelle: string } | null;
-  lieuStockage: { libelle: string } | null;
-};
-
-const TYPE_LABELS: Record<TypeCarburant, string> = {
-  GASOIL: "Gasoil",
-  SUPER: "Super",
-  MELANGE: "Mélange 2T",
-};
+import { OngletDemandes } from "./_components/onglet-demandes";
+import { OngletGarages } from "./_components/onglet-garages";
+import { OngletRechargements } from "./_components/onglet-rechargements";
+import { OngletConsommation } from "./_components/onglet-consommation";
+import { ModalDemandeCarburant } from "./_components/modal-demande-carburant";
 
 export default function CarburantPage() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const page = Number(searchParams.get("page") || "1");
+  const [modalDemandeOpen, setModalDemandeOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const [distributions, setDistributions] = useState<Distribution[]>([]);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [chargement, setChargement] = useState(true);
-
-  // Données pour le formulaire
-  const [employes, setEmployes] = useState<Array<{ id: string; nom: string; prenom: string }>>([]);
-  const [materiels, setMateriels] = useState<Array<{ id: string; codeIta: string; designation: string }>>([]);
-  const [stations, setStations] = useState<Array<{ id: string; libelle: string }>>([]);
-  const [cuves, setCuves] = useState<Array<{ id: string; libelle: string; articles: Array<{ articleId: string; libelle: string }> }>>([]);
-
-  const [modalOpen, setModalOpen] = useState(false);
-
-  const charger = useCallback(async () => {
-    setChargement(true);
-    try {
-      const data = await listerDistributions(page);
-      setDistributions(data.distributions as any);
-      setTotal(data.total);
-      setTotalPages(data.totalPages);
-    } catch (error: any) {
-      toast.error(error.message || "Erreur lors du chargement");
-    } finally {
-      setChargement(false);
-    }
-  }, [page]);
-
-  const chargerDonneesFormulaire = useCallback(async () => {
-    try {
-      // TODO: Charger employes et materiels depuis les Server Actions appropriées
-      // Pour l'instant, on utilise des données vides
-      setEmployes([]);
-      setMateriels([]);
-
-      const [stationsData, cuvesData] = await Promise.all([
-        listerStationsService(),
-        listerCuves(),
-      ]);
-
-      setStations(stationsData.stations);
-      setCuves(cuvesData.cuves);
-    } catch (error: any) {
-      toast.error("Erreur lors du chargement des données");
-    }
-  }, []);
-
-  useEffect(() => {
-    charger();
-    chargerDonneesFormulaire();
-  }, [charger, chargerDonneesFormulaire]);
-
-  const handlePageChange = (newPage: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", newPage.toString());
-    router.push(`?${params.toString()}`);
+  const handleRefresh = () => {
+    setRefreshKey((prev) => prev + 1);
   };
-
-  if (chargement) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="flex items-center gap-3 mb-6">
-          <Fuel className="h-8 w-8 text-primary" />
-          <div>
-            <h1 className="text-3xl font-semibold">Distributions de carburant</h1>
-            <p className="text-sm text-muted-foreground">
-              Gestion du carburant (stations et cuves)
-            </p>
-          </div>
-        </div>
-        <div className="text-center py-12 text-muted-foreground">
-          Chargement...
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto py-8">
@@ -134,131 +24,59 @@ export default function CarburantPage() {
         <div className="flex items-center gap-3">
           <Fuel className="h-8 w-8 text-primary" />
           <div>
-            <h1 className="text-3xl font-semibold">Distributions de carburant</h1>
+            <h1 className="text-3xl font-semibold">Carburant</h1>
             <p className="text-sm text-muted-foreground">
-              {total} distribution{total !== 1 ? "s" : ""} enregistrée
-              {total !== 1 ? "s" : ""}
+              Gestion des demandes, distributions et rechargements
             </p>
           </div>
         </div>
-        <Button onClick={() => setModalOpen(true)}>
+        <Button onClick={() => setModalDemandeOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
-          Nouvelle distribution
+          Nouvelle demande
         </Button>
       </div>
 
-      {distributions.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          Aucune distribution enregistrée.
-        </div>
-      ) : (
-        <>
-          <div className="border rounded-xl shadow-sm">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[130px]">RÉFÉRENCE</TableHead>
-                  <TableHead className="w-[110px]">DATE</TableHead>
-                  <TableHead>MATÉRIEL</TableHead>
-                  <TableHead>DEMANDEUR</TableHead>
-                  <TableHead>TYPE</TableHead>
-                  <TableHead className="text-right w-[100px]">QUANTITÉ</TableHead>
-                  <TableHead className="text-right w-[100px]">COMPTEUR</TableHead>
-                  <TableHead>SOURCE</TableHead>
-                  <TableHead className="w-[80px]">PLEIN</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {distributions.map((dist) => (
-                  <TableRow key={dist.id}>
-                    <TableCell className="font-medium font-mono text-xs">
-                      {dist.reference}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {format(new Date(dist.dateDistribution), "d MMM yy", {
-                        locale: fr,
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{dist.materiel.codeIta}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {dist.materiel.designation}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {dist.demandeur.prenom} {dist.demandeur.nom}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {TYPE_LABELS[dist.typeCarburant]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {Number(dist.quantite).toFixed(2)} L
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      <div className="flex items-center justify-end gap-1">
-                        {dist.compteurAnomalie && (
-                          <AlertTriangle className="h-3 w-3 text-warning" />
-                        )}
-                        {Number(dist.compteur).toLocaleString("fr-FR")}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {dist.nature === "STATION"
-                        ? dist.station?.libelle || "—"
-                        : dist.lieuStockage?.libelle || "—"}
-                    </TableCell>
-                    <TableCell>
-                      {dist.pleinComplet ? (
-                        <Badge variant="secondary">Complet</Badge>
-                      ) : (
-                        <Badge variant="outline">Partiel</Badge>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+      <Tabs defaultValue="demandes" className="w-full">
+        <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsTrigger value="demandes" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Demandes
+          </TabsTrigger>
+          <TabsTrigger value="garages" className="flex items-center gap-2">
+            <Warehouse className="h-4 w-4" />
+            Garages
+          </TabsTrigger>
+          <TabsTrigger value="rechargements" className="flex items-center gap-2">
+            <Fuel className="h-4 w-4" />
+            Rechargements
+          </TabsTrigger>
+          <TabsTrigger value="consommation" className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Consommation
+          </TabsTrigger>
+        </TabsList>
 
-          <div className="flex items-center justify-between mt-6">
-            <div className="text-sm text-muted-foreground">
-              Page {page} sur {totalPages} · {total} résultat
-              {total !== 1 ? "s" : ""}
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(page - 1)}
-                disabled={page === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(page + 1)}
-                disabled={page === totalPages}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </>
-      )}
+        <TabsContent value="demandes" className="space-y-4">
+          <OngletDemandes key={refreshKey} onRefresh={handleRefresh} />
+        </TabsContent>
 
-      <DistribuerModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        onSuccess={charger}
-        employes={employes}
-        materiels={materiels}
-        stations={stations}
-        cuves={cuves}
+        <TabsContent value="garages" className="space-y-4">
+          <OngletGarages key={refreshKey} onRefresh={handleRefresh} />
+        </TabsContent>
+
+        <TabsContent value="rechargements" className="space-y-4">
+          <OngletRechargements key={refreshKey} onRefresh={handleRefresh} />
+        </TabsContent>
+
+        <TabsContent value="consommation" className="space-y-4">
+          <OngletConsommation key={refreshKey} />
+        </TabsContent>
+      </Tabs>
+
+      <ModalDemandeCarburant
+        open={modalDemandeOpen}
+        onOpenChange={setModalDemandeOpen}
+        onSuccess={handleRefresh}
       />
     </div>
   );
