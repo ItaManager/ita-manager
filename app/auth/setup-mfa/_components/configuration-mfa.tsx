@@ -128,7 +128,7 @@ export function ConfigurationMFA({ userId }: ConfigurationMFAProps) {
               <div className="flex justify-center p-4 bg-white rounded-lg border border-border">
                 {qrCode && (
                   <Image
-                    src={qrCode}
+                    src={qrCode.trimEnd()}
                     alt="QR Code TOTP"
                     width={200}
                     height={200}

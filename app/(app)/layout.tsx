@@ -18,6 +18,15 @@ export default async function AppLayout({
     redirect("/connexion");
   }
 
+  // Vérifier si MFA est configurée
+  const { data: factors } = await supabase.auth.mfa.listFactors();
+  const mfaConfiguree = factors && factors.totp && factors.totp.length > 0;
+
+  // Si MFA non configurée, rediriger vers setup-mfa
+  if (!mfaConfiguree) {
+    redirect("/auth/setup-mfa");
+  }
+
   return (
     <div className="flex min-h-screen bg-background">
       {/* Barre latérale fixe */}

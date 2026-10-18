@@ -320,11 +320,10 @@ export const inviterUtilisateur = actionProtegee(
     try {
       // Créer le profil, les rôles et les codes de secours en transaction
       await prisma.$transaction(async (tx) => {
-        // Créer le profil avec l'ID de Supabase Auth
-        await tx.profil.create({
+        // Mettre à jour le profil (créé automatiquement par le trigger)
+        await tx.profil.update({
+          where: { id: profilId },
           data: {
-            id: profilId,
-            email: validated.email,
             actif: true,
             employeId: validated.employeId,
           },

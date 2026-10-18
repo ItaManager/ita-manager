@@ -11,7 +11,7 @@ import { createClient } from "@supabase/supabase-js";
 import { randomBytes } from "node:crypto";
 import { prismaDirect as prisma } from "../scripts/lib/prisma-direct";
 import { PERMISSIONS, type PermissionCode } from "../lib/auth/guard";
-import type { NiveauHierarchique } from "@prisma/client";
+import type { NiveauHierarchique, Sexe, SituationMatrimoniale, TypeMainOeuvre } from "@prisma/client";
 
 const ROLES = [
   {
@@ -801,13 +801,14 @@ async function seedEmployesTest() {
       dateNaissance: new Date("1990-05-15"),
       lieuNaissance: "Abidjan",
       nationalite: "CI",
-      sexe: "F" as const,
-      situationMatrimoniale: "CELIBATAIRE" as const,
+      sexe: "F" as Sexe,
+      situationMatrimoniale: "CELIBATAIRE" as SituationMatrimoniale,
       nombreEnfants: 0,
       telephone: "+225 07 00 00 01",
       email: "marie.kouassi.test@example.com",
       adresse: "Cocody, Abidjan",
       dateEmbauche: new Date("2024-01-15"),
+      typeMainOeuvre: "PERMANENT" as TypeMainOeuvre,
       actif: true,
     },
     {
@@ -817,13 +818,14 @@ async function seedEmployesTest() {
       dateNaissance: new Date("1988-08-22"),
       lieuNaissance: "Bouaké",
       nationalite: "CI",
-      sexe: "M" as const,
-      situationMatrimoniale: "MARIE" as const,
+      sexe: "M" as Sexe,
+      situationMatrimoniale: "MARIE" as SituationMatrimoniale,
       nombreEnfants: 2,
       telephone: "+225 07 00 00 02",
       email: "arnaud.yao.test@example.com",
       adresse: "Marcory, Abidjan",
       dateEmbauche: new Date("2024-02-01"),
+      typeMainOeuvre: "PERMANENT" as TypeMainOeuvre,
       actif: true,
     },
     {
@@ -833,13 +835,14 @@ async function seedEmployesTest() {
       dateNaissance: new Date("1992-03-10"),
       lieuNaissance: "Yamoussoukro",
       nationalite: "CI",
-      sexe: "F" as const,
-      situationMatrimoniale: "CELIBATAIRE" as const,
+      sexe: "F" as Sexe,
+      situationMatrimoniale: "CELIBATAIRE" as SituationMatrimoniale,
       nombreEnfants: 0,
       telephone: "+225 07 00 00 03",
       email: "fatou.bamba.test@example.com",
       adresse: "Plateau, Abidjan",
       dateEmbauche: new Date("2024-03-10"),
+      typeMainOeuvre: "PERMANENT" as TypeMainOeuvre,
       actif: true,
     },
   ];
@@ -847,28 +850,57 @@ async function seedEmployesTest() {
   for (const emp of employesTest) {
     const employe = await prisma.employe.upsert({
       where: { matricule: emp.matricule },
-      create: emp,
-      update: emp,
+      create: {
+        matricule: emp.matricule,
+        nom: emp.nom,
+        prenom: emp.prenom,
+        dateNaissance: emp.dateNaissance,
+        lieuNaissance: emp.lieuNaissance,
+        nationaliteId: emp.nationalite,
+        sexe: emp.sexe,
+        situationMatrimoniale: emp.situationMatrimoniale,
+        nombreEnfants: emp.nombreEnfants,
+        telephone: emp.telephone,
+        email: emp.email,
+        adresse: emp.adresse,
+        typeMainOeuvre: emp.typeMainOeuvre,
+      },
+      update: {
+        nom: emp.nom,
+        prenom: emp.prenom,
+        dateNaissance: emp.dateNaissance,
+        lieuNaissance: emp.lieuNaissance,
+        nationaliteId: emp.nationalite,
+        sexe: emp.sexe,
+        situationMatrimoniale: emp.situationMatrimoniale,
+        nombreEnfants: emp.nombreEnfants,
+        telephone: emp.telephone,
+        email: emp.email,
+        adresse: emp.adresse,
+        typeMainOeuvre: emp.typeMainOeuvre,
+      },
     });
 
-    // Créer une affectation active au poste
-    await prisma.affectation.upsert({
+    // Créer une affectation active au poste si elle n'existe pas
+    const affectationExistante = await prisma.affectation.findFirst({
       where: {
-        employeId_posteId_dateDebut: {
-          employeId: employe.id,
-          posteId,
-          dateDebut: emp.dateEmbauche,
-        },
-      },
-      create: {
         employeId: employe.id,
         posteId,
         dateDebut: emp.dateEmbauche,
-        dateFin: null,
-        superieurId: null,
       },
-      update: {},
     });
+
+    if (!affectationExistante) {
+      await prisma.affectation.create({
+        data: {
+          employeId: employe.id,
+          posteId,
+          dateDebut: emp.dateEmbauche,
+          dateFin: null,
+          superieurId: null,
+        },
+      });
+    }
   }
 
   console.log(`  ✅ ${employesTest.length} employés de test créés (sans compte utilisateur)`);

@@ -26,13 +26,13 @@ async function main() {
   console.log("🔑 Mot de passe:", password);
   console.log("");
 
-  // 1. Trouver Koffi FLO
+  // 1. Trouver Aya BROU
   const employe = await prisma.employe.findUnique({
-    where: { matricule: "JRN-2026-0002" },
+    where: { matricule: "ITA-2026-0001" },
   });
 
   if (!employe) {
-    console.log("❌ Employé JRN-2026-0002 non trouvé");
+    console.log("❌ Employé ITA-2026-0001 non trouvé");
     process.exit(1);
   }
 
