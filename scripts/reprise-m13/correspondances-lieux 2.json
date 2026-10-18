@@ -1,0 +1,158 @@
+[
+  {
+    "lieuExcel": "CHANTIER",
+    "nbOccurrences": 423,
+    "propositionNormalise": "CHANTIER",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "DIRECTION",
+    "nbOccurrences": 331,
+    "propositionNormalise": "DIRECTION",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "GARAGE",
+    "nbOccurrences": 57,
+    "propositionNormalise": "GARAGE",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "GARAGE PK22",
+    "nbOccurrences": 19,
+    "propositionNormalise": "GARAGE PK22",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "ASSINIE",
+    "nbOccurrences": 13,
+    "propositionNormalise": "ASSINIE",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "SITE",
+    "nbOccurrences": 13,
+    "propositionNormalise": "SITE",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "ADMINISTRATION",
+    "nbOccurrences": 13,
+    "propositionNormalise": "ADMINISTRATION",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "ABIDJAN",
+    "nbOccurrences": 11,
+    "propositionNormalise": "ABIDJAN",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "ONAD JEAN PAUL 2",
+    "nbOccurrences": 10,
+    "propositionNormalise": "ONAD JEAN PAUL 2",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "ASSINIE BASE VIE",
+    "nbOccurrences": 8,
+    "propositionNormalise": "ASSINIE BASE VIE",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "GARAGE PK22 - ABIDJAN",
+    "nbOccurrences": 4,
+    "propositionNormalise": "GARAGE PK22 - ABIDJAN",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "ONAD JP 2",
+    "nbOccurrences": 4,
+    "propositionNormalise": "ONAD JP 2",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "TAABO",
+    "nbOccurrences": 3,
+    "propositionNormalise": "TAABO",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "BONOUMIN",
+    "nbOccurrences": 2,
+    "propositionNormalise": "BONOUMIN",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "YOP 2 CIE",
+    "nbOccurrences": 2,
+    "propositionNormalise": "YOP 2 CIE",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "ASSINIE PK3",
+    "nbOccurrences": 2,
+    "propositionNormalise": "ASSINIE PK3",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "TOUBA",
+    "nbOccurrences": 1,
+    "propositionNormalise": "TOUBA",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "IVOIRE MOTORS",
+    "nbOccurrences": 1,
+    "propositionNormalise": "IVOIRE MOTORS",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "ONAD ANGRE",
+    "nbOccurrences": 1,
+    "propositionNormalise": "ONAD ANGRE",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "KONG - TEHINIE",
+    "nbOccurrences": 1,
+    "propositionNormalise": "KONG - TEHINIE",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "ONAD - ABIDJAN",
+    "nbOccurrences": 1,
+    "propositionNormalise": "ONAD - ABIDJAN",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "chANTIER",
+    "nbOccurrences": 1,
+    "propositionNormalise": "CHANTIER",
+    "aValider": true
+  },
+  {
+    "lieuExcel": "SITARAIL INPH",
+    "nbOccurrences": 1,
+    "propositionNormalise": "SITARAIL INPH",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "SITE PORTEO",
+    "nbOccurrences": 1,
+    "propositionNormalise": "SITE PORTEO",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "GARAGE PK 22",
+    "nbOccurrences": 1,
+    "propositionNormalise": "GARAGE PK 22",
+    "aValider": false
+  },
+  {
+    "lieuExcel": "MPOUTO",
+    "nbOccurrences": 1,
+    "propositionNormalise": "MPOUTO",
+    "aValider": false
+  }
+]

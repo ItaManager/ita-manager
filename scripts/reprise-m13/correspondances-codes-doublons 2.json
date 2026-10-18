@@ -1,0 +1,2028 @@
+[
+  {
+    "code": "AK-MTS1",
+    "nbOccurrences": 16,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 169,
+        "designation": "MARTEAU MASSE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 170,
+        "designation": "MARTEAU MASSE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 171,
+        "designation": "MARTEAU MASSE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 172,
+        "designation": "MARTEAU MASSE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 173,
+        "designation": "MARTEAU MASSE",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 174,
+        "designation": "MARTEAU MENUISIER",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 175,
+        "designation": "MARTEAU MENUISIER",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 176,
+        "designation": "MARTEAU MENUISIER",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 180,
+        "designation": "MARTEAU SIMPLE",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 181,
+        "designation": "MARTEAU SIMPLE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 182,
+        "designation": "MARTEAU SIMPLE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 183,
+        "designation": "MARTEAU SIMPLE",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 184,
+        "designation": "MARTEAU SIMPLE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 185,
+        "designation": "MARTEAU SIMPLE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 186,
+        "designation": "MARTEAU SIMPLE 2KG",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 187,
+        "designation": "MARTEAU SIMPLE 2KG",
+        "etat": ""
+      }
+    ],
+    "resolution": "MANUEL",
+    "commentaire": "16 occurrences → résolution manuelle requise"
+  },
+  {
+    "code": "AK-FUE01",
+    "nbOccurrences": 9,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 128,
+        "designation": "FUT A EAU 1000L",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 129,
+        "designation": "FUT A EAU 1000L",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 130,
+        "designation": "FUT A EAU 1000L",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 131,
+        "designation": "FUT A EAU 1000L",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 132,
+        "designation": "FUT A EAU 1000L",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 133,
+        "designation": "FUT A EAU 1000L",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 134,
+        "designation": "FUT A EAU 1000L",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 135,
+        "designation": "FUT A EAU 1000L",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 136,
+        "designation": "FUT A EAU 1000L",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-PELO1",
+    "nbOccurrences": 9,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 283,
+        "designation": "PELLE ORDINAIRES",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 284,
+        "designation": "PELLE ORDINAIRES",
+        "etat": "08 BON - 10 MAUVAIS"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 285,
+        "designation": "PELLE ORDINAIRES",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 286,
+        "designation": "PELLE ORDINAIRES",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 287,
+        "designation": "PELLE ORDINAIRES",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 288,
+        "designation": "PELLE ORDINAIRES",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 289,
+        "designation": "PELLE ORDINAIRES",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 290,
+        "designation": "PELLE ORDINAIRES",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 291,
+        "designation": "PELLE ORDINAIRES",
+        "etat": "BON"
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-ARCL01",
+    "nbOccurrences": 8,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 33,
+        "designation": "ARRACHE-CLOUS",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 34,
+        "designation": "ARRACHE-CLOUS",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 35,
+        "designation": "ARRACHE-CLOUS",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 36,
+        "designation": "ARRACHE-CLOUS",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 37,
+        "designation": "ARRACHE-CLOUS",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 38,
+        "designation": "ARRACHE-CLOUS",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 39,
+        "designation": "ARRACHE-CLOUS",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 40,
+        "designation": "ARRACHE-CLOUS",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-TC01",
+    "nbOccurrences": 8,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 402,
+        "designation": "TIGE DE COFFRAGE",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 403,
+        "designation": "TIGE DE COFFRAGE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 404,
+        "designation": "TIGE DE COFFRAGE",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 405,
+        "designation": "TIGE DE COFFRAGE",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 406,
+        "designation": "TIGE DE COFFRAGE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 407,
+        "designation": "TIGE DE COFFRAGE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 408,
+        "designation": "TIGE DE COFFRAGE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 409,
+        "designation": "TIGE DE COFFRAGE",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-BRT01",
+    "nbOccurrences": 7,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 52,
+        "designation": "BROUETTE DE CHANTIER",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 53,
+        "designation": "BROUETTE DE CHANTIER",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 54,
+        "designation": "BROUETTE DE CHANTIER",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 55,
+        "designation": "BROUETTE DE CHANTIER",
+        "etat": "2B 2M"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 56,
+        "designation": "BROUETTE DE CHANTIER",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 57,
+        "designation": "BROUETTE DE CHANTIER",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 58,
+        "designation": "BROUETTE DE CHANTIER",
+        "etat": "BON"
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-EMT02",
+    "nbOccurrences": 7,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 107,
+        "designation": "ETAIS METALIQUE GRIS - GALVA",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 108,
+        "designation": "ETAIS METALIQUE GRIS - GALVA",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 109,
+        "designation": "ETAIS METALIQUE GRIS - GALVA",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 110,
+        "designation": "ETAIS METALIQUE GRIS - GALVA",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 111,
+        "designation": "ETAIS METALIQUE GRIS - GALVA",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 112,
+        "designation": "ETAIS METALIQUE GRIS - GALVA",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 113,
+        "designation": "ETAIS METALIQUE GRIS - GALVA",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-BURIN1",
+    "nbOccurrences": 6,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 59,
+        "designation": "BURIN",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 60,
+        "designation": "BURIN",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 61,
+        "designation": "BURIN",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 62,
+        "designation": "BURIN",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 63,
+        "designation": "BURIN",
+        "etat": "B"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 64,
+        "designation": "BURIN",
+        "etat": "B"
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-NIVM1",
+    "nbOccurrences": 6,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 212,
+        "designation": "NIVEAU MACON",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 213,
+        "designation": "NIVEAU MACON",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 214,
+        "designation": "NIVEAU MACON",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 215,
+        "designation": "NIVEAU MACON",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 216,
+        "designation": "NIVEAU MACON",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 217,
+        "designation": "NIVEAU MACON 60MM",
+        "etat": ""
+      }
+    ],
+    "resolution": "MANUEL",
+    "commentaire": "6 occurrences → résolution manuelle requise"
+  },
+  {
+    "code": "AK-PDS06",
+    "nbOccurrences": 6,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 241,
+        "designation": "PANNEAU DE SIGNALISATION (ROUTE BARRE)",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 242,
+        "designation": "PANNEAU DE SIGNALISATION (ROUTE BARRE)",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 243,
+        "designation": "PANNEAU DE SIGNALISATION (ROUTE BARRE)",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 244,
+        "designation": "PANNEAU DE SIGNALISATION (ROUTE BARRE)",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 245,
+        "designation": "PANNEAU DE SIGNALISATION (ROUTE BARRE)",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 246,
+        "designation": "PANNEAU DE SIGNALISATION (ROUTE BARRE)",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-PELB01",
+    "nbOccurrences": 6,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 277,
+        "designation": "PELLE BECHES",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 278,
+        "designation": "PELLE BECHES",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 279,
+        "designation": "PELLE BECHES",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 280,
+        "designation": "PELLE BECHES",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 281,
+        "designation": "PELLE BECHES",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 282,
+        "designation": "PELLE BECHES",
+        "etat": "BON"
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-PIOCH1",
+    "nbOccurrences": 6,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 300,
+        "designation": "PIOCHE",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 301,
+        "designation": "PIOCHE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 302,
+        "designation": "PIOCHE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 303,
+        "designation": "PIOCHE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 304,
+        "designation": "PIOCHE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 305,
+        "designation": "PIOCHE",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-RATE1",
+    "nbOccurrences": 6,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 345,
+        "designation": "RATEAU",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 346,
+        "designation": "RATEAU",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 347,
+        "designation": "RATEAU",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 348,
+        "designation": "RATEAU",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 349,
+        "designation": "RATEAU",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 350,
+        "designation": "RATEAU",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-SAUM1",
+    "nbOccurrences": 6,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 382,
+        "designation": "SEAU MACON",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 383,
+        "designation": "SEAU MACON",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 384,
+        "designation": "SEAU MACON",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 385,
+        "designation": "SEAU MACON",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 386,
+        "designation": "SEAU MACON",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 387,
+        "designation": "SEAU MACON",
+        "etat": "BON"
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-PS01",
+    "nbOccurrences": 5,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 155,
+        "designation": "LAMPE SOLAIRE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 156,
+        "designation": "LAMPE SOLAIRE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 157,
+        "designation": "LAMPE SOLAIRE FELICITY SOLAR",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 158,
+        "designation": "LAMPE SOLAIRE FELICITY SOLAR",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 159,
+        "designation": "LAMPE SOLAIRE FELICITY SOLAR",
+        "etat": "BON"
+      }
+    ],
+    "resolution": "MANUEL",
+    "commentaire": "5 occurrences → résolution manuelle requise"
+  },
+  {
+    "code": "AK-MACH1",
+    "nbOccurrences": 5,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 160,
+        "designation": "MACHETTE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 161,
+        "designation": "MACHETTE",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 162,
+        "designation": "MACHETTE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 163,
+        "designation": "MACHETTE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 164,
+        "designation": "MACHETTE",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-PDS05",
+    "nbOccurrences": 5,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 223,
+        "designation": "PANNEAU DE SIGNALISATION (ATTENTION TRAVAUX)",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 224,
+        "designation": "PANNEAU DE SIGNALISATION (ATTENTION TRAVAUX)",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 225,
+        "designation": "PANNEAU DE SIGNALISATION (ATTENTION TRAVAUX)",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 226,
+        "designation": "PANNEAU DE SIGNALISATION (ATTENTION TRAVAUX)",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 227,
+        "designation": "PANNEAU DE SIGNALISATION (ATTENTION TRAVAUX)",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-RMT01",
+    "nbOccurrences": 5,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 332,
+        "designation": "RAIL METALIQUE",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 333,
+        "designation": "RAIL METALIQUE",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 334,
+        "designation": "RAIL METALIQUE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 335,
+        "designation": "RAIL METALIQUE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 336,
+        "designation": "RAIL METALIQUE",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-SERJ1",
+    "nbOccurrences": 5,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 388,
+        "designation": "SERRE-JOINT METALLIQUE",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 389,
+        "designation": "SERRE-JOINT METALLIQUE",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 390,
+        "designation": "SERRE-JOINT METALLIQUE",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 391,
+        "designation": "SERRE-JOINT METALLIQUE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 392,
+        "designation": "SERRE-JOINT METALLIQUE",
+        "etat": "BON"
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-ECHF1",
+    "nbOccurrences": 4,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 93,
+        "designation": "ENSEMBLE CHAFFAUDAGE",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 94,
+        "designation": "ENSEMBLE CHAFFAUDAGE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 95,
+        "designation": "ENSEMBLE CHAFFAUDAGE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 96,
+        "designation": "ENSEMBLE CHAFFAUDAGE",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-ECA01",
+    "nbOccurrences": 4,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 97,
+        "designation": "ENSEMBLE CONE D'ABRANHAM",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 98,
+        "designation": "ENSEMBLE CONE D'ABRANHAM",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 99,
+        "designation": "ENSEMBLE CONE D'ABRANHAM",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 100,
+        "designation": "ENSEMBLE CONE D'ABRANHAM",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-EMT01",
+    "nbOccurrences": 4,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 114,
+        "designation": "ETAIS METALIQUE ORANGE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 115,
+        "designation": "ETAIS METALIQUE ORANGE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 116,
+        "designation": "ETAIS METALIQUE ORANGE",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 117,
+        "designation": "ETAIS METALIQUE ORANGE",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-MO01",
+    "nbOccurrences": 4,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 208,
+        "designation": "MOULE POUR ECHANTILLONNAGE BETON",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 209,
+        "designation": "MOULE POUR ECHANTILLONNAGE BETON",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 210,
+        "designation": "MOULE POUR ECHANTILLONNAGE BETON",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 211,
+        "designation": "MOULE POUR ECHANTILLONNAGE BETON",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-PDS07",
+    "nbOccurrences": 4,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 247,
+        "designation": "PANNEAU DE SIGNALISATION (SORTIE D'ENGIN)",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 248,
+        "designation": "PANNEAU DE SIGNALISATION (SORTIE D'ENGIN)",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 249,
+        "designation": "PANNEAU DE SIGNALISATION (SORTIE D'ENGIN)",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 250,
+        "designation": "PANNEAU DE SIGNALISATION (SORTIE D'ENGIN)",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-PDS10",
+    "nbOccurrences": 4,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 253,
+        "designation": "PANNEAU DE SIGNALISATION(ACCES INTERDIT)",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 254,
+        "designation": "PANNEAU DE SIGNALISATION(ACCES INTERDIT)",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 255,
+        "designation": "PANNEAU DE SIGNALISATION(ACCES INTERDIT)",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 256,
+        "designation": "PANNEAU DE SIGNALISATION(ACCES INTERDIT)",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-SAN01",
+    "nbOccurrences": 4,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 362,
+        "designation": "SANGLE  5M",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 363,
+        "designation": "SANGLE  5M",
+        "etat": "3B 1M"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 364,
+        "designation": "SANGLE  5M",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 365,
+        "designation": "SANGLE  5M",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-SCIE01",
+    "nbOccurrences": 4,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 371,
+        "designation": "SCIE MACON",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 372,
+        "designation": "SCIE MACON",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 373,
+        "designation": "SCIE MACON",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 374,
+        "designation": "SCIE MACON 400MM",
+        "etat": "BON"
+      }
+    ],
+    "resolution": "MANUEL",
+    "commentaire": "4 occurrences → résolution manuelle requise"
+  },
+  {
+    "code": "AK-TRU01",
+    "nbOccurrences": 4,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 416,
+        "designation": "TRUELLE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 417,
+        "designation": "TRUELLE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 418,
+        "designation": "TRUELLE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 419,
+        "designation": "TRUELLE",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-DECAM1",
+    "nbOccurrences": 3,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 81,
+        "designation": "DECAMETTRE 50 M",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 82,
+        "designation": "DECAMETTRE 50 M",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 83,
+        "designation": "DECAMETTRE 50 M",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-EMT03",
+    "nbOccurrences": 3,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 118,
+        "designation": "ETAIS METALIQUE ROUGE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 119,
+        "designation": "ETAIS METALIQUE ROUGE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 120,
+        "designation": "ETAIS METALIQUE ROUGE",
+        "etat": "BON"
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-GRT01",
+    "nbOccurrences": 3,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 141,
+        "designation": "GRATTOIR",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 142,
+        "designation": "GRATTOIR",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 143,
+        "designation": "GRATTOIR",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-PDS08",
+    "nbOccurrences": 3,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 229,
+        "designation": "PANNEAU DE SIGNALISATION (DEVIATION A DROITE)",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 230,
+        "designation": "PANNEAU DE SIGNALISATION (DEVIATION A DROITE)",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 231,
+        "designation": "PANNEAU DE SIGNALISATION (DEVIATION A DROITE)",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-PDS09",
+    "nbOccurrences": 3,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 232,
+        "designation": "PANNEAU DE SIGNALISATION (DEVIATION A GAUCHE)",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 233,
+        "designation": "PANNEAU DE SIGNALISATION (DEVIATION A GAUCHE)",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 234,
+        "designation": "PANNEAU DE SIGNALISATION (DEVIATION A GAUCHE)",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-PTE02",
+    "nbOccurrences": 3,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 308,
+        "designation": "PLATEAU D'ECHAFFAUDAGE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 309,
+        "designation": "PLATEAU D'ECHAFFAUDAGE",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 310,
+        "designation": "PLATEAU D'ECHAFFAUDAGE",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-PTE01",
+    "nbOccurrences": 3,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 322,
+        "designation": "PORTIQUE D'ECHAFFAUDAGE",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 323,
+        "designation": "PORTIQUE D'ECHAFFAUDAGE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 324,
+        "designation": "PORTIQUE D'ECHAFFAUDAGE",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-POUT01",
+    "nbOccurrences": 3,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 328,
+        "designation": "Poutrelle H20-390 LANA",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 329,
+        "designation": "Poutrelle H20-390 LANA",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 330,
+        "designation": "Poutrelle H20-390 LANA",
+        "etat": "BON"
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-TUA1",
+    "nbOccurrences": 3,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 421,
+        "designation": "TUYAUX D'ASPIRATION",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 422,
+        "designation": "TUYAUX D'ASPIRATION",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 423,
+        "designation": "TUYAUX D'ASPIRATION",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-TUE1",
+    "nbOccurrences": 3,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 425,
+        "designation": "TUYAUX D'EVACUATION",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 426,
+        "designation": "TUYAUX D'EVACUATION",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 427,
+        "designation": "TUYAUX D'EVACUATION",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-BARM01",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 42,
+        "designation": "BARAMIDE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 43,
+        "designation": "BARAMIDE",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-CONE1",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 77,
+        "designation": "CONE ORANGE",
+        "etat": "7B 5M"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 78,
+        "designation": "CONE ORANGE",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-DECAM2",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 79,
+        "designation": "DECAMETTRE 30 M",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 80,
+        "designation": "DECAMETTRE 30 M",
+        "etat": "BON"
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-EQU01",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 103,
+        "designation": "EQUERRE ALUMINIUM",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 104,
+        "designation": "EQUERRE ALUMINIUM",
+        "etat": "MAUVAIS"
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-FOUR01",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 124,
+        "designation": "FOURCHE D'ÉTAIS",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 125,
+        "designation": "FOURCHE D'ÉTAIS",
+        "etat": "BON"
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-FUC01",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 126,
+        "designation": "FUT A CARBURANT 1000L",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 127,
+        "designation": "FUT A CARBURANT 1000L",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-HACH1",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 148,
+        "designation": "HACHE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 149,
+        "designation": "HACHE",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-PDS03",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 235,
+        "designation": "PANNEAU DE SIGNALISATION (RALENTISEMENT 20 KM)",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 236,
+        "designation": "PANNEAU DE SIGNALISATION (RALENTISEMENT 20 KM)",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-PDS02",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 237,
+        "designation": "PANNEAU DE SIGNALISATION (RALENTISEMENT 30 KM)",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 238,
+        "designation": "PANNEAU DE SIGNALISATION (RALENTISEMENT 30 KM)",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-PDS01",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 239,
+        "designation": "PANNEAU DE SIGNALISATION (RALENTISEMENT 40 KM)",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 240,
+        "designation": "PANNEAU DE SIGNALISATION (RALENTISEMENT 40 KM)",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-PDS16",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 252,
+        "designation": "PANNEAU DE SIGNALISATION PARKING",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 261,
+        "designation": "PANNEAU STOP A MAIN",
+        "etat": ""
+      }
+    ],
+    "resolution": "AJOUTER_SUFFIXE",
+    "commentaire": "Peu d'occurrences → ajouter suffixe -A, -B, -C"
+  },
+  {
+    "code": "AK-PBL01",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 264,
+        "designation": "PANNEAUX DE BLINDAGE LOCAL",
+        "etat": ""
+      },
+      {
+        "feuille": "MOBILIER DE BUREAU",
+        "ligne": 270,
+        "designation": "Poubelle TRASH BOX",
+        "etat": ""
+      }
+    ],
+    "resolution": "AJOUTER_SUFFIXE",
+    "commentaire": "Peu d'occurrences → ajouter suffixe -A, -B, -C"
+  },
+  {
+    "code": "AK-PCG01",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 265,
+        "designation": "PANNEAUX DE COFFRAGE GEOPANEL 60x40 (PLASTIQUE NOIR)",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 266,
+        "designation": "PANNEAUX DE COFFRAGE GEOPANEL 60x40 (PLASTIQUE NOIR)",
+        "etat": "BON"
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-PMC2",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 269,
+        "designation": "PANNEAUX METALLIQUES DE COFFRAGE DES VOILES ET REGARDS 1,00 X 1,50",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 270,
+        "designation": "PANNEAUX METALLIQUES DE COFFRAGE DES VOILES ET REGARDS 1,00 X 1,50",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-PMC6",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 271,
+        "designation": "PANNEAUX METALLIQUES DE COFFRAGE DES VOILES ET REGARDS 1,00 X1,75",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 272,
+        "designation": "PANNEAUX METALLIQUES DE COFFRAGE DES VOILES ET REGARDS 1,00 X1,75",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-POUT02",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 326,
+        "designation": "Poutrelle H20-290 LANA",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 327,
+        "designation": "Poutrelle H20-290 LANA",
+        "etat": "BON"
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-CIS01",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 380,
+        "designation": "SCISEAU",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 381,
+        "designation": "SCISEAU",
+        "etat": "BON"
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-TALO1",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 396,
+        "designation": "TALOCHE METALLIQUE",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 397,
+        "designation": "TALOCHE METALLIQUE",
+        "etat": "BON"
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-TALO2",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 398,
+        "designation": "TALOCHE PLASTIIQUE",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 399,
+        "designation": "TALOCHE PLASTIIQUE",
+        "etat": "BON"
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-TEN01",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 400,
+        "designation": "TENAILLE",
+        "etat": ""
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 401,
+        "designation": "TENAILLE",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-TRPM01",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 414,
+        "designation": "TREPIEDS METALLIQUE",
+        "etat": "BON"
+      },
+      {
+        "feuille": "PETITS MATERIELS",
+        "ligne": 415,
+        "designation": "TREPIEDS METALLIQUE",
+        "etat": "BON"
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-CHB30",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "MOBILIER DE BUREAU",
+        "ligne": 85,
+        "designation": "Chaise PLASTIQUE",
+        "etat": ""
+      },
+      {
+        "feuille": "MOBILIER DE BUREAU",
+        "ligne": 89,
+        "designation": "Chaise bureau",
+        "etat": ""
+      }
+    ],
+    "resolution": "AJOUTER_SUFFIXE",
+    "commentaire": "Peu d'occurrences → ajouter suffixe -A, -B, -C"
+  },
+  {
+    "code": "AK-CHB31",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "MOBILIER DE BUREAU",
+        "ligne": 86,
+        "designation": "Chaise PLASTIQUE",
+        "etat": ""
+      },
+      {
+        "feuille": "MOBILIER DE BUREAU",
+        "ligne": 90,
+        "designation": "Chaise bureau",
+        "etat": ""
+      }
+    ],
+    "resolution": "AJOUTER_SUFFIXE",
+    "commentaire": "Peu d'occurrences → ajouter suffixe -A, -B, -C"
+  },
+  {
+    "code": "AK-ECR06",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "MOBILIER DE BUREAU",
+        "ligne": 154,
+        "designation": "Ecran Ordinateur LENOVO",
+        "etat": ""
+      },
+      {
+        "feuille": "MOBILIER DE BUREAU",
+        "ligne": 155,
+        "designation": "Ecran Ordinateur DG FLATRON M227WDP",
+        "etat": ""
+      }
+    ],
+    "resolution": "AJOUTER_SUFFIXE",
+    "commentaire": "Peu d'occurrences → ajouter suffixe -A, -B, -C"
+  },
+  {
+    "code": "AK-PBL17",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "MOBILIER DE BUREAU",
+        "ligne": 285,
+        "designation": "Poubelle  METALLIQUE",
+        "etat": ""
+      },
+      {
+        "feuille": "MOBILIER DE BUREAU",
+        "ligne": 286,
+        "designation": "Poubelle  METALLIQUE",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-TAB34",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "MOBILIER DE BUREAU",
+        "ligne": 377,
+        "designation": "Table de bureau",
+        "etat": ""
+      },
+      {
+        "feuille": "MOBILIER DE BUREAU",
+        "ligne": 378,
+        "designation": "Table de bureau",
+        "etat": ""
+      }
+    ],
+    "resolution": "FUSIONNER",
+    "commentaire": "Même désignation → probablement inventaire en double, fusionner"
+  },
+  {
+    "code": "AK-TAB39",
+    "nbOccurrences": 2,
+    "occurrences": [
+      {
+        "feuille": "MOBILIER DE BUREAU",
+        "ligne": 383,
+        "designation": "Table de bureau",
+        "etat": ""
+      },
+      {
+        "feuille": "MOBILIER DE BUREAU",
+        "ligne": 384,
+        "designation": "Tablette Support",
+        "etat": ""
+      }
+    ],
+    "resolution": "AJOUTER_SUFFIXE",
+    "commentaire": "Peu d'occurrences → ajouter suffixe -A, -B, -C"
+  }
+]

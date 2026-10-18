@@ -1,0 +1,121 @@
+[
+  {
+    "etatExcel": "BON",
+    "nbOccurrences": 139,
+    "propositionStatut": "DISPONIBLE",
+    "aValider": false,
+    "commentaire": ""
+  },
+  {
+    "etatExcel": "OK",
+    "nbOccurrences": 57,
+    "propositionStatut": "DISPONIBLE",
+    "aValider": false,
+    "commentaire": ""
+  },
+  {
+    "etatExcel": "PANNE",
+    "nbOccurrences": 7,
+    "propositionStatut": "PANNE",
+    "aValider": false,
+    "commentaire": ""
+  },
+  {
+    "etatExcel": "PN",
+    "nbOccurrences": 4,
+    "propositionStatut": "PANNE",
+    "aValider": false,
+    "commentaire": ""
+  },
+  {
+    "etatExcel": "BON-NEUF",
+    "nbOccurrences": 4,
+    "propositionStatut": "DISPONIBLE",
+    "aValider": false,
+    "commentaire": ""
+  },
+  {
+    "etatExcel": "MAUVAIS",
+    "nbOccurrences": 4,
+    "propositionStatut": "HORS_SERVICE",
+    "aValider": false,
+    "commentaire": ""
+  },
+  {
+    "etatExcel": "HS",
+    "nbOccurrences": 3,
+    "propositionStatut": "HORS_SERVICE",
+    "aValider": false,
+    "commentaire": ""
+  },
+  {
+    "etatExcel": "BON - NEUF",
+    "nbOccurrences": 2,
+    "propositionStatut": "DISPONIBLE",
+    "aValider": false,
+    "commentaire": ""
+  },
+  {
+    "etatExcel": "B",
+    "nbOccurrences": 2,
+    "propositionStatut": "DISPONIBLE",
+    "aValider": false,
+    "commentaire": ""
+  },
+  {
+    "etatExcel": "NEUF PANNE",
+    "nbOccurrences": 1,
+    "propositionStatut": "PANNE",
+    "aValider": false,
+    "commentaire": ""
+  },
+  {
+    "etatExcel": "2B 2M",
+    "nbOccurrences": 1,
+    "propositionStatut": "À_VENTILER",
+    "aValider": true,
+    "commentaire": "Nécessite ventilation : créer plusieurs lignes de matériel (ex: 2B 2M → 2 DISPONIBLE + 2 HORS_SERVICE)"
+  },
+  {
+    "etatExcel": "7B 5M",
+    "nbOccurrences": 1,
+    "propositionStatut": "À_VENTILER",
+    "aValider": true,
+    "commentaire": "Nécessite ventilation : créer plusieurs lignes de matériel (ex: 2B 2M → 2 DISPONIBLE + 2 HORS_SERVICE)"
+  },
+  {
+    "etatExcel": "NEUF - BON",
+    "nbOccurrences": 1,
+    "propositionStatut": "DISPONIBLE",
+    "aValider": false,
+    "commentaire": ""
+  },
+  {
+    "etatExcel": "08 BON - 10 MAUVAIS",
+    "nbOccurrences": 1,
+    "propositionStatut": "À_VENTILER",
+    "aValider": true,
+    "commentaire": "Nécessite ventilation : créer plusieurs lignes de matériel (ex: 2B 2M → 2 DISPONIBLE + 2 HORS_SERVICE)"
+  },
+  {
+    "etatExcel": "HS EN REPARATION",
+    "nbOccurrences": 1,
+    "propositionStatut": "EN_REPARATION",
+    "aValider": false,
+    "commentaire": ""
+  },
+  {
+    "etatExcel": "2 BON - 2 MAUVAIS",
+    "nbOccurrences": 1,
+    "propositionStatut": "À_VENTILER",
+    "aValider": true,
+    "commentaire": "Nécessite ventilation : créer plusieurs lignes de matériel (ex: 2B 2M → 2 DISPONIBLE + 2 HORS_SERVICE)"
+  },
+  {
+    "etatExcel": "3B 1M",
+    "nbOccurrences": 1,
+    "propositionStatut": "À_VENTILER",
+    "aValider": true,
+    "commentaire": "Nécessite ventilation : créer plusieurs lignes de matériel (ex: 2B 2M → 2 DISPONIBLE + 2 HORS_SERVICE)"
+  }
+]

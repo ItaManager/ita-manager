@@ -369,6 +369,37 @@ export const PERMISSIONS = {
     libelle: "Configurer les paramètres du module Missions",
     domaine: "ADMIN",
   },
+  // M15 L2 — Paiements Fournisseurs
+  "paiements:fournisseurs:consulter": {
+    code: "paiements:fournisseurs:consulter",
+    libelle: "Consulter les factures et paiements fournisseurs",
+    domaine: "PAIEMENT",
+  },
+  "paiements:fournisseurs:creer": {
+    code: "paiements:fournisseurs:creer",
+    libelle: "Créer et soumettre des factures fournisseurs",
+    domaine: "PAIEMENT",
+  },
+  "paiements:fournisseurs:recevoir": {
+    code: "paiements:fournisseurs:recevoir",
+    libelle: "Confirmer réception de biens/services (Logistique, Chef chantier)",
+    domaine: "PAIEMENT",
+  },
+  "paiements:fournisseurs:valider": {
+    code: "paiements:fournisseurs:valider",
+    libelle: "Valider une facture fournisseur (Gestionnaire)",
+    domaine: "PAIEMENT",
+  },
+  "paiements:fournisseurs:valider-dg": {
+    code: "paiements:fournisseurs:valider-dg",
+    libelle: "Valider une facture fournisseur > seuil (DG)",
+    domaine: "PAIEMENT",
+  },
+  "paiements:fournisseurs:payer": {
+    code: "paiements:fournisseurs:payer",
+    libelle: "Créer et confirmer des paiements fournisseurs",
+    domaine: "PAIEMENT",
+  },
 } as const;
 
 export type PermissionCode = keyof typeof PERMISSIONS;
