@@ -43,22 +43,12 @@ export default async function SetupMFAPage() {
                 />
               </svg>
             </div>
-            <h1 className="text-2xl font-semibold text-foreground mb-2">
+            <h1 className="text-2xl font-semibold text-foreground">
               Configuration de l'authentification
             </h1>
-            <p className="text-sm text-muted-foreground">
-              Pour sécuriser votre compte, vous devez activer l'authentification à deux facteurs
-            </p>
           </div>
 
           <ConfigurationMFA userId={user.id} />
-        </div>
-
-        {/* Note de sécurité */}
-        <div className="mt-6 text-center">
-          <p className="text-xs text-muted-foreground">
-            🔐 L'authentification à deux facteurs protège votre compte contre les accès non autorisés
-          </p>
         </div>
       </div>
     </div>
