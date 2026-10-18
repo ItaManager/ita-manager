@@ -80,7 +80,7 @@ const creerPaiementSchema = z.object({
  */
 export const creerFactureFournisseur = actionProtegee(
   'paiements:fournisseurs:creer',
-  async ({ input, profil }) => {
+  async (session, input) => {
     const data = creerFactureSchema.parse(input);
 
     // D-05 : Vérification doublon référence
@@ -107,7 +107,7 @@ export const creerFactureFournisseur = actionProtegee(
         montantTTC: new Decimal(data.montantTTC),
         montantPaye: new Decimal(0),
         statutFacture: 'BROUILLON',
-        creePar: profil.id,
+        creePar: session.userId,
       },
       include: {
         fournisseur: true,
@@ -125,7 +125,7 @@ export const creerFactureFournisseur = actionProtegee(
  */
 export const soumettreFactureFournisseur = actionProtegee(
   'paiements:fournisseurs:creer',
-  async ({ input }) => {
+  async (session, input) => {
     const { factureId } = z.object({ factureId: z.string() }).parse(input);
 
     const facture = await prisma.factureFournisseur.findUnique({
@@ -162,7 +162,7 @@ export const soumettreFactureFournisseur = actionProtegee(
  */
 export const confirmerReceptionFacture = actionProtegee(
   'paiements:fournisseurs:recevoir',
-  async ({ input, profil }) => {
+  async (session, input) => {
     const data = confirmerReceptionSchema.parse(input);
 
     const facture = await prisma.factureFournisseur.findUnique({
@@ -183,7 +183,7 @@ export const confirmerReceptionFacture = actionProtegee(
       where: { id: data.factureId },
       data: {
         receptionConfirmee: true,
-        receptionneParId: profil.userId,
+        receptionneParId: session.userId,
         receptionneLe: new Date(),
         receptionCommentaire: data.commentaire,
         statutFacture: 'A_VALIDER',
@@ -207,7 +207,7 @@ export const confirmerReceptionFacture = actionProtegee(
  */
 export const validerFactureFournisseur = actionProtegee(
   'paiements:fournisseurs:valider',
-  async ({ input, profil }) => {
+  async (session, input) => {
     const data = validerFactureSchema.parse(input);
 
     const facture = await prisma.factureFournisseur.findUnique({
@@ -235,7 +235,7 @@ export const validerFactureFournisseur = actionProtegee(
     const updated = await prisma.factureFournisseur.update({
       where: { id: data.factureId },
       data: {
-        valideParId: profil.userId,
+        valideParId: session.userId,
         valideLe: new Date(),
         statutFacture: necessiteValidationDG ? 'A_VALIDER_DG' : 'A_PAYER',
       },
@@ -262,7 +262,7 @@ export const validerFactureFournisseur = actionProtegee(
  */
 export const validerFactureFournisseurDG = actionProtegee(
   'paiements:fournisseurs:valider-dg',
-  async ({ input, profil }) => {
+  async (session, input) => {
     const data = validerFactureSchema.parse(input);
 
     const facture = await prisma.factureFournisseur.findUnique({
@@ -282,7 +282,7 @@ export const validerFactureFournisseurDG = actionProtegee(
     const updated = await prisma.factureFournisseur.update({
       where: { id: data.factureId },
       data: {
-        valideDgParId: profil.userId,
+        valideDgParId: session.userId,
         valideDgLe: new Date(),
         statutFacture: 'A_PAYER',
       },
@@ -304,7 +304,7 @@ export const validerFactureFournisseurDG = actionProtegee(
  */
 export const refuserFactureFournisseur = actionProtegee(
   'paiements:fournisseurs:valider',
-  async ({ input }) => {
+  async (session, input) => {
     const data = refuserFactureSchema.parse(input);
 
     const facture = await prisma.factureFournisseur.findUnique({
@@ -350,7 +350,7 @@ export const refuserFactureFournisseur = actionProtegee(
  */
 export const creerPaiementFournisseur = actionProtegee(
   'paiements:fournisseurs:payer',
-  async ({ input, profil }) => {
+  async (session, input) => {
     const data = creerPaiementSchema.parse(input);
 
     const facture = await prisma.factureFournisseur.findUnique({
@@ -393,8 +393,8 @@ export const creerPaiementFournisseur = actionProtegee(
           datePaiement: data.datePaiement,
           urlPreuve: data.urlPreuve,
           statutPaiement: data.urlPreuve ? 'CONFIRME' : 'EN_ATTENTE_PREUVE',
-          effectueParId: profil.userId,
-          creePar: profil.id,
+          effectueParId: session.userId,
+          creePar: session.userId,
         },
       });
 
@@ -403,14 +403,12 @@ export const creerPaiementFournisseur = actionProtegee(
         parseFloat(facture.montantPaye.toString()) + data.montantPaye;
       const montantTTC = parseFloat(facture.montantTTC.toString());
 
-      let nouveauStatut: string;
+      let nouveauStatut = facture.statutFacture;
       if (Math.abs(nouveauMontantPaye - montantTTC) < 0.01) {
         // Soldée (tolérance 1 centime pour erreurs d'arrondi)
-        nouveauStatut = 'SOLDEE';
+        nouveauStatut = 'SOLDEE' as const;
       } else if (nouveauMontantPaye > 0) {
-        nouveauStatut = 'PARTIELLE';
-      } else {
-        nouveauStatut = facture.statutFacture;
+        nouveauStatut = 'PARTIELLE' as const;
       }
 
       await tx.factureFournisseur.update({
@@ -438,7 +436,7 @@ export const creerPaiementFournisseur = actionProtegee(
  */
 export const confirmerPaiementFournisseur = actionProtegee(
   'paiements:fournisseurs:payer',
-  async ({ input }) => {
+  async (session, input) => {
     const { paiementId, urlPreuve } = z
       .object({
         paiementId: z.string(),
@@ -487,7 +485,7 @@ export const confirmerPaiementFournisseur = actionProtegee(
  */
 export const listerFacturesFournisseur = actionProtegee(
   'paiements:fournisseurs:consulter',
-  async ({ input }) => {
+  async (session, input) => {
     const filters = z
       .object({
         statutFacture: z.string().optional(),
@@ -552,7 +550,7 @@ export const listerFacturesFournisseur = actionProtegee(
  */
 export const listerPaiementsFournisseur = actionProtegee(
   'paiements:fournisseurs:consulter',
-  async ({ input }) => {
+  async (session, input) => {
     const filters = z
       .object({
         fournisseurId: z.string().optional(),
@@ -609,7 +607,7 @@ export const listerPaiementsFournisseur = actionProtegee(
  */
 export const getFactureFournisseur = actionProtegee(
   'paiements:fournisseurs:consulter',
-  async ({ input }) => {
+  async (session, input) => {
     const { factureId } = z.object({ factureId: z.string() }).parse(input);
 
     const facture = await prisma.factureFournisseur.findUnique({
@@ -642,7 +640,7 @@ export const getFactureFournisseur = actionProtegee(
  */
 export const getFicheFournisseur = actionProtegee(
   'paiements:fournisseurs:consulter',
-  async ({ input }) => {
+  async (session, input) => {
     const { fournisseurId } = z
       .object({ fournisseurId: z.string() })
       .parse(input);
@@ -693,7 +691,7 @@ export const getFicheFournisseur = actionProtegee(
  */
 export const getIndicateursFournisseurs = actionProtegee(
   'paiements:fournisseurs:consulter',
-  async () => {
+  async (session) => {
     const [totalDu, facturesEnRetard, facturesAPayer, payeCeMois] =
       await Promise.all([
         // Total dû (toutes factures non soldées)
@@ -755,7 +753,7 @@ export const getIndicateursFournisseurs = actionProtegee(
  */
 export const getFacturesEnRetard = actionProtegee(
   'paiements:fournisseurs:consulter',
-  async () => {
+  async (session) => {
     const factures = await prisma.factureFournisseur.findMany({
       where: {
         dateEcheance: { lt: new Date() },
@@ -779,7 +777,7 @@ export const getFacturesEnRetard = actionProtegee(
  */
 export const getFacturesProchesEcheance = actionProtegee(
   'paiements:fournisseurs:consulter',
-  async () => {
+  async (session) => {
     const dans7Jours = new Date();
     dans7Jours.setDate(dans7Jours.getDate() + 7);
 

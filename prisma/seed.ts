@@ -152,6 +152,13 @@ const MATRICE: Record<PermissionCode, readonly string[]> = {
   "mission:controler": ["ADMIN", "DFC"],
   "mission:lire": ["ADMIN", "DG", "DRH", "DFC"],
   "mission:parametres": ["ADMIN"],
+  // M15 L2 — Paiements Fournisseurs
+  "paiements:fournisseurs:consulter": ["ADMIN", "DG", "DFC"],
+  "paiements:fournisseurs:creer": ["ADMIN", "DFC"],
+  "paiements:fournisseurs:recevoir": ["ADMIN", "DT", "CT", "CC"],
+  "paiements:fournisseurs:valider": ["ADMIN", "DFC"],
+  "paiements:fournisseurs:valider-dg": ["ADMIN", "DG"],
+  "paiements:fournisseurs:payer": ["ADMIN", "DFC"],
 };
 
 // Compte Super Admin — accès technique de maintenance, sans Employe
