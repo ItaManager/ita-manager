@@ -2,7 +2,7 @@ import "server-only";
 import { randomBytes } from "crypto";
 
 /**
- * Génère 10 codes de secours alphanumériques pour la MFA
+ * Génère 3 codes de secours alphanumériques pour la MFA
  * Format : XXXX-XXXX (8 caractères par code)
  *
  * Ces codes permettent à l'utilisateur de se connecter si :
@@ -15,7 +15,7 @@ import { randomBytes } from "crypto";
 export async function genererCodesSecours(): Promise<string[]> {
   const codes: string[] = [];
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 3; i++) {
     // Générer 4 bytes aléatoires et les convertir en hexadécimal
     const bytes = randomBytes(4);
     const hex = bytes.toString('hex').toUpperCase();

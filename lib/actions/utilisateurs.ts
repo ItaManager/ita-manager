@@ -313,7 +313,7 @@ export const inviterUtilisateur = actionProtegee(
 
     const profilId = authData.user.id;
 
-    // Générer 10 codes de secours pour la MFA
+    // Générer 3 codes de secours pour la MFA
     const { genererCodesSecours } = await import("@/lib/auth/mfa");
     const codesSecours = await genererCodesSecours();
 
