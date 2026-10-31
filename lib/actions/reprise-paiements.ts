@@ -237,10 +237,6 @@ export const reprendreEnAttente = actionProtegee(
       if (resultat.statut === 'REUSSI') stats.reussis++;
       if (resultat.statut === 'ECHOUE') stats.echecs++;
       if (resultat.statut === 'EN_ATTENTE') stats.enAttente++;
-
-      console.log(
-        `[Reprise] ${ligne.referenceIta} — ${resultat.message}`
-      );
     } catch (erreur: any) {
       console.error(
         `[Reprise] Erreur ${ligne.referenceIta}:`,

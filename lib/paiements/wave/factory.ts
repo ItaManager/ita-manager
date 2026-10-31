@@ -31,17 +31,14 @@ export function obtenirClientWave(): ClientWave {
       );
     }
 
-    console.log('✅ Wave API — Mode RÉEL (production)');
     return creerClientWave(apiKey);
   }
 
   // DÉVELOPPEMENT → simulé par défaut, réel si clé présente
   if (apiKey) {
-    console.log('✅ Wave API — Mode RÉEL (dev avec clé API)');
     return creerClientWave(apiKey);
   }
 
-  console.log('🧪 Wave API — Mode SIMULÉ (dev sans clé API)');
   return creerClientSimule();
 }
 

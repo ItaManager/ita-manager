@@ -75,11 +75,6 @@ export async function avecRetry<T>(
       const resultat = await fn();
 
       // Succès → retourner
-      if (tentative > 1) {
-        console.log(
-          `✅ ${operation} réussi après ${tentative} tentative(s)`
-        );
-      }
       return resultat;
     } catch (erreur: any) {
       const estDerniereTentative = tentative === MAX_TENTATIVES;
