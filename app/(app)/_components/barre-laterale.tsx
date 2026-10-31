@@ -1,9 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db/prisma";
 import { BarreLateraleClient } from "./barre-laterale-client";
-import { chargerCompteursAchats } from "@/lib/actions/compteurs-achats";
-import { chargerCompteursConges } from "@/lib/actions/conges";
-import { chargerCompteursMissions } from "@/lib/actions/missions";
 
 export async function BarreLaterale() {
   const supabase = await createClient();
@@ -36,14 +33,11 @@ export async function BarreLaterale() {
   const userPermissions =
     profil?.roles.flatMap((pr) => pr.role.permissions.map((rp) => rp.permission.code)) || [];
 
-  // Charger les compteurs de badges pour les achats
-  const compteursAchats = await chargerCompteursAchats();
-
-  // Charger les compteurs de badges pour les congés
-  const compteursConges = await chargerCompteursConges();
-
-  // Charger les compteurs de badges pour les missions
-  const compteursMissions = await chargerCompteursMissions();
+  // Compteurs désactivés temporairement pour améliorer les performances
+  // TODO: Charger les compteurs côté client avec React Query ou SWR
+  const compteursAchats = { aValider: 0, aInstruire: 0, commandes: 0, receptions: 0, factures: 0 };
+  const compteursConges = { aValiderN1: 0, aControler: 0 };
+  const compteursMissions = { aValiderN1: 0, aValiderRH: 0 };
 
   return (
     <BarreLateraleClient

@@ -93,20 +93,14 @@ function genererTemplateInvitation({
                       ${lienInvitation}
                     </p>
 
-                    <!-- Avertissement MFA -->
-                    <div style="margin-top: 30px; padding: 20px; background-color: #fff7ed; border-radius: 8px; border: 1px solid #fed7aa;">
-                      <h3 style="color: #c2410c; font-size: 16px; margin: 0 0 12px 0; font-weight: 600;">
-                        🔐 Authentification à deux facteurs obligatoire
+                    <!-- Info première connexion -->
+                    <div style="margin-top: 30px; padding: 20px; background-color: #eff6ff; border-radius: 8px; border: 1px solid #bfdbfe;">
+                      <h3 style="color: #1e40af; font-size: 16px; margin: 0 0 12px 0; font-weight: 600;">
+                        📋 Première connexion
                       </h3>
 
-                      <p style="color: #9a3412; font-size: 14px; line-height: 1.6; margin: 0 0 12px 0;">
-                        Pour sécuriser votre compte, vous devrez configurer l'authentification à deux facteurs lors de votre première connexion.
-                      </p>
-
-                      <p style="color: #9a3412; font-size: 14px; line-height: 1.6; margin: 0;">
-                        <strong>Vous aurez besoin de :</strong><br>
-                        • Une application d'authentification (Google Authenticator, Microsoft Authenticator, ou Authy)<br>
-                        • Votre téléphone pour scanner un QR code
+                      <p style="color: #1e3a8a; font-size: 14px; line-height: 1.6; margin: 0;">
+                        Lors de votre première connexion, vous pourrez créer votre mot de passe personnel et accéder à la plateforme.
                       </p>
                     </div>
 
