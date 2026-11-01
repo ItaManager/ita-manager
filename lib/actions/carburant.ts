@@ -1265,3 +1265,88 @@ export const listerAnomalies = actionProtegee(
     return { anomalies };
   }
 );
+
+/**
+ * Récupérer les données de consommation par véhicule et par mois
+ * Pour le tableau de suivi comme dans le schéma DIGIPARC
+ */
+export const obtenirConsommationParVehicule = actionProtegee(
+  PERMISSIONS["carburant:consulter"].code,
+  async (session, filtres?: { annee?: number; vehiculeId?: string; flotteId?: string }) => {
+    const annee = filtres?.annee || new Date().getFullYear();
+    const dateDebut = new Date(annee, 0, 1);
+    const dateFin = new Date(annee, 11, 31);
+
+    // Récupérer toutes les distributions de l'année
+    const distributions = await prisma.distributionCarburant.findMany({
+      where: {
+        dateDistribution: {
+          gte: dateDebut,
+          lte: dateFin,
+        },
+        ...(filtres?.vehiculeId && { materielId: filtres.vehiculeId }),
+      },
+      include: {
+        materiel: {
+          select: {
+            id: true,
+            codeIta: true,
+            designation: true,
+            // Flotte via catégorie ou autre champ si disponible
+          },
+        },
+      },
+      orderBy: [
+        { materiel: { codeIta: "asc" } },
+        { dateDistribution: "asc" },
+      ],
+    });
+
+    // Grouper par véhicule et par mois
+    const vehiculesMap = new Map<
+      string,
+      {
+        vehiculeId: string;
+        vehiculeCode: string;
+        vehiculeDesignation: string;
+        flotte: string;
+        consommationMensuelle: number[]; // 12 mois
+        total: number;
+      }
+    >();
+
+    for (const distrib of distributions) {
+      const vehiculeId = distrib.materielId;
+      const mois = new Date(distrib.dateDistribution).getMonth(); // 0-11
+      const quantite = distrib.quantite.toNumber();
+
+      if (!vehiculesMap.has(vehiculeId)) {
+        vehiculesMap.set(vehiculeId, {
+          vehiculeId,
+          vehiculeCode: distrib.materiel.codeIta,
+          vehiculeDesignation: distrib.materiel.designation,
+          flotte: "Flotte principale", // TODO: récupérer via relation si disponible
+          consommationMensuelle: Array(12).fill(0),
+          total: 0,
+        });
+      }
+
+      const vehicule = vehiculesMap.get(vehiculeId)!;
+      vehicule.consommationMensuelle[mois] += quantite;
+      vehicule.total += quantite;
+    }
+
+    const donnees = Array.from(vehiculesMap.values());
+
+    // Calculer les totaux
+    const totalEnregistrements = donnees.length;
+    const quantiteTotale = donnees.reduce((sum, v) => sum + v.total, 0);
+
+    return {
+      annee,
+      totalEnregistrements,
+      quantiteTotale,
+      donnees,
+    };
+  }
+);

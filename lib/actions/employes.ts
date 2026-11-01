@@ -639,14 +639,15 @@ export const creerEmploye = actionProtegee(
         });
       }
 
-      // Créer le contrat
+      // Valider et créer le contrat
+      const salaireValide = Math.min(input.salaire ?? 0, 99999999);
       await tx.contrat.create({
         data: {
           employeId: emp.id,
           typeContrat: input.typeContrat,
           dateDebut: input.dateEmbauche,
           dateFin: input.dateFin,
-          salaire: input.salaire ?? 0,
+          salaire: salaireValide,
           signe: false,
         },
       });
