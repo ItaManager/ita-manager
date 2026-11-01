@@ -210,24 +210,29 @@ export function ModaleDemandeCarburant({
         </DialogHeader>
 
         {/* INDICATEUR D'ÉTAPES */}
-        <div className="px-6 pt-4">
-          <div className="flex items-center gap-2">
+        <div className="px-6 pt-4 pb-2">
+          <div className="flex items-center">
             {[1, 2, ...(circuit === "STATION" ? [3] : [])].map((num, idx, arr) => (
               <div key={num} className="flex items-center flex-1">
-                <div
-                  className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
-                    num < etape
-                      ? "bg-green-500 text-white"
-                      : num === etape
-                      ? "bg-primary text-white"
-                      : "bg-gray-200 text-gray-500"
-                  }`}
-                >
-                  {num}
+                <div className="flex flex-col items-center flex-1">
+                  <div
+                    className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-semibold transition-colors ${
+                      num < etape
+                        ? "bg-green-500 text-white"
+                        : num === etape
+                        ? "bg-primary text-white"
+                        : "bg-gray-200 text-gray-500"
+                    }`}
+                  >
+                    {num}
+                  </div>
+                  <div className="mt-2 text-xs font-medium text-center whitespace-nowrap">
+                    {num === 1 ? "Véhicule" : num === 2 ? "Distribution" : "Paiement"}
+                  </div>
                 </div>
                 {idx < arr.length - 1 && (
                   <div
-                    className={`flex-1 h-1 mx-2 ${
+                    className={`h-1 flex-1 -mt-6 transition-colors ${
                       num < etape ? "bg-green-500" : "bg-gray-200"
                     }`}
                   />
