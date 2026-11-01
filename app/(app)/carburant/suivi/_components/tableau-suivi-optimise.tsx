@@ -84,9 +84,13 @@ export function TableauSuiviOptimise() {
   const [filtreChauffeur, setFiltreChauffeur] = useState<string>("tous");
   const [filtreTypeCarburant, setFiltreTypeCarburant] =
     useState<string>("tous");
-  const [filtrePeriode, setFiltrePeriode] = useState<string>("mois-actuel");
+  const [filtrePeriode, setFiltrePeriode] = useState<string>("tous");
   const [filtreStation, setFiltreStation] = useState<string>("tous");
   const [showFiltresAvances, setShowFiltresAvances] = useState(false);
+
+  // Filtre par dates personnalisées
+  const [dateDebut, setDateDebut] = useState<string>("");
+  const [dateFin, setDateFin] = useState<string>("");
 
   // Tri
   const [sortColumn, setSortColumn] = useState<SortColumn>("date");
@@ -95,6 +99,9 @@ export function TableauSuiviOptimise() {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
+
+  // Recherche dans l'analyse par véhicule
+  const [rechercheVehicule, setRechercheVehicule] = useState("");
 
   // TODO: Récupérer les vraies données depuis la base
   const consommations: Consommation[] = [
@@ -366,8 +373,19 @@ export function TableauSuiviOptimise() {
   const consommationsFiltrees = useMemo(() => {
     let filtered = [...consommations];
 
-    // Filtre par période
-    if (filtrePeriode !== "tous") {
+    // Filtre par dates personnalisées (prioritaire sur filtrePeriode)
+    if (dateDebut && dateFin) {
+      const debut = new Date(dateDebut);
+      debut.setHours(0, 0, 0, 0);
+      const fin = new Date(dateFin);
+      fin.setHours(23, 59, 59, 999);
+
+      filtered = filtered.filter((c) =>
+        isWithinInterval(c.date, { start: debut, end: fin })
+      );
+    }
+    // Filtre par période prédéfinie si pas de dates personnalisées
+    else if (filtrePeriode !== "tous") {
       const range = getPeriodRange(filtrePeriode);
       if (range) {
         const [start, end] = range;
@@ -452,6 +470,8 @@ export function TableauSuiviOptimise() {
     recherche,
     sortColumn,
     sortDirection,
+    dateDebut,
+    dateFin,
   ]);
 
   // Calcul des indicateurs de synthèse
@@ -484,6 +504,63 @@ export function TableauSuiviOptimise() {
     };
   }, [consommationsFiltrees]);
 
+  // Analyse par véhicule
+  const analyseParVehicule = useMemo(() => {
+    const vehiculesMap = new Map<
+      string,
+      {
+        vehicule: string;
+        immatriculation: string;
+        nombrePleins: number;
+        totalLitres: number;
+        totalCout: number;
+        totalKm: number;
+        consoMoyenne: number;
+      }
+    >();
+
+    consommationsFiltrees.forEach((c) => {
+      const key = `${c.vehicule}-${c.immatriculation}`;
+      if (!vehiculesMap.has(key)) {
+        vehiculesMap.set(key, {
+          vehicule: c.vehicule,
+          immatriculation: c.immatriculation,
+          nombrePleins: 0,
+          totalLitres: 0,
+          totalCout: 0,
+          totalKm: 0,
+          consoMoyenne: 0,
+        });
+      }
+
+      const stats = vehiculesMap.get(key)!;
+      stats.nombrePleins++;
+      stats.totalLitres += c.litresAjoutes;
+      stats.totalCout += c.coutTotal;
+      stats.totalKm += c.kmParcourus;
+    });
+
+    // Calculer la consommation moyenne par véhicule
+    let result = Array.from(vehiculesMap.values()).map((stats) => ({
+      ...stats,
+      consoMoyenne:
+        stats.totalKm > 0 ? (stats.totalLitres / stats.totalKm) * 100 : 0,
+    }));
+
+    // Filtrer par recherche
+    if (rechercheVehicule) {
+      const terme = rechercheVehicule.toLowerCase();
+      result = result.filter(
+        (v) =>
+          v.vehicule.toLowerCase().includes(terme) ||
+          v.immatriculation.toLowerCase().includes(terme)
+      );
+    }
+
+    // Trier par coût total décroissant
+    return result.sort((a, b) => b.totalCout - a.totalCout);
+  }, [consommationsFiltrees, rechercheVehicule]);
+
   // Données pagination
   const totalPages = Math.ceil(consommationsFiltrees.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -508,7 +585,7 @@ export function TableauSuiviOptimise() {
     (filtreVehicule !== "tous" ? 1 : 0) +
     (filtreChauffeur !== "tous" ? 1 : 0) +
     (filtreTypeCarburant !== "tous" ? 1 : 0) +
-    (filtrePeriode !== "mois-actuel" ? 1 : 0) +
+    (filtrePeriode !== "tous" || (dateDebut && dateFin) ? 1 : 0) +
     (filtreStation !== "tous" ? 1 : 0);
 
   if (consommations.length === 0) {
@@ -599,6 +676,126 @@ export function TableauSuiviOptimise() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Analyse par véhicule */}
+      {analyseParVehicule.length > 0 && (
+        <div className="rounded-lg border bg-card">
+          <div className="px-6 py-4 border-b border-border space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold">Analyse par véhicule</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Consommation totale de chaque véhicule sur la période filtrée
+              </p>
+            </div>
+
+            {/* Barre de recherche et export */}
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Rechercher un véhicule ou immatriculation..."
+                  value={rechercheVehicule}
+                  onChange={(e) => setRechercheVehicule(e.target.value)}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 pl-9 pr-9 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                />
+                {rechercheVehicule && (
+                  <button
+                    onClick={() => setRechercheVehicule("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-full"
+                disabled={analyseParVehicule.length === 0}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Exporter
+              </Button>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="tabulaire w-full">
+              <thead className="bg-muted/50">
+                <tr className="border-b border-border">
+                  <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Véhicule
+                  </th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Immatriculation
+                  </th>
+                  <th className="text-right py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Pleins
+                  </th>
+                  <th className="text-right py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Total litres
+                  </th>
+                  <th className="text-right py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Total coût (FCFA)
+                  </th>
+                  <th className="text-right py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Km parcourus
+                  </th>
+                  <th className="text-right py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Conso moy. (L/100km)
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {analyseParVehicule.map((stats, index) => (
+                  <tr
+                    key={`${stats.vehicule}-${stats.immatriculation}`}
+                    className="border-b last:border-0 hover:bg-muted/30"
+                  >
+                    <td className="py-3 px-4 text-sm font-medium">
+                      {stats.vehicule}
+                    </td>
+                    <td className="py-3 px-4 text-sm font-mono text-muted-foreground">
+                      {stats.immatriculation}
+                    </td>
+                    <td className="montant py-3 px-4 text-right text-sm tabular-nums">
+                      {stats.nombrePleins}
+                    </td>
+                    <td className="montant py-3 px-4 text-right text-sm font-medium tabular-nums">
+                      {stats.totalLitres.toLocaleString("fr-FR", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}{" "}
+                      L
+                    </td>
+                    <td className="montant py-3 px-4 text-right text-sm font-medium tabular-nums">
+                      {stats.totalCout.toLocaleString("fr-FR")} F
+                    </td>
+                    <td className="montant py-3 px-4 text-right text-sm tabular-nums">
+                      {stats.totalKm.toLocaleString("fr-FR")} km
+                    </td>
+                    <td
+                      className={`montant py-3 px-4 text-right text-sm font-medium tabular-nums ${
+                        stats.consoMoyenne > 20
+                          ? "text-orange-600"
+                          : ""
+                      }`}
+                    >
+                      {stats.consoMoyenne > 0
+                        ? stats.consoMoyenne.toLocaleString("fr-FR", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
+                        : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Barre de recherche et filtres */}
       <div className="space-y-4">
@@ -767,7 +964,17 @@ export function TableauSuiviOptimise() {
                 <Label htmlFor="periode" className="text-xs font-medium">
                   Période
                 </Label>
-                <Select value={filtrePeriode} onValueChange={setFiltrePeriode}>
+                <Select
+                  value={filtrePeriode}
+                  onValueChange={(value) => {
+                    setFiltrePeriode(value);
+                    // Réinitialiser les dates personnalisées quand on sélectionne une période
+                    if (value !== "tous") {
+                      setDateDebut("");
+                      setDateFin("");
+                    }
+                  }}
+                >
                   <SelectTrigger id="periode">
                     <SelectValue placeholder="Sélectionner" />
                   </SelectTrigger>
@@ -782,6 +989,49 @@ export function TableauSuiviOptimise() {
                     <SelectItem value="annee">12 derniers mois</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Date début */}
+              <div className="space-y-2">
+                <Label htmlFor="dateDebut" className="text-xs font-medium flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  Date début
+                </Label>
+                <input
+                  id="dateDebut"
+                  type="date"
+                  value={dateDebut}
+                  onChange={(e) => {
+                    setDateDebut(e.target.value);
+                    // Réinitialiser filtrePeriode quand on sélectionne des dates
+                    if (e.target.value && dateFin) {
+                      setFiltrePeriode("tous");
+                    }
+                  }}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+              </div>
+
+              {/* Date fin */}
+              <div className="space-y-2">
+                <Label htmlFor="dateFin" className="text-xs font-medium flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  Date fin
+                </Label>
+                <input
+                  id="dateFin"
+                  type="date"
+                  value={dateFin}
+                  onChange={(e) => {
+                    setDateFin(e.target.value);
+                    // Réinitialiser filtrePeriode quand on sélectionne des dates
+                    if (dateDebut && e.target.value) {
+                      setFiltrePeriode("tous");
+                    }
+                  }}
+                  min={dateDebut}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                />
               </div>
 
               {/* Véhicule */}
@@ -878,11 +1128,13 @@ export function TableauSuiviOptimise() {
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    setFiltrePeriode("mois-actuel");
+                    setFiltrePeriode("tous");
                     setFiltreVehicule("tous");
                     setFiltreChauffeur("tous");
                     setFiltreTypeCarburant("tous");
                     setFiltreStation("tous");
+                    setDateDebut("");
+                    setDateFin("");
                   }}
                 >
                   <X className="h-4 w-4 mr-2" />
