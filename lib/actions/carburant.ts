@@ -23,15 +23,19 @@ export const distribuerCarburant = actionProtegee(
       demandeurId: string;
       materielId: string;
       typeCarburant: TypeCarburant;
-      quantite: number;
+      quantite: number; // Litres demandés
+      litresAjoutes: number; // Litres réellement livrés
       montant?: number;
-      compteur: number;
+      compteurPrecedent: number; // Dernier relevé
+      compteur: number; // Relevé actuel
       pleinComplet: boolean;
       nature: NatureDistribution;
       stationId?: string;
       lieuStockageId?: string;
       articleStockId?: string; // Pour CUVE
       dateDistribution: Date;
+      modePaiement?: string; // Mode de paiement
+      numeroFacture?: string; // Numéro facture/bon
     }
   ) => {
     // Générer référence: DC-{ANNEE}-{SEQ:4}
@@ -109,6 +113,16 @@ export const distribuerCarburant = actionProtegee(
         });
       }
 
+      // Calculer km parcourus et consommation
+      const compteurPrecedent = new Decimal(data.compteurPrecedent);
+      const compteur = new Decimal(data.compteur);
+      const litresAjoutes = new Decimal(data.litresAjoutes);
+
+      const kmParcourus = compteur.minus(compteurPrecedent);
+      const consommation = kmParcourus.greaterThan(0) && uniteCompteur === "KILOMETRE"
+        ? litresAjoutes.dividedBy(kmParcourus).times(100)
+        : null;
+
       // 3. Créer la distribution
       const dist = await tx.distributionCarburant.create({
         data: {
@@ -117,16 +131,22 @@ export const distribuerCarburant = actionProtegee(
           materielId: data.materielId,
           typeCarburant: data.typeCarburant,
           quantite: new Decimal(data.quantite),
+          litresAjoutes,
           montant: data.montant ? new Decimal(data.montant) : null,
-          compteur: new Decimal(data.compteur),
+          compteurPrecedent,
+          compteur,
           uniteCompteur: uniteCompteur,
+          kmParcourus,
           pleinComplet: data.pleinComplet,
+          consommation,
           compteurAnomalie: compteurAnomalie || false,
           motifAnomalie,
           nature: data.nature,
           stationId: data.stationId,
           lieuStockageId: data.lieuStockageId,
           mouvementStockId: mouvementStock?.id,
+          modePaiement: data.modePaiement as any,
+          numeroFacture: data.numeroFacture,
           serviParId: session.userId,
           dateDistribution: data.dateDistribution,
           releveCompteurId: releveCompteur.id,
@@ -1347,6 +1367,140 @@ export const obtenirConsommationParVehicule = actionProtegee(
       totalEnregistrements,
       quantiteTotale,
       donnees,
+    };
+  }
+);
+
+/**
+ * M16 L2 — Récupérer le suivi détaillé de consommation carburant
+ * Pour le tableau de suivi optimisé avec filtres
+ */
+export const listerConsommationsPourSuivi = actionProtegee(
+  PERMISSIONS["carburant:consulter"].code,
+  async (session, filtres?: {
+    dateDebut?: Date;
+    dateFin?: Date;
+    vehiculeId?: string;
+    chauffeurId?: string;
+    typeCarburant?: string;
+    stationId?: string;
+  }) => {
+    const where: any = {
+      // Exclure les anomalies par défaut
+      compteurAnomalie: false,
+    };
+
+    if (filtres?.dateDebut && filtres?.dateFin) {
+      where.dateDistribution = {
+        gte: filtres.dateDebut,
+        lte: filtres.dateFin,
+      };
+    }
+
+    if (filtres?.vehiculeId) {
+      where.materielId = filtres.vehiculeId;
+    }
+
+    if (filtres?.chauffeurId) {
+      where.demandeurId = filtres.chauffeurId;
+    }
+
+    if (filtres?.typeCarburant) {
+      where.typeCarburant = filtres.typeCarburant;
+    }
+
+    if (filtres?.stationId) {
+      where.stationId = filtres.stationId;
+    }
+
+    const distributions = await prisma.distributionCarburant.findMany({
+      where,
+      include: {
+        demandeur: {
+          select: {
+            nom: true,
+            prenom: true,
+          },
+        },
+        materiel: {
+          select: {
+            codeIta: true,
+            designation: true,
+            immatriculation: true,
+          },
+        },
+        station: {
+          select: {
+            libelle: true,
+          },
+        },
+      },
+      orderBy: {
+        dateDistribution: "desc",
+      },
+    });
+
+    // Mapper au format attendu par le composant
+    const consommations = distributions.map((d, index) => ({
+      numero: distributions.length - index, // Numérotation décroissante
+      date: d.dateDistribution,
+      chauffeur: `${d.demandeur.nom} ${d.demandeur.prenom}`,
+      vehicule: d.materiel.designation || d.materiel.codeIta,
+      immatriculation: d.materiel.immatriculation || "N/A",
+      typeCarburant: d.typeCarburant,
+      compteurPrecedent: d.compteurPrecedent.toNumber(),
+      kmCompteur: d.compteur.toNumber(),
+      uniteCompteur: d.uniteCompteur,
+      kmParcourus: d.kmParcourus.toNumber(),
+      litresAjoutes: d.litresAjoutes.toNumber(),
+      pleinComplet: d.pleinComplet,
+      consoAux100km: d.consommation?.toNumber() || 0,
+      station: d.station?.libelle || (d.nature === "CUVE" ? "Garage ITA" : "Non renseignée"),
+      coutTotal: d.montant?.toNumber() || 0,
+      modePaiement: d.modePaiement || "Non renseigné",
+      numeroFacture: d.numeroFacture || "",
+      observations: d.motifAnomalie || "",
+    }));
+
+    // Calculer statistiques
+    const totalDistributions = consommations.length;
+    const totalLitres = consommations.reduce((sum, c) => sum + c.litresAjoutes, 0);
+    const totalCout = consommations.reduce((sum, c) => sum + c.coutTotal, 0);
+    const totalKm = consommations.reduce((sum, c) => sum + c.kmParcourus, 0);
+    const consoMoyenne = totalKm > 0 ? (totalLitres / totalKm) * 100 : 0;
+
+    // Listes uniques pour filtres
+    const vehiculesUniques = Array.from(
+      new Set(consommations.map((c) => c.vehicule))
+    ).sort();
+
+    const chauffeursUniques = Array.from(
+      new Set(consommations.map((c) => c.chauffeur))
+    ).sort();
+
+    const stationsUniques = Array.from(
+      new Set(consommations.map((c) => c.station))
+    ).sort();
+
+    const typesCarburantUniques = Array.from(
+      new Set(consommations.map((c) => c.typeCarburant))
+    ).sort();
+
+    return {
+      consommations,
+      statistiques: {
+        totalDistributions,
+        totalLitres,
+        totalCout,
+        totalKm,
+        consoMoyenne,
+      },
+      filtres: {
+        vehicules: vehiculesUniques,
+        chauffeurs: chauffeursUniques,
+        stations: stationsUniques,
+        typesCarburant: typesCarburantUniques,
+      },
     };
   }
 );

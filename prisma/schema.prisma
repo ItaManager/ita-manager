@@ -3651,6 +3651,15 @@ enum StatutDemandeCarburant {
   REFUSEE
 }
 
+/// M16 L2 — Mode de paiement pour distribution carburant
+enum ModePaiementCarburant {
+  ESPECES
+  CARTE_BANCAIRE
+  BON_CARBURANT
+  VIREMENT
+  COMPTE_ENTREPRISE /// Compte client chez la station
+}
+
 /// M16 L2 — Mode de remise pour plein en station (D-02)
 enum ModeRemiseStation {
   ARGENT_REMIS
@@ -3690,15 +3699,23 @@ model DistributionCarburant {
   materiel   Materiel @relation(fields: [materielId], references: [id])
 
   typeCarburant TypeCarburant
-  quantite      Decimal       @db.Decimal(10, 2) /// Litres
+  quantite      Decimal       @db.Decimal(10, 2) /// Litres demandés
+  litresAjoutes Decimal       @db.Decimal(10, 2) /// Litres RÉELLEMENT livrés
   montant       Decimal?      @db.Decimal(12, 0) /// FCFA — optionnel en cuve, requis en station
 
-  /// Compteur au moment de la demande
-  compteur         Decimal       @db.Decimal(10, 2)
-  uniteCompteur    UniteCompteur
-  pleinComplet     Boolean       @default(true) /// Borne l'intervalle de calcul
-  compteurAnomalie Boolean       @default(false) /// Recul détecté
-  motifAnomalie    String?
+  /// Compteur au moment de la distribution
+  compteurPrecedent Decimal      @db.Decimal(10, 2) /// Dernier relevé avant distribution
+  compteur          Decimal      @db.Decimal(10, 2) /// Relevé à la distribution
+  uniteCompteur     UniteCompteur
+  kmParcourus       Decimal      @db.Decimal(10, 2) /// = compteur - compteurPrecedent (0 si HEURE)
+  pleinComplet      Boolean      @default(true) /// Borne l'intervalle de calcul
+  consommation      Decimal?     @db.Decimal(6, 2) /// L/100km (nullable si kmParcourus = 0)
+  compteurAnomalie  Boolean      @default(false) /// Recul détecté
+  motifAnomalie     String?
+
+  /// Paiement et justificatifs
+  modePaiement  ModePaiementCarburant?
+  numeroFacture String? /// Référence station ou bon carburant
 
   /// Nature — deux circuits distincts
   nature NatureDistribution
