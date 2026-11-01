@@ -576,7 +576,13 @@ export function ModaleDemandeCarburant({
       </DialogContent>
 
       {/* MODALE CRÉATION RAPIDE STATION */}
-      <AlertDialog open={modaleStationOuverte} onOpenChange={setModaleStationOuverte}>
+      <AlertDialog
+        open={modaleStationOuverte}
+        onOpenChange={(open) => {
+          setModaleStationOuverte(open);
+          if (!open) setNouvelleStationNom(""); // Réinitialiser à la fermeture
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Nouvelle station-service</AlertDialogTitle>
