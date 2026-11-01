@@ -15,8 +15,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, Plus } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
 interface ModaleDemandeCarburantProps {
   ouvert: boolean;
@@ -54,6 +63,15 @@ export function ModaleDemandeCarburant({
   const [montant, setMontant] = useState("");
   const [modePaiement, setModePaiement] = useState("");
   const [numeroFacture, setNumeroFacture] = useState("");
+
+  // Modale création rapide station
+  const [modaleStationOuverte, setModaleStationOuverte] = useState(false);
+  const [nouvelleStationNom, setNouvelleStationNom] = useState("");
+  const [stationsLocales, setStationsLocales] = useState<ComboboxOption[]>([
+    { value: "s-001", label: "Total Marcory" },
+    { value: "s-002", label: "Shell Plateau" },
+    { value: "s-003", label: "Pétro Ivoire Koumassi" },
+  ]);
 
   // Auto-remplissage
   useEffect(() => {
@@ -106,11 +124,23 @@ export function ModaleDemandeCarburant({
     { value: "p-002", label: "PRJ-002 — Route nationale" },
   ];
 
-  const stationsOptions: ComboboxOption[] = [
-    { value: "s-001", label: "Total Marcory" },
-    { value: "s-002", label: "Shell Plateau" },
-    { value: "s-003", label: "Pétro Ivoire Koumassi" },
-  ];
+  const ajouterNouvelleStation = () => {
+    if (!nouvelleStationNom.trim()) {
+      toast.error("Le nom de la station est requis");
+      return;
+    }
+
+    const nouvelleStation: ComboboxOption = {
+      value: `station-${Date.now()}`,
+      label: nouvelleStationNom.trim(),
+    };
+
+    setStationsLocales([...stationsLocales, nouvelleStation]);
+    setStationId(nouvelleStation.value);
+    setNouvelleStationNom("");
+    setModaleStationOuverte(false);
+    toast.success(`Station "${nouvelleStation.label}" ajoutée`);
+  };
 
   const cuvesOptions: ComboboxOption[] = [
     { value: "c-001", label: "Cuve Garage Principal — Gasoil" },
@@ -319,13 +349,26 @@ export function ModaleDemandeCarburant({
                   <Label className="text-sm font-medium">
                     Station <span className="text-destructive">*</span>
                   </Label>
-                  <Combobox
-                    options={stationsOptions}
-                    value={stationId}
-                    onChange={setStationId}
-                    placeholder="Sélectionner une station"
-                    variant="search"
-                  />
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Combobox
+                        options={stationsLocales}
+                        value={stationId}
+                        onChange={setStationId}
+                        placeholder="Sélectionner une station"
+                        variant="search"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setModaleStationOuverte(true)}
+                      className="h-11 w-11"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -531,6 +574,51 @@ export function ModaleDemandeCarburant({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* MODALE CRÉATION RAPIDE STATION */}
+      <AlertDialog open={modaleStationOuverte} onOpenChange={setModaleStationOuverte}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Nouvelle station-service</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ajoutez rapidement une nouvelle station pour cette distribution.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="nouvelle-station">
+                Nom de la station <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="nouvelle-station"
+                placeholder="Ex: Shell Cocody"
+                value={nouvelleStationNom}
+                onChange={(e) => setNouvelleStationNom(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    ajouterNouvelleStation();
+                  }
+                }}
+                className="h-11"
+                autoFocus
+              />
+            </div>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <Button
+              onClick={ajouterNouvelleStation}
+              style={{ backgroundColor: '#13850b' }}
+              className="hover:opacity-90 text-white"
+            >
+              Ajouter
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
