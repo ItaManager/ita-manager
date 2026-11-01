@@ -509,7 +509,8 @@ export function ModaleDemandeCarburant({
               }
             }}
             disabled={isPending}
-            className="bg-green-600 hover:bg-green-700 text-white"
+            style={{ backgroundColor: '#13850b' }}
+            className="hover:opacity-90 text-white"
           >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {etape === 3 || (etape === 2 && circuit === "CUVE") ? "Créer la distribution" : "Suivant"}
