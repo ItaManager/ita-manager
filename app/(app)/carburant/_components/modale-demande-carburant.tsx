@@ -130,16 +130,16 @@ export function ModaleDemandeCarburant({
       if (!materielId) return toast.error("Le véhicule est requis");
       if (!quantiteDemandee || parseFloat(quantiteDemandee) <= 0) return toast.error("La quantité demandée est requise");
       if (!compteurPrecedent || parseFloat(compteurPrecedent) < 0) return toast.error("Le compteur précédent est requis");
+      if (circuit === "STATION" && !stationId) return toast.error("La station est requise");
+      if (circuit === "CUVE" && !lieuStockageId) return toast.error("La cuve est requise");
       setEtape(2);
     } else if (etape === 2) {
       if (!litresAjoutes || parseFloat(litresAjoutes) <= 0) return toast.error("Les litres ajoutés sont requis");
       if (!compteurActuel || parseFloat(compteurActuel) < 0) return toast.error("Le compteur actuel est requis");
       if (parseFloat(compteurActuel) < parseFloat(compteurPrecedent)) return toast.error("Le compteur actuel ne peut pas être inférieur au compteur précédent");
       if (circuit === "STATION") {
-        if (!stationId) return toast.error("La station est requise");
         setEtape(3);
       } else {
-        if (!lieuStockageId) return toast.error("La cuve est requise");
         handleSubmit();
       }
     }
@@ -308,6 +308,34 @@ export function ModaleDemandeCarburant({
                 </p>
               </div>
 
+              {circuit === "STATION" ? (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">
+                    Station <span className="text-destructive">*</span>
+                  </Label>
+                  <Combobox
+                    options={stationsOptions}
+                    value={stationId}
+                    onChange={setStationId}
+                    placeholder="Sélectionner une station"
+                    variant="search"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">
+                    Cuve <span className="text-destructive">*</span>
+                  </Label>
+                  <Combobox
+                    options={cuvesOptions}
+                    value={lieuStockageId}
+                    onChange={setLieuStockageId}
+                    placeholder="Sélectionner une cuve"
+                    variant="search"
+                  />
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Projet (optionnel)</Label>
                 <Combobox
@@ -397,34 +425,6 @@ export function ModaleDemandeCarburant({
                   Plein complet (réservoir rempli entièrement)
                 </Label>
               </div>
-
-              {circuit === "STATION" ? (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">
-                    Station <span className="text-destructive">*</span>
-                  </Label>
-                  <Combobox
-                    options={stationsOptions}
-                    value={stationId}
-                    onChange={setStationId}
-                    placeholder="Sélectionner une station"
-                    variant="search"
-                  />
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">
-                    Cuve <span className="text-destructive">*</span>
-                  </Label>
-                  <Combobox
-                    options={cuvesOptions}
-                    value={lieuStockageId}
-                    onChange={setLieuStockageId}
-                    placeholder="Sélectionner une cuve"
-                    variant="search"
-                  />
-                </div>
-              )}
             </>
           )}
 
