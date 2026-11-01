@@ -266,7 +266,7 @@ export function ModaleDemandeCarburant({
               <div className="grid grid-cols-2 gap-5">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">
-                    Compteur avant distribution <span className="text-destructive">*</span>
+                    Compteur kilométrique avant <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     type="number"
@@ -276,6 +276,9 @@ export function ModaleDemandeCarburant({
                     onChange={(e) => setCompteurPrecedent(e.target.value)}
                     className="h-11"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Dernier relevé avant la distribution
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -288,6 +291,9 @@ export function ModaleDemandeCarburant({
                     onChange={setUniteCompteur}
                     placeholder="Unité"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    {uniteCompteur === "KILOMETRE" ? "Pour véhicules" : "Pour engins"}
+                  </p>
                 </div>
               </div>
 
@@ -390,13 +396,16 @@ export function ModaleDemandeCarburant({
 
               <div className="grid grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Compteur avant</Label>
+                  <Label className="text-sm font-medium">Compteur kilométrique avant</Label>
                   <Input value={compteurPrecedent} disabled className="h-11 bg-muted" />
+                  <p className="text-xs text-muted-foreground">
+                    Relevé à l'étape 1
+                  </p>
                 </div>
 
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">
-                    Compteur après distribution <span className="text-destructive">*</span>
+                    Compteur kilométrique après <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     type="number"
@@ -407,9 +416,14 @@ export function ModaleDemandeCarburant({
                     className="h-11"
                   />
                   {kmParcourus > 0 && (
-                    <p className="text-xs text-green-600">
+                    <p className="text-xs" style={{ color: '#13850b' }}>
                       ✓ {kmParcourus.toFixed(2)} {uniteCompteur === "KILOMETRE" ? "km" : "h"} parcourus
                       {consommation && ` • ${consommation} L/100km`}
+                    </p>
+                  )}
+                  {!kmParcourus && (
+                    <p className="text-xs text-muted-foreground">
+                      Relevé au moment de la distribution
                     </p>
                   )}
                 </div>
