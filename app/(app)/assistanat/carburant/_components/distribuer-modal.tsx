@@ -29,7 +29,9 @@ type DistributionFormData = {
   materielId: string;
   typeCarburant: TypeCarburant;
   quantite: number;
+  litresAjoutes: number;
   montant?: number;
+  compteurPrecedent: number;
   compteur: number;
   pleinComplet: boolean;
   nature: NatureDistribution;
@@ -37,6 +39,8 @@ type DistributionFormData = {
   lieuStockageId?: string;
   articleStockId?: string;
   dateDistribution: string;
+  modePaiement?: string;
+  numeroFacture?: string;
 };
 
 type DistribuerModalProps = {
@@ -81,6 +85,9 @@ export function DistribuerModal({
       pleinComplet: true,
       nature: NatureDistribution.STATION,
       dateDistribution: new Date().toISOString().split("T")[0],
+      compteurPrecedent: 0,
+      quantite: 0,
+      litresAjoutes: 0,
     },
   });
 
@@ -220,8 +227,28 @@ export function DistribuerModal({
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="dateDistribution">
+                  Date <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="dateDistribution"
+                  type="date"
+                  {...register("dateDistribution", {
+                    required: "Date requise",
+                  })}
+                />
+                {errors.dateDistribution && (
+                  <p className="text-sm text-destructive">
+                    {errors.dateDistribution.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
                 <Label htmlFor="quantite">
-                  Quantité (L) <span className="text-destructive">*</span>
+                  Quantité demandée (L) <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="quantite"
@@ -239,12 +266,54 @@ export function DistribuerModal({
                   </p>
                 )}
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="litresAjoutes">
+                  Litres réellement ajoutés <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="litresAjoutes"
+                  type="number"
+                  step="0.01"
+                  {...register("litresAjoutes", {
+                    required: "Litres ajoutés requis",
+                    valueAsNumber: true,
+                    min: { value: 0.01, message: "Doit être > 0" },
+                  })}
+                />
+                {errors.litresAjoutes && (
+                  <p className="text-sm text-destructive">
+                    {errors.litresAjoutes.message}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
+                <Label htmlFor="compteurPrecedent">
+                  Compteur précédent <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="compteurPrecedent"
+                  type="number"
+                  step="0.01"
+                  {...register("compteurPrecedent", {
+                    required: "Compteur précédent requis",
+                    valueAsNumber: true,
+                    min: { value: 0, message: "Doit être ≥ 0" },
+                  })}
+                />
+                {errors.compteurPrecedent && (
+                  <p className="text-sm text-destructive">
+                    {errors.compteurPrecedent.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="compteur">
-                  Compteur <span className="text-destructive">*</span>
+                  Compteur actuel <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="compteur"
@@ -259,24 +328,6 @@ export function DistribuerModal({
                 {errors.compteur && (
                   <p className="text-sm text-destructive">
                     {errors.compteur.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="dateDistribution">
-                  Date <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="dateDistribution"
-                  type="date"
-                  {...register("dateDistribution", {
-                    required: "Date requise",
-                  })}
-                />
-                {errors.dateDistribution && (
-                  <p className="text-sm text-destructive">
-                    {errors.dateDistribution.message}
                   </p>
                 )}
               </div>

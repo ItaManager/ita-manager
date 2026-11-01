@@ -32,6 +32,8 @@ import { Loader2, Fuel, AlertTriangle } from "lucide-react";
 
 const schema = z.object({
   quantite: z.number().positive("Quantité doit être positive"),
+  litresAjoutes: z.number().positive("Litres ajoutés doit être positif"),
+  compteurPrecedent: z.number().nonnegative("Compteur précédent doit être positif ou zéro"),
   compteur: z.number().nonnegative("Compteur doit être positif ou zéro"),
   pleinComplet: z.boolean(),
 });
@@ -64,6 +66,8 @@ export function ModalDistribuerGarage({ open, onOpenChange, demande, onSuccess }
     resolver: zodResolver(schema),
     defaultValues: {
       quantite: Number(demande.quantiteSouhai) || 0,
+      litresAjoutes: Number(demande.quantiteSouhai) || 0,
+      compteurPrecedent: Number(demande.compteurActuel) || 0,
       compteur: Number(demande.compteurActuel) || 0,
       pleinComplet: true,
     },
@@ -91,6 +95,8 @@ export function ModalDistribuerGarage({ open, onOpenChange, demande, onSuccess }
         materielId: (demande.materiel as any).id || demande.id,
         typeCarburant: demande.typeCarburant as any,
         quantite: values.quantite,
+        litresAjoutes: values.litresAjoutes,
+        compteurPrecedent: values.compteurPrecedent,
         compteur: values.compteur,
         pleinComplet: values.pleinComplet,
         nature: "CUVE" as any,
@@ -173,71 +179,125 @@ export function ModalDistribuerGarage({ open, onOpenChange, demande, onSuccess }
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="quantite"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Quantité distribuée (L)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      {...field}
-                      className="tabular-nums"
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Quantité effectivement servie (peut différer de la demande)
-                  </FormDescription>
-                  {stockInsuffisant && (
-                    <p className="text-sm text-destructive">
-                      ⚠ Stock insuffisant (D-06)
-                    </p>
-                  )}
-                  {quantite > 0 && !stockInsuffisant && (
-                    <p className="text-sm text-muted-foreground">
-                      Stock après distribution: {(stockDisponible - quantite).toFixed(2)} L
-                    </p>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="quantite"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quantité demandée (L)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        className="tabular-nums"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Litres demandés initialement
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="compteur"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Compteur actuel (km ou heures)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      {...field}
-                      className="tabular-nums"
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Relevé du compteur au moment de la distribution (D-04, D-09)
-                  </FormDescription>
-                  {compteurInferieur && (
-                    <Alert variant="destructive" className="mt-2">
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertDescription>
-                        Compteur inférieur au relevé de la demande (
-                        {Number(demande.compteurActuel).toLocaleString("fr-FR")}). Anomalie
-                        sera enregistrée (D-04).
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="litresAjoutes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Litres réellement ajoutés</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        className="tabular-nums"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Quantité effectivement servie (peut différer)
+                    </FormDescription>
+                    {stockInsuffisant && (
+                      <p className="text-sm text-destructive">
+                        ⚠ Stock insuffisant (D-06)
+                      </p>
+                    )}
+                    {quantite > 0 && !stockInsuffisant && (
+                      <p className="text-sm text-muted-foreground">
+                        Stock après: {(stockDisponible - quantite).toFixed(2)} L
+                      </p>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="compteurPrecedent"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Compteur précédent</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        className="tabular-nums"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Dernier relevé avant distribution
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="compteur"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Compteur actuel (km ou heures)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        className="tabular-nums"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Relevé au moment de la distribution
+                    </FormDescription>
+                    {compteurInferieur && (
+                      <Alert variant="destructive" className="mt-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          Compteur inférieur au relevé de la demande (
+                          {Number(demande.compteurActuel).toLocaleString("fr-FR")}). Anomalie
+                          sera enregistrée (D-04).
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}

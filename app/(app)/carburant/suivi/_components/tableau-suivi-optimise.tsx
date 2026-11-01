@@ -61,21 +61,46 @@ interface Consommation {
   vehicule: string;
   immatriculation: string;
   typeCarburant: string;
+  compteurPrecedent: number;
   kmCompteur: number;
+  uniteCompteur: string;
   kmParcourus: number;
   litresAjoutes: number;
-  prixLitre: number;
+  pleinComplet: boolean;
   coutTotal: number;
   consoAux100km: number;
   station: string;
   modePaiement: string;
+  numeroFacture: string;
   observations: string;
+}
+
+interface DonneesInitiales {
+  consommations: Consommation[];
+  statistiques: {
+    totalDistributions: number;
+    totalLitres: number;
+    totalCout: number;
+    totalKm: number;
+    consoMoyenne: number;
+  };
+  filtres: {
+    vehicules: string[];
+    chauffeurs: string[];
+    stations: string[];
+    typesCarburant: string[];
+    immatriculations: string[];
+  };
 }
 
 type SortColumn = keyof Consommation | null;
 type SortDirection = "asc" | "desc";
 
-export function TableauSuiviOptimise() {
+interface TableauSuiviOptimiseProps {
+  donneesInitiales: DonneesInitiales;
+}
+
+export function TableauSuiviOptimise({ donneesInitiales }: TableauSuiviOptimiseProps) {
   const [recherche, setRecherche] = useState("");
   const [openSearch, setOpenSearch] = useState(false);
 
@@ -103,240 +128,9 @@ export function TableauSuiviOptimise() {
   // Recherche dans l'analyse par véhicule
   const [rechercheVehicule, setRechercheVehicule] = useState("");
 
-  // TODO: Récupérer les vraies données depuis la base
-  const consommations: Consommation[] = [
-    {
-      numero: 16,
-      date: new Date("2026-01-07"),
-      chauffeur: "KOUASSI Jean",
-      vehicule: "Toyota Yaris",
-      immatriculation: "QR-345-ST",
-      typeCarburant: "Hybride",
-      kmCompteur: 67739,
-      kmParcourus: 330,
-      litresAjoutes: 36.89,
-      prixLitre: 1030,
-      coutTotal: 37997,
-      consoAux100km: 11.18,
-      station: "BP",
-      modePaiement: "Ticket carburant",
-      observations: "",
-    },
-    {
-      numero: 27,
-      date: new Date("2026-01-23"),
-      chauffeur: "TOURE Ibrahim",
-      vehicule: "Ford Transit",
-      immatriculation: "MN-012-OP",
-      typeCarburant: "Gasoil",
-      kmCompteur: 43387,
-      kmParcourus: 224,
-      litresAjoutes: 24.4,
-      prixLitre: 1336,
-      coutTotal: 32598,
-      consoAux100km: 10.89,
-      station: "Shell",
-      modePaiement: "Ticket carburant",
-      observations: "",
-    },
-    {
-      numero: 19,
-      date: new Date("2026-01-25"),
-      chauffeur: "N'GUESSAN François",
-      vehicule: "Renault Clio",
-      immatriculation: "AB-123-CD",
-      typeCarburant: "Super sans plomb",
-      kmCompteur: 29696,
-      kmParcourus: 184,
-      litresAjoutes: 53.41,
-      prixLitre: 1060,
-      coutTotal: 56615,
-      consoAux100km: 29.03,
-      station: "Carrefour",
-      modePaiement: "Carte bancaire",
-      observations: "",
-    },
-    {
-      numero: 23,
-      date: new Date("2026-01-26"),
-      chauffeur: "KOFFI Marie",
-      vehicule: "Peugeot 308",
-      immatriculation: "EF-456-GH",
-      typeCarburant: "Gasoil",
-      kmCompteur: 18341,
-      kmParcourus: 87,
-      litresAjoutes: 32.8,
-      prixLitre: 1140,
-      coutTotal: 37392,
-      consoAux100km: 37.7,
-      station: "Shell",
-      modePaiement: "Espèces",
-      observations: "",
-    },
-    {
-      numero: 11,
-      date: new Date("2026-01-31"),
-      chauffeur: "YAO Christophe",
-      vehicule: "Citroën C3",
-      immatriculation: "IJ-789-KL",
-      typeCarburant: "Super",
-      kmCompteur: 23021,
-      kmParcourus: 164,
-      litresAjoutes: 23.43,
-      prixLitre: 1064,
-      coutTotal: 24929,
-      consoAux100km: 14.29,
-      station: "BP",
-      modePaiement: "Carte carburant",
-      observations: "",
-    },
-    // Données décembre 2025
-    {
-      numero: 8,
-      date: new Date("2025-12-05"),
-      chauffeur: "KOUASSI Jean",
-      vehicule: "Toyota Yaris",
-      immatriculation: "QR-345-ST",
-      typeCarburant: "Hybride",
-      kmCompteur: 67409,
-      kmParcourus: 315,
-      litresAjoutes: 35.2,
-      prixLitre: 1015,
-      coutTotal: 35728,
-      consoAux100km: 11.17,
-      station: "BP",
-      modePaiement: "Carte carburant",
-      observations: "",
-    },
-    {
-      numero: 12,
-      date: new Date("2025-12-12"),
-      chauffeur: "TOURE Ibrahim",
-      vehicule: "Ford Transit",
-      immatriculation: "MN-012-OP",
-      typeCarburant: "Gasoil",
-      kmCompteur: 43163,
-      kmParcourus: 210,
-      litresAjoutes: 22.8,
-      prixLitre: 1320,
-      coutTotal: 30096,
-      consoAux100km: 10.86,
-      station: "Shell",
-      modePaiement: "Ticket carburant",
-      observations: "",
-    },
-    {
-      numero: 15,
-      date: new Date("2025-12-18"),
-      chauffeur: "N'GUESSAN François",
-      vehicule: "Renault Clio",
-      immatriculation: "AB-123-CD",
-      typeCarburant: "Super sans plomb",
-      kmCompteur: 29512,
-      kmParcourus: 175,
-      litresAjoutes: 50.2,
-      prixLitre: 1045,
-      coutTotal: 52459,
-      consoAux100km: 28.69,
-      station: "Total",
-      modePaiement: "Carte bancaire",
-      observations: "",
-    },
-    {
-      numero: 9,
-      date: new Date("2025-12-20"),
-      chauffeur: "KOFFI Marie",
-      vehicule: "Peugeot 308",
-      immatriculation: "EF-456-GH",
-      typeCarburant: "Gasoil",
-      kmCompteur: 18254,
-      kmParcourus: 92,
-      litresAjoutes: 34.5,
-      prixLitre: 1125,
-      coutTotal: 38812,
-      consoAux100km: 37.5,
-      station: "Garage",
-      modePaiement: "Espèces",
-      observations: "Consommation élevée",
-    },
-    {
-      numero: 6,
-      date: new Date("2025-12-28"),
-      chauffeur: "YAO Christophe",
-      vehicule: "Citroën C3",
-      immatriculation: "IJ-789-KL",
-      typeCarburant: "Super",
-      kmCompteur: 22857,
-      kmParcourus: 158,
-      litresAjoutes: 22.6,
-      prixLitre: 1050,
-      coutTotal: 23730,
-      consoAux100km: 14.3,
-      station: "BP",
-      modePaiement: "Ticket carburant",
-      observations: "",
-    },
-    // Données novembre 2025
-    {
-      numero: 3,
-      date: new Date("2025-11-08"),
-      chauffeur: "TOURE Ibrahim",
-      vehicule: "Ford Transit",
-      immatriculation: "MN-012-OP",
-      typeCarburant: "Gasoil",
-      kmCompteur: 42953,
-      kmParcourus: 198,
-      litresAjoutes: 21.5,
-      prixLitre: 1305,
-      coutTotal: 28057,
-      consoAux100km: 10.86,
-      station: "Shell",
-      modePaiement: "Carte carburant",
-      observations: "",
-    },
-    {
-      numero: 5,
-      date: new Date("2025-11-15"),
-      chauffeur: "YAO Christophe",
-      vehicule: "Citroën C3",
-      immatriculation: "IJ-789-KL",
-      typeCarburant: "Super",
-      kmCompteur: 22699,
-      kmParcourus: 0,
-      litresAjoutes: 20.0,
-      prixLitre: 1040,
-      coutTotal: 20800,
-      consoAux100km: 0,
-      station: "BP",
-      modePaiement: "Espèces",
-      observations: "Compteur non relevé",
-    },
-  ];
-
-  // Extraire toutes les valeurs uniques pour les filtres
-  const options = useMemo(() => {
-    const chauffeurs = new Set<string>();
-    const vehicules = new Set<string>();
-    const immatriculations = new Set<string>();
-    const typesCarburant = new Set<string>();
-    const stations = new Set<string>();
-
-    consommations.forEach((c) => {
-      chauffeurs.add(c.chauffeur);
-      vehicules.add(c.vehicule);
-      immatriculations.add(c.immatriculation);
-      typesCarburant.add(c.typeCarburant);
-      stations.add(c.station);
-    });
-
-    return {
-      chauffeurs: Array.from(chauffeurs).sort(),
-      vehicules: Array.from(vehicules).sort(),
-      immatriculations: Array.from(immatriculations).sort(),
-      typesCarburant: Array.from(typesCarburant).sort(),
-      stations: Array.from(stations).sort(),
-    };
-  }, [consommations]);
+  // Utiliser les données récupérées depuis la base
+  const consommations = donneesInitiales.consommations;
+  const options = donneesInitiales.filtres;
 
   // Fonction pour obtenir la plage de dates selon le filtre période
   const getPeriodRange = (periode: string): [Date, Date] | null => {
@@ -1246,15 +1040,6 @@ export function TableauSuiviOptimise() {
                       onSort={handleSort}
                     />
                     <ColonneHeaderSortable
-                      label="Prix/Litre (FCFA)"
-                      tooltip="Prix unitaire du litre"
-                      align="right"
-                      column="prixLitre"
-                      sortColumn={sortColumn}
-                      sortDirection={sortDirection}
-                      onSort={handleSort}
-                    />
-                    <ColonneHeaderSortable
                       label="Coût total (FCFA)"
                       tooltip="Montant total de la dépense"
                       align="right"
@@ -1339,9 +1124,6 @@ export function TableauSuiviOptimise() {
                             maximumFractionDigits: 2,
                           })}{" "}
                           L
-                        </td>
-                        <td className="montant px-4 py-3 text-right text-sm whitespace-nowrap">
-                          {conso.prixLitre.toLocaleString("fr-FR")} F
                         </td>
                         <td className="montant px-4 py-3 text-right text-sm font-medium whitespace-nowrap">
                           {conso.coutTotal.toLocaleString("fr-FR")} F

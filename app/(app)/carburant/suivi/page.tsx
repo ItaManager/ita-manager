@@ -2,9 +2,13 @@ import { TableauSuiviOptimise } from "./_components/tableau-suivi-optimise";
 import { verifierAccesPage } from "@/lib/auth/page-access";
 import { ModuleLayout } from "@/components/layouts/module-layout";
 import { Suspense } from "react";
+import { listerConsommationsPourSuivi } from "@/lib/actions/carburant";
 
 export default async function PageSuiviCarburant() {
   await verifierAccesPage("/carburant/suivi");
+
+  // Récupérer les données depuis la base
+  const donnees = await listerConsommationsPourSuivi();
 
   return (
     <ModuleLayout
@@ -13,7 +17,7 @@ export default async function PageSuiviCarburant() {
       helpText="Suivez la consommation de carburant par véhicule, chauffeur et projet. Les données sont calculées automatiquement à partir des distributions validées."
     >
       <Suspense fallback={<div>Chargement...</div>}>
-        <TableauSuiviOptimise />
+        <TableauSuiviOptimise donneesInitiales={donnees} />
       </Suspense>
     </ModuleLayout>
   );

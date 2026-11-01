@@ -1486,6 +1486,10 @@ export const listerConsommationsPourSuivi = actionProtegee(
       new Set(consommations.map((c) => c.typeCarburant))
     ).sort();
 
+    const immatriculationsUniques = Array.from(
+      new Set(consommations.map((c) => c.immatriculation))
+    ).sort();
+
     return {
       consommations,
       statistiques: {
@@ -1500,6 +1504,7 @@ export const listerConsommationsPourSuivi = actionProtegee(
         chauffeurs: chauffeursUniques,
         stations: stationsUniques,
         typesCarburant: typesCarburantUniques,
+        immatriculations: immatriculationsUniques,
       },
     };
   }
