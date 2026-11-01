@@ -36,8 +36,8 @@ export async function BarreLaterale() {
   // Compteurs désactivés temporairement pour améliorer les performances
   // TODO: Charger les compteurs côté client avec React Query ou SWR
   const compteursAchats = { aValider: 0, aInstruire: 0, commandes: 0, receptions: 0, factures: 0 };
-  const compteursConges = { aValiderN1: 0, aControler: 0 };
-  const compteursMissions = { aValiderN1: 0, aValiderRH: 0 };
+  const compteursConges = { aValiderN1: 0, aControler: 0, controleRH: 0 };
+  const compteursMissions = { aValiderN1: 0, aValiderRH: 0, aViser: 0, aTraiter: 0 };
 
   return (
     <BarreLateraleClient
