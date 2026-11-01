@@ -73,9 +73,11 @@ export const BADGE_PAIEMENTS: Record<string, string> = {
 // M16 L2 - Carburant
 export const BADGE_CARBURANT: Record<string, string> = {
   BROUILLON: BADGE_STYLES.neutre,
-  EN_ATTENTE: BADGE_STYLES.attention,
+  ATTENTE_VALIDATION: BADGE_STYLES.attention,
   VALIDEE: BADGE_STYLES.succes,
+  LIVREE: BADGE_STYLES.succes,
   REFUSEE: BADGE_STYLES.erreur,
+  EN_ATTENTE: BADGE_STYLES.attention,
   EN_COURS: BADGE_STYLES["en-cours"],
   CLOTURE: BADGE_STYLES.succes,
   RECEPTIONNEE: BADGE_STYLES.succes,
@@ -124,7 +126,7 @@ export const BADGE_APPELS_OFFRES: Record<string, string> = {
 /**
  * Fonction utilitaire pour obtenir les classes d'un badge
  */
-export function getBadgeClasses(statut: string, module: "conges" | "achats" | "factures" | "paiements" | "carburant" | "releves" | "remuneration" | "projets" | "appels-offres"): string {
+export function getBadgeClasses(module: "conges" | "achats" | "factures" | "paiements" | "carburant" | "releves" | "remuneration" | "projets" | "appels-offres", statut: string): string {
   const mappings = {
     conges: BADGE_CONGES,
     achats: BADGE_ACHATS,

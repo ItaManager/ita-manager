@@ -124,7 +124,7 @@ const buildNavigation = (
       { label: "Courrier arrivée", href: "/assistanat/courrier/arrivee", icon: Inbox, moduleNumber: "M16", moduleName: "Assistanat" },
       { label: "Courrier départ", href: "/assistanat/courrier/depart", icon: Send, moduleNumber: "M16", moduleName: "Assistanat" },
       { label: "Courrier à traiter", href: "/assistanat/courrier/a-traiter", icon: FileCheck, badge: 0, moduleNumber: "M16", moduleName: "Assistanat" },
-      { label: "Carburant", href: "/assistanat/carburant", icon: Package, moduleNumber: "M18", moduleName: "Carburant" },
+      { label: "Carburant", href: "/carburant", icon: Package, moduleNumber: "M18", moduleName: "Carburant" },
     ],
   },
   {
