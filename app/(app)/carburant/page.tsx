@@ -1,56 +1,28 @@
 import { Suspense } from "react";
 import { verifierAccesPage } from "@/lib/auth/page-access";
 import { ModuleLayout } from "@/components/layouts/module-layout";
-import { IndicateursCarburant } from "./_components/indicateurs-carburant";
-import { TableauDemandes } from "./_components/tableau-demandes";
-import { TitreTaches } from "./_components/titre-taches";
-import { ListeTaches } from "./_components/liste-taches";
-
-interface PageCarburantProps {
-  searchParams: Promise<{
-    statut?: string;
-    page?: string;
-  }>;
-}
+import { TableauSuiviOptimise } from "./_components/tableau-suivi-optimise";
+import { listerConsommationsPourSuivi } from "@/lib/actions/carburant";
 
 export const metadata = {
   title: "Carburant — ITA Manager",
 };
 
-export default async function CarburantPage({
-  searchParams,
-}: PageCarburantProps) {
+export default async function CarburantPage() {
   await verifierAccesPage("/carburant");
 
-  const params = await searchParams;
+  // Récupérer les données depuis la base
+  const donnees = await listerConsommationsPourSuivi();
 
   return (
     <ModuleLayout
       titre="Carburant"
-      description="Demandes, distributions et suivi de consommation"
-      helpText="Gérez les demandes de carburant des chauffeurs, validez-les et suivez la consommation par véhicule. Deux circuits disponibles : station-service ou garage ITA."
-      indicateurs={
-        <Suspense fallback={<div>Chargement...</div>}>
-          <IndicateursCarburant />
-        </Suspense>
-      }
-      taches={{
-        titre: (
-          <Suspense fallback={<h2>Vos tâches</h2>}>
-            <TitreTaches />
-          </Suspense>
-        ),
-        contenu: (
-          <Suspense fallback={<div>Chargement...</div>}>
-            <ListeTaches />
-          </Suspense>
-        ),
-      }}
+      description="Distribution et suivi de consommation carburant"
+      helpText="Créez des distributions de carburant et suivez la consommation par véhicule. Deux circuits disponibles : station-service (dépense) ou cuve ITA (mouvement de stock)."
     >
-      <TableauDemandes
-        statut={params.statut}
-        page={params.page ? parseInt(params.page) : 1}
-      />
+      <Suspense fallback={<div>Chargement...</div>}>
+        <TableauSuiviOptimise donneesInitiales={donnees} />
+      </Suspense>
     </ModuleLayout>
   );
 }
